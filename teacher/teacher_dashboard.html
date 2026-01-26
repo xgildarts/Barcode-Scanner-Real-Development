@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="/css/teacher-css/teacher_global.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_dashboard.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_set_location.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_attendance_now.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_attendance_history.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_student_registered.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_manual_entry.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_academic_setup.css">
+    <link rel="stylesheet" href="/css/teacher-css/teacher_settings.css">
+</head>
+<body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="settings-icon" onclick="navigateTo('settings')">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+            </div>
+            <div class="sidebar-profile">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            </div>
+            <div class="sidebar-name">Mr. David</div>
+            <div class="sidebar-role">Teacher</div>
+        </div>
+
+        <div class="sidebar-menu">
+            <button class="menu-item" onclick="navigateTo('dashboard')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Dashboard</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('location')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Set Location</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('attendanceNow')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm0 4c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm6 12H6v-1.4c0-2 4-3.1 6-3.1s6 1.1 6 3.1V19z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Attendance Now</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('history')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Attendance History</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('studentRegistered')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Student Registered</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('manualEntry')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Manual Entry</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('eventAttendance')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Event attendance</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('eventHistory')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Event Attendance History</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('academicSetup')">
+                <div class="menu-item-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+                    </svg>
+                </div>
+                <span class="menu-item-text">Academic Setup</span>
+            </button>
+        </div>
+    </div>
+
+    <!--Main Body-->
+    <main>
+
+        <!--Header-->
+        <div class="header">
+            <button class="menu-btn" id="menuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <button class="logout-btn" onclick="logout()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!--Dashboard-->
+        <section class="sections" id="dashboard">
+            <div class="dashboard-content">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <button class="close-btn">×</button>
+                        <div class="stat-icon students">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-label">Total Students</div>
+                        <div class="stat-value">200</div>
+                    </div>
+        
+                    <div class="stat-card">
+                        <button class="close-btn">×</button>
+                        <div class="stat-icon presents">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-label">Presents</div>
+                        <div class="stat-value">190</div>
+                    </div>
+        
+                    <div class="stat-card">
+                        <button class="close-btn">×</button>
+                        <div class="stat-icon absents">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-label">Absents</div>
+                        <div class="stat-value">10</div>
+                    </div>
+                </div>
+        
+                <div class="overview-section">
+                    <h2 class="section-title">Attendance Overview</h2>
+                    <div class="chart-container">
+                        <svg class="donut-chart" width="200" height="200" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="#5a8a7a" stroke-width="35" stroke-dasharray="427 47" />
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="#d88888" stroke-width="35" stroke-dasharray="47 427" stroke-dashoffset="-427" />
+                        </svg>
+                        <div class="chart-center">
+                            <div class="chart-label">Total of Students</div>
+                            <div class="chart-value">200</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color presents"></div>
+                            <span>Presents 190</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color absents"></div>
+                            <span>Absents 10</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!--Set Location-->
+        <section class="sections" id="location">
+            <div class="content">
+                <div class="map-container">
+                    <div class="map-view">
+                        <div class="radius-circle"></div>
+                        <div class="map-marker">
+                            <div class="marker-pin"></div>
+                        </div>
+                    </div>
+                    <div class="radius-control">
+                        <h2 class="control-title">Location Radius Check</h2>
+                        <div class="radius-info">
+                            <span>Allowed Radius:</span>
+                            <span class="radius-value"><span id="radiusValue">50</span> meters</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" class="radius-slider" id="radiusSlider" min="10" max="100" value="50" step="5">
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="action-buttons">
+                    <button class="btn set-location-btn" onclick="setLocation()">Set Location</button>
+                    <button class="btn cancel-btn" onclick="cancel()">Cancel</button>
+                </div>
+            </div>
+        </section>
+
+        <!--Attendance Now-->
+        <section class="sections" id="attendanceNow">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                    </div>
+                    <button class="action-btn print-btn" onclick="printAttendance()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                        </svg>
+                        Print
+                    </button>
+                    <button class="action-btn save-btn" onclick="saveAttendance()">Save</button>
+                </div>
+        
+                <div class="filters-row">
+                    <select class="filter-select" id="courseFilter">
+                        <option value="">Big Data</option>
+                        <option value="Event-Driven Programming">Event-Driven Programming</option>
+                        <option value="Digital Marketing">Digital Marketing</option>
+                        <option value="Integrative Programming">Integrative Programming</option>
+                    </select>
+        
+                    <select class="filter-select" id="yearFilter">
+                        <option value="">1</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+        
+                    <button class="set-btn" onclick="applyFilters()">Set</button>
+                </div>
+            </div>
+        
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" class="attendance-checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>ID Number</th>
+                            <th>Firstname</th>
+                            <th>M.I</th>
+                            <th>Lastname</th>
+                            <th>Subject</th>
+                            <th>Year Level</th>
+                            <th>Time</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <!-- Empty rows for attendance taking -->
+                        <tr class="empty-row">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>    
+        </section>
+
+        <!--Attendance History-->
+        <section class="sections" id="history">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                    </div>
+                    <button class="export-btn" onclick="exportToExcel()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                        </svg>
+                        Export Excel
+                    </button>
+                </div>
+        
+                <div class="filters-row">
+                    <select class="filter-select" id="subjectFilter">
+                        <option value="">All Subject</option>
+                        <option value="programming">Programming</option>
+                        <option value="database">Database</option>
+                        <option value="networking">Networking</option>
+                        <option value="web-dev">Web Development</option>
+                    </select>
+        
+                    <select class="filter-select" id="statusFilter">
+                        <option value="">All</option>
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                        <option value="late">Late</option>
+                    </select>
+                </div>
+            </div>
+        
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>ID Number</th>
+                            <th>Firstname</th>
+                            <th>M.I</th>
+                            <th>Lastname</th>
+                            <th>Program</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <tr>
+                            <td>1231255</td>
+                            <td>Emily</td>
+                            <td>D</td>
+                            <td>Chu</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>123-250</td>
+                            <td>Miguel</td>
+                            <td>E</td>
+                            <td>Torres</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1208991</td>
+                            <td>Kristine</td>
+                            <td>F</td>
+                            <td>Navarro</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1208991</td>
+                            <td>Sarah</td>
+                            <td>N</td>
+                            <td>Panganiban</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1231255</td>
+                            <td>Jasmine</td>
+                            <td>T</td>
+                            <td>Castillo</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>123-001</td>
+                            <td>Paolo</td>
+                            <td>M</td>
+                            <td>Garcia</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1231255</td>
+                            <td>Maria</td>
+                            <td>S</td>
+                            <td>Santos</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1231111</td>
+                            <td>Andrea</td>
+                            <td>A</td>
+                            <td>Lachica</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>123-019</td>
+                            <td>Charlmea</td>
+                            <td>M</td>
+                            <td>Selga</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1239309</td>
+                            <td>Clarissa</td>
+                            <td>M</td>
+                            <td>Padilla</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1229533</td>
+                            <td>Steven John</td>
+                            <td>A</td>
+                            <td>Agustin</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1234567</td>
+                            <td>Faith</td>
+                            <td>A</td>
+                            <td>Robles</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1247932</td>
+                            <td>Jan Ray</td>
+                            <td>A</td>
+                            <td>Aquino</td>
+                            <td>BSIT</td>
+                        </tr>
+                        <tr>
+                            <td>1210919</td>
+                            <td>Dwynna</td>
+                            <td>W</td>
+                            <td>Chan</td>
+                            <td>BSIT</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>    
+        </section>
+
+        <!--Student Registration-->
+        <section class="sections" id="studentRegistered">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                    </div>
+                    <button class="print-btn" onclick="printList()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                        </svg>
+                        Print
+                    </button>
+                </div>
+        
+                <div class="filters-row">
+                    <select class="filter-select" id="yearFilter">
+                        <option value="">Year level: All</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+            </div>
+        
+            <div class="table-container">
+                <table class="students-table">
+                    <thead>
+                        <tr>
+                            <th>ID Number</th>
+                            <th>Firstname</th>
+                            <th>M.I</th>
+                            <th>Lastname</th>
+                            <th>Program</th>
+                            <th>Year Level</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsBody">
+                        <tr>
+                            <td>1231255</td>
+                            <td>Emily</td>
+                            <td>D</td>
+                            <td>Chu</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('1231255')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('1231255')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>123-250</td>
+                            <td>Miguel</td>
+                            <td>E</td>
+                            <td>Torres</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('123-250')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('123-250')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>1208991</td>
+                            <td>Kristine</td>
+                            <td>F</td>
+                            <td>Navarro</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('1208991')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('1208991')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>1208991</td>
+                            <td>Sarah</td>
+                            <td>N</td>
+                            <td>Panganiban</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('1208991-2')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('1208991-2')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>1231255</td>
+                            <td>Jasmine</td>
+                            <td>T</td>
+                            <td>Castillo</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('1231255-2')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('1231255-2')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>123-001</td>
+                            <td>Paolo</td>
+                            <td>M</td>
+                            <td>Garcia</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('123-001')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('123-001')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>1231255</td>
+                            <td>Maria</td>
+                            <td>S</td>
+                            <td>Santos</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="edit-btn" onclick="editStudent('1231255-3')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteStudent('1231255-3')">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>    
+        </section>
+
+        <!--Manual Entry-->
+        <section class="sections" id="manualEntry">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                </div>
+        
+                <select class="filter-select" id="yearFilter">
+                    <option value="">Year level All</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+            </div>
+        
+            <div class="content-card">
+                <div class="table-header">
+                    <div class="header-cell">
+                        Student name
+                        <svg class="sort-icon" viewBox="0 0 24 24">
+                            <path d="M7 10l5 5 5-5z"/>
+                        </svg>
+                    </div>
+                    <div class="header-cell">Year level</div>
+                    <div class="header-cell">Actions</div>
+                </div>
+        
+                <div class="student-list" id="studentList">
+                    <!-- Students will be populated here -->
+                </div>
+            </div>    
+        </section>
+
+        <!--Event Attendance-->
+        <section class="sections" id="eventAttendance">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                    </div>
+                    <button class="action-btn print-btn" onclick="printAttendance()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                        </svg>
+                        Print
+                    </button>
+                    <button class="action-btn save-btn" onclick="saveAttendance()">Save</button>
+                </div>
+        
+                <div class="filters-row">
+                    <select class="filter-select" id="yearFilter">
+                        <option value="">Year Level All</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+            </div>
+        
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" class="attendance-checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>ID Number</th>
+                            <th>Firstname</th>
+                            <th>M.I</th>
+                            <th>Lastname</th>
+                            <th>Course</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <!-- Empty rows for attendance taking -->
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="empty-row">
+                            <td class="checkbox-cell"><input type="checkbox" class="attendance-checkbox row-checkbox"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!--Event Attendance History-->
+        <section class="sections" id="eventHistory">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                    </div>
+                    <button class="export-btn" onclick="exportToExcel()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                        </svg>
+                        Export Excel
+                    </button>
+                </div>
+        
+                <div class="filters-row">
+                    <select class="filter-select" id="yearFilter">
+                        <option value="">Year Level All</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+            </div>
+        
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>ID Number</th>
+                            <th>Firstname</th>
+                            <th>M.I</th>
+                            <th>Lastname</th>
+                            <th>Program</th>
+                            <th>Year Level</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Course</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <tr>
+                            <td>1231255</td>
+                            <td>Emily</td>
+                            <td>D</td>
+                            <td>Chu</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:00 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>123-250</td>
+                            <td>Miguel</td>
+                            <td>E</td>
+                            <td>Torres</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:02 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1208991</td>
+                            <td>Kristine</td>
+                            <td>F</td>
+                            <td>Navarro</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:05 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1208991</td>
+                            <td>Sarah</td>
+                            <td>N</td>
+                            <td>Panganiban</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:07 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1231255</td>
+                            <td>Jasmine</td>
+                            <td>T</td>
+                            <td>Castillo</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:10 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>123-001</td>
+                            <td>Paolo</td>
+                            <td>M</td>
+                            <td>Garcia</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:12 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1231255</td>
+                            <td>Maria</td>
+                            <td>S</td>
+                            <td>Santos</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:15 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1231111</td>
+                            <td>Andrea</td>
+                            <td>A</td>
+                            <td>Lachica</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:18 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>123-019</td>
+                            <td>Charlmea</td>
+                            <td>M</td>
+                            <td>Selga</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:20 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1239309</td>
+                            <td>Clarissa</td>
+                            <td>M</td>
+                            <td>Padilla</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:22 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1229533</td>
+                            <td>Steven John</td>
+                            <td>A</td>
+                            <td>Agustin</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:25 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1234567</td>
+                            <td>Jan Ray</td>
+                            <td>A</td>
+                            <td>Aquino</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:28 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                        <tr>
+                            <td>1210919</td>
+                            <td>Dwynna</td>
+                            <td>W</td>
+                            <td>Chan</td>
+                            <td>BSIT</td>
+                            <td>1</td>
+                            <td>1/4/2026</td>
+                            <td>8:30 AM</td>
+                            <td>Programming</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>    
+        </section>
+
+        <!--Academic Setup-->
+        <section class="sections" id="academicSetup">
+            <div class="content-modal">
+                <button class="add-program-btn" onclick="openAddModal()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Program
+                </button>
+        
+                <div class="programs-list" id="programsList">
+                    <!-- Programs will be dynamically added here -->
+                </div>
+            </div>
+        
+            <div class="btn-container">
+                <button class="done-btn" onclick="saveChanges()">DONE</button>
+            </div>
+        
+            <!-- Add Program Modal -->
+            <div class="modal" id="addModal">
+                <div class="modal-content">
+                    <h2 class="modal-header">Add New Program</h2>
+                    <div class="form-group">
+                        <label class="form-label">Program Name</label>
+                        <input type="text" class="form-input" id="programNameInput" placeholder="Enter program name">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel-btn" onclick="closeAddModal()">Cancel</button>
+                        <button class="modal-btn confirm-btn" onclick="addProgram()">Add</button>
+                    </div>
+                </div>
+            </div>        
+        </section>
+
+        <!--Settings-->
+        <section class="sections" id="settings">
+            <div class="profile-section">
+                <div class="avatar-container">
+                    <div class="avatar">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <div class="camera-badge">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="profile-name">Mr. David</div>
+                <div class="profile-email">davidco@gmail.com</div>
+                <button class="edit-profile-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Edit
+                </button>
+            </div>
+        
+            <div class="content-section">
+                <h2 class="section-title">Account Information</h2>
+                
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">Name</span>
+                        <span class="info-value">Mr. David</span>
+                        <button class="edit-settings-btn" onclick="editField('name')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Edit
+                        </button>
+                    </div>
+        
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">davidco@gmail.com</span>
+                        <button class="edit-settings-btn" onclick="editField('email')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Edit
+                        </button>
+                    </div>
+                </div>
+        
+                <h2 class="section-title">Change Password</h2>
+                
+                <div class="info-card">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="password-input" id="currentPassword" placeholder="••••••••">
+                    </div>
+        
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="password-input" id="newPassword" placeholder="••••••••">
+                    </div>
+        
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••">
+                    </div>
+        
+                    <button class="update-password-settings-btn" onclick="updatePassword()">Update Password</button>
+                </div>
+        
+                <button class="logout-settings-btn" onclick="logout()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                    Log Out
+                </button>
+            </div>
+        </section>
+    </main>
+    
+    
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(180deg, #7a9a8a 0%, #4a7a7a 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background: rgba(90, 138, 122, 0.8);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.header-title {
+    flex: 1;
+    text-align: center;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin-right: 24px;
+}
+
+.scanner-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 20px;
+}
+
+.scanner-frame {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 16 / 9;
+    background: rgba(0,0,0,0.85);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.scanner-viewfinder {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    border: 2px solid rgba(90,180,140,0.6);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#camera {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.corner {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border: 3px solid #5ab48c;
+    z-index: 2;
+}
+
+.corner.top-left {
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: none;
+}
+
+.corner.top-right {
+    top: 0;
+    right: 0;
+    border-left: none;
+    border-bottom: none;
+}
+
+.corner.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-right: none;
+    border-top: none;
+}
+
+.corner.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-left: none;
+    border-top: none;
+}
+
+.scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #5ab48c, transparent);
+    animation: scan 2s infinite;
+    z-index: 2;
+}
+
+@keyframes scan {
+    0% { top: 0; opacity: 0; }
+    50% { top: 50%; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+.instructions {
+    margin-top: 24px;
+    text-align: center;
+    color: white;
+    max-width: 400px;
+}
+
+.instructions-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.instructions-text {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.action-buttons {
+    margin-top: 32px;
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.scan-btn {
+    background: #5ab48c;
+    color: white;
+}
+
+.manual-btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.5);
+}

@@ -1,0 +1,414 @@
+
+// Dashboard
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+const menuBtn = document.getElementById('menuBtn');
+
+menuBtn.addEventListener('click', function() {
+    sidebar.classList.toggle('active');
+    sidebarOverlay.classList.toggle('active');
+});
+
+sidebarOverlay.addEventListener('click', function() {
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+});
+
+
+function logout() {
+    if (confirm('Are you sure you want to log out?')) {
+        alert('Logging out...');
+    }
+}
+
+document.querySelectorAll('.close-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.target.closest('.stat-card').style.display = 'none';
+    });
+});
+
+
+// Navigation Shifting Logic
+function navigateTo(navName) {
+
+    //For debugging purposes
+    console.log(navName)
+
+    const navs = [ 
+        'dashboard', 
+        'location', 
+        'attendanceNow', 
+        'history', 
+        'studentRegistered', 
+        'manualEntry', 
+        'eventAttendance', 
+        'eventHistory', 
+        'academicSetup',
+        'settings' ]
+    
+    navs.forEach(nav => {
+        if(nav == navName) {
+            document.getElementById(nav).classList.add('active')
+        } else {
+            document.getElementById(nav).classList.remove('active')
+        }
+    })
+
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+
+}
+
+// Set Location
+
+const radiusSlider = document.getElementById('radiusSlider');
+const radiusValue = document.getElementById('radiusValue');
+const radiusCircle = document.querySelector('.radius-circle');
+
+radiusSlider.addEventListener('input', function() {
+    const value = this.value;
+    radiusValue.textContent = value;
+    
+    // Update slider gradient
+    const percentage = ((value - 10) / (100 - 10)) * 100;
+    this.style.background = `linear-gradient(to right, #5a8a7a 0%, #5a8a7a ${percentage}%, #e0e0e0 ${percentage}%, #e0e0e0 100%)`;
+    
+    // Update circle size
+    const circleSize = 100 + (value - 10) * 2;
+    radiusCircle.style.width = circleSize + 'px';
+    radiusCircle.style.height = circleSize + 'px';
+});
+
+function setLocation() {
+    const radius = document.getElementById('radiusValue').textContent;
+    alert(`Location set with ${radius} meters radius!`);
+    // Here you would save the location and radius
+}
+
+function cancel() {
+    if (confirm('Are you sure you want to cancel?')) {
+        window.history.back();
+    }
+}
+
+// Initialize slider gradient
+radiusSlider.dispatchEvent(new Event('input'));
+
+// Teacher Attendance
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateProgress();
+}
+
+function updateProgress() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const checked = document.querySelectorAll('.row-checkbox:checked').length;
+    const total = checkboxes.length;
+    const percentage = (checked / total) * 100;
+    
+    document.getElementById('progressFill').style.width = percentage + '%';
+}
+
+function applyFilters() {
+    alert('Filters applied! Loading students...');
+    // Here you would load students based on selected course and year
+}
+
+function printAttendance() {
+    window.print();
+}
+
+function saveAttendance() {
+    const checked = document.querySelectorAll('.row-checkbox:checked').length;
+    alert(`Attendance saved! ${checked} students marked as present.`);
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    // Search functionality would be implemented here
+});
+
+
+// Attendance history
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#attendanceBody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+document.getElementById('subjectFilter').addEventListener('change', function() {
+    const subject = this.value;
+    alert(`Filtering by subject: ${subject || 'All'}`);
+    // Here you would filter the data
+});
+
+document.getElementById('statusFilter').addEventListener('change', function() {
+    const status = this.value;
+    alert(`Filtering by status: ${status || 'All'}`);
+    // Here you would filter the data
+});
+
+function exportToExcel() {
+    alert('Exporting attendance history to Excel...');
+    // Here you would implement Excel export
+}
+
+// Event Attendance
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#attendanceBody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+document.getElementById('yearFilter').addEventListener('change', function() {
+    const year = this.value;
+    alert(`Filtering by year level: ${year || 'All'}`);
+    // Here you would filter and load students by year level
+});
+
+function printAttendance() {
+    window.print();
+}
+
+function saveAttendance() {
+    const checked = document.querySelectorAll('.row-checkbox:checked').length;
+    alert(`Event attendance saved! ${checked} students marked as present.`);
+}
+
+// Student Registered
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#studentsBody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+document.getElementById('yearFilter').addEventListener('change', function() {
+    const year = this.value;
+    alert(`Filtering by year level: ${year || 'All'}`);
+    // Here you would filter the data by year level
+});
+
+function printList() {
+    window.print();
+}
+
+function editStudent(id) {
+    alert(`Editing student with ID: ${id}`);
+    // Here you would open an edit form
+}
+
+function deleteStudent(id) {
+    if (confirm(`Are you sure you want to delete student with ID: ${id}?`)) {
+        alert(`Student ${id} deleted successfully!`);
+        // Here you would delete the student from database
+    }
+}
+
+// Manual Entry
+
+const students = [
+    { name: 'Emily D. Chu', year: 1 },
+    { name: 'Miguel E. Torres', year: 1 },
+    { name: 'Kristine F. Navarro', year: 1 },
+    { name: 'Sarah N. Panganiban', year: 1 },
+    { name: 'Jasmine T. Castillo', year: 1 },
+    { name: 'Paolo M. Garcia', year: 1 },
+    { name: 'Maria S. Santos', year: 1 },
+    { name: 'Andrea A. Lachica', year: 1 },
+    { name: 'Charlmea M. Selga', year: 1 },
+    { name: 'Steven John A. Agustin', year: 1 },
+    { name: 'Jan Ray A. Aquino', year: 1 },
+    { name: 'Clarissa M. Padilla', year: 1 },
+    { name: 'Faith E. Robles', year: 1 }
+];
+
+let attendanceStatus = {};
+
+function renderStudents(studentsToShow) {
+    const studentList = document.getElementById('studentList');
+    studentList.innerHTML = '';
+
+    studentsToShow.forEach((student, index) => {
+        const row = document.createElement('div');
+        row.className = 'student-row';
+        
+        const status = attendanceStatus[student.name];
+        const presentActive = status === 'present' ? 'active' : '';
+        const absentActive = status === 'absent' ? 'active' : '';
+        
+        row.innerHTML = `
+            <div class="student-name">${student.name}</div>
+            <div class="year-level">${student.year}</div>
+            <div class="action-buttons">
+                <button class="status-btn present-btn ${presentActive}" onclick="markPresent('${student.name}')" ${status === 'present' ? 'disabled' : ''}>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    Present
+                </button>
+                <button class="status-btn absent-btn ${absentActive}" onclick="markAbsent('${student.name}')" ${status === 'absent' ? 'disabled' : ''}>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    Absent
+                </button>
+            </div>
+        `;
+        studentList.appendChild(row);
+    });
+}
+
+function markPresent(name) {
+    attendanceStatus[name] = 'present';
+    renderStudents(students);
+}
+
+function markAbsent(name) {
+    attendanceStatus[name] = 'absent';
+    renderStudents(students);
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const filtered = students.filter(student => 
+        student.name.toLowerCase().includes(searchTerm)
+    );
+    renderStudents(filtered);
+});
+
+document.getElementById('yearFilter').addEventListener('change', function() {
+    const year = this.value;
+    if (year) {
+        const filtered = students.filter(student => student.year === parseInt(year));
+        renderStudents(filtered);
+    } else {
+        renderStudents(students);
+    }
+});
+
+// Teacher Event Attendance History
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#attendanceBody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+function switchTab(tab) {
+    // Update active tab
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Filter or sort by selected tab
+    alert(`Filtering by: ${tab}`);
+}
+
+function exportToExcel() {
+    alert('Exporting event attendance history to Excel...');
+}
+
+// Academic Management
+let subjects = [
+    'Big Data',
+    'Event-Driven Programming',
+    'Digital Marketing',
+    'Integrative Programming'
+];
+
+function renderPrograms() {
+    const programsList = document.getElementById('programsList');
+    programsList.innerHTML = '';
+
+    subjects.forEach((program, index) => {
+        const card = document.createElement('div');
+        card.className = 'program-card';
+        card.innerHTML = `
+            <div class="program-name">${program}</div>
+            <button class="delete-btn" onclick="deleteProgram(${index})">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+            </button>
+        `;
+        programsList.appendChild(card);
+    });
+}
+
+function openAddModal() {
+    document.getElementById('addModal').classList.add('active');
+    document.getElementById('programNameInput').value = '';
+    document.getElementById('programNameInput').focus();
+}
+
+function closeAddModal() {
+    document.getElementById('addModal').classList.remove('active');
+}
+
+function addProgram() {
+    const input = document.getElementById('programNameInput');
+    const programName = input.value.trim();
+
+    if (!programName) {
+        alert('Please enter a program name.');
+        return;
+    }
+
+    programs.push(programName);
+    renderPrograms();
+    closeAddModal();
+}
+
+function deleteProgram(index) {
+    if (confirm(`Are you sure you want to delete "${programs[index]}"?`)) {
+        programs.splice(index, 1);
+        renderPrograms();
+    }
+}
+
+function saveChanges() {
+    alert('Changes saved successfully!');
+    // Here you would typically send the data to a server
+}
+
+
+// Initial render
+renderStudents(students);
+
+
+// Startup
+navigateTo('dashboard')
+
+// Render Academic Setup
+renderPrograms()

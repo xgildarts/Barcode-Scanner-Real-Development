@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Registration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/signup.css">
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <!-- Replace src with your actual logo -->
+      <img src="/public/logo.png" alt="Logo">
+    </div>
+
+    <h1>Student Registration</h1>
+    <div class="subtitle">Fill in the required information.</div>
+
+    <form>
+      <div class="field">
+        <label>First Name <span>*</span></label>
+        <input type="text" placeholder="First Name" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Middle Name</label>
+          <input type="text" placeholder="Middle Name" />
+        </div>
+        <div class="field">
+          <label>Last Name <span>*</span></label>
+          <input type="text" placeholder="Last Name" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Email <span>*</span></label>
+        <input type="email" placeholder="@gmail.com" />
+      </div>
+
+      <div class="field">
+        <label>ID Number <span>*</span></label>
+        <input type="text" placeholder="123..." />
+      </div>
+
+      <div class="field">
+        <label>Program <span>*</span></label>
+        <input type="text" value="BS in Information Technology" />
+      </div>
+
+      <div class="field">
+        <label>Year Level <span>*</span></label>
+        <input type="text" value="1st Year" />
+      </div>
+
+      <div class="field">
+        <label>Parent/Guardian Contact Number <span>*</span></label>
+        <input type="text" placeholder="+63 900 000 0000" />
+      </div>
+
+      <div class="field">
+        <label>Password <span>*</span></label>
+        <input type="password" placeholder="Password" />
+      </div>
+
+      <div class="field">
+        <label>Confirm Password <span>*</span></label>
+        <input type="password" placeholder="Confirm Password" />
+        <div class="hint">Must be at least 8 characters</div>
+      </div>
+
+      <button class="btn" type="button">Create Account</button>
+
+      <div class="login-link">
+        Already have an account? <a href="student_login.html">Login here</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

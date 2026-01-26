@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/student_dashboard.css">
+</head>
+<body>
+
+  <div class="dashboard-wrapper">
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+      <button class="icon-btn">←</button>
+      <h1>Student Dashboard</h1>
+      <button class="icon-btn">⚙</button>
+    </header>
+
+    <!-- PROFILE CARD -->
+    <div class="profile-card">
+      <div class="avatar"></div>
+      <div class="profile-info">
+        <h2>Andrea A. Lachica</h2>
+        <p class="id">1231255</p>
+        <p>BS in Information Technology</p>
+        <p>1st Year</p>
+      </div>
+    </div>
+
+    <!-- BARCODE CARD -->
+    <div class="card">
+      <h3>Generate Barcode</h3>
+
+      <div class="barcode-box">
+        <img src="https://via.placeholder.com/250x80?text=BARCODE" alt="Barcode">
+      </div>
+
+      <p class="barcode-note">This unique barcode is valid for today only.</p>
+
+      <button class="btn-primary">Generate today's barcode</button>
+
+      <div class="action-row">
+        <button class="btn-outline">📄 Generate Barcode</button>
+        <button class="btn-outline">🕒 Attendance History</button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

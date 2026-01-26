@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan Barcode</title>
+<link rel="stylesheet" href="/css/guard-css/guard_camera_scan.css">
+</head>
+
+<body>
+
+<div class="header">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <h1 class="header-title">Scan Barcode</h1>
+</div>
+
+<div class="scanner-container">
+    <div class="scanner-frame">
+        <div class="scanner-viewfinder">
+
+            <video id="camera" autoplay playsinline muted></video>
+
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+
+            <div class="scan-line"></div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <div class="instructions-title">
+            Place the barcode inside the frame
+        </div>
+        <div class="instructions-text">
+            Hold steady for automatic scanning
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="action-btn scan-btn" onclick="startScan()">Scan Now</button>
+        <button class="action-btn manual-btn" onclick="manualEntry()">Enter Manually</button>
+    </div>
+</div>
+
+<script>
+const video = document.getElementById("camera");
+let scanning = false;
+
+async function startCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: "environment" } }
+        });
+        video.srcObject = stream;
+    } catch (e) {
+        alert("Camera access denied or unavailable");
+        console.error(e);
+    }
+}
+
+async function startScan() {
+    if (!("BarcodeDetector" in window)) {
+        alert("Barcode scanning not supported on this browser");
+        return;
+    }
+
+    if (scanning) return;
+    scanning = true;
+
+    const detector = new BarcodeDetector({
+        formats: ["ean_13", "ean_8", "code_128", "code_39", "qr_code"]
+    });
+
+    const scanLoop = async () => {
+        if (!scanning) return;
+
+        try {
+            const barcodes = await detector.detect(video);
+            if (barcodes.length > 0) {
+                scanning = false;
+                alert("Scanned Code: " + barcodes[0].rawValue);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        requestAnimationFrame(scanLoop);
+    };
+
+    scanLoop();
+}
+
+function manualEntry() {
+    const code = prompt("Enter barcode number:");
+    if (code) alert("Barcode entered: " + code);
+}
+
+function goBack() {
+    history.back();
+}
+
+startCamera();
+</script>
+
+</body>
+</html>

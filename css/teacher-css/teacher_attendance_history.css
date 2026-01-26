@@ -1,0 +1,157 @@
+
+.search-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.search-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    opacity: 0.5;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 12px 12px 42px;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+    outline: 2px solid #5a8a7a;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.export-btn {
+    background: #3d6b6b;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.export-btn:hover {
+    background: #2c5a5a;
+}
+
+.export-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: white;
+}
+
+.filters-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    color: #333;
+    min-width: 120px;
+}
+
+.filter-select:focus {
+    outline: 2px solid #5a8a7a;
+}
+
+.table-container {
+    overflow-x: auto;
+    background: white;
+}
+
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.attendance-table thead {
+    background: #3d6b6b;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.attendance-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.attendance-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.attendance-table tbody tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+.attendance-table tbody tr:hover {
+    background: #f0f0f0;
+}
+
+.attendance-table td {
+    padding: 16px 12px;
+    font-size: 13px;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .search-row {
+        flex-wrap: wrap;
+    }
+
+    .export-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .filters-row {
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        min-width: 100px;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+        padding: 12px 8px;
+        font-size: 11px;
+    }
+}

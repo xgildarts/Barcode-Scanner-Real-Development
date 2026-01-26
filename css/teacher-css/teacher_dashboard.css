@@ -1,0 +1,362 @@
+
+.menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.menu-btn span {
+    width: 24px;
+    height: 3px;
+    background: #1a4545;
+    border-radius: 2px;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: #1a4545;
+}
+
+.dashboard-content {
+    padding: 24px 20px;
+}
+
+.stats-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon.students {
+    background: #5a8a7a;
+}
+
+.stat-icon.presents {
+    background: #5a8a7a;
+}
+
+.stat-icon.absents {
+    background: #d88888;
+}
+
+.stat-icon svg {
+    width: 28px;
+    height: 28px;
+    fill: white;
+}
+
+.stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a4545;
+}
+
+.close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.overview-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a4545;
+    margin-bottom: 24px;
+}
+
+.chart-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+}
+
+.donut-chart {
+    transform: rotate(-90deg);
+}
+
+.chart-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.chart-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.chart-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a4545;
+}
+
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-color.presents {
+    background: #5a8a7a;
+}
+
+.legend-color.absents {
+    background: #d88888;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100vh;
+    background: linear-gradient(180deg, #4a7a7a 0%, #3d6b6b 100%);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+    transition: left 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sidebar-header {
+    padding: 32px 24px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-profile {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-profile svg {
+    width: 45px;
+    height: 45px;
+    fill: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar-name {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.sidebar-role {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 16px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.settings-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.settings-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: white;
+}
+
+.sidebar-menu {
+    padding: 16px 12px;
+}
+
+.menu-item {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(4px);
+}
+
+.menu-item-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-item-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+.menu-item-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .stats-row {
+        flex-direction: column;
+    }
+
+    .header {
+        justify-content: space-between;
+    }
+
+    .chart-container {
+        width: 180px;
+        height: 180px;
+    }
+}
+
+@media (min-width: 1024px) {
+    /* Sidebar always visible on desktop */
+    .sidebar {
+        left: 0;
+    }
+
+    .header {
+        justify-content: flex-end;
+    }
+
+    /* Remove overlay on desktop */
+    .sidebar-overlay {
+        display: none;
+    }
+
+    /* Push main content to the right */
+    main {
+        margin-left: 300px;
+    }
+
+    /* Optional: hide hamburger menu on desktop */
+    .menu-btn {
+        display: none;
+    }
+}

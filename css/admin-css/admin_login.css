@@ -1,0 +1,217 @@
+body {
+    background: linear-gradient(180deg, #3d6b6b 0%, #2c5f5f 50%, #5fa881 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.login-container {
+    background: linear-gradient(135deg, rgba(200, 220, 220, 0.9) 0%, rgba(180, 200, 200, 0.85) 100%);
+    border-radius: 24px;
+    padding: 40px 30px;
+    max-width: 400px;
+    width: 100%;
+    margin: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    width: 120px;
+    height: 120px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.logo-content {
+    text-align: center;
+    padding: 10px;
+}
+
+.logo-mountains {
+    width: 60px;
+    height: 30px;
+    margin: 0 auto 5px;
+}
+
+.mountain-left {
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 25px solid #5a7a5a;
+    display: inline-block;
+    margin-right: -5px;
+}
+
+.mountain-right {
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 25px solid #3d5f8f;
+    display: inline-block;
+}
+
+.logo-text {
+    font-size: 9px;
+    font-weight: 700;
+    color: #2c5f5f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.logo-subtitle {
+    font-size: 7px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.welcome-text {
+    text-align: center;
+    color: #1a4545;
+    margin-bottom: 30px;
+}
+
+.welcome-text h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.welcome-text p {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    width: 20px;
+    height: 20px;
+    opacity: 0.5;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 14px 14px 44px;
+    border: none;
+    font-size: 14px;
+    color: #333;
+    background: white;
+}
+
+.form-input:focus {
+    outline: 2px solid #4a8080;
+}
+
+.form-input::placeholder {
+    color: #999;
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 13px;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #1a4545;
+    font-weight: 500;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.forgot-password {
+    color: #1a4545;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #2c5f5f 0%, #3d7070 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(44, 95, 95, 0.3);
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(44, 95, 95, 0.4);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+.signup-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: #1a4545;
+}
+
+.signup-link a {
+    color: #1a4545;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.signup-link a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 30px 24px;
+    }
+
+    .logo {
+        width: 100px;
+        height: 100px;
+    }
+}

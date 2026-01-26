@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="../css/student-css/student_global.css">
+    <link rel="stylesheet" href="../css/student-css/student_dashboard.css">
+    <link rel="stylesheet" href="/css/student-css/student_settings.css">
+</head>
+<body>
+
+    <div class="header">
+        <div class="go-back-btn" id="goBackBtn" onclick="goBack()">&#8592;</div>
+        <h1 class="title" id="title">Student Dashboard</h1>
+        <button class="settings-btn" onclick="tab('settings')">⚙</button>
+    </div>
+
+    <!--Barcode-->
+    <section id="generateBarcode" class="sections">
+        <div class="profile-section">
+            <div class="avatar-container">
+                <div class="avatar">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <div class="camera-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">Andrea A. Lachica</div>
+                <div class="profile-id">1231255</div>
+                <div class="profile-course">BS in Information Technology</div>
+                <div class="profile-year">1st Year</div>
+            </div>
+        </div>
+    
+        <div class="barcode-card">
+            <h2 class="barcode-title">Generate Barcode</h2>
+            
+            <div class="barcode-container">
+                <svg class="barcode" id="barcodeImage" viewBox="0 0 280 100" preserveAspectRatio="xMidYMid meet">
+                    <!-- Barcode will be generated here -->
+                </svg>
+                <div class="barcode-text">
+                    This unique barcode is valid for<br>today only.
+                </div>
+            </div>
+    
+            <button class="generate-btn" onclick="generateBarcode()">Generate today's barcode</button>
+        </div>
+    </section>
+
+    <!--Attendance History-->
+    <section id="attendanceHistory" class="sections">
+        
+        <div class="profile-section">
+            <div class="avatar-container">
+                <div class="avatar">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <div class="camera-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">Andrea A. Lachica</div>
+                <div class="profile-id">1231255</div>
+                <div class="profile-course">BS in Information Technology</div>
+                <div class="profile-year">1st Year</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Course</th>
+                        <th>Professor</th>
+                        <th>ID Number</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <tr>
+                        <td>1/10/2025</td>
+                        <td>8:00 AM</td>
+                        <td>Programming</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                    <tr>
+                        <td>1/9/2025</td>
+                        <td>9:00 AM</td>
+                        <td>Event Driven</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                    <tr>
+                        <td>1/8/2025</td>
+                        <td>9:00 AM</td>
+                        <td>Programming</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                    <tr>
+                        <td>1/7/2025</td>
+                        <td>10:00 AM</td>
+                        <td>Big Data</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                    <tr>
+                        <td>1/2/2025</td>
+                        <td>10:00 AM</td>
+                        <td>Big Data</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                    <tr>
+                        <td>1/2/2025</td>
+                        <td>10:00 AM</td>
+                        <td>Big Data</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                    <tr>
+                        <td>1/2/2025</td>
+                        <td>10:00 AM</td>
+                        <td>Big Data</td>
+                        <td>Andrea A. Lachica</td>
+                        <td>1231255</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="action-buttons"  id="actionButtons">
+        <button id="generateBarcode" class="action-btn" onclick="tab('generateBarcode')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
+            </svg>
+            Generate Barcode
+        </button>
+        <button id="attendanceHistory" class="action-btn" onclick="tab('attendanceHistory')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            Attendance History
+        </button>
+    </div>
+
+    <!--Student Settings-->
+    <section  id="settings" class="sections">
+        
+        <div class="profile-section">
+            <div class="avatar-container">
+                <div class="avatar">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <div class="camera-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">Andrea A. Lachica</div>
+                <div class="profile-id">1231255</div>
+                <div class="profile-course">BS in Information Technology</div>
+                <div class="profile-year">1st Year</div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-title">
+                <span>Edit Profile</span>
+                <button class="edit-profile-btn" onclick="toggleEdit()">Edit Profile</button>
+            </div>
+    
+            <div class="form-card">
+                <div class="form-group">
+                    <label class="form-label">Full name</label>
+                    <input type="text" class="form-input" id="fullName" value="Andrea A. Lachica" disabled>
+                </div>
+    
+                <div class="form-group">
+                    <label class="form-label">ID Number</label>
+                    <input type="text" class="form-input" id="idNumber" value="1231255" disabled>
+                </div>
+    
+                <div class="form-group">
+                    <label class="form-label">Year Level</label>
+                    <input type="text" class="form-input" id="yearLevel" value="1st Year" disabled>
+                </div>
+    
+                <div class="form-group">
+                    <label class="form-label">Program</label>
+                    <input type="text" class="form-input" id="program" value="BS in Information Technology" disabled>
+                </div>
+            </div>
+    
+            <div class="password-section">
+                <div class="section-title">
+                    <span>Change Password</span>
+                </div>
+    
+                <div class="form-card">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="password-input" id="currentPassword" placeholder="••••••••">
+                        </div>
+                    </div>
+    
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="password-input" id="newPassword" placeholder="••••••••">
+                        </div>
+                    </div>
+    
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••">
+                        </div>
+                    </div>
+    
+                    <button class="update-password-btn" onclick="updatePassword()">Update Password</button>
+                </div>
+            </div>
+    
+            <button class="logout-btn" onclick="logout()">Log Out</button>
+        </div>
+
+    </section>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            tab('generateBarcode')
+        })
+        
+        // Events for going back
+        function goBack() {
+            document.getElementById('goBackBtn').classList.remove('show')
+            tab('generateBarcode')
+        }   
+
+        // Tab
+        function tab(tabName) {
+
+            // For debugging
+            console.log(tabName)
+
+            const tabs = ['generateBarcode', 'attendanceHistory', 'settings'];
+
+            // Sections
+            const barcodeSection = document.getElementById('generateBarcode');
+            const historySection = document.getElementById('attendanceHistory');
+
+            // Change title
+            switch(tabName) {
+                case 'generateBarcode':
+                    document.getElementById('title').textContent = "Barcode Generation";
+                    break;
+                case 'attendanceHistory':
+                    document.getElementById('title').textContent = "Attendance History";
+                    break;
+                case 'settings':
+                    document.getElementById('title').textContent = "Settings";
+                    break;
+            }
+
+            // Hide the tab button at the bottom, when clicking the settings
+            if(tabName === 'settings') {
+                document.getElementById('actionButtons').classList.add('hide')
+                document.getElementById('goBackBtn').classList.add('show')
+            } else {
+                document.getElementById('actionButtons').classList.remove('hide')
+                document.getElementById('goBackBtn').classList.remove('show')
+            }
+
+
+            // Active tab styling
+            tabs.forEach(tab => {
+                if(tab === tabName) {
+                    document.getElementById(tab).classList.add('active')
+                } else {
+                    document.getElementById(tab).classList.remove('active')
+                }
+            });
+        }
+
+        function generateBarcode() {
+            const svg = document.getElementById('barcodeImage');
+            svg.innerHTML = '';
+            
+            const barWidth = 280;
+            const barHeight = 100;
+            const numBars = 60;
+            const patterns = [2, 3, 4, 2, 3, 2, 4, 3, 2, 3];
+            
+            let currentX = 0;
+            const barUnitWidth = barWidth / 100;
+            
+            for (let i = 0; i < numBars; i++) {
+                const width = patterns[i % patterns.length] * barUnitWidth;
+                const isBlack = i % 2 === 0;
+                
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', currentX);
+                rect.setAttribute('y', 0);
+                rect.setAttribute('width', width);
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('fill', isBlack ? '#000' : '#fff');
+                
+                svg.appendChild(rect);
+                currentX += width;
+            }
+        }
+
+        // Student Settings
+        let isEditing = false;
+
+        function toggleEdit() {
+            isEditing = !isEditing;
+            const inputs = ['fullName', 'idNumber', 'yearLevel', 'program'];
+            const btn = document.querySelector('.edit-profile-btn');
+            
+            inputs.forEach(id => {
+                const input = document.getElementById(id);
+                input.disabled = !isEditing;
+            });
+
+            if (isEditing) {
+                btn.textContent = 'Save Changes';
+                btn.style.background = '#2c5f5f';
+            } else {
+                btn.textContent = 'Edit Profile';
+                btn.style.background = '#5fa881';
+                alert('Profile updated successfully!');
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'student_dashboard.html';
+        }
+
+        function updatePassword() {
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if (!current || !newPass || !confirm) {
+                alert('Please fill in all password fields.');
+                return;
+            }
+
+            if (newPass !== confirm) {
+                alert('New passwords do not match!');
+                return;
+            }
+
+            if (newPass.length < 8) {
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+
+            alert('Password updated successfully!');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                alert('Logging out...');
+                // Here you would typically redirect to login page
+            }
+        }
+
+        // Generate initial barcode
+        generateBarcode();
+    </script>
+</body>
+</html>

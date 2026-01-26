@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Table</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef5f3;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #4a7a7a;
+            color: #fff;
+        }
+
+        tr:hover {
+            background: #f2f7f7;
+        }
+
+        img.barcode {
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Student Records</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Barcode</th>
+        </tr>
+    </thead>
+    <tbody id="studentTableBody">
+        <tr>
+            <td colspan="5" style="text-align:center;">Loading data...</td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    
+    async function fetchBarcodes() {
+        try {
+            const res = await fetch('http://localhost:3000/get_barcode')
+            if(res.ok) {
+                const response = await res.json()
+                if(response.ok) {
+                    const studentTableBody = document.getElementById('studentTableBody')
+                    studentTableBody.innerHTML = ""
+                    response.contents.forEach(b => {
+                        const { id, barcode } = b
+                        const tr = document.createElement('tr')
+                        tr.innerHTML = `<td>${id}</td>
+                                        <td>${barcode}</td>`
+                        studentTableBody.appendChild(tr)
+                    })
+                } else {
+                    alert(response.message)
+                }
+            }
+        } catch(err) {
+            console.error('Error: ' + err)
+        }
+    }
+
+    setInterval(fetchBarcodes, 100)
+</script>
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+body {
+    background: linear-gradient(180deg, #7a9a8a 0%, #8aaa9a 100%);
+    padding-bottom: 80px;
+}
+
+.header {
+    background: linear-gradient(135deg, #6a8a7a 0%, #7a9a8a 100%);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.search-container {
+    padding: 16px 20px;
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    opacity: 0.5;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 12px 12px 42px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+    outline: 2px solid #5fa881;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.students-list {
+    padding: 0 20px;
+}
+
+.student-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.student-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.student-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a4545;
+    margin-bottom: 4px;
+}
+
+.student-badge {
+    background: #e57373;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.student-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.student-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.student-course {
+    font-size: 12px;
+    color: #666;
+}
+
+.student-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/*For teacher*/
+.teacher-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.teacher-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.teacher-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a4545;
+    margin-bottom: 4px;
+}
+
+.teacher-badge {
+    background: #e57373;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.teacher-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+.teacher-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.teacher-course {
+    font-size: 12px;
+    color: #666;
+}
+
+/*For guards*/
+.guard-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.guard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.guard-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a4545;
+    margin-bottom: 4px;
+}
+
+.guard-badge {
+    background: #e57373;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.guard-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+.guard-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.guard-domain-gate {
+    font-size: 12px;
+    color: #666;
+}
+
+.action-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.register-btn-container {
+   padding: 0 20px; 
+   margin-top: 20px;    
+}
+
+.register-btn {
+    width: 100%;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #5fa881 0%, #6bb890 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(95, 168, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.register-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(95, 168, 129, 0.5);
+}
+
+.register-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+@media (max-width: 480px) {
+    .student-info {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .student-meta {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
