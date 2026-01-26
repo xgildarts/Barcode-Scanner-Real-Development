@@ -16,6 +16,7 @@ app.use('/guard', express.static(path.join(__dirname, '../../guard')))
 app.use('/student', express.static(path.join(__dirname, '../../student')))
 app.use('/teacher', express.static(path.join(__dirname, '../../teacher')))
 app.use('/css', express.static(path.join(__dirname, '../../css')))
+app.use('/public', express.static(path.join(__dirname, '../../public')))
 
 // Root redirect
 app.get('/', (req, res) => {

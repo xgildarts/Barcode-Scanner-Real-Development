@@ -1,6 +1,8 @@
 .profile-section {
-    padding: 40px 20px;
+    background: white;
+    padding: 30px 20px;
     text-align: center;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .avatar-container {
@@ -92,8 +94,7 @@
 }
 
 .content-section {
-    padding: 0 20px 20px;
-    max-width: 500px;
+    padding: 20px;
     margin: 0 auto;
 }
 
@@ -108,8 +109,8 @@
     background: white;
     border-radius: 12px;
     padding: 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .info-row {

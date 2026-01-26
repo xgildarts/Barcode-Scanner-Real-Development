@@ -34,6 +34,8 @@ function navigateTo(navName) {
     //For debugging purposes
     console.log(navName)
 
+    const headerTitle = document.getElementById('headerTitle')
+
     const navs = [ 
         'dashboard', 
         'location', 
@@ -45,6 +47,40 @@ function navigateTo(navName) {
         'eventHistory', 
         'academicSetup',
         'settings' ]
+
+        switch(navName) {
+            case 'dashboard':
+                headerTitle.textContent = 'Dashboard'
+                break
+            case 'location':
+                headerTitle.textContent = 'Location'
+                break
+            case 'attendanceNow':
+                headerTitle.textContent = 'Attendance'
+                break
+            case 'history':
+                headerTitle.textContent = 'Attendance History'
+                break    
+            case 'studentRegistered':
+                headerTitle.textContent = 'Student Records'
+                break  
+            case 'manualEntry':
+                headerTitle.textContent = 'Manual Entry'
+                break   
+            case 'eventAttendance':
+                headerTitle.textContent = 'Event Attendance'
+                break  
+            case 'eventHistory':
+                headerTitle.textContent = 'Event Attendance History'
+                break
+            case 'academicSetup':
+                headerTitle.textContent = 'Academic Setup'
+                break
+            case 'settings':
+                headerTitle.textContent = 'Settings'
+                break
+
+        }
     
     navs.forEach(nav => {
         if(nav == navName) {

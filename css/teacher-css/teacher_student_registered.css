@@ -138,7 +138,7 @@
 }
 
 .edit-btn,
-.delete-btn {
+.delete-btn-student-registered {
     padding: 6px 14px;
     border: none;
     border-radius: 6px;
@@ -160,17 +160,17 @@
     background: #4a7a6a;
 }
 
-.delete-btn {
+.delete-btn-student-registered {
     background: #d88888;
     color: white;
 }
 
-.delete-btn:hover {
+.delete-btn-student-registered:hover {
     background: #c77777;
 }
 
 .edit-btn svg,
-.delete-btn svg {
+.delete-btn-student-registered svg {
     width: 14px;
     height: 14px;
     fill: white;

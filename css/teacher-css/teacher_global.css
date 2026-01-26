@@ -19,6 +19,12 @@ body {
   align-items: center;
 }
 
+.header-title {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .controls-section {
   padding: 16px 20px 20px;
 }
