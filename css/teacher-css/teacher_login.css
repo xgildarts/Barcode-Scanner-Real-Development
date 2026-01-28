@@ -1,6 +1,7 @@
 body {
     display: flex;
     flex-direction: column;
+    background: linear-gradient(135deg, #2c5f5f 0%, #4a8080 100%);
 }
   
 .login-container {

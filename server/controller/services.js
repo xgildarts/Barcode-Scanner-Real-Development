@@ -1,0 +1,209 @@
+
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const db = require('../configuration/db');
+const SALT_ROUNDS = 10
+const JWT_SECRET = 'q09481239328'
+
+// Generate Barcode
+const generateBarcode = () => {
+    const timestamp = Date.now().toString(); 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
+    return 'BC' + timestamp + randomSuffix;
+}
+
+// Generate Device ID
+const generateDeviceID = () => {
+    const timestamp = Date.now().toString(); 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
+    return 'DEV' + timestamp + randomSuffix;
+}
+
+// Hash Password
+async function hashPassword(password) {
+    return await bcrypt.hash(password, SALT_ROUNDS);
+}
+
+// De-hashed Password
+async function comparePassword(password, hashedPassword) {
+    return await bcrypt.compare(password, hashedPassword);
+}
+
+// Find student account duplication
+function checkStudentAccountDuplication(email, idNumber) {
+    const checkQuery = `
+    SELECT 1 FROM student_accounts
+    WHERE student_email = ? OR student_id_number = ?
+    LIMIT 1
+    `;
+    return new Promise((resolve, reject) => {
+        db.execute(checkQuery, [email, idNumber], async (err, result) => {
+            if (err) {
+                reject(err)
+            }
+            resolve(result.length > 0)
+        });
+    })
+}
+
+// Student Registration
+function studentRegistration(
+    idNumber,
+    firstName,
+    middleName,
+    lastName,
+    email,
+    hashedPassword,
+    yearLevel,
+    guardianContact,
+    program,
+    locationGenerated,
+    barcode,
+    deviceID
+) {
+    const query = `
+        INSERT INTO student_accounts (
+            student_id_number,
+            student_firstname,
+            student_middlename,
+            student_lastname,
+            student_email,
+            password,
+            student_year_level,
+            student_guardian_number,
+            student_program,
+            location_generated,
+            barcode,
+            device_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+        idNumber,
+        firstName,
+        middleName,
+        lastName,
+        email,
+        hashedPassword,
+        yearLevel,
+        guardianContact,
+        program,
+        locationGenerated,
+        barcode,
+        deviceID
+    ];
+
+    return new Promise((resolve, reject) => {
+        db.execute(query, values, (err, result) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(result);
+        });
+    });
+}
+
+// Student Login
+async function studentLogin(email, password, device_id) {
+
+    const query = `
+        SELECT  
+            student_id_number, 
+            student_firstname, 
+            student_middlename, 
+            student_lastname, 
+            student_email, 
+            password,
+            student_year_level,
+            student_guardian_number,
+            student_program,
+            device_id
+        FROM student_accounts
+        WHERE student_email = ?
+        LIMIT 1
+    `;
+
+    return new Promise(async (resolve, reject) => {
+        db.execute(query, [email], async (err, result) => {
+            
+            if (err) return reject({ message: err });
+
+            if (result.length === 0) {
+                return reject('Invalid email or password');
+            }
+
+            const row = result[0];
+
+            // Check device ID if same
+            if(!await deviceIDChecker(device_id, email)) return reject('Device is not registered to this account!')
+
+            // ✅ Compare password
+            const isMatch = await comparePassword(password, row.password);
+            if (isMatch) {
+                const token = generateToken(row)
+                return resolve({ ok: true, message: 'Successfully Login!', token, student_firstname: row.student_firstname });
+            }
+
+            return reject('Invalid email or password' );
+        });
+    });
+}
+
+// Generate Token
+function generateToken(payload) {
+    console.log(payload)
+    return jwt.sign(payload, JWT_SECRET, {
+        expiresIn: '24h'
+    });
+}
+
+// Verify Token
+function verifyToken(token) {
+    try {
+        return jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+        return null;
+    }
+}
+
+// Remove the prepend Bearer
+function removeBearer(authorization) {
+    const token = authorization.split(' ')[1]
+    return token
+}
+
+// Device ID Checker
+function deviceIDChecker(deviceID, student_email) {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT 1 FROM student_accounts
+            WHERE device_id = ? AND student_email = ?
+            LIMIT 1
+        `;
+        db.execute(query, [deviceID, student_email], (err, results) => {
+            if (err) return reject(err);
+
+            if (results.length === 0) {
+                // No user found with that email
+                return resolve(false);
+            }
+
+            return resolve(true)
+        });
+    });
+}
+
+// Export functions
+module.exports= {
+    generateBarcode,
+    generateDeviceID,
+    hashPassword,
+    comparePassword,
+    checkStudentAccountDuplication,
+    studentRegistration,
+    studentLogin,
+    generateToken,
+    verifyToken,
+    removeBearer,
+    deviceIDChecker
+}

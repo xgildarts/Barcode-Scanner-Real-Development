@@ -4,7 +4,7 @@ const mysql = require('mysql2')
 const connection = mysql.createPool({
     user: 'root',
     password: '',
-    database: 'barcode_demontration'
+    database: 'attendance_barcode_system'
 })
 
 connection.getConnection((err, conn) => {

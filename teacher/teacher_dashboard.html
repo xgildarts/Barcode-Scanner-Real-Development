@@ -278,15 +278,13 @@
                 <table class="attendance-table">
                     <thead>
                         <tr>
-                            <th class="checkbox-cell">
-                                <input type="checkbox" class="attendance-checkbox" id="selectAll" onchange="toggleSelectAll()">
-                            </th>
                             <th>ID Number</th>
                             <th>Firstname</th>
                             <th>M.I</th>
                             <th>Lastname</th>
                             <th>Subject</th>
                             <th>Year Level</th>
+                            <th>Program</th>
                             <th>Time</th>
                             <th>Date</th>
                         </tr>
@@ -461,109 +459,169 @@
                             <th>Firstname</th>
                             <th>M.I</th>
                             <th>Lastname</th>
+                            <th>Subject</th>
+                            <th>Year Level</th>
                             <th>Program</th>
+                            <th>Time</th>
+                            <th>Date</th>
                         </tr>
                     </thead>
                     <tbody id="attendanceBody">
                         <tr>
-                            <td>1231255</td>
-                            <td>Emily</td>
-                            <td>D</td>
-                            <td>Chu</td>
-                            <td>BSIT</td>
+                          <td>1231255</td>
+                          <td>Emily</td>
+                          <td>D</td>
+                          <td>Chu</td>
+                          <td>Programming 101</td>
+                          <td>1</td>
+                          <td>BSIT</td>
+                          <td>08:30 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>123-250</td>
-                            <td>Miguel</td>
-                            <td>E</td>
-                            <td>Torres</td>
-                            <td>BSIT</td>
+                          <td>123-250</td>
+                          <td>Miguel</td>
+                          <td>E</td>
+                          <td>Torres</td>
+                          <td>Database Systems</td>
+                          <td>2</td>
+                          <td>BSIT</td>
+                          <td>10:00 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1208991</td>
-                            <td>Kristine</td>
-                            <td>F</td>
-                            <td>Navarro</td>
-                            <td>BSIT</td>
+                          <td>1208991</td>
+                          <td>Kristine</td>
+                          <td>F</td>
+                          <td>Navarro</td>
+                          <td>Web Development</td>
+                          <td>3</td>
+                          <td>BSIT</td>
+                          <td>01:45 PM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1208991</td>
-                            <td>Sarah</td>
-                            <td>N</td>
-                            <td>Panganiban</td>
-                            <td>BSIT</td>
+                          <td>1208991</td>
+                          <td>Sarah</td>
+                          <td>N</td>
+                          <td>Panganiban</td>
+                          <td>Data Structures</td>
+                          <td>2</td>
+                          <td>BSIT</td>
+                          <td>03:00 PM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1231255</td>
-                            <td>Jasmine</td>
-                            <td>T</td>
-                            <td>Castillo</td>
-                            <td>BSIT</td>
+                          <td>1231255</td>
+                          <td>Jasmine</td>
+                          <td>T</td>
+                          <td>Castillo</td>
+                          <td>Operating Systems</td>
+                          <td>4</td>
+                          <td>BSIT</td>
+                          <td>09:15 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>123-001</td>
-                            <td>Paolo</td>
-                            <td>M</td>
-                            <td>Garcia</td>
-                            <td>BSIT</td>
+                          <td>123-001</td>
+                          <td>Paolo</td>
+                          <td>M</td>
+                          <td>Garcia</td>
+                          <td>Networks</td>
+                          <td>3</td>
+                          <td>BSIT</td>
+                          <td>11:30 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1231255</td>
-                            <td>Maria</td>
-                            <td>S</td>
-                            <td>Santos</td>
-                            <td>BSIT</td>
+                          <td>1231255</td>
+                          <td>Maria</td>
+                          <td>S</td>
+                          <td>Santos</td>
+                          <td>Software Engineering</td>
+                          <td>4</td>
+                          <td>BSIT</td>
+                          <td>01:00 PM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1231111</td>
-                            <td>Andrea</td>
-                            <td>A</td>
-                            <td>Lachica</td>
-                            <td>BSIT</td>
+                          <td>1231111</td>
+                          <td>Andrea</td>
+                          <td>A</td>
+                          <td>Lachica</td>
+                          <td>Cybersecurity</td>
+                          <td>3</td>
+                          <td>BSIT</td>
+                          <td>02:30 PM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>123-019</td>
-                            <td>Charlmea</td>
-                            <td>M</td>
-                            <td>Selga</td>
-                            <td>BSIT</td>
+                          <td>123-019</td>
+                          <td>Charlmea</td>
+                          <td>M</td>
+                          <td>Selga</td>
+                          <td>Cloud Computing</td>
+                          <td>2</td>
+                          <td>BSIT</td>
+                          <td>10:45 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1239309</td>
-                            <td>Clarissa</td>
-                            <td>M</td>
-                            <td>Padilla</td>
-                            <td>BSIT</td>
+                          <td>1239309</td>
+                          <td>Clarissa</td>
+                          <td>M</td>
+                          <td>Padilla</td>
+                          <td>Mobile App Dev</td>
+                          <td>1</td>
+                          <td>BSIT</td>
+                          <td>08:00 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1229533</td>
-                            <td>Steven John</td>
-                            <td>A</td>
-                            <td>Agustin</td>
-                            <td>BSIT</td>
+                          <td>1229533</td>
+                          <td>Steven John</td>
+                          <td>A</td>
+                          <td>Agustin</td>
+                          <td>Artificial Intelligence</td>
+                          <td>4</td>
+                          <td>BSIT</td>
+                          <td>09:45 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1234567</td>
-                            <td>Faith</td>
-                            <td>A</td>
-                            <td>Robles</td>
-                            <td>BSIT</td>
+                          <td>1234567</td>
+                          <td>Faith</td>
+                          <td>A</td>
+                          <td>Robles</td>
+                          <td>Human-Computer Interaction</td>
+                          <td>3</td>
+                          <td>BSIT</td>
+                          <td>11:00 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1247932</td>
-                            <td>Jan Ray</td>
-                            <td>A</td>
-                            <td>Aquino</td>
-                            <td>BSIT</td>
+                          <td>1247932</td>
+                          <td>Jan Ray</td>
+                          <td>A</td>
+                          <td>Aquino</td>
+                          <td>Machine Learning</td>
+                          <td>2</td>
+                          <td>BSIT</td>
+                          <td>01:30 PM</td>
+                          <td>2026-01-27</td>
                         </tr>
                         <tr>
-                            <td>1210919</td>
-                            <td>Dwynna</td>
-                            <td>W</td>
-                            <td>Chan</td>
-                            <td>BSIT</td>
+                          <td>1210919</td>
+                          <td>Dwynna</td>
+                          <td>W</td>
+                          <td>Chan</td>
+                          <td>Database Systems</td>
+                          <td>1</td>
+                          <td>BSIT</td>
+                          <td>10:15 AM</td>
+                          <td>2026-01-27</td>
                         </tr>
-                    </tbody>
+                      </tbody>                                          
                 </table>
             </div>    
         </section>
