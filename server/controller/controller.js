@@ -1,8 +1,8 @@
 const express = require('express')
-const db = require('../configuration/db')
 const cors = require('cors')
 const path = require('path')
 const auth = require('../authentication/authentication')
+const student = require('../model/student')
 
 const app = express()
 const PORT = 3000
@@ -24,7 +24,8 @@ app.use(cors())
 // })
 
 // API Routes
-app.use('/v1/authentication', auth)
+app.use('/api/v1/authentication', auth)
+app.use('/api/v1/students', student)
 
 
 app.listen(PORT, () => {

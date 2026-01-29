@@ -33,10 +33,10 @@
                 </div>
             </div>
             <div class="profile-info">
-                <div class="profile-name">Andrea A. Lachica</div>
-                <div class="profile-id">1231255</div>
-                <div class="profile-course">BS in Information Technology</div>
-                <div class="profile-year">1st Year</div>
+                <div class="profile-name">Unknown</div>
+                <div class="profile-id">0000000</div>
+                <div class="profile-course">Unknown</div>
+                <div class="profile-year">Unknown</div>
             </div>
         </div>
     
@@ -74,10 +74,10 @@
                 </div>
             </div>
             <div class="profile-info">
-                <div class="profile-name">Andrea A. Lachica</div>
-                <div class="profile-id">1231255</div>
-                <div class="profile-course">BS in Information Technology</div>
-                <div class="profile-year">1st Year</div>
+                <div class="profile-name">Unknown</div>
+                <div class="profile-id">0000000</div>
+                <div class="profile-course">Unknown</div>
+                <div class="profile-year">Unknown</div>
             </div>
         </div>
 
@@ -180,10 +180,10 @@
                 </div>
             </div>
             <div class="profile-info">
-                <div class="profile-name">Andrea A. Lachica</div>
-                <div class="profile-id">1231255</div>
-                <div class="profile-course">BS in Information Technology</div>
-                <div class="profile-year">1st Year</div>
+                <div class="profile-name">Unknown</div>
+                <div class="profile-id">0000000</div>
+                <div class="profile-course">Unknown</div>
+                <div class="profile-year">Unknown</div>
             </div>
         </div>
 
@@ -194,26 +194,38 @@
             </div>
     
             <div class="form-card">
+
                 <div class="form-group">
-                    <label class="form-label">Full name</label>
-                    <input type="text" class="form-input" id="fullName" value="Andrea A. Lachica" disabled>
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-input" id="firstName" value="Unknown" disabled>
                 </div>
-    
+            
+                <div class="form-group">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" class="form-input" id="middleName" value="Unknown" disabled>
+                </div>
+            
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-input" id="lastName" value="Unknown" disabled>
+                </div>
+            
                 <div class="form-group">
                     <label class="form-label">ID Number</label>
-                    <input type="text" class="form-input" id="idNumber" value="1231255" disabled>
+                    <input type="text" class="form-input" id="idNumber" value="000000" disabled>
                 </div>
-    
+            
                 <div class="form-group">
                     <label class="form-label">Year Level</label>
-                    <input type="text" class="form-input" id="yearLevel" value="1st Year" disabled>
+                    <input type="text" class="form-input" id="yearLevel" value="0" disabled>
                 </div>
-    
+            
                 <div class="form-group">
                     <label class="form-label">Program</label>
-                    <input type="text" class="form-input" id="program" value="BS in Information Technology" disabled>
+                    <input type="text" class="form-input" id="program" value="Unknown" disabled>
                 </div>
-            </div>
+            
+            </div>            
     
             <div class="password-section">
                 <div class="section-title">
@@ -251,153 +263,8 @@
 
     </section>
 
-    <script>
-
-        document.addEventListener('DOMContentLoaded', () => {
-            tab('generateBarcode')
-        })
-        
-        // Events for going back
-        function goBack() {
-            document.getElementById('goBackBtn').classList.remove('show')
-            tab('generateBarcode')
-        }   
-
-        // Tab
-        function tab(tabName) {
-
-            // For debugging
-            console.log(tabName)
-
-            const tabs = ['generateBarcode', 'attendanceHistory', 'settings'];
-
-            // Sections
-            const barcodeSection = document.getElementById('generateBarcode');
-            const historySection = document.getElementById('attendanceHistory');
-
-            // Change title
-            switch(tabName) {
-                case 'generateBarcode':
-                    document.getElementById('title').textContent = "Barcode Generation";
-                    break;
-                case 'attendanceHistory':
-                    document.getElementById('title').textContent = "Attendance History";
-                    break;
-                case 'settings':
-                    document.getElementById('title').textContent = "Settings";
-                    break;
-            }
-
-            // Hide the tab button at the bottom, when clicking the settings
-            if(tabName === 'settings') {
-                document.getElementById('actionButtons').classList.add('hide')
-                document.getElementById('goBackBtn').classList.add('show')
-            } else {
-                document.getElementById('actionButtons').classList.remove('hide')
-                document.getElementById('goBackBtn').classList.remove('show')
-            }
-
-
-            // Active tab styling
-            tabs.forEach(tab => {
-                if(tab === tabName) {
-                    document.getElementById(tab).classList.add('active')
-                } else {
-                    document.getElementById(tab).classList.remove('active')
-                }
-            });
-        }
-
-        function generateBarcode() {
-            const svg = document.getElementById('barcodeImage');
-            svg.innerHTML = '';
-            
-            const barWidth = 280;
-            const barHeight = 100;
-            const numBars = 60;
-            const patterns = [2, 3, 4, 2, 3, 2, 4, 3, 2, 3];
-            
-            let currentX = 0;
-            const barUnitWidth = barWidth / 100;
-            
-            for (let i = 0; i < numBars; i++) {
-                const width = patterns[i % patterns.length] * barUnitWidth;
-                const isBlack = i % 2 === 0;
-                
-                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                rect.setAttribute('x', currentX);
-                rect.setAttribute('y', 0);
-                rect.setAttribute('width', width);
-                rect.setAttribute('height', barHeight);
-                rect.setAttribute('fill', isBlack ? '#000' : '#fff');
-                
-                svg.appendChild(rect);
-                currentX += width;
-            }
-        }
-
-        // Student Settings
-        let isEditing = false;
-
-        function toggleEdit() {
-            isEditing = !isEditing;
-            const inputs = ['fullName', 'idNumber', 'yearLevel', 'program'];
-            const btn = document.querySelector('.edit-profile-btn');
-            
-            inputs.forEach(id => {
-                const input = document.getElementById(id);
-                input.disabled = !isEditing;
-            });
-
-            if (isEditing) {
-                btn.textContent = 'Save Changes';
-                btn.style.background = '#2c5f5f';
-            } else {
-                btn.textContent = 'Edit Profile';
-                btn.style.background = '#5fa881';
-                alert('Profile updated successfully!');
-            }
-        }
-
-        function goBack() {
-            window.location.href = 'student_dashboard.html';
-        }
-
-        function updatePassword() {
-            const current = document.getElementById('currentPassword').value;
-            const newPass = document.getElementById('newPassword').value;
-            const confirm = document.getElementById('confirmPassword').value;
-
-            if (!current || !newPass || !confirm) {
-                alert('Please fill in all password fields.');
-                return;
-            }
-
-            if (newPass !== confirm) {
-                alert('New passwords do not match!');
-                return;
-            }
-
-            if (newPass.length < 8) {
-                alert('Password must be at least 8 characters long!');
-                return;
-            }
-
-            alert('Password updated successfully!');
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-        }
-
-        function logout() {
-            if (confirm('Are you sure you want to log out?')) {
-                alert('Logging out...');
-                // Here you would typically redirect to login page
-            }
-        }
-
-        // Generate initial barcode
-        generateBarcode();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="app.js"></script>
 </body>
 </html>

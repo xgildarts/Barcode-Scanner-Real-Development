@@ -1,4 +1,4 @@
-const db = require('../configuration/db');
+
 const express = require('express');
 const services = require('../controller/services');
 
@@ -76,6 +76,16 @@ router.post('/student_login', async (req, res) => {
     }
 })
 
+// Check token
+router.post('/verify_token', (req, res) => {
+    const token = services.removeBearer(req.headers['authorization'])
+    const response = services.verifyToken(token)
+    if(response) {
+        res.json({ ok: true, message: 'Valid token' })
+    } else {
+        res.json({ ok: false, message: 'Invalid token or expired!' })
+    }
+})
 
 
 module.exports = router;

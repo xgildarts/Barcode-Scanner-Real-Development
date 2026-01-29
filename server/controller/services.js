@@ -39,7 +39,7 @@ function checkStudentAccountDuplication(email, idNumber) {
     return new Promise((resolve, reject) => {
         db.execute(checkQuery, [email, idNumber], async (err, result) => {
             if (err) {
-                reject(err)
+                return reject(err)
             }
             resolve(result.length > 0)
         });
@@ -108,6 +108,7 @@ async function studentLogin(email, password, device_id) {
 
     const query = `
         SELECT  
+            student_id,
             student_id_number, 
             student_firstname, 
             student_middlename, 
@@ -139,6 +140,10 @@ async function studentLogin(email, password, device_id) {
 
             // ✅ Compare password
             const isMatch = await comparePassword(password, row.password);
+
+            // Remove password before sending a payload
+            delete row.password
+
             if (isMatch) {
                 const token = generateToken(row)
                 return resolve({ ok: true, message: 'Successfully Login!', token, student_firstname: row.student_firstname });
@@ -193,6 +198,94 @@ function deviceIDChecker(deviceID, student_email) {
     });
 }
 
+// Student update profile
+function studentUpdateProfile(studentId, profileData) {
+    return new Promise((resolve, reject) => {
+        const { firstName, middleName, lastName, yearLevel, program } = profileData;
+
+        const sql = `
+            UPDATE student_accounts
+            SET student_firstname = ?,
+                student_middlename = ?,
+                student_lastname = ?,
+                student_year_level = ?,
+                student_program = ?
+            WHERE student_id_number = ?
+        `;
+
+        db.execute(
+            sql,
+            [firstName, middleName, lastName, yearLevel, program, studentId],
+            (err, result) => {
+                if (err) {
+                    console.error('Database update error:', err);
+                    return reject(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
+// Get Student Data's
+function getStudentsData(studentId) {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                student_year_level,
+                student_program
+            FROM student_accounts
+            WHERE student_id = ?
+        `;
+
+        db.execute(
+            sql,
+            [studentId],
+            (err, result) => {
+                if (err) {
+                    console.error('Database update error:', err);
+                    return reject(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
+// Update Student password
+function updateStudentPassword(currentPassword, newPassword, studentId) {
+
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT password FROM student_accounts WHERE student_id = ? LIMIT 1',
+            [studentId],
+            async (err, result) => {
+
+                if (err) return reject(err);
+                if (result.length === 0) return reject('Student not found!');
+
+                const isMatch = await bcrypt.compare(currentPassword, result[0].password);
+                if (!isMatch) return reject('Current password is incorrect!');
+
+                const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+                db.execute(
+                    'UPDATE student_accounts SET password = ? WHERE student_id = ?',
+                    [hashedPassword, studentId],
+                    (err) => {
+                        if (err) return reject(err);
+                        resolve('Successfully updated password!');
+                    }
+                );
+            }
+        );
+    });
+}
+
 // Export functions
 module.exports= {
     generateBarcode,
@@ -205,5 +298,9 @@ module.exports= {
     generateToken,
     verifyToken,
     removeBearer,
-    deviceIDChecker
+    deviceIDChecker,
+    studentUpdateProfile,
+    getStudentsData,
+    updateStudentPassword,
+    studentUpdateProfile
 }

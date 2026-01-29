@@ -13,7 +13,7 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    // 🔴 Password length
+    // Password length
     if (password.length < 8) {
         Swal.fire({
             icon: "error",
@@ -23,7 +23,7 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
         return;
     }
 
-    // 🔴 Password match
+    // Password match
     if (password !== confirmPassword) {
         Swal.fire({
             icon: "error",
@@ -47,7 +47,7 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     };
 
     try {
-        const res = await fetch('http://localhost:3000/v1/authentication/student_registration', {
+        const res = await fetch('http://localhost:3000/api/v1/authentication/student_registration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
