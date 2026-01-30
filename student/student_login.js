@@ -1,9 +1,21 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const emailInput = document.getElementById('email');
+    const rememberMeCheckbox = document.getElementById('rememberMe');
+
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+        emailInput.value = rememberedEmail;
+        rememberMeCheckbox.checked = true;
+    }
+});
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
-    const device_id = localStorage.getItem('device_id') || ''
+    const rememberMe = document.getElementById('rememberMe').checked;
+    const device_id = localStorage.getItem('device_id') || '';
 
     if (!email || !password) {
         Swal.fire({
@@ -25,8 +37,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
         if (res.ok && data.ok) {
 
-            // Put token to localstorage
-            localStorage.setItem('student_token', data.token)
+            // Save token
+            localStorage.setItem('student_token', data.token);
+
+            // Remember Me logic
+            if (rememberMe) {
+                localStorage.setItem('rememberedEmail', email);
+            } else {
+                localStorage.removeItem('rememberedEmail');
+            }
 
             Swal.fire({
                 icon: 'success',
@@ -34,9 +53,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                 text: `Welcome back, ${data.student_firstname}!`,
                 confirmButtonColor: '#3085d6'
             }).then(() => {
-                // Redirect to dashboard or homepage after login
-                window.location.href = 'student_dashboard.html'; 
+                window.location.href = 'student_dashboard.html';
             });
+
         } else {
             Swal.fire({
                 icon: 'error',

@@ -76,6 +76,31 @@ router.post('/student_login', async (req, res) => {
     }
 })
 
+// Teacher Registration
+router.post('/teacher_registration', async (req, res) => {
+    try {
+        const { fullName,
+                email,
+                password,
+                department  } = req.body
+        const result = await services.teacherRegistration(fullName, email, password, department)
+        res.json({ ok: true, message: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Teacher Login
+router.post('/teacher_login', async (req, res) => {
+    const { email, password } = req.body
+    try {
+        const result = await services.teacherLogin(email, password)
+        res.json({ ok: true, message: result.message, token: result.token, teacher_name: result.teacher_name })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
 // Check token
 router.post('/verify_token', (req, res) => {
     const token = services.removeBearer(req.headers['authorization'])
@@ -86,6 +111,7 @@ router.post('/verify_token', (req, res) => {
         res.json({ ok: false, message: 'Invalid token or expired!' })
     }
 })
+
 
 
 module.exports = router;

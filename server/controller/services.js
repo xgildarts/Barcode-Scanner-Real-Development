@@ -156,7 +156,6 @@ async function studentLogin(email, password, device_id) {
 
 // Generate Token
 function generateToken(payload) {
-    console.log(payload)
     return jwt.sign(payload, JWT_SECRET, {
         expiresIn: '24h'
     });
@@ -286,6 +285,109 @@ function updateStudentPassword(currentPassword, newPassword, studentId) {
     });
 }
 
+// Get Student Barcode and Expiration date
+function getStudentBarcode(studentID) {
+    return new Promise((resolve, reject) => {
+      db.execute(
+        'SELECT barcode_date_generated, barcode FROM student_accounts WHERE student_id = ?',
+        [studentID],
+        (err, result) => {
+          if (err) return reject(err);
+          if (result.length === 0) return reject('No student barcode found!');
+          resolve(result[0]); 
+        }
+      );
+    });
+}
+
+// Update Student Barcode
+function updateStudentBarcode(studentID, newBarcode) {
+    return new Promise((resolve, reject) => {
+        db.execute('UPDATE student_accounts SET barcode = ?, barcode_date_generated = NOW() WHERE student_id = ?',
+             [ newBarcode, studentID ],
+             (err, result) => {
+                if(err) { return reject(err) }
+                resolve('Student barcode successfully updated!')
+        })
+    })
+}
+
+// Get all programs
+function getAllPrograms() {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT program_name, program_date_created FROM program', [], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Teacher registration
+async function teacherRegistration(fullName, email, password, department) {
+
+    const hashedPassword = await hashPassword(password)
+
+    return new Promise((resolve, reject) => {
+        db.execute('INSERT INTO teacher (teacher_name, teacher_email, teacher_password, teacher_program) VALUES(?, ?, ?, ?)',
+             [ fullName, email, hashedPassword, department ],
+            (err, result) => {
+            if(err) { return reject(err) }
+            resolve('Successfully create new account for teacher')
+        })
+    })
+}
+
+// Teacher Login
+async function teacherLogin(email, password) {
+
+    const query = `
+        SELECT  
+            teacher_id,
+            teacher_name, 
+            teacher_program,
+            teacher_password
+        FROM teacher
+        WHERE teacher_email = ?
+        LIMIT 1
+    `;
+
+    return new Promise(async (resolve, reject) => {
+        db.execute(query, [email], async (err, result) => {
+            
+            if (err) return reject({ message: err });
+
+            if (result.length === 0) {
+                return reject('Invalid email or password');
+            }
+
+            const row = result[0];
+
+            const isMatch = await comparePassword(password, row.teacher_password);
+
+            // Remove password before sending a payload
+            delete row.password
+
+            if (isMatch) {
+                const token = generateToken(row)
+                return resolve({ ok: true, message: 'Successfully Login!', token, teacher_name: row.teacher_name });
+            }
+
+            return reject('Invalid email or password' );
+        });
+    });
+}
+
+// Get All Student Data
+async function teacherGetAllStudentDataTotalCount(programName) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT COUNT(student_id) AS total FROM student_accounts WHERE student_program = ?', [ programName ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+  
+
 // Export functions
 module.exports= {
     generateBarcode,
@@ -302,5 +404,11 @@ module.exports= {
     studentUpdateProfile,
     getStudentsData,
     updateStudentPassword,
-    studentUpdateProfile
+    studentUpdateProfile,
+    getStudentBarcode,
+    updateStudentBarcode,
+    getAllPrograms,
+    teacherRegistration,
+    teacherLogin,
+    teacherGetAllStudentDataTotalCount
 }

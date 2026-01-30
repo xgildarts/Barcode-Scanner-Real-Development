@@ -9,6 +9,7 @@
 .go-back-btn {
   font-size: 2rem;
   visibility: hidden;
+  cursor: pointer;
 }
 
 .go-back-btn.show {

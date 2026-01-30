@@ -3,6 +3,8 @@ const cors = require('cors')
 const path = require('path')
 const auth = require('../authentication/authentication')
 const student = require('../model/student')
+const programs = require('../model/program')
+const teacher = require('../model/teacher')
 
 const app = express()
 const PORT = 3000
@@ -26,6 +28,8 @@ app.use(cors())
 // API Routes
 app.use('/api/v1/authentication', auth)
 app.use('/api/v1/students', student)
+app.use('/api/v1/teacher', teacher)
+app.use('/api/v1/programs', programs)
 
 
 app.listen(PORT, () => {

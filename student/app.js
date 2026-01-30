@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tab('generateBarcode')
     checkToken()
     loadProfileData()
+    initialCheckBarcodeExpiration()
 })
 
 // Global variable
@@ -103,7 +104,7 @@ async function loadProfileData() {
 }
 
 // Events for going back
-function goBack() {
+function goBackBtn() {
     document.getElementById('goBackBtn').classList.remove('show')
     tab('generateBarcode')
 }   
@@ -153,18 +154,161 @@ function tab(tabName) {
     });
 }
 
-// Continue this tomorrow
-function generateBarcode(value = '20260001') {
-    
-    JsBarcode('#barcodeImage', value, {
-        format: 'CODE128',   // widely supported
+// Generate barcode
+function generateBarcode(barcode) {
+    JsBarcode('#barcodeImage', barcode, {
+        format: 'CODE128',   
         width: 5,
-        height: 100,
-        displayValue: true,  // shows text below barcode
-        fontSize: 16,
+        height: 300,
+        displayValue: true,  
+        fontSize: 56,
         margin: 10
     });
 }
+
+// Generate random barcode
+function generateRandomBarcode() {
+    const timestamp = Date.now().toString(); 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
+    const barcode = 'BC' + timestamp + randomSuffix;
+    return barcode
+}
+
+// Update Student Barcode
+async function updateStudentBarcode(barcode) {
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/students/update_student_barcode', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ barcode })
+        })
+        const data = await res.json()
+        if(res.ok) {
+            console.log(data.message)
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message
+            });
+        }
+    } catch(err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Fetch Failed',
+            text: data.message || 'Failed to retrieve barcode data.'
+        });
+    }
+}
+
+// Initial check barcode expiration
+async function initialCheckBarcodeExpiration() {
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/students/student_barcode', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        });
+    
+        const data = await res.json();
+    
+        if (res.ok) {
+          const { barcode, barcode_date_generated } = data.content;
+          const now = new Date();
+          const dateGenerated = new Date(barcode_date_generated);
+    
+          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const generatedDayStart = new Date(dateGenerated.getFullYear(), dateGenerated.getMonth(), dateGenerated.getDate());
+    
+          if (todayStart > generatedDayStart) {
+            Swal.fire({
+              icon: 'info',
+              title: 'Barcode Expired',
+              text: 'Your barcode has expired please generate a new one!.'
+            });
+          } else {
+            generateBarcode(barcode);
+            Swal.fire({
+              icon: 'success',
+              title: 'Barcode Valid',
+              text: 'Your barcode is still valid.'
+            });
+          }
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Fetch Failed',
+            text: data.message || 'Failed to retrieve barcode data.'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || err
+        });
+      }
+}
+
+// Check barcode expiration
+async function checkBarcodeExpiration() {
+    try {
+      const res = await fetch('http://localhost:3000/api/v1/students/student_barcode', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        }
+      });
+  
+      const data = await res.json();
+  
+      if (res.ok) {
+        const { barcode, barcode_date_generated } = data.content;
+        const now = new Date();
+        const dateGenerated = new Date(barcode_date_generated);
+  
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const generatedDayStart = new Date(dateGenerated.getFullYear(), dateGenerated.getMonth(), dateGenerated.getDate());
+  
+        if (todayStart > generatedDayStart) {
+          const newBarcode = generateRandomBarcode();
+          generateBarcode(newBarcode);
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Barcode has been generated.'
+          });
+          updateStudentBarcode(newBarcode)
+        } else {
+          generateBarcode(barcode);
+          Swal.fire({
+            icon: 'success',
+            title: 'Barcode Valid',
+            text: 'Your barcode is still valid.'
+          });
+        }
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Fetch Failed',
+          text: data.message || 'Failed to retrieve barcode data.'
+        });
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message || err
+      });
+    }
+}  
+
 
 // Student Settings
 let isEditing = false;

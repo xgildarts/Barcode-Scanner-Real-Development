@@ -11,7 +11,7 @@
 <body>
 
     <div class="header">
-        <div class="go-back-btn" id="goBackBtn" onclick="goBack()">&#8592;</div>
+        <div class="go-back-btn" id="goBackBtn" onclick="goBackBtn()">&#8592;</div>
         <h1 class="title" id="title">Student Dashboard</h1>
         <button class="settings-btn" onclick="tab('settings')">⚙</button>
     </div>
@@ -52,7 +52,7 @@
                 </div>
             </div>
     
-            <button class="generate-btn" onclick="generateBarcode()">Generate today's barcode</button>
+            <button class="generate-btn" onclick="checkBarcodeExpiration()">Generate today's barcode</button>
         </div>
     </section>
 

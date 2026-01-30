@@ -4,6 +4,8 @@ const sidebar = document.getElementById('sidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 const menuBtn = document.getElementById('menuBtn');
 
+const token = localStorage.getItem('teacher_token')
+
 menuBtn.addEventListener('click', function() {
     sidebar.classList.toggle('active');
     sidebarOverlay.classList.toggle('active');
@@ -14,12 +16,58 @@ sidebarOverlay.addEventListener('click', function() {
     sidebarOverlay.classList.remove('active');
 });
 
+// Get total students
+async function getTotalStudents() {
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/teacher/get_students_total_count', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        const data = await res.json()
+        // Set Dashboard total student number
+        document.getElementById('totalStudents').textContent = data.content[0].total
+    
+        if(!res.ok) { alert(data.message) }
 
-function logout() {
-    if (confirm('Are you sure you want to log out?')) {
-        alert('Logging out...');
+    } catch(err) {
+        alert(err)
     }
 }
+getTotalStudents() // => You stopped here
+
+
+function logout() {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'You will be logged out of your account',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, log out',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+
+            // Clear stored tokens
+            localStorage.removeItem('teacher_token');
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Logged out',
+                text: 'You have been successfully logged out',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = 'teacher_login.html';
+            });
+        }
+    });
+}
+
 
 document.querySelectorAll('.close-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {

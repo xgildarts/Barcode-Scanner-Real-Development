@@ -10,7 +10,6 @@ student.get('/student_get_data', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const data = await services.getStudentsData(decodedToken.student_id)
-        console.log(data)
         res.json({ ok: true, message: 'Successfully retrieved data!', contents: data })
     } catch(err) {
         res.status(401).json({ ok: false, message: err })
@@ -37,6 +36,7 @@ student.put('/student_update_profile', async (req, res) => {
     }
 })
 
+// Change Student password
 student.put('/student_change_password', async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body
@@ -46,6 +46,31 @@ student.put('/student_change_password', async (req, res) => {
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(401).json({ ok: false, message: err })
+    }
+})
+
+// Get student barcode
+student.get('/student_barcode', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getStudentBarcode(decodedToken.student_id)
+        res.json({ ok: true, message: 'Successfully retrieved barcode',  content: result})
+    } catch(err) {
+        res.status(401).json({ ok: false, message: err })
+    }
+})
+
+// Update student barcode
+student.put('/update_student_barcode', async (req, res) => {
+    try {
+        const { barcode } = req.body
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.updateStudentBarcode(decodedToken.student_id, barcode)
+        res.json({ ok: true, message: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
     }
 })
 

@@ -351,32 +351,42 @@ renderTeachers(teachers);
 renderGuards(guards);
 
 
-// Academic Setup
-let programs = [
-    'Bachelor of Science in Nursing',
-    'Bachelor of Science in Tourism Management',
-    'Bachelor of Science (BS) in Aviation',
-    'Bachelor of Science in Culinary'
-];
+// Render Programs
+async function renderPrograms() {
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/programs/program_get_data')
 
-function renderPrograms() {
-    const programsList = document.getElementById('programsList');
-    programsList.innerHTML = '';
+        const programsList = document.getElementById('programsList');
+        programsList.innerHTML = '';
 
-    programs.forEach((program, index) => {
-        const card = document.createElement('div');
-        card.className = 'program-card';
-        card.innerHTML = `
-            <div class="program-name">${program}</div>
-            <button class="delete-btn" onclick="deleteProgram(${index})">
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                </svg>
-            </button>
-        `;
-        programsList.appendChild(card);
-    });
+        const data = await res.json()
+
+        if(!res.ok) { return alert(data.message) }
+
+        data.content.forEach((program, index) => {
+
+            const { program_name, program_date_created } = program
+
+            const card = document.createElement('div');
+            card.className = 'program-card';
+            card.innerHTML = `
+                <div class="program-name">${program_name}</div>
+                <button class="delete-btn" onclick="deleteProgram(${index})">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+            `;
+            programsList.appendChild(card);
+        });
+
+    } catch(err) {
+        alert(err)
+    }
+
 }
+// Initial render
+renderPrograms();
 
 function openAddModal() {
     document.getElementById('addModal').classList.add('active');
@@ -427,10 +437,6 @@ document.getElementById('addModal').addEventListener('click', function(e) {
     }
 });
 
-// Initial render
-renderPrograms();
-
-
 // Manage Registration
 function switchRole(role) {
     // Update active tab
@@ -452,6 +458,71 @@ function switchRole(role) {
         document.getElementById('studentForm').classList.add('active');
     }
 }
+
+// Teacher Form
+document.getElementById('teacherForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    try {
+        const teacherFullName = document.getElementById('teacher_fullname').value;
+        const teacherEmail = document.getElementById('teacher_email').value;
+        const teacherPassword = document.getElementById('teacher_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const teacherDepartment = document.getElementById('teacher_department').value;
+
+        if(teacherPassword !== confirmPassword) { return alert('Password is not match!') }
+    
+        const teacherData = {
+            fullName: teacherFullName,
+            email: teacherEmail,
+            password: teacherPassword,
+            department: teacherDepartment,
+        };
+    
+        const res = await fetch('http://localhost:3000/api/v1/authentication/teacher_registration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(teacherData)
+        })
+
+        const data = await res.json()
+        
+        if(!res.ok) { return alert(data.message) }
+
+        document.getElementById('teacherForm').reset()
+
+    } catch(err) {
+        alert(err)
+    }
+
+})
+
+// Generate program on Teacher Selection
+async function generateProgramSelectionOnTeacher() {
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/programs/program_get_data')
+        const teacherDepartment = document.getElementById('teacher_department')
+        teacherDepartment.innerHTML = '<option value="">Select Department</option>';
+
+        const data = await res.json()
+
+        if(!res.ok) { return alert(data.message) }
+
+        data.content.forEach((program, index) => {
+            const { program_name } = program
+            const option = document.createElement('option')
+            option.value = program_name
+            option.textContent = program_name
+            teacherDepartment.appendChild(option);
+        });
+    } catch(err) {
+        alert(err)
+    }
+}
+generateProgramSelectionOnTeacher()
 
 function goBack() {
     window.history.back();
