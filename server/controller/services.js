@@ -505,6 +505,135 @@ async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, teache
     })
 }
 
+// Check Student If Exists in Registration
+async function checkStudentIfExistsInRegistration(barcode) {
+    return new Promise((resolve, reject) => {
+        db.execute(`SELECT 
+                        student_id,
+                        student_id_number,
+                        student_firstname,
+                        student_middlename,
+                        student_lastname,
+                        student_email,
+                        student_year_level,
+                        student_guardian_number,
+                        student_program
+                    FROM student_accounts
+                    WHERE barcode = ?`, [ barcode ], 
+                    (err, result) => {
+                        if(err) { return reject(err) }
+                        resolve(result)
+                    })
+    })
+}
+
+// Check Student If Exists on Regular class from specific teacher
+async function checkStudentToRegularClass(studentIDNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT 1 FROM student_records_regular_class WHERE student_id_number = ? LIMIT 1', 
+            [ studentIDNumber ], 
+            (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result.length > 0)
+        })
+    })
+}
+
+// Check student if already on attendance
+async function checkStudentIfAlreadyExistsInAttendance(student_id_number) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT 1 FROM attendance_record WHERE student_id_number = ? LIMIT 1',
+            [student_id_number],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve(result.length > 0)
+            }
+        )
+    })
+}
+
+
+// Check year level and serial number
+function checkYearLevelAndSerialNumber(teacher_barcode_scanner_serial_number, yearLevel) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT subject_name_set, 
+             year_level_set 
+             FROM subject_and_year_level_setter 
+             WHERE teacher_barcode_scanner_serial_number = ? 
+             AND year_level_set = ?`,
+            [teacher_barcode_scanner_serial_number, yearLevel],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve(result)
+            }
+        )
+    })
+}
+
+// Continue this tomorrow 
+// Insert student Attendance 
+async function insertStudentAttendance(
+    student_id,
+    student_id_number,
+    student_firstname,
+    student_middlename,
+    student_lastname,
+    student_year_level,
+    student_program,
+    teacher_barcode_scanner_serial_number
+) {
+    // 1️⃣ Check if student already exists in attendance
+    const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
+
+    if (exists) {
+        throw new Error('Student already recorded in attendance.')
+    }
+
+    // 2️⃣ Check teacher serial number + year level
+    const result = await checkYearLevelAndSerialNumber(
+        teacher_barcode_scanner_serial_number,
+        student_year_level
+    )
+
+    if (result.length === 0) {
+        throw new Error('Year level not authorized for this teacher.')
+    }
+
+    // 3️⃣ Insert attendance record
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT INTO attendance_record (
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                year_level,
+                subject,
+                student_program,
+                teacher_barcode_scanner_serial_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                student_year_level,
+                result[0].subject_name_set,
+                student_program,
+                teacher_barcode_scanner_serial_number
+            ],
+            (err) => {
+                if (err) return reject(err)
+                resolve('Successfully inserted student attendance!')
+            }
+        )
+    })
+}
+
 
 // Export functions
 module.exports= {
@@ -532,5 +661,9 @@ module.exports= {
     teacherGetTotalAttendanceRecord,
     teacherAddStudent,
     teacherGetStudentRegistered,
-    teacherSubjectAndYearLevelSetter
+    teacherSubjectAndYearLevelSetter,
+    checkStudentIfExistsInRegistration,
+    checkStudentToRegularClass,
+    insertStudentAttendance,
+    checkYearLevelAndSerialNumber
 }

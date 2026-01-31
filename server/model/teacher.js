@@ -90,6 +90,26 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
     }
 })
 
+// Attendance Insertion
+teacher.post('/teacher_attendance_insertion', async (req, res) => {
+    const { barcode } = req.body
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        // 1. Check Registration if Student Exists
+        const result = await services.checkStudentIfExistsInRegistration(barcode)
+        res.json({ result })
+        if(result.length === 0) { return res.json({ ok: false, message: 'Student not registered' }) }
+        // 2. Check Regular class registration for specific teacher
+        const exists = await services.checkStudentToRegularClass(result[0].student_id_number)
+        if(!exists) { return res.json({ ok: false, message: 'Student not register to this subject!' }) }
+        // 3. Insert to Attendance
+
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
 
 
 module.exports = teacher
