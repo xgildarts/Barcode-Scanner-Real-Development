@@ -149,7 +149,7 @@
                             </svg>
                         </div>
                         <div class="stat-label">Total Students</div>
-                        <div class="stat-value" id="totalStudents">200</div>
+                        <div class="stat-value" id="totalStudents">0</div>
                     </div>
         
                     <div class="stat-card">
@@ -160,7 +160,7 @@
                             </svg>
                         </div>
                         <div class="stat-label">Presents</div>
-                        <div class="stat-value">190</div>
+                        <div class="stat-value" id="totalPresents">190</div>
                     </div>
         
                     <div class="stat-card">
@@ -256,21 +256,22 @@
         
                 <div class="filters-row">
                     <select class="filter-select" id="courseFilter">
-                        <option value="">Big Data</option>
+                        <option value="">Select Subject</option>
+                        <option value="Big Data">Big Data</option>
                         <option value="Event-Driven Ecoast Day">Event-Driven Ecoast Day</option>
                         <option value="Digital Marketing">Digital Marketing</option>
                         <option value="Integrative Ecoast Day">Integrative Ecoast Day</option>
                     </select>
         
                     <select class="filter-select" id="yearFilter">
-                        <option value="">1</option>
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
+                        <option value="">Select Year Level</option>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
                     </select>
         
-                    <button class="set-btn" onclick="applyFilters()">Set</button>
+                    <button class="set-btn" onclick="subjectAndYearLevelSetter()">Set</button>
                 </div>
             </div>
         
@@ -642,6 +643,12 @@
                         </svg>
                         Print
                     </button>
+                    <button class="add-student-btn" onclick="openAddStudentModal()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                        </svg>
+                        Add Student
+                    </button>
                 </div>
         
                 <div class="filters-row">
@@ -670,181 +677,7 @@
                         </tr>
                     </thead>
                     <tbody id="studentsBody">
-                        <tr>
-                            <td>1231255</td>
-                            <td>Emily</td>
-                            <td>D</td>
-                            <td>Chu</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('1231255')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('1231255')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>123-250</td>
-                            <td>Miguel</td>
-                            <td>E</td>
-                            <td>Torres</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('123-250')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('123-250')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>1208991</td>
-                            <td>Kristine</td>
-                            <td>F</td>
-                            <td>Navarro</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('1208991')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('1208991')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>1208991</td>
-                            <td>Sarah</td>
-                            <td>N</td>
-                            <td>Panganiban</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('1208991-2')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('1208991-2')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>1231255</td>
-                            <td>Jasmine</td>
-                            <td>T</td>
-                            <td>Castillo</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('1231255-2')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('1231255-2')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>123-001</td>
-                            <td>Paolo</td>
-                            <td>M</td>
-                            <td>Garcia</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('123-001')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('123-001')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>1231255</td>
-                            <td>Maria</td>
-                            <td>S</td>
-                            <td>Santos</td>
-                            <td>BSIT</td>
-                            <td>1</td>
-                            <td>1/4/2026</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="edit-btn" onclick="editStudent('1231255-3')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    <button class="delete-btn-student-registered" onclick="deleteStudent('1231255-3')">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        <!--Auto generated-->
                     </tbody>
                 </table>
             </div>    
@@ -1397,6 +1230,121 @@
             </div>
         </section>
     </main>
+
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2>Add Student</h2>
+            <button class="modal-close" onclick="closeAddStudentModal()">✕</button>
+        </div>
+
+        <!-- FORM (your provided format) -->
+        <div class="form-container">
+            <h2 class="form-title">Student Registration</h2>
+            
+            <form id="registrationForm">
+                <!-- FIRST NAME -->
+                <div class="form-group">
+                    <label class="form-label">
+                        First Name <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input id="firstName" type="text" class="form-input" placeholder="First Name" required>
+                    </div>
+                </div>
+    
+                <!-- MIDDLE + LAST -->
+                <div class="name-row">
+                    <div class="form-group">
+                        <label class="form-label">Middle Name</label>
+                        <div class="input-wrapper">
+                            <input id="middleName" type="text" class="form-input" placeholder="Middle Name">
+                        </div>
+                    </div>
+    
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <div class="input-wrapper">
+                            <input id="lastName" type="text" class="form-input" placeholder="Last Name">
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- EMAIL -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Email <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input
+                            type="email"
+                            id="email"
+                            class="form-input"
+                            placeholder="example@panpacificu.edu.ph"
+                            required
+                            pattern="^[a-zA-Z0-9._%+-]+@panpacificu\.edu\.ph$"
+                        />
+                    </div>
+                </div>
+    
+                <!-- ID NUMBER -->
+                <div class="form-group">
+                    <label class="form-label">
+                        ID Number <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input id="idNumber" type="text" class="form-input" placeholder="ID Number" required>
+                    </div>
+                </div>
+    
+                <!-- PROGRAM -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Program <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <select id="program" class="form-select" required>
+                            <option value="">Select Program</option>
+                            <option value="BSIT">BS in Information Technology</option>
+                            <option value="BSCS">BS in Computer Science</option>
+                            <option value="BSCpE">BS in Computer Engineering</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <!-- YEAR LEVEL -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Year Level <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <select id="yearLevel" class="form-select" required>
+                            <option value="">Select Year</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <!-- GUARDIAN CONTACT -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Parent/Guardian Contact <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input id="guardianContactNumber" type="tel" class="form-input" placeholder="+63XXXXXXXXXX" required>
+                    </div>
+                </div>
+    
+                <button type="submit" class="modal-submit-btn">Add Student</button>
+            </form>
+        </div>
+    </div>
+    </div>
+
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>

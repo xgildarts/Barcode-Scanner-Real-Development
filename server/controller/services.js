@@ -12,6 +12,13 @@ const generateBarcode = () => {
     return 'BC' + timestamp + randomSuffix;
 }
 
+// Generate Teacher Serial Number
+const generateTeacherSerialNumber = () => {
+    const timestamp = Date.now().toString(); 
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
+    return 'TSN' + timestamp + randomSuffix;
+}
+
 // Generate Device ID
 const generateDeviceID = () => {
     const timestamp = Date.now().toString(); 
@@ -328,11 +335,24 @@ async function teacherRegistration(fullName, email, password, department) {
     const hashedPassword = await hashPassword(password)
 
     return new Promise((resolve, reject) => {
-        db.execute('INSERT INTO teacher (teacher_name, teacher_email, teacher_password, teacher_program) VALUES(?, ?, ?, ?)',
-             [ fullName, email, hashedPassword, department ],
+        const teacherBarcodeScannerSerialNumber = generateTeacherSerialNumber()
+        db.execute('INSERT INTO teacher (teacher_name, teacher_email, teacher_password, teacher_program, teacher_barcode_scanner_serial_number) VALUES(?, ?, ?, ?, ?)',
+             [ fullName, email, hashedPassword, department, teacherBarcodeScannerSerialNumber ],
             (err, result) => {
             if(err) { return reject(err) }
+            initialTeacherSubjectAndYearLevelSetter('', '', teacherBarcodeScannerSerialNumber)
             resolve('Successfully create new account for teacher')
+        })
+    })
+}
+
+// Insert a NULL value to subject and year level setter
+async function initialTeacherSubjectAndYearLevelSetter(subjectSet = '', yearLevelSet = '', teacherBarcodeScannerSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute('INSERT INTO subject_and_year_level_setter (subject_name_set, year_level_set, teacher_barcode_scanner_serial_number) VALUES(?, ?, ?)',
+             [ subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber ],
+            (err, result) => {
+            if(err) { return reject(err) }
         })
     })
 }
@@ -345,7 +365,8 @@ async function teacherLogin(email, password) {
             teacher_id,
             teacher_name, 
             teacher_program,
-            teacher_password
+            teacher_password,
+            teacher_barcode_scanner_serial_number
         FROM teacher
         WHERE teacher_email = ?
         LIMIT 1
@@ -378,15 +399,112 @@ async function teacherLogin(email, password) {
 }
 
 // Get All Student Data
-async function teacherGetAllStudentDataTotalCount(programName) {
+async function teacherGetAllStudentDataTotalCount(teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT COUNT(student_id) AS total FROM student_accounts WHERE student_program = ?', [ programName ], (err, result) => {
+        db.execute('SELECT COUNT(student_id) AS total FROM student_records_regular_class WHERE teacher_barcode_scanner_serial_number = ?', [ teacherBarcodeScannerSerialNumber ], (err, result) => {
             if(err) { return reject(err) }
             resolve(result)
         })
     })
 }
-  
+
+// Get Total Student Attendees Right Now
+async function teacherGetTotalAttendanceRecord(teacherBarcodeScannerSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT COUNT(attendance_id) as total_attendees FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [ teacherBarcodeScannerSerialNumber ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Teacher Add Student
+async function teacherAddStudent(
+    studentIDNumber, 
+    studentFirstName, 
+    studentMiddleName, 
+    studentLastName, 
+    studentEmail, 
+    studentProgram, 
+    studentYearLevel, 
+    studentGuardianNumber, 
+    teacherBarcodeScannerSerialNumber
+) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT INTO student_records_regular_class (
+                student_id_number, 
+                student_firstname, 
+                student_middlename, 
+                student_lastname, 
+                student_email, 
+                student_program, 
+                student_year_level, 
+                student_guardian_number, 
+                teacher_barcode_scanner_serial_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                studentIDNumber, 
+                studentFirstName, 
+                studentMiddleName, 
+                studentLastName, 
+                studentEmail, 
+                studentProgram, 
+                studentYearLevel,
+                studentGuardianNumber,
+                teacherBarcodeScannerSerialNumber
+            ],
+            (err, result) => {
+                if (err) return reject(err);
+                resolve({
+                    message: 'Successfully added new student!',
+                });
+            }
+        );
+    });
+}
+
+// Teacher Get Student Registered
+async function teacherGetStudentRegistered(teacherBarcodeScannerSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT 
+                student_id, 
+                student_id_number, 
+                student_firstname, 
+                student_middlename,
+                student_lastname,
+                student_email,
+                student_year_level,
+                student_guardian_number,
+                student_program,
+                date_created
+            FROM student_records_regular_class 
+            WHERE teacher_barcode_scanner_serial_number = ?`,
+            [ teacherBarcodeScannerSerialNumber ],
+            (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            }
+        );
+    });
+}
+
+// Teacher Subject And Year Level Setter
+async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(`UPDATE subject_and_year_level_setter 
+                    SET subject_name_set = ?, 
+                    year_level_set = ? 
+                    WHERE teacher_barcode_scanner_serial_number = ?`, 
+                    [subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber],
+                    (err, result) => {
+                        if(err) { return reject(err) }
+                        resolve('Successfully set!')
+                    })
+    })
+}
+
 
 // Export functions
 module.exports= {
@@ -410,5 +528,9 @@ module.exports= {
     getAllPrograms,
     teacherRegistration,
     teacherLogin,
-    teacherGetAllStudentDataTotalCount
+    teacherGetAllStudentDataTotalCount,
+    teacherGetTotalAttendanceRecord,
+    teacherAddStudent,
+    teacherGetStudentRegistered,
+    teacherSubjectAndYearLevelSetter
 }

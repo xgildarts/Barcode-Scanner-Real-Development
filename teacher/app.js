@@ -28,16 +28,76 @@ async function getTotalStudents() {
         })
         const data = await res.json()
         // Set Dashboard total student number
+        console.log(data)
+        if(!res.ok) { return alert(data.message) }
         document.getElementById('totalStudents').textContent = data.content[0].total
-    
-        if(!res.ok) { alert(data.message) }
 
     } catch(err) {
         alert(err)
     }
 }
-getTotalStudents() // => You stopped here
 
+// Load Student Registered
+async function loadStudentsRegistered() {
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/teacher/get_student_registered', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        const data = await res.json();
+
+        const tbody = document.getElementById('studentsBody');
+        tbody.innerHTML = '';
+
+        data.content.forEach(student => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${student.student_id_number}</td>
+                <td>${student.student_firstname}</td>
+                <td>${student.student_middlename || '-'}</td>
+                <td>${student.student_lastname}</td>
+                <td>${student.student_program}</td>
+                <td>${student.student_year_level}</td>
+                <td>${student.date_created}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="edit-btn" onclick="editStudent('${student.student_id_number}')">
+                            Edit
+                        </button>
+                        <button class="delete-btn-student-registered" onclick="deleteStudent('${student.student_id_number}')">
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error('Error loading students:', error);
+    }
+}
+
+// Format Time
+function formatTime(timeString) {
+    let [h, m] = timeString.split(':');
+    h = parseInt(h, 10);
+    let ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12; // Convert 0 to 12 for midnight
+    return `${h}:${m} ${ampm}`;
+}
+
+// Modal for Add Student
+function openAddStudentModal() {
+    document.getElementById('addStudentModal').style.display = 'flex';
+}
+
+function closeAddStudentModal() {
+    document.getElementById('addStudentModal').style.display = 'none';
+}
 
 function logout() {
     Swal.fire({
@@ -68,12 +128,112 @@ function logout() {
     });
 }
 
+// Subject and Year Level Setter
+async function subjectAndYearLevelSetter() {
+
+    const subject = document.getElementById('courseFilter').value
+    const yearLevel = document.getElementById('yearFilter').value
+
+    // Confirmation before submission
+    const confirmResult = await Swal.fire({
+        title: 'Are you sure?',
+        text: 'This will update the subject and year level.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, submit',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    })
+
+    // Stop if cancelled
+    if (!confirmResult.isConfirmed) return
+
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/teacher/teacher_subject_and_year_level_setter', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ subject, yearLevel })
+        })
+
+        const data = await res.json()
+
+        if (res.ok) {
+            Swal.fire({
+                title: 'Success!',
+                text: data.message,
+                icon: 'success'
+            })
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message,
+                icon: 'error'
+            })
+        }
+
+    } catch (err) {
+        Swal.fire({
+            title: 'Something went wrong',
+            text: err.message || 'Please try again later.',
+            icon: 'error'
+        })
+    }
+}
+
+
+// Add Student Form
+document.getElementById('registrationForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const studentData = {
+        student_firstname: document.getElementById('firstName').value,
+        student_middlename: document.getElementById('middleName').value,
+        student_lastname: document.getElementById('lastName').value,
+        student_email: document.getElementById('email').value,
+        student_id_number: document.getElementById('idNumber').value,
+        student_program: document.getElementById('program').value,
+        student_year_level: document.getElementById('yearLevel').value,
+        student_guardian_number: document.getElementById('guardianContactNumber').value
+    };
+
+    if (!studentData.student_email.endsWith('@panpacificu.edu.ph')) {
+        alert('Please use a valid Panpacific University email.');
+        return;
+    }
+
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/teacher/add_student', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(studentData)
+        })
+        const data = await res.json()
+        if(res.ok) {
+            alert(data.message)
+            // Update
+            loadStudentsRegistered()
+        } else {
+            alert(data.message)
+        }
+    } catch(err) {
+        alert(err)
+    }
+    
+    this.reset();
+});
 
 document.querySelectorAll('.close-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.target.closest('.stat-card').style.display = 'none';
     });
 });
+
 
 
 // Navigation Shifting Logic
@@ -144,7 +304,6 @@ function navigateTo(navName) {
 }
 
 // Set Location
-
 const radiusSlider = document.getElementById('radiusSlider');
 const radiusValue = document.getElementById('radiusValue');
 const radiusCircle = document.querySelector('.radius-circle');
@@ -267,12 +426,6 @@ document.getElementById('searchInput').addEventListener('input', function() {
     });
 });
 
-document.getElementById('yearFilter').addEventListener('change', function() {
-    const year = this.value;
-    alert(`Filtering by year level: ${year || 'All'}`);
-    // Here you would filter and load students by year level
-});
-
 function printAttendance() {
     window.print();
 }
@@ -291,12 +444,6 @@ document.getElementById('searchInput').addEventListener('input', function() {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(searchTerm) ? '' : 'none';
     });
-});
-
-document.getElementById('yearFilter').addEventListener('change', function() {
-    const year = this.value;
-    alert(`Filtering by year level: ${year || 'All'}`);
-    // Here you would filter the data by year level
 });
 
 function printList() {
@@ -387,15 +534,6 @@ document.getElementById('searchInput').addEventListener('input', function() {
     renderStudents(filtered);
 });
 
-document.getElementById('yearFilter').addEventListener('change', function() {
-    const year = this.value;
-    if (year) {
-        const filtered = students.filter(student => student.year === parseInt(year));
-        renderStudents(filtered);
-    } else {
-        renderStudents(students);
-    }
-});
 
 // Teacher Event Attendance History
 document.getElementById('searchInput').addEventListener('input', function() {
@@ -487,12 +625,15 @@ function saveChanges() {
 }
 
 
-// Initial render
-renderStudents(students);
-
-
+document.addEventListener('DOMContentLoaded', () => {
 // Startup
 navigateTo('dashboard')
-
+// Initial render
+renderStudents(students);
 // Render Academic Setup
 renderPrograms()
+// Load Student Registered
+loadStudentsRegistered()
+// Load Total Students
+getTotalStudents()
+})
