@@ -171,30 +171,30 @@
                             </svg>
                         </div>
                         <div class="stat-label">Absents</div>
-                        <div class="stat-value">10</div>
+                        <div class="stat-value" id="totalStudentAbsent">0</div>
                     </div>
                 </div>
         
                 <div class="overview-section">
                     <h2 class="section-title">Attendance Overview</h2>
                     <div class="chart-container">
-                        <svg class="donut-chart" width="200" height="200" viewBox="0 0 200 200">
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#5a8a7a" stroke-width="35" stroke-dasharray="427 47" />
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#d88888" stroke-width="35" stroke-dasharray="47 427" stroke-dashoffset="-427" />
+                        <svg id="donutChart" class="donut-chart" width="200" height="200" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="#d88888" stroke-width="35" stroke-dasharray="427 47" />
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="#5a8a7a" stroke-width="35" stroke-dasharray="47 427" stroke-dashoffset="-427" />
                         </svg>
                         <div class="chart-center">
                             <div class="chart-label">Total of Students</div>
-                            <div class="chart-value">200</div>
+                            <div class="chart-value" id="centerTotalStudents">200</div>
                         </div>
                     </div>
                     <div class="legend">
                         <div class="legend-item">
                             <div class="legend-color presents"></div>
-                            <span>Presents 190</span>
+                            <span id="bottomTotalPresent">Presents 190</span>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color absents"></div>
-                            <span>Absents 10</span>
+                            <span id="bottomTotalAbsent">Absents 10</span>
                         </div>
                     </div>
                 </div>
@@ -238,7 +238,7 @@
                         <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                         </svg>
-                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInputAttendance">
                     </div>
                     <button class="action-btn print-btn" onclick="printAttendance()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
@@ -246,12 +246,18 @@
                         </svg>
                         Print
                     </button>
-                    <button class="export-btn" onclick="exportToExcel()">
+                    <button class="export-btn" onclick="exportAttendanceToExcel()">
                         <svg viewBox="0 0 24 24">
                             <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"></path>
                         </svg>
                         Export Excel
                     </button>
+                    <button class="action-btn refresh-btn" onclick="refreshAttendance()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        Refresh
+                    </button>                     
                 </div>
         
                 <div class="filters-row">
@@ -276,7 +282,7 @@
             </div>
         
             <div class="table-container">
-                <table class="attendance-table">
+                <table class="attendance-table" id="attendanceNowTable">
                     <thead>
                         <tr>
                             <th>ID Number</th>
@@ -291,126 +297,7 @@
                         </tr>
                     </thead>
                     <tbody id="attendanceBody">
-                        <!-- Empty rows for attendance taking -->
-                        <tr class="empty-row">
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="empty-row">
-                            
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
+                        <!--Load auto generated by Javascript-->
                     </tbody>
                 </table>
             </div>    
@@ -424,36 +311,43 @@
                         <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                         </svg>
-                        <input type="text" class="search-input" placeholder="Search students..." id="searchInput">
+                        <input type="text" class="search-input" placeholder="Search students..." id="searchInputAttendanceHistory">
                     </div>
-                    <button class="export-btn" onclick="exportToExcel()">
+                    <button class="export-btn" onclick="exportAttendanceHistoryToExcel()">
                         <svg viewBox="0 0 24 24">
                             <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
                         </svg>
                         Export Excel
                     </button>
+                    <button class="action-btn refresh-btn" onclick="refreshAttendanceHistory()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        Refresh
+                    </button>    
                 </div>
         
                 <div class="filters-row">
-                    <select class="filter-select" id="subjectFilter">
+                    <select class="filter-select" id="subjectFilterAttendanceHistory">
                         <option value="">All Subject</option>
-                        <option value="Ecoast Day">Ecoast Day</option>
-                        <option value="database">Database</option>
-                        <option value="networking">Networking</option>
-                        <option value="web-dev">Web Development</option>
+                        <option value="Database">Database</option>
+                        <option value="Big Data">Big Data</option>
+                        <option value="Networking">Networking</option>
+                        <option value="Web Development">Web Development</option>
                     </select>
         
-                    <select class="filter-select" id="statusFilter">
+                    <select class="filter-select" id="yearFilterAttendanceHistory">
                         <option value="">All</option>
-                        <option value="present">Present</option>
-                        <option value="absent">Absent</option>
-                        <option value="late">Late</option>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
                     </select>
                 </div>
             </div>
         
             <div class="table-container">
-                <table class="attendance-table">
+                <table class="attendance-table" id="attendanceHistoryTable">
                     <thead>
                         <tr>
                             <th>ID Number</th>
@@ -467,161 +361,8 @@
                             <th>Date</th>
                         </tr>
                     </thead>
-                    <tbody id="attendanceBody">
-                        <tr>
-                          <td>1231255</td>
-                          <td>Emily</td>
-                          <td>D</td>
-                          <td>Chu</td>
-                          <td>Programming 101</td>
-                          <td>1</td>
-                          <td>BSIT</td>
-                          <td>08:30 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>123-250</td>
-                          <td>Miguel</td>
-                          <td>E</td>
-                          <td>Torres</td>
-                          <td>Database Systems</td>
-                          <td>2</td>
-                          <td>BSIT</td>
-                          <td>10:00 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1208991</td>
-                          <td>Kristine</td>
-                          <td>F</td>
-                          <td>Navarro</td>
-                          <td>Web Development</td>
-                          <td>3</td>
-                          <td>BSIT</td>
-                          <td>01:45 PM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1208991</td>
-                          <td>Sarah</td>
-                          <td>N</td>
-                          <td>Panganiban</td>
-                          <td>Data Structures</td>
-                          <td>2</td>
-                          <td>BSIT</td>
-                          <td>03:00 PM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1231255</td>
-                          <td>Jasmine</td>
-                          <td>T</td>
-                          <td>Castillo</td>
-                          <td>Operating Systems</td>
-                          <td>4</td>
-                          <td>BSIT</td>
-                          <td>09:15 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>123-001</td>
-                          <td>Paolo</td>
-                          <td>M</td>
-                          <td>Garcia</td>
-                          <td>Networks</td>
-                          <td>3</td>
-                          <td>BSIT</td>
-                          <td>11:30 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1231255</td>
-                          <td>Maria</td>
-                          <td>S</td>
-                          <td>Santos</td>
-                          <td>Software Engineering</td>
-                          <td>4</td>
-                          <td>BSIT</td>
-                          <td>01:00 PM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1231111</td>
-                          <td>Andrea</td>
-                          <td>A</td>
-                          <td>Lachica</td>
-                          <td>Cybersecurity</td>
-                          <td>3</td>
-                          <td>BSIT</td>
-                          <td>02:30 PM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>123-019</td>
-                          <td>Charlmea</td>
-                          <td>M</td>
-                          <td>Selga</td>
-                          <td>Cloud Computing</td>
-                          <td>2</td>
-                          <td>BSIT</td>
-                          <td>10:45 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1239309</td>
-                          <td>Clarissa</td>
-                          <td>M</td>
-                          <td>Padilla</td>
-                          <td>Mobile App Dev</td>
-                          <td>1</td>
-                          <td>BSIT</td>
-                          <td>08:00 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1229533</td>
-                          <td>Steven John</td>
-                          <td>A</td>
-                          <td>Agustin</td>
-                          <td>Artificial Intelligence</td>
-                          <td>4</td>
-                          <td>BSIT</td>
-                          <td>09:45 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1234567</td>
-                          <td>Faith</td>
-                          <td>A</td>
-                          <td>Robles</td>
-                          <td>Human-Computer Interaction</td>
-                          <td>3</td>
-                          <td>BSIT</td>
-                          <td>11:00 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1247932</td>
-                          <td>Jan Ray</td>
-                          <td>A</td>
-                          <td>Aquino</td>
-                          <td>Machine Learning</td>
-                          <td>2</td>
-                          <td>BSIT</td>
-                          <td>01:30 PM</td>
-                          <td>2026-01-27</td>
-                        </tr>
-                        <tr>
-                          <td>1210919</td>
-                          <td>Dwynna</td>
-                          <td>W</td>
-                          <td>Chan</td>
-                          <td>Database Systems</td>
-                          <td>1</td>
-                          <td>BSIT</td>
-                          <td>10:15 AM</td>
-                          <td>2026-01-27</td>
-                        </tr>
+                    <tbody id="attendanceHistoryTableBody">
+                        <!--Auto generated by Javascript-->
                       </tbody>                                          
                 </table>
             </div>    
@@ -1347,6 +1088,7 @@
 
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

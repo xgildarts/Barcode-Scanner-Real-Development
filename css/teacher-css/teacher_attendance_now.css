@@ -38,6 +38,15 @@
     color: #999;
 }
 
+.refresh-btn {
+    background: #4a7a7a;
+    color: white;
+}
+
+.refresh-btn:hover {
+    background: #3a6a6a;
+}
+
 .action-btn {
     padding: 10px 16px;
     border: none;

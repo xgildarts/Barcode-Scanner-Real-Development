@@ -6,6 +6,9 @@ const menuBtn = document.getElementById('menuBtn');
 
 const token = localStorage.getItem('teacher_token')
 
+let totalPresent = 0
+let totalStudentRegistered = 0
+
 menuBtn.addEventListener('click', function() {
     sidebar.classList.toggle('active');
     sidebarOverlay.classList.toggle('active');
@@ -16,10 +19,29 @@ sidebarOverlay.addEventListener('click', function() {
     sidebarOverlay.classList.remove('active');
 });
 
-// Get total students
-async function getTotalStudents() {
+// Donut chart progress
+function setDonutProgress(percent) {
+    const svg = document.getElementById('donutChart');
+    const circles = svg.querySelectorAll('circle');
+    
+    const progressCircle = circles[1];
+    
+    const radius = progressCircle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+  
+    progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+  
+    const offset = circumference * (1 - percent / 100);
+    
+    progressCircle.style.strokeDashoffset = -offset;
+}
+  
+
+// Get Attendance Record
+async function getStudentAttendanceRecords() {
+    const attendanceBody = document.getElementById('attendanceBody')
     try {
-        const res = await fetch('http://localhost:3000/api/v1/teacher/get_students_total_count', {
+        const res = await fetch('http://localhost:3000/api/v1/teacher/teacher_attendance_record', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -27,14 +49,111 @@ async function getTotalStudents() {
             }
         })
         const data = await res.json()
-        // Set Dashboard total student number
-        console.log(data)
         if(!res.ok) { return alert(data.message) }
-        document.getElementById('totalStudents').textContent = data.content[0].total
 
+        // Set total student registered
+        document.getElementById('totalPresents').textContent = data.content.length
+        // Set the text bottom  total student registered
+        document.getElementById('bottomTotalPresent').textContent = "Presents " + data.content.length
+        totalPresent = data.content.length
+        // Set total student absent
+        document.getElementById('totalStudentAbsent').textContent = totalStudentRegistered - totalPresent
+        // Set text bottom total Absent
+        document.getElementById('bottomTotalAbsent').textContent = "Absent " + (totalStudentRegistered - totalPresent)
+        // Calculate the percentage of absent and present
+        const percent = (totalPresent / totalStudentRegistered) * 100
+        // Set donut progress
+        setDonutProgress(percent)
+
+        attendanceBody.innerHTML = ""
+
+        data.content.forEach(d => {
+            const { 
+                    student_id_number,
+                    student_firstname,
+                    student_middlename,
+                    student_lastname,
+                    subject,
+                    year_level,
+                    student_program,
+                    attendance_time,
+                    attendance_date
+                 } = d
+            const tr = document.createElement('tr')
+            tr.innerHTML = `
+                            <td>${student_id_number}</td>
+                            <td>${student_firstname}</td>
+                            <td>${student_middlename}</td>
+                            <td>${student_lastname}</td>
+                            <td>${subject}</td>
+                            <td>${year_level}</td>
+                            <td>${student_program}</td>
+                            <td>${formatTime(attendance_time)}</td>
+                            <td>${formatDate(attendance_date)}</td>
+            `
+            attendanceBody.appendChild(tr)
+        })
     } catch(err) {
         alert(err)
     }
+}
+
+// Get attendance history record
+async function getStudentAttendanceHistoryRecords() {
+    const attendanceBody = document.getElementById('attendanceHistoryTableBody')
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/teacher/teacher_attendance_history_record', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        const data = await res.json()
+        if(!res.ok) { return alert(data.message) }
+
+        attendanceBody.innerHTML = ""
+
+        data.content.forEach(d => {
+            const { 
+                    student_id_number,
+                    student_firstname,
+                    student_middlename,
+                    student_lastname,
+                    subject,
+                    year_level,
+                    student_program,
+                    attendance_time,
+                    attendance_date
+                 } = d
+            const tr = document.createElement('tr')
+            tr.innerHTML = `
+                            <td>${student_id_number}</td>
+                            <td>${student_firstname}</td>
+                            <td>${student_middlename}</td>
+                            <td>${student_lastname}</td>
+                            <td>${subject}</td>
+                            <td>${year_level}</td>
+                            <td>${student_program}</td>
+                            <td>${formatTime(attendance_time)}</td>
+                            <td>${formatDate(attendance_date)}</td>
+            `
+            attendanceBody.appendChild(tr)
+        })
+    } catch(err) {
+        alert(err)
+    }
+}
+
+
+// Refresh button attendance
+function refreshAttendance() {
+    getStudentAttendanceRecords()
+}
+
+// Refresh button attendance history
+function refreshAttendanceHistory() {
+    getStudentAttendanceHistoryRecords()
 }
 
 // Load Student Registered
@@ -48,6 +167,12 @@ async function loadStudentsRegistered() {
             }
         });
         const data = await res.json();
+
+        // Set variable value
+        document.getElementById('totalStudents').textContent = data.content.length
+        // Set text at the center
+        document.getElementById('centerTotalStudents').textContent = data.content.length
+        totalStudentRegistered = data.content.length
 
         const tbody = document.getElementById('studentsBody');
         tbody.innerHTML = '';
@@ -88,6 +213,11 @@ function formatTime(timeString) {
     let ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12; // Convert 0 to 12 for midnight
     return `${h}:${m} ${ampm}`;
+}
+
+// Format Date
+function formatDate(dateString) {
+    return dateString.split('T')[0]
 }
 
 // Modal for Add Student
@@ -235,7 +365,6 @@ document.querySelectorAll('.close-btn').forEach(btn => {
 });
 
 
-
 // Navigation Shifting Logic
 function navigateTo(navName) {
 
@@ -367,21 +496,22 @@ function printAttendance() {
     window.print();
 }
 
-function saveAttendance() {
-    const checked = document.querySelectorAll('.row-checkbox:checked').length;
-    alert(`Attendance saved! ${checked} students marked as present.`);
-}
+// Attendance
+document.getElementById('searchInputAttendance').addEventListener('input', function () {
+    const searchValue = this.value.toLowerCase()
+    const rows = document.querySelectorAll('#attendanceBody tr')
 
-document.getElementById('searchInput').addEventListener('input', function() {
-    // Search functionality would be implemented here
-});
-
+    rows.forEach(row => {
+        const rowText = row.textContent.toLowerCase()
+        row.style.display = rowText.includes(searchValue) ? '' : 'none'
+    })
+})
 
 // Attendance history
-
-document.getElementById('searchInput').addEventListener('input', function() {
+document.getElementById('searchInputAttendanceHistory').addEventListener('input', function() {
+    console.log(this.value)
     const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#attendanceBody tr');
+    const rows = document.querySelectorAll('#attendanceHistoryTableBody tr');
     
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
@@ -389,21 +519,62 @@ document.getElementById('searchInput').addEventListener('input', function() {
     });
 });
 
-document.getElementById('subjectFilter').addEventListener('change', function() {
-    const subject = this.value;
-    alert(`Filtering by subject: ${subject || 'All'}`);
-    // Here you would filter the data
+// Subject Filter Attendance History
+document.getElementById('subjectFilterAttendanceHistory').addEventListener('change', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#attendanceHistoryTableBody tr')
+    rows.forEach(row => {
+        const subjectCell = row.cells[4].textContent.trim().toLowerCase() // Subject column
+        if (!searchTerm || subjectCell === searchTerm) {
+            row.style.display = ''
+        } else {
+            row.style.display = 'none'
+        }
+    })
 });
 
-document.getElementById('statusFilter').addEventListener('change', function() {
-    const status = this.value;
-    alert(`Filtering by status: ${status || 'All'}`);
-    // Here you would filter the data
+// Year Filter Attendance History Function
+document.getElementById('yearFilterAttendanceHistory').addEventListener('change', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#attendanceHistoryTableBody tr')
+    rows.forEach(row => {
+        const yearCell = row.cells[5].textContent.trim().toLowerCase() // Year column
+        if (!searchTerm || yearCell === searchTerm) {
+            row.style.display = ''
+        } else {
+            row.style.display = 'none'
+        }
+    })
 });
 
-function exportToExcel() {
-    alert('Exporting attendance history to Excel...');
-    // Here you would implement Excel export
+function exportAttendanceToExcel() {
+    const table = document.getElementById('attendanceNowTable')
+    if (!table) {
+        alert('No table data to export')
+        return
+    }
+
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.table_to_sheet(table)
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance')
+
+    XLSX.writeFile(workbook, 'attendance.xlsx')
+}
+
+function exportAttendanceHistoryToExcel() {
+    const table = document.getElementById('attendanceHistoryTable')
+    if (!table) {
+        alert('No table data to export')
+        return
+    }
+
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.table_to_sheet(table)
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance History')
+
+    XLSX.writeFile(workbook, 'attendance_history.xlsx')
 }
 
 // Event Attendance
@@ -428,11 +599,6 @@ document.getElementById('searchInput').addEventListener('input', function() {
 
 function printAttendance() {
     window.print();
-}
-
-function saveAttendance() {
-    const checked = document.querySelectorAll('.row-checkbox:checked').length;
-    alert(`Event attendance saved! ${checked} students marked as present.`);
 }
 
 // Student Registered
@@ -463,7 +629,6 @@ function deleteStudent(id) {
 }
 
 // Manual Entry
-
 const students = [
     { name: 'Emily D. Chu', year: 1 },
     { name: 'Miguel E. Torres', year: 1 },
@@ -526,26 +691,6 @@ function markAbsent(name) {
     renderStudents(students);
 }
 
-document.getElementById('searchInput').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const filtered = students.filter(student => 
-        student.name.toLowerCase().includes(searchTerm)
-    );
-    renderStudents(filtered);
-});
-
-
-// Teacher Event Attendance History
-document.getElementById('searchInput').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#attendanceBody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-});
-
 function switchTab(tab) {
     // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -555,10 +700,6 @@ function switchTab(tab) {
 
     // Filter or sort by selected tab
     alert(`Filtering by: ${tab}`);
-}
-
-function exportToExcel() {
-    alert('Exporting event attendance history to Excel...');
 }
 
 // Academic Management
@@ -598,19 +739,43 @@ function closeAddModal() {
     document.getElementById('addModal').classList.remove('active');
 }
 
-function addProgram() {
-    const input = document.getElementById('programNameInput');
-    const programName = input.value.trim();
+async function addProgram() {
+    const input = document.getElementById('programNameInput')
+    const programName = input.value.trim()
 
     if (!programName) {
-        alert('Please enter a program name.');
-        return;
+        alert('Please enter a program name.')
+        return
     }
 
-    programs.push(programName);
-    renderPrograms();
-    closeAddModal();
+    // 🔍 PRINT FIRST
+    console.log('Program to be added:', programName)
+    // alert('Program: ' + programName) // optional popup
+
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/programs/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ program_name: programName })
+        })
+
+        const data = await res.json()
+
+        if (!res.ok || !data.ok) {
+            alert(data.message || 'Failed to add program.')
+            return
+        }
+        renderPrograms()
+        closeAddModal()
+
+    } catch (err) {
+        console.error(err)
+        alert('Server error. Please try again.')
+    }
 }
+
 
 function deleteProgram(index) {
     if (confirm(`Are you sure you want to delete "${programs[index]}"?`)) {
@@ -634,6 +799,8 @@ renderStudents(students);
 renderPrograms()
 // Load Student Registered
 loadStudentsRegistered()
-// Load Total Students
-getTotalStudents()
+// Load Attendance
+getStudentAttendanceRecords()
+// Load Attendance History
+getStudentAttendanceHistoryRecords()
 })

@@ -418,6 +418,7 @@ async function teacherGetTotalAttendanceRecord(teacherBarcodeScannerSerialNumber
     })
 }
 
+
 // Teacher Add Student
 async function teacherAddStudent(
     studentIDNumber, 
@@ -530,7 +531,7 @@ async function checkStudentIfExistsInRegistration(barcode) {
 // Check Student If Exists on Regular class from specific teacher
 async function checkStudentToRegularClass(studentIDNumber) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT 1 FROM student_records_regular_class WHERE student_id_number = ? LIMIT 1', 
+        db.execute('SELECT student_id_number FROM student_records_regular_class WHERE student_id_number = ? LIMIT 1', 
             [ studentIDNumber ], 
             (err, result) => {
             if(err) { return reject(err) }
@@ -572,7 +573,6 @@ function checkYearLevelAndSerialNumber(teacher_barcode_scanner_serial_number, ye
     })
 }
 
-// Continue this tomorrow 
 // Insert student Attendance 
 async function insertStudentAttendance(
     student_id,
@@ -586,7 +586,6 @@ async function insertStudentAttendance(
 ) {
     // 1️⃣ Check if student already exists in attendance
     const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
-
     if (exists) {
         throw new Error('Student already recorded in attendance.')
     }
@@ -602,7 +601,7 @@ async function insertStudentAttendance(
     }
 
     // 3️⃣ Insert attendance record
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
         db.execute(
             `INSERT INTO attendance_record (
                 student_id,
@@ -628,11 +627,93 @@ async function insertStudentAttendance(
             ],
             (err) => {
                 if (err) return reject(err)
-                resolve('Successfully inserted student attendance!')
+                resolve()
+            }
+        )
+    })
+
+    // 4️⃣ Insert attendance history (SAFE to await)
+    await insertStudentAttendanceHistory(
+        student_id,
+        student_id_number,
+        student_firstname,
+        student_middlename,
+        student_lastname,
+        student_year_level,
+        result[0].subject_name_set,
+        student_program,
+        teacher_barcode_scanner_serial_number
+    )
+
+    return 'Successfully inserted student attendance!'
+}
+
+// Insert student Attendance History
+function insertStudentAttendanceHistory(
+    student_id,
+    student_id_number,
+    student_firstname,
+    student_middlename,
+    student_lastname,
+    student_year_level,
+    subject_name_set,
+    student_program,
+    teacher_barcode_scanner_serial_number
+) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT INTO attendance_history_record (
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                year_level,
+                subject,
+                student_program,
+                teacher_barcode_scanner_serial_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                student_year_level,
+                subject_name_set,
+                student_program,
+                teacher_barcode_scanner_serial_number
+            ],
+            (err) => {
+                if (err) return reject(err)
+
+                console.log('Successfully inserted student attendance history!')
+                resolve(true)
             }
         )
     })
 }
+
+// Get Student Attendance Now
+async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [ teacher_barcode_scanner_serial_number ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Get Student Attendance History
+async function getStudentAttendanceHistory(teacher_barcode_scanner_serial_number) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM attendance_history_record WHERE teacher_barcode_scanner_serial_number = ?', [ teacher_barcode_scanner_serial_number ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
 
 
 // Export functions
@@ -665,5 +746,7 @@ module.exports= {
     checkStudentIfExistsInRegistration,
     checkStudentToRegularClass,
     insertStudentAttendance,
-    checkYearLevelAndSerialNumber
+    checkYearLevelAndSerialNumber,
+    getStudentAttendanceNow,
+    getStudentAttendanceHistory
 }
