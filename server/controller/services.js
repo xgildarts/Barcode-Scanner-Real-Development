@@ -714,6 +714,131 @@ async function getStudentAttendanceHistory(teacher_barcode_scanner_serial_number
     })
 }
 
+// Get Subjects
+async function getStudentSubjects(teacherID) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM subject WHERE teacher_id = ?', [ teacherID ], (err, result) => {
+            if(err) { reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Delete Subject
+async function deleteSubject(subjectID) {
+    return new Promise((resolve, reject) => {
+        db.execute('DELETE FROM subject WHERE subject_id = ?', [ subjectID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve('Successfully deleted!')
+        })
+    })
+}
+
+// Delete Subject
+async function addSubject(subjectName, teacherID) {
+    return new Promise((resolve, reject) => {
+        db.execute('INSERT INTO subject (subject_name, teacher_id) VALUES(?, ?)', [ subjectName, teacherID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve('Successfully inserted!')
+        })
+    })
+}
+
+// Get Year Levels
+async function teacherGetYearLevel() {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM year_level', [], (err, result) => {
+            if(err) { reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Update Student Registered Record
+function updateStudentRegisteredRecord(
+    student_id,
+    student_id_number,
+    student_firstname,
+    student_middlename,
+    student_lastname,
+    student_year_level,
+    student_program
+) {
+    return new Promise((resolve, reject) => {
+        const query = `
+            UPDATE student_records_regular_class
+            SET
+                student_id_number = ?,
+                student_firstname = ?,
+                student_middlename = ?,
+                student_lastname = ?,
+                student_year_level = ?,
+                student_program = ?
+            WHERE student_id = ?
+        `;
+
+        const values = [
+            student_id_number,
+            student_firstname,
+            student_middlename,
+            student_lastname,
+            student_year_level,
+            student_program,
+            student_id
+        ];
+
+        db.execute(query, values, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+        });
+    });
+}
+
+// Delete Student Registered Record
+function deleteStudentRegisteredRecord(studentID) {
+    return new Promise((resolve, reject) => {
+        db.execute('DELETE FROM student_records_regular_class WHERE student_id = ?', [ studentID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve('Student successfully deleted!')
+        })
+    })
+}
+
+// Get Teacher Data
+function getTeacherData(teacherID) {
+    return new Promise((resolve, reject) => {
+
+        const query = `SELECT 
+                            teacher_name, 
+                            teacher_email, 
+                            teacher_program, 
+                            teacher_current_subject, 
+                            teacher_location,
+                            teacher_barcode_scanner_serial_number 
+                       FROM teacher 
+                       WHERE teacher_id = ?`
+
+        db.execute(query, [ teacherID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+
+
+// Debugger
+// async function tester() {
+//     try {
+//        const result = await teacherGetYearLevel()
+//        console.log(result)
+//     } catch(err) {
+//        console.log(err)
+//     }
+// }
+
+// tester()
+
 
 
 // Export functions
@@ -748,5 +873,12 @@ module.exports= {
     insertStudentAttendance,
     checkYearLevelAndSerialNumber,
     getStudentAttendanceNow,
-    getStudentAttendanceHistory
+    getStudentAttendanceHistory,
+    getStudentSubjects,
+    deleteSubject,
+    addSubject,
+    teacherGetYearLevel,
+    updateStudentRegisteredRecord,
+    deleteStudentRegisteredRecord,
+    getTeacherData
 }

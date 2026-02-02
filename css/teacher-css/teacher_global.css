@@ -36,3 +36,7 @@ body {
 .sections.active {
   display: block;
 }
+
+@media print {
+  
+}

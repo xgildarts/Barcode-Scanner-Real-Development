@@ -171,6 +171,134 @@ teacher.get('/teacher_attendance_history_record', async (req, res) => {
     }
 })
 
+// Get subjects
+teacher.get('/get_subjects', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getStudentSubjects(decodedToken.teacher_id)
+        res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Delete Subjects
+teacher.delete('/delete_program/:id', async (req, res) => {
+    const subjectID = req.params.id
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.deleteSubject(subjectID)
+        res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Add Subject
+teacher.post('/programs/add', async (req, res) => {
+    const { program_name } = req.body
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.addSubject(program_name, decodedToken.teacher_id)
+        res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Get Year Levels
+teacher.get('/get_year_levels', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.teacherGetYearLevel()
+        res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+});
+
+// Get Programs
+teacher.get('/get_programs', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getAllPrograms()
+        res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Update Student Record
+teacher.put('/update_student_record', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        services.verifyToken(token)
+
+        const {
+            student_id,
+            student_id_number,
+            firstname,
+            mi,
+            lastname,
+            program,
+            year_level,
+            record_date
+        } = req.body
+
+        const result = await services.updateStudentRegisteredRecord(
+            student_id,
+            student_id_number,
+            firstname,
+            mi,
+            lastname,
+            year_level,
+            program
+        )
+
+        res.json({
+            ok: true,
+            message: 'Student record updated successfully!',
+            content: result
+        })
+
+    } catch (err) {
+        res.status(500).json({
+            ok: false,
+            message: err.message || err
+        })
+    }
+})
+
+// Delete Student Record
+teacher.delete('/delete_student_record/:id', async (req, res) => {
+    const id = req.params.id
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.deleteStudentRegisteredRecord(id)
+        res.json({ ok: true, message: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+teacher.get('/get_teacher_data', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getTeacherData(decodedToken.teacher_id)
+        res.json({ ok: true, message: 'Successfully retrieved data!', content: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+
 
 
 module.exports = teacher

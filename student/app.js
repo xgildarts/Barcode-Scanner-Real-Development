@@ -158,11 +158,11 @@ function tab(tabName) {
 function generateBarcode(barcode) {
     JsBarcode('#barcodeImage', barcode, {
         format: 'CODE128',   
-        width: 5,
-        height: 300,
+        width: 10,
+        height: 1000,
         displayValue: true,  
-        fontSize: 56,
-        margin: 10
+        fontSize: 200,
+        margin: 60
     });
 }
 

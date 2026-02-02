@@ -176,6 +176,7 @@
     fill: white;
 }
 
+
 @media (max-width: 768px) {
     .search-row {
         flex-wrap: wrap;
