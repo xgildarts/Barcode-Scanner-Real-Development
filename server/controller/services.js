@@ -161,6 +161,27 @@ async function studentLogin(email, password, device_id) {
     });
 }
 
+// Get Student Attendance
+function getStudentAttendance(studentID) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM attendance_record WHERE student_id', [ studentID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+async function test() {
+    try {
+        const result = await getStudentAttendance(17)
+        console.log(result)
+    } catch(err) {
+        console.log(err)
+    }
+}
+
+test()
+
 // Generate Token
 function generateToken(payload) {
     return jwt.sign(payload, JWT_SECRET, {
@@ -584,13 +605,13 @@ async function insertStudentAttendance(
     student_program,
     teacher_barcode_scanner_serial_number
 ) {
-    // 1️⃣ Check if student already exists in attendance
+    // 1️ Check if student already exists in attendance
     const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
     if (exists) {
         throw new Error('Student already recorded in attendance.')
     }
 
-    // 2️⃣ Check teacher serial number + year level
+    // 2️ Check teacher serial number + year level
     const result = await checkYearLevelAndSerialNumber(
         teacher_barcode_scanner_serial_number,
         student_year_level
@@ -600,7 +621,7 @@ async function insertStudentAttendance(
         throw new Error('Year level not authorized for this teacher.')
     }
 
-    // 3️⃣ Insert attendance record
+    // 3️ Insert attendance record
     await new Promise((resolve, reject) => {
         db.execute(
             `INSERT INTO attendance_record (
@@ -632,7 +653,7 @@ async function insertStudentAttendance(
         )
     })
 
-    // 4️⃣ Insert attendance history (SAFE to await)
+    // 4 Insert attendance history (SAFE to await)
     await insertStudentAttendanceHistory(
         student_id,
         student_id_number,
@@ -807,7 +828,6 @@ function deleteStudentRegisteredRecord(studentID) {
 // Get Teacher Data
 function getTeacherData(teacherID) {
     return new Promise((resolve, reject) => {
-
         const query = `SELECT 
                             teacher_name, 
                             teacher_email, 
@@ -825,12 +845,58 @@ function getTeacherData(teacherID) {
     })
 }
 
+// Update Teacher Password
+function updateTeacherPassword(teacherID, currentPassword, newPassword) {
+    return new Promise((resolve, reject) => {
+        const query = `SELECT teacher_password FROM teacher WHERE teacher_id = ?`
+        db.execute(query, [teacherID], async (err, result) => {
+            if(err) { return reject(err) }
+            if (result.length === 0) { reject('Unauthorized') }
+            const isMatch = await comparePassword(currentPassword, result[0].teacher_password)
+            const hashNewPassword = await hashPassword(newPassword, SALT_ROUNDS)
+            if(isMatch) {
+                db.execute('UPDATE teacher SET teacher_password = ? WHERE teacher_id = ?', [hashNewPassword, teacherID], (err, result) => {
+                    if(err) { return reject(err) }
+                    if(result.length === 0) { return reject('Update password failed!') }
+                    resolve('Successfully update new password!')
+                })
+            } else {
+                return reject('Invalid password!')
+            }
+        })
+    })
+}
 
+// Update Teacher Name
+function updateTeacherName(teacherID, teacherNewName) {
+    return new Promise((resolve, reject) => {
+        db.execute('UPDATE teacher SET teacher_name = ? WHERE teacher_id = ?', [ teacherNewName, teacherID ], (err, result) => {
+            if(err) { return reject(err) }
+            if(result.affectedRows === 0) { reject('Update failed!') }
+            resolve('Successfully update teacher name!')
+        })
+    })
+}
+
+
+// Manual Insert Attendance
+// function manualInsertAttendance(id,
+//     studentIDNumber,
+//     studentFirstName,
+//     studentMiddleName,
+//     studentLastName,
+//     studentProgram,
+//     studentYearLevel,
+//     teacher_barcode_scanner_serial_number) {
+//     return new Promise((resolve, reject) => {
+//         db.execute('INSERT INTO attendance_record(student_id_number ,student_middlename, student_lastname, student_firstname, student_program, year_level)')
+//     })
+// }
 
 // Debugger
 // async function tester() {
 //     try {
-//        const result = await teacherGetYearLevel()
+//        const result = await updateTeacherName(7, 'Hello World')
 //        console.log(result)
 //     } catch(err) {
 //        console.log(err)
@@ -880,5 +946,7 @@ module.exports= {
     teacherGetYearLevel,
     updateStudentRegisteredRecord,
     deleteStudentRegisteredRecord,
-    getTeacherData
+    getTeacherData,
+    updateTeacherPassword,
+    updateTeacherName
 }

@@ -1,8 +1,39 @@
-// ==========================================
-// 1. GLOBAL CONFIGURATION & STATE
-// ==========================================
+
 const BASE_URL = 'http://localhost:3000/api/v1';
 const TOKEN = localStorage.getItem('teacher_token');
+
+// Check TOKEN
+async function checkToken() {
+    try {
+        // If no TOKEN provided, redirect the user to login page
+        if(!TOKEN) {
+            Swal.fire({ icon: 'error', title: 'Please login first!', message: 'Please login first!' })
+            .then(() => {
+                window.location.href = 'teacher_login.html'
+            })
+        }
+
+        const res = await fetch('http://localhost:3000/api/v1/authentication/verify_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        })
+
+        const data = await res.json()
+
+        if(!res.ok) {
+            Swal.fire({ icon: 'error', title: data.message, message: data.message })
+            .then(() => {
+                window.location.href = 'teacher_login.html'
+            })
+        } 
+
+    } catch(err) {
+        Swal.fire({ icon: 'error', title: err, message: err })
+    }
+}
 
 const DOM = {
     sidebar: document.getElementById('sidebar'),
@@ -15,28 +46,10 @@ let state = {
     totalPresent: 0,
     totalStudentRegistered: 0,
     attendanceStatus: {}, // For manual entry
-    manualStudents: [
-        { name: 'Emily D. Chu', year: 1 },
-        { name: 'Miguel E. Torres', year: 1 },
-        { name: 'Kristine F. Navarro', year: 1 },
-        { name: 'Sarah N. Panganiban', year: 1 },
-        { name: 'Jasmine T. Castillo', year: 1 },
-        { name: 'Paolo M. Garcia', year: 1 },
-        { name: 'Maria S. Santos', year: 1 },
-        { name: 'Andrea A. Lachica', year: 1 },
-        { name: 'Charlmea M. Selga', year: 1 },
-        { name: 'Steven John A. Agustin', year: 1 },
-        { name: 'Jan Ray A. Aquino', year: 1 },
-        { name: 'Clarissa M. Padilla', year: 1 },
-        { name: 'Faith E. Robles', year: 1 }
-    ]
+    manualStudents: []
 };
 
-// ==========================================
-// 2. UTILITY FUNCTIONS (REUSABLE)
-// ==========================================
-
-// Generic API Fetcher with SweetAlert Error Handling
+// Generic API Fetcher
 async function apiCall(endpoint, method = 'GET', body = null) {
     try {
         const options = {
@@ -90,7 +103,7 @@ function setupTableSearch(inputId, tableBodyId) {
     });
 }
 
-// Generic Excel Export with SweetAlert
+// Generic Excel Export
 function exportTableToExcel(tableId, fileName) {
     const table = document.getElementById(tableId);
     if (!table) {
@@ -122,10 +135,6 @@ function exportTableToExcel(tableId, fileName) {
 function printPage() {
     window.print();
 }
-
-// ==========================================
-// 3. UI & NAVIGATION LOGIC
-// ==========================================
 
 DOM.menuBtn.addEventListener('click', () => {
     DOM.sidebar.classList.toggle('active');
@@ -179,10 +188,6 @@ function cancel() {
     });
 }
 
-// ==========================================
-// 4. DASHBOARD & ATTENDANCE LOGIC
-// ==========================================
-
 function setDonutProgress(percent) {
     const svg = document.getElementById('donutChart');
     if(!svg) return;
@@ -224,6 +229,7 @@ async function getStudentAttendanceRecords() {
     document.getElementById('bottomTotalAbsent').textContent = "Absent " + finalAbsent;
 
     const percent = state.totalStudentRegistered > 0 ? (state.totalPresent / state.totalStudentRegistered) * 100 : 0;
+
     setDonutProgress(percent);
 
     const tbody = document.getElementById('attendanceBody');
@@ -301,11 +307,7 @@ function applyFilters() {
     // Add logic here to load students based on selected course/year
 }
 
-// ==========================================
-// 5. STUDENT RECORDS LOGIC
-// ==========================================
-
-// 1. Function to Load Data
+// Function to Load Data
 async function loadStudentsRegistered() {
     try {
         const data = await apiCall('/teacher/get_student_registered');
@@ -338,7 +340,7 @@ async function loadStudentsRegistered() {
                     <td>${s.student_lastname}</td>
                     <td>${s.student_program}</td>
                     <td>${s.student_year_level}</td>
-                    <td>${s.date_created}</td>
+                    <td>${s.date_created.split('T')[0]}</td>
                     <td>
                         <div class="action-btns">
                             <button class="edit-btn" onclick="editStudent(
@@ -349,7 +351,7 @@ async function loadStudentsRegistered() {
                                 '${s.student_lastname}', 
                                 '${s.student_program}', 
                                 '${s.student_year_level}', 
-                                '${s.date_created}'
+                                '${s.date_created.split('T')[0]}'
                             )">Edit</button>
                             
                             <button class="delete-btn-student-registered" onclick="deleteStudent('${dbId}')">Delete</button>
@@ -363,7 +365,7 @@ async function loadStudentsRegistered() {
     }
 }
 
-// 2. Event Listener for Adding a Student
+// Event Listener for Adding a Student
 document.getElementById('registrationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -394,7 +396,6 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     }
 });
 
-// 3. Modal Utility Functions
 function openAddStudentModal() { 
     document.getElementById('addStudentModal').style.display = 'flex'; 
 }
@@ -403,7 +404,6 @@ function closeAddStudentModal() {
     document.getElementById('addStudentModal').style.display = 'none'; 
 }
 
-// 4. Edit Student Wrapper
 // This receives the data from the HTML onclick and passes it to your modal logic
 function editStudent(
     id, 
@@ -458,10 +458,6 @@ function deleteStudent(student_id) {
     });
 }
 
-
-// ==========================================
-// 6. ACADEMIC SETUP & SETTINGS
-// ==========================================
 
 async function subjectAndYearLevelSetter() {
     const subject = document.getElementById('courseFilter').value;
@@ -592,51 +588,25 @@ function saveChanges() {
     });
 }
 
-// ==========================================
-// 7. MANUAL ENTRY & LOCATION
-// ==========================================
-
-function renderManualStudents() {
-    const list = document.getElementById('studentList');
-    list.innerHTML = state.manualStudents.map(student => {
-        const status = state.attendanceStatus[student.name];
-        return `
-            <div class="student-row">
-                <div class="student-name">${student.name}</div>
-                <div class="year-level">${student.year}</div>
-                <div class="action-buttons">
-                    <button class="status-btn present-btn ${status === 'present' ? 'active' : ''}" 
-                        onclick="markManualStatus('${student.name}', 'present')" ${status === 'present' ? 'disabled' : ''}>
-                        Present
-                    </button>
-                    <button class="status-btn absent-btn ${status === 'absent' ? 'active' : ''}" 
-                        onclick="markManualStatus('${student.name}', 'absent')" ${status === 'absent' ? 'disabled' : ''}>
-                        Absent
-                    </button>
-                </div>
-            </div>`;
-    }).join('');
-}
-
 function markManualStatus(name, status) {
     state.attendanceStatus[name] = status;
     renderManualStudents();
 }
 
-function switchTab(tab) {
-    // Update active tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+// function switchTab(tab) {
+//     // Update active tab buttons
+//     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+//     event.target.classList.add('active');
 
-    Swal.fire({
-        toast: true,
-        position: 'top',
-        icon: 'info',
-        title: `Filtering by: ${tab}`,
-        showConfirmButton: false,
-        timer: 1000
-    });
-}
+//     Swal.fire({
+//         toast: true,
+//         position: 'top',
+//         icon: 'info',
+//         title: `Filtering by: ${tab}`,
+//         showConfirmButton: false,
+//         timer: 1000
+//     });
+// }
 
 // Location Slider
 const radiusSlider = document.getElementById('radiusSlider');
@@ -692,13 +662,11 @@ async function refreshAttendanceHistory() {
     });
 }
 
+// Print
 function printList() {
     window.print();
 }
 
-// ==========================================
-// 8. RECORD MODAL
-// ==========================================
 // Open the Modal
 function openRecordModal(id, 
     student_id_number, 
@@ -714,7 +682,7 @@ function openRecordModal(id,
     document.getElementById('firstname').value = student_firstname
     document.getElementById('mi').value = student_middlename
     document.getElementById('lastname').value = student_lastname
-    document.getElementById('program').value = student_program
+    document.getElementById('editProgram').value = student_program
     document.getElementById('year_level').value = student_year_level
 
 
@@ -734,11 +702,11 @@ window.onclick = function(event) {
 }
 
 
-// ==========================================
-// 9. INITIALIZATION
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Check TOKEN first
+    checkToken()
+
     // 1. Navigation Init
     navigateTo('dashboard');
     
@@ -746,9 +714,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStudentsRegistered();
     getStudentAttendanceRecords();
     getStudentAttendanceHistoryRecords();
+    getTeacherDataToServer();
+    loadManualEntryStudents()
     
     // 3. UI Renders
-    renderManualStudents();
     renderSubjects()
     renderYearLevel()
     renderPrograms()
@@ -758,10 +727,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTableSearch('searchInputAttendance', 'attendanceBody');
     setupTableSearch('searchInputAttendanceHistory', 'attendanceHistoryTableBody');
     setupTableSearch('searchInput', 'studentsBody'); 
+    setupManualEntryFilterSearch()
 
     // 5. Setup Filter Dropdowns
     setupHistoryDropdownFilter('subjectFilterAttendanceHistory', 4);
     setupHistoryDropdownFilter('yearFilterAttendanceHistory', 5);
+    setupManualEntryFilter()
 
     // Registration
     studentRegisteredDropdownFilter('recordYearFilter', 5)
@@ -803,6 +774,7 @@ async function renderYearLevel() {
     const select = document.getElementById('yearFilter');
     const yearFilterAttendanceHistory = document.getElementById('yearFilterAttendanceHistory')
     const recordYearFilter = document.getElementById('recordYearFilter')
+    const manualEntryYearFilter = document.getElementById('manualEntryYearFilter')
 
     select.innerHTML = `
         <option value="">Select Year Level</option>
@@ -817,6 +789,12 @@ async function renderYearLevel() {
         `).join('')}
     `;
     recordYearFilter.innerHTML = `
+    <option value="">Select Year Level</option>
+    ${data.content.map(y => `
+        <option value="${y.year_level_name}">${y.year_level_name}</option>
+    `).join('')}
+    `;
+    manualEntryYearFilter.innerHTML = `
     <option value="">Select Year Level</option>
     ${data.content.map(y => `
         <option value="${y.year_level_name}">${y.year_level_name}</option>
@@ -880,12 +858,255 @@ async function getTeacherDataToServer() {
     document.querySelector('.profile-name').textContent =  data.content[0].teacher_name
     document.querySelector('.profile-email').textContent =  data.content[0].teacher_email
     document.getElementById('accountInformationName').textContent = data.content[0].teacher_name
-    document.getElementById('accountEmailInformation').textContent  = data.content[0].teacher_email
+    // document.getElementById('accountEmailInformation').textContent  = data.content[0].teacher_email
 
 }
 
-getTeacherDataToServer()
+// Teacher Update Password
+async function updatePassword() {
+    // Get Values
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    // Client-Side Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Missing Fields',
+            text: 'Please fill in all password fields.'
+        });
+    }
+
+    if (newPassword !== confirmPassword) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Password Mismatch',
+            text: 'The new passwords do not match. Please try again.'
+        });
+    }
+
+    if (newPassword.length < 6) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Weak Password',
+            text: 'New password must be at least 6 characters long.'
+        });
+    }
+
+    // 3. Prepare Payload
+    const payload = {
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+    };
+
+    const res = await apiCall('/teacher/change_password', 'PUT', payload);
+
+    // 5. Handle Success
+    if (res) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Your password has been updated successfully.'
+        });
+
+        // Clear the inputs
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+    }
+}
+
+// Edit teacher Name
+async function editProfileName() {
+
+    const currentName = document.getElementById('accountInformationName').textContent
+
+    const { value: newName } = await Swal.fire({
+        title: 'Change Name',
+        input: 'text',
+        inputLabel: 'New name',
+        inputValue: currentName,
+        inputPlaceholder: 'Enter new name',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Name cannot be empty!'
+            }
+        }
+    })
+
+    if (newName) {
+        console.log('New name:', newName)
+
+        const data = await apiCall('/teacher/change_teacher_name', 'PUT', { newName })
+        if(!data) { return }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Updated!',
+            text: 'Name has been changed successfully'
+        }).then(() => {
+            getTeacherDataToServer()
+        })
+    }
+}
+
+// Edit teacher Email
+// async function editProfileEmail() {
+
+//     const currentName = document.getElementById('accountInformationName').textContent
+
+//     const { value: newName } = await Swal.fire({
+//         title: 'Change Name',
+//         input: 'text',
+//         inputLabel: 'New name',
+//         inputValue: currentName,
+//         inputPlaceholder: 'Enter new name',
+//         showCancelButton: true,
+//         confirmButtonText: 'Save',
+//         cancelButtonText: 'Cancel',
+//         inputValidator: (value) => {
+//             if (!value) {
+//                 return 'Name cannot be empty!'
+//             }
+//         }
+//     })
+
+//     if (newName) {
+//         console.log('New name:', newName)
+
+//         // Example: send to backend
+//         // await updateName(newName)
+
+//         Swal.fire({
+//             icon: 'success',
+//             title: 'Updated!',
+//             text: 'Name has been changed successfully'
+//         })
+//     }
+// }
+
+// Load ManualEntry Student
+async function loadManualEntryStudents() {
+    const data = await apiCall('/teacher/get_student_registered');
+
+    if (!data || !data.content) return;
+
+    const listContainer = document.getElementById('studentList');
+
+    listContainer.innerHTML = data.content.map(student => {
+
+        const id = student.student_id;
+        const idNumber = student.student_id_number;
+
+        const middleName = student.student_middlename ?? '';
+        const fullName = `${student.student_firstname} ${middleName} ${student.student_lastname}`;
+
+        console.log("Student Loaded:", student);
+
+        return `
+            <div class="student-row">
+                <div class="student-name">${fullName}</div>
+                <div class="year-level">${student.student_year_level}</div>
+
+                <div class="action-buttons">
+                    <button 
+                        id="btn-present-${id}"
+                        class="status-btn present-btn"
+                        onclick="addToAttendance(
+                            ${id},
+                            '${idNumber}',
+                            '${student.student_firstname}',
+                            '${middleName}',
+                            '${student.student_lastname}',
+                            '${student.student_program}',
+                            '${student.student_year_level}'
+                        )">
+                        Add to attendance
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+
+// Manual Entry Student Filter
+function setupManualEntryFilter() {
+    const filterDropdown = document.getElementById('manualEntryYearFilter');
+    const studentList = document.getElementById('studentList');
+
+    if (!filterDropdown || !studentList) return;
+
+    filterDropdown.addEventListener('change', function() {
+        const selectedValue = this.value.trim().toLowerCase(); // e.g., "1st year"
+        const rows = studentList.querySelectorAll('.student-row');
+
+        rows.forEach(row => {
+            const yearText = row.querySelector('.year-level').textContent.trim().toLowerCase();
+            const isMatch = selectedValue === "" || yearText === selectedValue || selectedValue.includes(yearText);
+            if (isMatch) {
+                row.style.display = 'grid'; 
+            } else {
+                row.style.display = 'none'; 
+            }
+        });
+    });
+}
+
+// Manual Entry Student Search Function
+function setupManualEntryFilterSearch() {
+    const searchInput = document.getElementById('manualEntrySearchInput');
+    const studentList = document.getElementById('studentList');
+
+    if (!searchInput || !studentList) return;
+
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        const rows = studentList.querySelectorAll('.student-row');
+
+        rows.forEach(row => {
+            const studentName = row.querySelector('.student-name').textContent.toLowerCase();
+
+            if (studentName.includes(searchTerm)) {
+                row.style.display = "grid";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+}
+
+// 2. The function triggered by the buttons
+function addToAttendance(
+    id,
+    studentIDNumber,
+    studentFirstName,
+    studentMiddleName,
+    studentLastName,
+    studentProgram,
+    studentYearLevel
+) {
+    console.log("Add To Attendance Parameters:");
+    console.log("ID:", id);
+    console.log("Student ID Number:", studentIDNumber);
+    console.log("First Name:", studentFirstName);
+    console.log("Middle Name:", studentMiddleName);
+    console.log("Last Name:", studentLastName);
+    console.log("Program:", studentProgram);
+    console.log("Year Level:", studentYearLevel);
+    
+}
+
+
+
+
 
 
 // Realtime refresh
-// setInterval(getStudentAttendanceRecords, 1000)
+setInterval(getStudentAttendanceRecords, 1000)
+setInterval(getStudentAttendanceHistoryRecords, 1000)

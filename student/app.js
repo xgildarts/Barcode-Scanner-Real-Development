@@ -22,7 +22,7 @@ async function checkToken() {
             })
         }
 
-        const res = await fetch('http://localhost:3000/api/v1/authentication/verify_token', {
+        const res = await fetch('http://192.168.1.50:3000/api/v1/authentication/verify_token', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ async function checkToken() {
 // Load Profile Data
 async function loadProfileData() {
     try {
-        const res = await fetch('http://localhost:3000/api/v1/students/student_get_data', {
+        const res = await fetch('http://192.168.1.50:3000/api/v1/students/student_get_data', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ function generateRandomBarcode() {
 // Update Student Barcode
 async function updateStudentBarcode(barcode) {
     try {
-        const res = await fetch('http://localhost:3000/api/v1/students/update_student_barcode', {
+        const res = await fetch('http://192.168.1.50:3000/api/v1/students/update_student_barcode', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ async function updateStudentBarcode(barcode) {
 // Initial check barcode expiration
 async function initialCheckBarcodeExpiration() {
     try {
-        const res = await fetch('http://localhost:3000/api/v1/students/student_barcode', {
+        const res = await fetch('http://192.168.1.50:3000/api/v1/students/student_barcode', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -258,7 +258,7 @@ async function initialCheckBarcodeExpiration() {
 // Check barcode expiration
 async function checkBarcodeExpiration() {
     try {
-      const res = await fetch('http://localhost:3000/api/v1/students/student_barcode', {
+      const res = await fetch('http://192.168.1.50:3000/api/v1/students/student_barcode', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -308,6 +308,21 @@ async function checkBarcodeExpiration() {
       });
     }
 }  
+
+// Get attendance history
+async function getAttendanceHistory() {
+    try {
+        const res = await fetch('', {
+            
+        })
+        const data = await res.json()
+        if(res.ok) {
+            console.log(data)
+        }
+    } catch(err) {
+
+    }
+}
 
 
 // Student Settings
@@ -364,7 +379,7 @@ async function toggleEdit() {
     };
 
     try {
-        const res = await fetch("http://localhost:3000/api/v1/students/student_update_profile", {
+        const res = await fetch("http://192.168.1.50:3000/api/v1/students/student_update_profile", {
             method: "PUT",
             headers: { 
                 "Content-Type": "application/json",
@@ -449,7 +464,7 @@ async function updatePassword() {
 
     try {
         const res = await fetch(
-            'http://localhost:3000/api/v1/students/student_change_password',
+            'http://192.168.1.50:3000/api/v1/students/student_change_password',
             {
                 method: 'PUT',
                 headers: {

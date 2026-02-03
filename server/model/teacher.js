@@ -287,6 +287,7 @@ teacher.delete('/delete_student_record/:id', async (req, res) => {
     }
 })
 
+// Get Teacher Data
 teacher.get('/get_teacher_data', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
@@ -298,7 +299,44 @@ teacher.get('/get_teacher_data', async (req, res) => {
     }
 })
 
+// Teacher Change Password
+teacher.put('/change_password', async (req, res) => {
+    const { current_password, new_password } = req.body;
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.updateTeacherPassword(decodedToken.teacher_id, current_password, new_password)
+        res.json({ ok: true, message: 'Password updated successfully!', content: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Teacher Change Name
+teacher.put('/change_teacher_name', async (req, res) => {
+    const { newName } = req.body;
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
+        res.json({ ok: true, message: 'Successfully updated new name!', content: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+teacher.post('/manual_attendance', async (req, res) => {
+    const { newName } = req.body;
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
+        res.json({ ok: true, message: 'Successfully updated new name!', content: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
 
 
-
+// Export route
 module.exports = teacher
