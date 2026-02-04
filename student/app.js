@@ -1,63 +1,77 @@
 
+const CONFIG = {
 
+    BASE_URL: 'http://192.168.1.50:3000/api/v1',
+    TOKEN: localStorage.getItem('student_token')
+};
+
+// Helper function to handle all API calls
+async function authFetch(endpoint, method = 'GET', body = null) {
+    try {
+        const options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + CONFIG.TOKEN
+            }
+        };
+
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+
+        const res = await fetch(`${CONFIG.BASE_URL}${endpoint}`, options);
+        const data = await res.json();
+
+        return { res, data }; // Return both response status and data
+    } catch (err) {
+        console.error('API Error:', err);
+        throw err; // Pass error to specific function to handle
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     tab('generateBarcode')
     checkToken()
     loadProfileData()
     initialCheckBarcodeExpiration()
+    getAttendanceHistory()
+    // Generate initial barcode
+    generateBarcode();
 })
-
-// Global variable
-const token = localStorage.getItem('student_token')
 
 // Check token
 async function checkToken() {
     try {
         // If no token provided, redirect the user to login page
-        if(!token) {
+        if (!CONFIG.TOKEN) {
             Swal.fire({ icon: 'error', title: 'Please login first!', message: 'Please login first!' })
-            .then(() => {
-                window.location.href = 'student_login.html'
-            })
+                .then(() => {
+                    window.location.href = 'student_login.html'
+                })
+            return;
         }
 
-        const res = await fetch('http://192.168.1.50:3000/api/v1/authentication/verify_token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            }
-        })
+        const { res, data } = await authFetch('/authentication/verify_token', 'POST');
 
-        const data = await res.json()
-
-        if(!res.ok) {
+        if (!res.ok) {
             Swal.fire({ icon: 'error', title: data.message, message: data.message })
-            .then(() => {
-                window.location.href = 'student_login.html'
-            })
-        } 
+                .then(() => {
+                    window.location.href = 'student_login.html'
+                })
+        }
 
-    } catch(err) {
-        Swal.fire({ icon: 'error', title: err, message: err })
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', message: err.message || err })
     }
 }
 
 // Load Profile Data
 async function loadProfileData() {
     try {
-        const res = await fetch('http://192.168.1.50:3000/api/v1/students/student_get_data', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            }
-        })
+        const { res, data } = await authFetch('/students/student_get_data');
 
-        const data = await res.json()
-        if(res.ok) {
-
+        if (res.ok) {
             // Profile container
             const profileInfo = document.querySelectorAll('.profile-info')
 
@@ -81,25 +95,21 @@ async function loadProfileData() {
             })
 
             // Profile Settings
-            document.getElementById("firstName").value  = student_firstname;
+            document.getElementById("firstName").value = student_firstname;
             document.getElementById("middleName").value = student_middlename;
-            document.getElementById("lastName").value   = student_lastname;
-            document.getElementById("idNumber").value   = student_id_number;
-            document.getElementById("yearLevel").value  = student_year_level;
-            document.getElementById("program").value    = student_program;
-
-
-
-
+            document.getElementById("lastName").value = student_lastname;
+            document.getElementById("idNumber").value = student_id_number;
+            document.getElementById("yearLevel").value = student_year_level;
+            document.getElementById("program").value = student_program;
 
         } else {
             Swal.fire({ icon: 'error', title: data.message, message: data.message })
-            .then(() => {
-                window.location.href = 'student_login.html'
-            })
+                .then(() => {
+                    window.location.href = 'student_login.html'
+                })
         }
-    } catch(err) {
-
+    } catch (err) {
+        console.error(err);
     }
 }
 
@@ -107,22 +117,17 @@ async function loadProfileData() {
 function goBackBtn() {
     document.getElementById('goBackBtn').classList.remove('show')
     tab('generateBarcode')
-}   
+}
 
 // Tab
 function tab(tabName) {
-
     // For debugging
     console.log(tabName)
 
     const tabs = ['generateBarcode', 'attendanceHistory', 'settings'];
 
-    // Sections
-    const barcodeSection = document.getElementById('generateBarcode');
-    const historySection = document.getElementById('attendanceHistory');
-
     // Change title
-    switch(tabName) {
+    switch (tabName) {
         case 'generateBarcode':
             document.getElementById('title').textContent = "Barcode Generation";
             break;
@@ -135,7 +140,7 @@ function tab(tabName) {
     }
 
     // Hide the tab button at the bottom, when clicking the settings
-    if(tabName === 'settings') {
+    if (tabName === 'settings') {
         document.getElementById('actionButtons').classList.add('hide')
         document.getElementById('goBackBtn').classList.add('show')
     } else {
@@ -143,10 +148,9 @@ function tab(tabName) {
         document.getElementById('goBackBtn').classList.remove('show')
     }
 
-
     // Active tab styling
     tabs.forEach(tab => {
-        if(tab === tabName) {
+        if (tab === tabName) {
             document.getElementById(tab).classList.add('active')
         } else {
             document.getElementById(tab).classList.remove('active')
@@ -157,36 +161,29 @@ function tab(tabName) {
 // Generate barcode
 function generateBarcode(barcode) {
     JsBarcode('#barcodeImage', barcode, {
-        format: 'CODE128',   
+        format: 'CODE128',
         width: 10,
         height: 1000,
-        displayValue: true,  
+        displayValue: true,
         fontSize: 200,
         margin: 60
     });
 }
 
-// Generate random barcode
+// Generate random barcode string
 function generateRandomBarcode() {
-    const timestamp = Date.now().toString(); 
+    const timestamp = Date.now().toString();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     const barcode = 'BC' + timestamp + randomSuffix;
     return barcode
 }
 
-// Update Student Barcode
+// Update Student Barcode (API)
 async function updateStudentBarcode(barcode) {
     try {
-        const res = await fetch('http://192.168.1.50:3000/api/v1/students/update_student_barcode', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ barcode })
-        })
-        const data = await res.json()
-        if(res.ok) {
+        const { res, data } = await authFetch('/students/update_student_barcode', 'PUT', { barcode });
+
+        if (res.ok) {
             console.log(data.message)
         } else {
             Swal.fire({
@@ -195,11 +192,11 @@ async function updateStudentBarcode(barcode) {
                 text: data.message
             });
         }
-    } catch(err) {
+    } catch (err) {
         Swal.fire({
             icon: 'error',
             title: 'Fetch Failed',
-            text: data.message || 'Failed to retrieve barcode data.'
+            text: 'Failed to update barcode data.'
         });
     }
 }
@@ -207,120 +204,139 @@ async function updateStudentBarcode(barcode) {
 // Initial check barcode expiration
 async function initialCheckBarcodeExpiration() {
     try {
-        const res = await fetch('http://192.168.1.50:3000/api/v1/students/student_barcode', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          }
-        });
-    
-        const data = await res.json();
-    
+        const { res, data } = await authFetch('/students/student_barcode');
+
         if (res.ok) {
-          const { barcode, barcode_date_generated } = data.content;
-          const now = new Date();
-          const dateGenerated = new Date(barcode_date_generated);
-    
-          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          const generatedDayStart = new Date(dateGenerated.getFullYear(), dateGenerated.getMonth(), dateGenerated.getDate());
-    
-          if (todayStart > generatedDayStart) {
-            Swal.fire({
-              icon: 'info',
-              title: 'Barcode Expired',
-              text: 'Your barcode has expired please generate a new one!.'
-            });
-          } else {
-            generateBarcode(barcode);
-            Swal.fire({
-              icon: 'success',
-              title: 'Barcode Valid',
-              text: 'Your barcode is still valid.'
-            });
-          }
+            const { barcode, barcode_date_generated } = data.content;
+            const now = new Date();
+            const dateGenerated = new Date(barcode_date_generated);
+
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const generatedDayStart = new Date(dateGenerated.getFullYear(), dateGenerated.getMonth(), dateGenerated.getDate());
+
+            if (todayStart > generatedDayStart) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Barcode Expired',
+                    text: 'Your barcode has expired please generate a new one!.'
+                });
+            } else {
+                generateBarcode(barcode);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Barcode Valid',
+                    text: 'Your barcode is still valid.'
+                });
+            }
         } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Fetch Failed',
-            text: data.message || 'Failed to retrieve barcode data.'
-          });
+            Swal.fire({
+                icon: 'error',
+                title: 'Fetch Failed',
+                text: data.message || 'Failed to retrieve barcode data.'
+            });
         }
-      } catch (err) {
+    } catch (err) {
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.message || err
+            icon: 'error',
+            title: 'Error',
+            text: err.message || err
         });
-      }
+    }
 }
 
-// Check barcode expiration
+// Check barcode expiration (Manual Trigger)
 async function checkBarcodeExpiration() {
     try {
-      const res = await fetch('http://192.168.1.50:3000/api/v1/students/student_barcode', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        }
-      });
-  
-      const data = await res.json();
-  
-      if (res.ok) {
-        const { barcode, barcode_date_generated } = data.content;
-        const now = new Date();
-        const dateGenerated = new Date(barcode_date_generated);
-  
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const generatedDayStart = new Date(dateGenerated.getFullYear(), dateGenerated.getMonth(), dateGenerated.getDate());
-  
-        if (todayStart > generatedDayStart) {
-          const newBarcode = generateRandomBarcode();
-          generateBarcode(newBarcode);
-          Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: 'Barcode has been generated.'
-          });
-          updateStudentBarcode(newBarcode)
+        const { res, data } = await authFetch('/students/student_barcode');
+
+        if (res.ok) {
+            const { barcode, barcode_date_generated } = data.content;
+            const now = new Date();
+            const dateGenerated = new Date(barcode_date_generated);
+
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const generatedDayStart = new Date(dateGenerated.getFullYear(), dateGenerated.getMonth(), dateGenerated.getDate());
+
+            if (todayStart > generatedDayStart) {
+                const newBarcode = generateRandomBarcode();
+                generateBarcode(newBarcode);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Barcode has been generated.'
+                });
+                updateStudentBarcode(newBarcode)
+            } else {
+                generateBarcode(barcode);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Barcode Valid',
+                    text: 'Your barcode is still valid.'
+                });
+            }
         } else {
-          generateBarcode(barcode);
-          Swal.fire({
-            icon: 'success',
-            title: 'Barcode Valid',
-            text: 'Your barcode is still valid.'
-          });
+            Swal.fire({
+                icon: 'error',
+                title: 'Fetch Failed',
+                text: data.message || 'Failed to retrieve barcode data.'
+            });
         }
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Fetch Failed',
-          text: data.message || 'Failed to retrieve barcode data.'
-        });
-      }
     } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: err.message || err
-      });
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || err
+        });
     }
-}  
+}
+
+// Format time
+function formatTime(time) {
+    if (!time) return '-'
+    const [hours, minutes] = time.split(':')
+    const h = parseInt(hours, 10)
+    const suffix = h >= 12 ? 'PM' : 'AM'
+    const hour12 = ((h + 11) % 12 + 1)
+    return `${hour12}:${minutes} ${suffix}`
+}
 
 // Get attendance history
 async function getAttendanceHistory() {
+    const attendanceBody = document.getElementById('attendanceBody')
     try {
-        const res = await fetch('', {
-            
-        })
-        const data = await res.json()
-        if(res.ok) {
-            console.log(data)
+        const { res, data } = await authFetch('/students/get_attendance_history_record');
+        
+        if (!res.ok) { 
+            return Swal.fire({ 
+                icon: 'error', 
+                title: 'Error', 
+                text: data.message 
+            });
         }
-    } catch(err) {
+        
+        if(!data.content || data.content.length === 0) {
+            attendanceBody.innerHTML = '<tr><td colspan="5" style="text-align:center">No attendance records found.</td></tr>';
+            return;
+        }
 
+        attendanceBody.innerHTML = data.content.map(d =>
+            `<tr>
+                <td>${d.attendance_date.split('T')[0]}</td>
+                <td>${formatTime(d.attendance_time)}</td>
+                <td>${d.subject || 'N/A'}</td>
+                <td>${d.student_firstname} ${d.student_middlename}. ${d.student_lastname}</td>
+                <td>${d.student_id_number}</td>
+            </tr>`
+        ).join('')
+
+    } catch (err) {
+
+        console.error(err);
+        Swal.fire({ 
+            icon: 'error', 
+            title: 'Error', 
+            text: err.message || 'Failed to load attendance history.'
+        });
     }
 }
 
@@ -379,16 +395,7 @@ async function toggleEdit() {
     };
 
     try {
-        const res = await fetch("http://192.168.1.50:3000/api/v1/students/student_update_profile", {
-            method: "PUT",
-            headers: { 
-                "Content-Type": "application/json",
-                "Authorization": 'Bearer ' + token
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
+        const { res, data } = await authFetch("/students/student_update_profile", "PUT", payload);
 
         if (!res.ok) {
             return Swal.fire({
@@ -463,22 +470,12 @@ async function updatePassword() {
     }
 
     try {
-        const res = await fetch(
-            'http://192.168.1.50:3000/api/v1/students/student_change_password',
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({
-                    currentPassword: current,
-                    newPassword: newPass
-                })
-            }
-        );
+        const payload = {
+            currentPassword: current,
+            newPassword: newPass
+        };
 
-        const data = await res.json();
+        const { res, data } = await authFetch('/students/student_change_password', 'PUT', payload);
 
         if (!res.ok) {
             Swal.fire({
@@ -540,6 +537,3 @@ function logout() {
         }
     });
 }
-
-// Generate initial barcode
-generateBarcode();

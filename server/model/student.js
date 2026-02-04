@@ -75,12 +75,13 @@ student.put('/update_student_barcode', async (req, res) => {
 })
 
 // Get Student Data
-student.get('/get_attendance_record', async (req, res) => {
+student.get('/get_attendance_history_record', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
-        const result = await services.updateStudentBarcode(decodedToken.student_id)
-        res.json({ ok: true, message: result })
+        console.log(decodedToken)
+        const result = await services.getAttendanceHistoryForStudentOnly(decodedToken.student_id)
+        res.json({ ok: true, message: 'Successfully retrieved student history attendance!', content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
     }

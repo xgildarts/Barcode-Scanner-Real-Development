@@ -162,25 +162,25 @@ async function studentLogin(email, password, device_id) {
 }
 
 // Get Student Attendance
-function getStudentAttendance(studentID) {
+function getAttendanceHistoryForStudentOnly(studentID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_record WHERE student_id', [ studentID ], (err, result) => {
+        db.execute('SELECT * FROM attendance_history_record WHERE student_id = ?', [ studentID ], (err, result) => {
             if(err) { return reject(err) }
             resolve(result)
         })
     })
 }
 
-async function test() {
-    try {
-        const result = await getStudentAttendance(17)
-        console.log(result)
-    } catch(err) {
-        console.log(err)
-    }
-}
+// async function test() {
+//     try {
+//         const result = await getStudentAttendance(13)
+//         console.log(result)
+//     } catch(err) {
+//         console.log(err)
+//     }
+// }
 
-test()
+// test()
 
 // Generate Token
 function generateToken(payload) {
@@ -948,5 +948,6 @@ module.exports= {
     deleteStudentRegisteredRecord,
     getTeacherData,
     updateTeacherPassword,
-    updateTeacherName
+    updateTeacherName,
+    getAttendanceHistoryForStudentOnly
 }
