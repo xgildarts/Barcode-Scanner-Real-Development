@@ -85,3 +85,41 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     document.getElementById('registrationForm').reset();
 
 });
+
+async function loadProgramsDropdown() {
+    const programSelect = document.getElementById('program');
+
+    try {
+        const response = await fetch('http://localhost:3000/api/v1/programs/program_get_data');
+        
+        const data = await response.json();
+
+        console.log(data)
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to load programs');
+        }
+
+        programSelect.innerHTML = '<option value="">Select Program</option>';
+
+        data.content.forEach(program => {
+            const option = document.createElement('option');
+            
+            option.value = program.program_name; 
+            option.textContent = program.program_name;
+            
+            programSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('Error loading programs:', error);
+        // Optional: Show an error option
+        const errorOption = document.createElement('option');
+        errorOption.textContent = "Error loading programs";
+        programSelect.appendChild(errorOption);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadProgramsDropdown()
+});

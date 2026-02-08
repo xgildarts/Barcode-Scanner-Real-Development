@@ -155,7 +155,7 @@
                             </div>
                             <div class="account-details">
                                 <div class="account-title">Students Accounts</div>
-                                <div class="account-count">1000 Accounts</div>
+                                <div class="account-count" id="studentAccountCounts">0 Accounts</div>
                             </div>
                         </div>
                         <div class="arrow-icon">›</div>
@@ -170,7 +170,7 @@
                             </div>
                             <div class="account-details">
                                 <div class="account-title">Teacher Accounts</div>
-                                <div class="account-count">40 Accounts</div>
+                                <div class="account-count" id="teacherAccountCounts">0 Accounts</div>
                             </div>
                         </div>
                         <div class="arrow-icon">›</div>
@@ -185,7 +185,7 @@
                             </div>
                             <div class="account-details">
                                 <div class="account-title">Guard Accounts</div>
-                                <div class="account-count">8 Accounts</div>
+                                <div class="account-count" id="guardAccountCounts">0 Accounts</div>
                             </div>
                         </div>
                         <div class="arrow-icon">›</div>
@@ -215,12 +215,8 @@
                     </div>
             
                     <div class="filters-row">
-                        <input
-                            type="text"
-                            class="event-name-input"
-                            placeholder="Enter event name (e.g. Programming Seminar)"
-                        >
-                        <button class="set-event-button">Set Event</button>
+                        <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name">
+                        <button onclick="handleSetEvent()" class="set-event-button">Set Event</button>
                     </div>
                 </div>
             
@@ -766,10 +762,6 @@
                 </div>
             </div>
         
-            <div class="btn-container">
-                <button class="done-btn" onclick="saveChanges()">DONE</button>
-            </div>
-        
             <!-- Add Program Modal -->
             <div class="modal" id="addModal">
                 <div class="modal-content">
@@ -803,43 +795,27 @@
                     <form class="form-section active" id="guardForm">
                         <div class="form-group">
                             <label class="form-label">Full Name <span class="required">*</span></label>
-                            <input type="text" class="form-input" placeholder="Full Name" required>
+                            <input type="text" class="form-input" id="guard_fullname" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" class="form-input" placeholder="Email" required>
+                            <input type="email" class="form-input" id="guard_email" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Password <span class="required">*</span></label>
-                            <input type="password" class="form-input" placeholder="Password" required>
+                            <input type="password" class="form-input" id="guard_password" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Contact Number <span class="required">*</span></label>
-                            <input type="tel" class="form-input" placeholder="Contact Number" required>
+                            <input type="tel" class="form-input" id="guard_contact_number" required>
                         </div>
-            
-                        <div class="form-group">
-                            <label class="form-label">ID Number <span class="required">*</span></label>
-                            <input type="text" class="form-input" placeholder="ID Number" required>
-                        </div>
-            
-                        <div class="form-group">
-                            <label class="form-label">Shift Assigned <span class="required">*</span></label>
-                            <select class="form-select" required>
-                                <option value="">Select Shift</option>
-                                <option value="morning">Morning Shift</option>
-                                <option value="afternoon">Afternoon Shift</option>
-                                <option value="evening">Evening Shift</option>
-                                <option value="night">Night Shift</option>
-                            </select>
-                        </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Location Assigned <span class="required">*</span></label>
-                            <select class="form-select" required>
+                            <select class="form-select" id="guard_location" required>
                                 <option value="">Select Location</option>
                                 <option value="main-gate">Main Gate</option>
                                 <option value="building-a">Building A</option>
@@ -847,9 +823,10 @@
                                 <option value="parking">Parking Area</option>
                             </select>
                         </div>
-            
+                    
                         <button type="submit" class="register-btn">Register</button>
                     </form>
+                    
             
                     <!-- Teacher Registration Form -->
                     <form class="form-section" id="teacherForm">
@@ -869,7 +846,7 @@
                         </div>
                     
                         <div class="form-group">
-                            <label class="form-label" for="confirm_password">Contact Number <span class="required">*</span></label>
+                            <label class="form-label" for="confirm_password">Confirm Password <span class="required">*</span></label>
                             <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
                         </div>
                     
@@ -892,34 +869,34 @@
                     <form class="form-section" id="studentForm">
                         <div class="form-group">
                             <label class="form-label">First Name <span class="required">*</span></label>
-                            <input type="text" class="form-input" placeholder="First Name" required>
+                            <input type="text" id="std_firstname" class="form-input" placeholder="First Name" required>
                         </div>
-            
+                    
                         <div class="name-row">
                             <div class="form-group">
                                 <label class="form-label">Middle Name</label>
-                                <input type="text" class="form-input" placeholder="Middle Name">
+                                <input type="text" id="std_middlename" class="form-input" placeholder="Middle Name">
                             </div>
-            
+                    
                             <div class="form-group">
                                 <label class="form-label">Last Name</label>
-                                <input type="text" class="form-input" placeholder="Last Name">
+                                <input type="text" id="std_lastname" class="form-input" placeholder="Last Name" required>
                             </div>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" class="form-input" placeholder="Email" required>
+                            <input type="email" id="std_email" class="form-input" placeholder="Email" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">ID Number <span class="required">*</span></label>
-                            <input type="text" class="form-input" placeholder="ID Number" required>
+                            <input type="text" id="std_id_number" class="form-input" placeholder="ID Number" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Program <span class="required">*</span></label>
-                            <select class="form-select" required>
+                            <select id="std_program" class="form-select" required>
                                 <option value="">Select Program</option>
                                 <option value="BS in Information Technology">BS in Information Technology</option>
                                 <option value="BS in Computer Science">BS in Computer Science</option>
@@ -928,33 +905,33 @@
                                 <option value="BS in Education">BS in Education</option>
                             </select>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Year Level <span class="required">*</span></label>
-                            <select class="form-select" required>
+                            <select id="std_year_level" class="form-select" required>
                                 <option value="">Select Year</option>
-                                <option value="1">1st Year</option>
-                                <option value="2">2nd Year</option>
-                                <option value="3">3rd Year</option>
-                                <option value="4">4th Year</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
                             </select>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Parent/Guardian Contact Number <span class="required">*</span></label>
-                            <input type="tel" class="form-input" placeholder="Contact Number" required>
+                            <input type="tel" id="std_contact" class="form-input" placeholder="Contact Number" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Password <span class="required">*</span></label>
-                            <input type="password" class="form-input" placeholder="Password" required>
+                            <input type="password" id="std_password" class="form-input" placeholder="Password" required>
                         </div>
-            
+                    
                         <div class="form-group">
                             <label class="form-label">Confirm Password <span class="required">*</span></label>
-                            <input type="password" class="form-input" placeholder="Confirm Password" required>
+                            <input type="password" id="std_confirm_password" class="form-input" placeholder="Confirm Password" required>
                         </div>
-            
+                    
                         <button type="submit" class="register-btn">Register</button>
                     </form>
                 </div>
@@ -963,6 +940,7 @@
 
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="app.js"></script>
 </body>

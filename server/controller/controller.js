@@ -5,6 +5,8 @@ const auth = require('../authentication/authentication')
 const student = require('../model/student')
 const programs = require('../model/program')
 const teacher = require('../model/teacher')
+const admin = require('../model/admin')
+const guard = require('../model/guard')
 
 const app = express()
 const PORT = 3000
@@ -30,6 +32,8 @@ app.use('/api/v1/authentication', auth)
 app.use('/api/v1/students', student)
 app.use('/api/v1/teacher', teacher)
 app.use('/api/v1/programs', programs)
+app.use('/api/v1/admin', admin)
+app.use('/api/v1/guard', guard)
 
 
 app.listen(PORT, () => {

@@ -343,7 +343,7 @@ function updateStudentBarcode(studentID, newBarcode) {
 // Get all programs
 function getAllPrograms() {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT program_name, program_date_created FROM program', [], (err, result) => {
+        db.execute('SELECT program_id, program_name, program_date_created FROM program', [], (err, result) => {
             if(err) { return reject(err) }
             resolve(result)
         })
@@ -352,20 +352,40 @@ function getAllPrograms() {
 
 // Teacher registration
 async function teacherRegistration(fullName, email, password, department) {
+    const hashedPassword = await hashPassword(password);
 
-    const hashedPassword = await hashPassword(password)
+    const teacherBarcodeScannerSerialNumber = generateTeacherSerialNumber();
 
-    return new Promise((resolve, reject) => {
-        const teacherBarcodeScannerSerialNumber = generateTeacherSerialNumber()
-        db.execute('INSERT INTO teacher (teacher_name, teacher_email, teacher_password, teacher_program, teacher_barcode_scanner_serial_number) VALUES(?, ?, ?, ?, ?)',
-             [ fullName, email, hashedPassword, department, teacherBarcodeScannerSerialNumber ],
+    return new Promise( async (resolve, reject) => {
+        const sql = `
+            INSERT INTO teacher 
+            (teacher_name, teacher_email, teacher_password, teacher_program, teacher_barcode_scanner_serial_number) 
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        const emailExists = await emailFinder('teacher_email', email, 'teacher');
+        if (emailExists) {
+            reject('Email is already taken!');
+        }
+
+        db.execute(
+            sql,
+            [fullName, email, hashedPassword, department, teacherBarcodeScannerSerialNumber],
             (err, result) => {
-            if(err) { return reject(err) }
-            initialTeacherSubjectAndYearLevelSetter('', '', teacherBarcodeScannerSerialNumber)
-            resolve('Successfully create new account for teacher')
-        })
-    })
+                if (err) { return reject(err); }
+                try {
+                    initialTeacherSubjectAndYearLevelSetter('', '', teacherBarcodeScannerSerialNumber);
+                    resolve('Successfully created new account for teacher');
+                } catch (initErr) {
+                    console.error('Initialization error:', initErr);
+                    resolve('Account created, but failed to initialize state.');
+                }
+            }
+        );
+    });
 }
+
+// Guard Registration
 
 // Insert a NULL value to subject and year level setter
 async function initialTeacherSubjectAndYearLevelSetter(subjectSet = '', yearLevelSet = '', teacherBarcodeScannerSerialNumber) {
@@ -878,6 +898,16 @@ function updateTeacherName(teacherID, teacherNewName) {
     })
 }
 
+// Get Whole Campus Accounts
+function getWholeCampusAccounts(tableName) {
+    return new Promise((resolve, reject) => {
+        db.execute(`SELECT * FROM ${tableName}`, [], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
 
 // Manual Insert Attendance
 // function manualInsertAttendance(id,
@@ -893,22 +923,242 @@ function updateTeacherName(teacherID, teacherNewName) {
 //     })
 // }
 
+
+// Email finder
+function emailFinder(columnToFind, email, tableName) {
+    return new Promise((resolve, reject) => {
+        db.query(`SELECT * FROM ${tableName} WHERE ${columnToFind} = ?`, [email], (err, result) => {
+            if (err) { 
+                return reject(err); 
+            }
+            
+            if (result.length > 0) {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        });
+    });
+}
+
+// Guard registration
+async function guardRegistration(
+    guard_name, 
+    guard_email, 
+    guard_password, 
+    guard_designated_location
+) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const emailExists = await emailFinder('guard_email', guard_email, 'guards');
+
+            if (emailExists) {
+                return reject('Email already exists!');
+            }
+
+            const hashedPassword = await bcrypt.hash(guard_password, SALT_ROUNDS);
+
+            const sql = `
+                INSERT INTO guards 
+                (guard_name, guard_email, guard_password, guard_designated_location)
+                VALUES (?, ?, ?, ?)
+            `;
+
+            db.query(
+                sql,
+                [guard_name, guard_email, hashedPassword, guard_designated_location],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve('Successfully registered!');
+                }
+            );
+
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+// Check duplication program
+function checkProgramDuplicate(programName) {
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT * FROM program WHERE program_name = ?";
+        
+        db.execute(sql, [programName], (err, result) => {
+            if (err) {
+                console.error("Database Error:", err);
+                return reject(err);
+            }
+            resolve(result.length > 0);
+        });
+    });
+}
+
+// Add Program
+async function addProgram(programName) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const isDuplicate = await checkProgramDuplicate(programName);
+
+            if (isDuplicate) {
+                return reject('Program already exists!');
+            }
+
+            const sql = `
+                INSERT INTO program (program_name) 
+                VALUES (?)
+            `;
+
+            db.execute(
+                sql,
+                [programName],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve('Successfully added new program!');
+                }
+            );
+
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+// Delete Program
+function deleteProgram(id) {
+    return new Promise((resolve, reject) => {
+        const sql = "DELETE FROM program WHERE program_id = ?";
+        
+        db.execute(sql, [id], (err, result) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(result);
+        });
+    });
+}
+
+// Admin Login
+async function adminLogin(email, password) {
+
+    const query = `
+        SELECT 
+            admin_id,
+            admin_name, 
+            admin_email,
+            admin_password
+        FROM admin_accounts
+        WHERE admin_email = ?
+        LIMIT 1
+    `;
+
+    return new Promise(async (resolve, reject) => {
+        db.execute(query, [email], async (err, result) => {
+            
+            if (err) return reject({ message: err });
+
+            if (result.length === 0) {
+                return reject('Invalid email or password');
+            }
+
+            const row = result[0];
+
+            const isMatch = await comparePassword(password, row.admin_password);
+
+            delete row.admin_password;
+
+            if (isMatch) {
+                const token = generateToken(row);
+
+                return resolve({ 
+                    ok: true, 
+                    message: 'Login successful', 
+                    token, 
+                    user: {
+                        id: row.admin_id,
+                        name: row.admin_name,
+                        email: row.admin_email
+                    }
+                });
+            }
+
+            return reject('Invalid email or password');
+        });
+    });
+}
+
+// Admin Set Event Name
+async function setEventName(eventName, adminID) {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE event_setter 
+            SET event_name_set = ? WHERE admin_id = ?
+        `;
+        db.execute(sql, [eventName, adminID], (err, result) => {
+            if (err) return reject(err.message);
+            resolve('Event updated successfully');
+        });
+    });
+}
+
+// Find student ID Number
+async function studentBarcodeFinder(studentBarcode) {
+    return new Promise((resolve, reject) => {
+        const query = `
+        SELECT 
+            student_id,
+            student_id_number,
+            student_firstname,
+            student_middlename,
+            student_lastname,
+            student_email,
+            student_year_level,
+            student_guardian_number,
+            student_program,
+            barcode,
+            barcode_date_generated,
+            device_id
+        FROM student_accounts
+        WHERE barcode = ?;`
+        db.execute(query, [ studentBarcode ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Find if student is already in attendance
+async function studentCheckEventIfExists(studentIDNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT student_id_number FROM event_attendance_record WHERE student_id_number = ?', [ studentIDNumber ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result.length > 0)
+        })
+    })
+}
+
+async function guardInsertAttendanceRecord() {
+
+}
+
 // Debugger
-// async function tester() {
-//     try {
-//        const result = await updateTeacherName(7, 'Hello World')
-//        console.log(result)
-//     } catch(err) {
-//        console.log(err)
-//     }
-// }
+async function tester() {
+    try {
+       const result = await studentBarcodeFinder('BC17702264764254979')
+       console.log(result)
+    } catch(err) {
+       console.log(err)
+    }
+}
 
-// tester()
-
+tester()
 
 
 // Export functions
 module.exports= {
+    setEventName,
+    adminLogin,
+    deleteProgram,
     generateBarcode,
     generateDeviceID,
     hashPassword,
@@ -949,5 +1199,9 @@ module.exports= {
     getTeacherData,
     updateTeacherPassword,
     updateTeacherName,
-    getAttendanceHistoryForStudentOnly
+    getAttendanceHistoryForStudentOnly,
+    emailFinder,
+    guardRegistration,
+    getWholeCampusAccounts,
+    addProgram
 }

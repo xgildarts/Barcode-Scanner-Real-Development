@@ -101,6 +101,17 @@ router.post('/teacher_login', async (req, res) => {
     }
 })
 
+// Guard Registration
+router.post('/guard_registration', async (req, res) => {
+    const { guard_name, guard_email, guard_password, guard_designated_location } = req.body
+    try {
+        const result = await services.guardRegistration(guard_name, guard_email, guard_password, guard_designated_location)
+        res.json({ ok: true, message: result })
+    } catch(err) {
+        res.status(401).json({ ok: false, message: err })
+    } 
+})
+
 // Check token
 router.post('/verify_token', (req, res) => {
     const token = services.removeBearer(req.headers['authorization'])
@@ -111,6 +122,31 @@ router.post('/verify_token', (req, res) => {
         res.json({ ok: false, message: 'Invalid token or expired!' })
     }
 })
+
+// Admin Login
+router.post('/admin_login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({ ok: false, message: 'Please enter email and password.' });
+        }
+
+        const result = await services.adminLogin(email, password);
+        
+        // 3. Send Response
+        res.json(result);
+
+    } catch (err) {
+        console.error(err);
+        // Handle the specific rejection string from the service
+        if (err === 'Invalid email or password' || err.message === 'Invalid email or password') {
+            return res.status(401).json({ ok: false, message: 'Invalid email or password.' });
+        }
+        
+        res.status(500).json({ ok: false, message: 'Server error' });
+    }
+});
 
 
 

@@ -1,11 +1,27 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     navigateTo('dashboard')
+    // Initial render
+    renderPrograms();
+    fetchStudentAccounts()
+    fetchTeacherAccounts()
+    fetchGuardAccounts()
 })
 
 const sidebar = document.getElementById('sidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 const menuBtn = document.querySelector('.menu-btn');
+
+const TOKEN = localStorage.getItem('admin_token');
+
+const DOMElements = {
+    studentAccountCounts: document.getElementById('studentAccountCounts'),
+    teacherAccountCounts: document.getElementById('teacherAccountCounts'),
+    guardAccountCounts: document.getElementById('guardAccountCounts'),
+    studentsList: document.getElementById('studentsList'),
+    teacherList: document.getElementById('teacherList'),
+    guardList: document.getElementById('guardList')
+}
 
 menuBtn.addEventListener('click', function() {
     sidebar.classList.toggle('active');
@@ -129,13 +145,24 @@ function updatePassword() {
 }
 
 function logout() {
-    if (confirm('Are you sure you want to log out?')) {
-        alert('Logging out...');
-        // Redirect to login page
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You will be logged out of the admin panel.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, log out!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_user'); 
+            window.location.href = 'admin_login.html';
+        }
+    });
 }
 
-// Open calendar ONLY when button is clicked
+
 document.querySelector('.calendar-btn').addEventListener('click', () => {
     calendar.open();
 });
@@ -143,75 +170,6 @@ document.querySelector('.calendar-btn').addEventListener('click', () => {
 document.querySelector('.settings-btn').addEventListener('click', function() {
     
 });
-
-// Student account management
-const students = [
-    {
-        name: 'Steven John A. Agustin',
-        id: 'BSIT - 3rd Year',
-        course: 'Bachelor of Science in Information Technology'
-    },
-    {
-        name: 'Andrea A. Lachica',
-        id: 'BSIT - 3rd Year',
-        course: 'Bachelor of Science in Information Technology'
-    },
-    {
-        name: 'Charlene M. Selga',
-        id: 'BSCE - 1st Year',
-        course: 'Bachelor of Science in Computer Engineering'
-    },
-    {
-        name: 'Jethrey A. Aquino',
-        id: 'BSIT - 2nd Year',
-        course: 'Bachelor of Science in Information Technology'
-    }
-];
-
-// Teacher account management
-const teachers = [
-    {
-        name: 'Maria L. Santos',
-        email: 'maria@gmail.com',
-        advisory: 'BSIT'
-    },
-    {
-        name: 'Mark D. Lim',
-        email: 'mark@gmail.com',
-        advisory: 'SHS - Stem 12'
-    },
-    {
-        name: 'Charlene M. Selga',
-        email: 'pat@gmail.com',
-        advisory: 'BSCS'
-    },
-    {
-        name: 'Karen D. Reyes',
-        email: 'karen@gmail.com',
-        advisory: 'BSIT'
-    }
-];
-
-// Teacher account management
-const guards = [
-    {
-        name: 'Juan M. Cruz',
-        domainGate: 'MAIN GATE'
-    },
-    {
-        name: 'Mark D. Santos',
-        domainGate: 'BACK GATE'
-    },
-    {
-        name: 'Ralph K. Lim',
-        domainGate: 'BACK GATE'
-    },
-    {
-        name: 'Lucas D. Lee',
-        domainGate: 'MAIN GATE'
-    }
-];
-
 
 // Render students
 function renderStudents(studentsToRender) {
@@ -258,65 +216,6 @@ function register() {
     navigateTo("registration");
 }
 
-
-// Render teachers
-function renderTeachers(teachersToRender) {
-    const teacherList = document.getElementById('teacherList');
-    teacherList.innerHTML = '';
-
-    teachersToRender.forEach((teacher, index) => {
-        const card = document.createElement('div');
-        card.className = 'teacher-card';
-        card.innerHTML = `
-            <div class="teacher-header">
-                <div>
-                    <div class="teacher-name">${teacher.name}</div>
-                </div>
-            </div>
-            <div class="teacher-info">
-                <div class="info-item">${teacher.email}</div>
-            </div>
-            <div class="teacher-meta">
-                <div class="teacher-course">${teacher.advisory}</div>
-                <div class="teacher-actions">
-                    <button class="action-btn edit-btn-account-management" onclick="editStudent(${index})">Edit</button>
-                    <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${index})">Delete</button>
-                </div>
-            </div>
-        `;
-        teacherList.appendChild(card);
-    });
-}
-
-// Render guards
-function renderGuards(guardsToRender) {
-    const guardsList = document.getElementById('guardList');
-    guardsToRender.innerHTML = '';
-
-    guardsToRender.forEach((guard, index) => {
-        const card = document.createElement('div');
-        card.className = 'teacher-card';
-        card.innerHTML = `
-            <div class="guard-header">
-                <div>
-                    <div class="guard-name">${guard.name}</div>
-                </div>
-            </div>
-            <div class="guard-info">
-                <div class="info-item"></div>
-            </div>
-            <div class="guard-meta">
-                <div class="guard-domain-gate">${guard.domainGate}</div>
-                <div class="guard-actions">
-                    <button class="action-btn edit-btn-account-management" onclick="editStudent(${index})">Edit</button>
-                    <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${index})">Delete</button>
-                </div>
-            </div>
-        `;
-        guardsList.appendChild(card);
-    });
-}
-
 document.getElementById('searchStudentInput').addEventListener('input', function(e) {
     const searchStudent = e.target.value.toLowerCase();
     const filteredStudents = students.filter(student => 
@@ -345,12 +244,6 @@ document.getElementById('searchGuardInput').addEventListener('input', function(e
     renderStudents(filteredGuards);
 });
 
-// Initial render
-renderStudents(students);
-renderTeachers(teachers);
-renderGuards(guards);
-
-
 // Render Programs
 async function renderPrograms() {
     try {
@@ -361,17 +254,19 @@ async function renderPrograms() {
 
         const data = await res.json()
 
+        console.log(data)
+
         if(!res.ok) { return alert(data.message) }
 
         data.content.forEach((program, index) => {
 
-            const { program_name, program_date_created } = program
+            const { program_id, program_name, program_date_created } = program
 
             const card = document.createElement('div');
             card.className = 'program-card';
             card.innerHTML = `
                 <div class="program-name">${program_name}</div>
-                <button class="delete-btn" onclick="deleteProgram(${index})">
+                <button class="delete-btn" onclick="deleteProgram(${program_id}, '${program_name}')">
                     <svg viewBox="0 0 24 24">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
@@ -385,8 +280,7 @@ async function renderPrograms() {
     }
 
 }
-// Initial render
-renderPrograms();
+
 
 function openAddModal() {
     document.getElementById('addModal').classList.add('active');
@@ -398,32 +292,103 @@ function closeAddModal() {
     document.getElementById('addModal').classList.remove('active');
 }
 
-function addProgram() {
-    const input = document.getElementById('programNameInput');
-    const programName = input.value.trim();
+// Add Program
+async function addProgram() {
+    const inputField = document.getElementById('programNameInput');
+    const programName = inputField.value.trim();
 
     if (!programName) {
-        alert('Please enter a program name.');
-        return;
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Missing Input',
+            text: 'Please enter a program name.'
+        });
     }
 
-    programs.push(programName);
-    renderPrograms();
-    closeAddModal();
-}
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/admin/add_program', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ programName: programName })
+        });
 
-function deleteProgram(index) {
-    if (confirm(`Are you sure you want to delete "${programs[index]}"?`)) {
-        programs.splice(index, 1);
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Failed to add program');
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'New program added successfully!'
+        });
+
+        inputField.value = ''; 
+        closeAddModal();       
+        // Reload programs
         renderPrograms();
+
+    } catch (error) {
+        console.error('Add Program Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message
+        });
     }
 }
 
-function saveChanges() {
-    alert('Changes saved successfully!');
-    // Here you would typically send the data to a server
+// Delete Program
+async function deleteProgram(id, name) {
+
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you really want to delete "${name}"? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+
+        const response = await fetch(`http://localhost:3000/api/v1/admin/delete_program/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to delete program');
+        }
+
+        await Swal.fire(
+            'Deleted!',
+            `"${name}" has been deleted.`,
+            'success'
+        );
+
+        renderPrograms()
+
+    } catch (error) {
+        console.error('Delete Error:', error);
+        Swal.fire('Error', error.message, 'error');
+    }
 }
 
+
+// No function yet
 function goBack() {
     if (confirm('Are you sure you want to go back? Any unsaved changes will be lost.')) {
         window.history.back();
@@ -459,47 +424,6 @@ function switchRole(role) {
     }
 }
 
-// Teacher Form
-document.getElementById('teacherForm').addEventListener('submit', async (e) => {
-    e.preventDefault()
-
-    try {
-        const teacherFullName = document.getElementById('teacher_fullname').value;
-        const teacherEmail = document.getElementById('teacher_email').value;
-        const teacherPassword = document.getElementById('teacher_password').value;
-        const confirmPassword = document.getElementById('confirm_password').value;
-        const teacherDepartment = document.getElementById('teacher_department').value;
-
-        if(teacherPassword !== confirmPassword) { return alert('Password is not match!') }
-    
-        const teacherData = {
-            fullName: teacherFullName,
-            email: teacherEmail,
-            password: teacherPassword,
-            department: teacherDepartment,
-        };
-    
-        const res = await fetch('http://localhost:3000/api/v1/authentication/teacher_registration', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(teacherData)
-        })
-
-        const data = await res.json()
-        
-        if(!res.ok) { return alert(data.message) }
-
-        document.getElementById('teacherForm').reset()
-
-    } catch(err) {
-        alert(err)
-    }
-
-})
-
 // Generate program on Teacher Selection
 async function generateProgramSelectionOnTeacher() {
     try {
@@ -528,26 +452,361 @@ function goBack() {
     window.history.back();
 }
 
-// Handle form submissions
-document.getElementById('guardForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    alert('Guard registered successfully!');
-});
+// Reusable function to fetch accounts
+async function fetchAccountCount(tableName) {
+    try {
+        const url = `http://localhost:3000/api/v1/admin/get_whole_campus_accounts_count/${tableName}`;
 
-document.getElementById('teacherForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    alert('Teacher registered successfully!');
-});
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
 
-document.getElementById('studentForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const password = e.target.querySelector('input[placeholder="Password"]').value;
-    const confirmPassword = e.target.querySelector('input[placeholder="Confirm Password"]').value;
-    
-    if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        return;
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            throw new Error(data.message || `Failed to fetch count for ${tableName}`);
+        }
+
+        return data.contents; 
+
+    } catch (error) {
+        console.error(`Error fetching ${tableName} count:`, error);
+        return null; 
     }
+}
+
+// Fetch student accounts
+async function fetchStudentAccounts() {
+    const result = await fetchAccountCount('student_accounts')
+    DOMElements.studentAccountCounts.textContent = result.length
+    DOMElements.studentsList.innerHTML = result.map(d =>
+        `
+            <div class="student-card">
+                    <div class="student-header">
+                        <div>
+                            <div class="student-name">${d.student_firstname} ${d.student_middlename}. ${d.student_lastname}</div>
+                        </div>
+                    </div>
+                    <div class="student-info">
+                        <div class="info-item">${d.student_year_level}</div>
+                    </div>
+                    <div class="student-meta">
+                        <div class="student-course">${d.student_program}</div>
+                        <div class="student-actions">
+                            <button class="action-btn edit-btn-account-management" onclick="editStudent(${d.student_id})">Edit</button>
+                            <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.student_id})">Delete</button>
+                        </div>
+                    </div>
+            </div>
+        `
+    ).join('')
+}
+
+// Fetch teacher accounts
+async function fetchTeacherAccounts() {
+    const result = await fetchAccountCount('teacher')
+    DOMElements.teacherAccountCounts.textContent = result.length
+    DOMElements.teacherList.innerHTML = result.map(d => 
+        `
+            <div class="teacher-card">
+                <div class="teacher-header">
+                    <div>
+                        <div class="teacher-name">${d.teacher_name}</div>
+                    </div>
+                </div>
+                <div class="teacher-info">
+                    <div class="info-item">${d.teacher_email}</div>
+                </div>
+                <div class="teacher-meta">
+                    <div class="teacher-course">${d.teacher_program}</div>
+                    <div class="teacher-actions">
+                        <button class="action-btn edit-btn-account-management" onclick="editStudent(${d.teacher_id})">Edit</button>
+                        <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.teacher_id})">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `
+    ).join('')
+}
+
+// Fetch guard accounts
+async function fetchGuardAccounts() {
+    const result = await fetchAccountCount('guards')
+    DOMElements.guardAccountCounts.textContent = result.length
+    DOMElements.guardList.innerHTML = result.map(d =>
+        `
+            <div class="teacher-card">
+                <div class="guard-header">
+                    <div>
+                        <div class="guard-name">${d.guard_name}</div>
+                    </div>
+                </div>
+                <div class="guard-info">
+                    <div class="info-item"></div>
+                </div>
+                <div class="guard-meta">
+                    <div class="guard-domain-gate">${d.guard_designated_location}</div>
+                    <div class="guard-actions">
+                        <button class="action-btn edit-btn-account-management" onclick="editStudent(${d.guard_id})">Edit</button>
+                        <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.guard_id})">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `
+    ).join('')
     
-    alert('Student registered successfully!');
+}
+
+// Handle form submissions
+document.getElementById('guardForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const fullName = document.getElementById('guard_fullname').value;
+    const email = document.getElementById('guard_email').value;
+    const password = document.getElementById('guard_password').value;
+    const location = document.getElementById('guard_location').value;
+
+    const guardData = {
+        guard_name: fullName,
+        guard_email: email,
+        guard_password: password,
+        guard_designated_location: location
+    };
+
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/authentication/guard_registration', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json' 
+            },
+            body: JSON.stringify(guardData)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            throw new Error(result.message || 'Registration failed');
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Guard registered successfully!'
+        });
+        
+        document.getElementById('guardForm').reset();
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message
+        });
+    }
 });
+
+document.getElementById('teacherForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const teacherFullName = document.getElementById('teacher_fullname').value;
+    const teacherEmail = document.getElementById('teacher_email').value;
+    const teacherPassword = document.getElementById('teacher_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const teacherDepartment = document.getElementById('teacher_department').value;
+
+    if (teacherPassword !== confirmPassword) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Password Mismatch',
+            text: ' The password and confirm password do not match.'
+        });
+    }
+
+    const teacherData = {
+        fullName: teacherFullName,
+        email: teacherEmail,
+        password: teacherPassword,
+        department: teacherDepartment
+    };
+
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/authentication/teacher_registration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(teacherData)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Registration Failed',
+                text: data.message || 'Something went wrong.'
+            });
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: 'Teacher registered successfully.'
+        });
+
+        document.getElementById('teacherForm').reset();
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Could not connect to the server.'
+        });
+    }
+});
+
+document.getElementById('studentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const firstName = document.getElementById('std_firstname').value;
+    const middleName = document.getElementById('std_middlename').value;
+    const lastName = document.getElementById('std_lastname').value;
+    const email = document.getElementById('std_email').value;
+    const idNumber = document.getElementById('std_id_number').value;
+    const program = document.getElementById('std_program').value;
+    const yearLevel = document.getElementById('std_year_level').value;
+    const guardianContact = document.getElementById('std_contact').value;
+    const password = document.getElementById('std_password').value;
+    const confirmPassword = document.getElementById('std_confirm_password').value;
+
+    if (password !== confirmPassword) {
+        console.warn('Password mismatch detected.');
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Password Mismatch',
+            text: 'The password and confirm password do not match.'
+        });
+    }
+
+    const studentData = {
+        firstName, middleName, lastName, email, 
+        idNumber, program, yearLevel, guardianContact, password
+    };
+
+
+    try {
+        const res = await fetch('http://localhost:3000/api/v1/authentication/student_registration', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(studentData)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Registration failed');
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Welcome!',
+            text: 'Student account created successfully.'
+        });
+
+        document.getElementById('studentForm').reset();
+
+    } catch (err) {
+        console.error('6. Error caught:', err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message
+        });
+    }
+});
+
+// Set Event
+async function handleSetEvent() {
+    const eventInput = document.getElementById('event_name_input');
+    const eventName = eventInput.value.trim();
+
+    if (!TOKEN) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Unauthorized',
+            text: 'You must be logged in to perform this action.'
+        }).then(() => {
+            window.location.href = 'admin_login.html'; // Redirect to login
+        });
+    }
+
+    if (!eventName) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Empty Input',
+            text: 'Please enter an event name.'
+        });
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/api/v1/admin/set_event', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${TOKEN}` 
+            },
+            body: JSON.stringify({ event_name: eventName })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401 || response.status === 403) {
+            throw new Error('Session expired. Please login again.');
+        }
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to set event');
+        }
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Event Set!',
+            text: `Event successfully set to: "${eventName}"`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+        eventInput.value = '';
+
+    } catch (error) {
+        console.error('Error setting event:', error);
+        
+        if (error.message.includes('Session expired')) {
+             Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: error.message
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message
+            });
+        }
+    }
+}
