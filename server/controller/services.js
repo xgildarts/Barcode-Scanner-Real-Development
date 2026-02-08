@@ -1101,7 +1101,8 @@ async function setEventName(eventName, adminID) {
     });
 }
 
-// Find student ID Number
+
+// Find student if exists in student accounts
 async function studentBarcodeFinder(studentBarcode) {
     return new Promise((resolve, reject) => {
         const query = `
@@ -1122,40 +1123,161 @@ async function studentBarcodeFinder(studentBarcode) {
         WHERE barcode = ?;`
         db.execute(query, [ studentBarcode ], (err, result) => {
             if(err) { return reject(err) }
-            resolve(result)
+            resolve(result[0])
         })
     })
 }
 
 // Find if student is already in attendance
-async function studentCheckEventIfExists(studentIDNumber) {
+async function studentCheckEventIfExists(studentIDNumber, status) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT student_id_number FROM event_attendance_record WHERE student_id_number = ?', [ studentIDNumber ], (err, result) => {
+        // No date check needed because the table is wiped daily
+        const sql = `
+            SELECT student_id_number 
+            FROM event_attendance_record 
+            WHERE student_id_number = ? 
+            AND status = ? 
+            LIMIT 1
+        `;
+
+        db.execute(sql, [ studentIDNumber, status ], (err, result) => {
+            if(err) { return reject(err); }
+            
+            // Returns TRUE if record exists, FALSE if not
+            resolve(result.length > 0);
+        });
+    });
+}
+
+// Get Event Setter
+async function getEventSet() {
+    return new Promise((resolve, reject) => {
+        // We order by ID DESC to get the latest event set by Admin
+        const query = "SELECT event_name_set FROM subject_and_year_level_setter ORDER BY id DESC LIMIT 1";
+        
+        db.execute(query, [], (err, result) => {
             if(err) { return reject(err) }
-            resolve(result.length > 0)
+            // If no event is set, resolve null
+            resolve(result.length > 0 ? result[0] : null)
         })
     })
 }
 
-async function guardInsertAttendanceRecord() {
+// Main Insert Function
+async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guardName, guardLocation) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Check if student exists
+            const student = await studentBarcodeFinder(studentBarcode);
+            if (!student) { 
+                return reject('Student does not exist in records!'); 
+            }
 
+            // Check for Duplicates (Prevent double scanning)
+            const alreadyScanned = await studentCheckEventIfExists(student.student_id_number, status);
+            
+            if (alreadyScanned) {
+                return reject(`Student has already scanned for ${status}!`);
+            }
+
+            // STEP 3: Get the Active Event
+            const eventData = await getEventSet();
+            if (!eventData || !eventData.event_name_set) {
+                return reject('No active event found. Please contact Admin.');
+            }
+            const activeEventName = eventData.event_name_set;
+
+            // STEP 4: Insert the Record
+            const insertQuery = `
+                INSERT INTO event_attendance_record 
+                (student_id, student_name, student_id_number, student_program, event_name, guard_name, guard_location, status, guard_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            // Combine First and Last name
+            const fullName = `${student.student_firstname} ${student.student_middlename} ${student.student_lastname}`;
+
+            const values = [
+                student.student_id,       
+                fullName,                 
+                student.student_id_number,
+                student.student_program,  
+                activeEventName,          
+                guardName || 'Guard',     
+                guardLocation,            
+                status,                   
+                guardID
+            ];
+
+            db.execute(insertQuery, values, (err, result) => {
+                if (err) { return reject(err); }
+                resolve({
+                    message: `${status} Recorded Successfully`,
+                    student: fullName,
+                    event: activeEventName
+                });
+            });
+
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
 
 // Debugger
-async function tester() {
-    try {
-       const result = await studentBarcodeFinder('BC17702264764254979')
-       console.log(result)
-    } catch(err) {
-       console.log(err)
-    }
-}
+// async function tester() {
+//     try {
+//        const result = await guardLogin('gray@panpacificu.edu.ph', 'q09481239328')
+//        console.log(result)
+//     } catch(err) {
+//        console.log(err)
+//     }
+// }
 
-tester()
+// tester()
+
+async function guardLogin(email, password) {
+    return new Promise((resolve, reject) => {
+        const query = "SELECT * FROM guards WHERE guard_email = ? LIMIT 1"; 
+        db.execute(query, [email], async (err, result) => {
+            if (err) {
+                return reject({ message: "Database error", code: 500 });
+            }
+            if (result.length === 0) {
+                return reject({ message: "Account not found", code: 404 });
+            }
+            const guard = result[0];
+            console.log(guard)
+            try {
+                const isMatch = await comparePassword(password, guard.guard_password);
+                if (!isMatch) {
+                    return reject({ message: "Invalid password", code: 401 });
+                }
+                const payload = {
+                    id: guard.id,
+                    name: guard.guard_name,
+                    role: 'guard'
+                };
+                
+                const token = generateToken(payload);
+                resolve({
+                    message: "Login Successful",
+                    token: token,
+                    guard_name: guard.guard_name
+                });
+
+            } catch (error) {
+                reject({ message: "Authentication failed", code: 500 });
+            }
+        });
+    });
+}
 
 
 // Export functions
 module.exports= {
+    guardLogin,
+    guardInsertAttendanceRecord,
     setEventName,
     adminLogin,
     deleteProgram,
