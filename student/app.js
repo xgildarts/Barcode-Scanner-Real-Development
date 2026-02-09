@@ -1,7 +1,7 @@
 
 const CONFIG = {
 
-    BASE_URL: 'http://192.168.1.50:3000/api/v1',
+    BASE_URL: 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1',
     TOKEN: localStorage.getItem('student_token')
 };
 
@@ -162,7 +162,7 @@ function tab(tabName) {
 function generateBarcode(barcode) {
     JsBarcode('#barcodeImage', barcode, {
         format: 'CODE128',
-        width: 10,
+        width: 15, // Calibrate 10 for barcode scanner
         height: 1000,
         displayValue: true,
         fontSize: 200,

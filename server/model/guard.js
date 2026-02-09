@@ -14,6 +14,7 @@ guard.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const result = await services.guardLogin(email, password);
+        console.log(result)
         res.json({ 
             ok: true, 
             token: result.token, 
@@ -25,8 +26,22 @@ guard.post('/login', async (req, res) => {
 });
 
 // Continue here tomorrow
-guard.post('/event_attendance', (req, res) => {
-
+guard.post('/event_attendance', async (req, res) => {
+    try {
+        const { barcode, status } = req.body
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.guardInsertAttendanceRecord(
+            barcode,
+            status,
+            decodedToken.guard_id,
+            decodedToken.guard_name,
+            decodedToken.guard_location)
+        res.json(result)
+    } catch(err) {
+        console.error(err)
+        res.status(500).json({ ok: false, message: err })
+    }
 })
 
 

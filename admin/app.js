@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     navigateTo('dashboard')
     // Initial render
@@ -6,6 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchStudentAccounts()
     fetchTeacherAccounts()
     fetchGuardAccounts()
+    renderEventAttendanceRecord()
+    renderEventHistoryAttendanceRecord()
+    generateProgramSelectionOnTeacher()
+    
 })
 
 const sidebar = document.getElementById('sidebar');
@@ -14,14 +17,135 @@ const menuBtn = document.querySelector('.menu-btn');
 
 const TOKEN = localStorage.getItem('admin_token');
 
+const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+
 const DOMElements = {
     studentAccountCounts: document.getElementById('studentAccountCounts'),
     teacherAccountCounts: document.getElementById('teacherAccountCounts'),
     guardAccountCounts: document.getElementById('guardAccountCounts'),
     studentsList: document.getElementById('studentsList'),
     teacherList: document.getElementById('teacherList'),
-    guardList: document.getElementById('guardList')
+    guardList: document.getElementById('guardList'),
+    attendanceBody: document.getElementById('attendanceBody'),
+    attendanceHistory: document.getElementById('attendanceHistory'),
+    sideBarStatsValue: document.getElementById('sideBarStatsValue'),
+    statsValue: document.getElementById('statsValue'),
+    sideBarName: document.querySelector('.sidebar-name'),
+    profileName: document.querySelector('.profile-name'),
+    profileEmail: document.querySelector('.profile-email')
 }
+
+function dateFormat(stringDate) {
+    return stringDate.split('T')[0]
+}
+
+function formatTime(timeString) {
+    if (!timeString) return '--:--';
+    const [hours, minutes] = timeString.split(':');
+    let h = parseInt(hours, 10);
+    const m = minutes;
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    return `${h}:${m} ${suffix}`;
+}
+
+// Event Attendance
+async function renderEventAttendanceRecord() {
+    try {
+        const res = await fetch(`${URL_BASED}/admin/get_events`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TOKEN}`
+            }
+        })
+        const data = await res.json()
+        // Set total attendees
+        DOMElements.statsValue.textContent = data.content.length
+        DOMElements.sideBarStatsValue.textContent = data.content.length
+
+        if(res.ok) {
+            DOMElements.attendanceBody.innerHTML = data.content.map(d => 
+                `
+                <tr>
+                    <td>${d.student_id_number}</td>
+                    <td>${d.student_name}</td>
+                    <td>${d.student_program}</td>
+                    <td>${d.student_year_level}</td>
+                    <td>${dateFormat(d.date)}</td>
+                    <td>${formatTime(d.time)}</td>
+                    <td>${d.event_name}</td>
+                </tr>
+                `
+            ).join('')
+            console.log(data)
+        } else {
+            console.log(data)
+        }
+    } catch(err) {
+        alert(err)
+    }
+}
+
+// Event Attendance History
+async function renderEventHistoryAttendanceRecord() {
+    try {
+        const res = await fetch(`${URL_BASED}/admin/get_events`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TOKEN}`
+            }
+        })
+        const data = await res.json()
+        if(res.ok) {
+            DOMElements.attendanceHistory.innerHTML = data.content.map(d => 
+                `
+                <tr>
+                    <td>${d.student_id_number}</td>
+                    <td>${d.student_name}</td>
+                    <td>${d.student_program}</td>
+                    <td>${d.student_year_level}</td>
+                    <td>${dateFormat(d.date)}</td>
+                    <td>${formatTime(d.time)}</td>
+                    <td>${d.event_name}</td>
+                </tr>
+                `
+            ).join('')
+            console.log(data)
+        } else {
+            console.log(data)
+        }
+    } catch(err) {
+        alert(err)
+    }
+}
+
+// Get admin data
+async function getAdminData() {
+    try {
+        const res = await fetch(URL_BASED + '/admin/get_admin_data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TOKEN}`
+            }
+        })
+        const data = await res.json()
+        if(data.ok) {
+            DOMElements.sideBarName.textContent = data.content[0].admin_name
+            DOMElements.profileName.textContent = data.content[0].admin_name
+            DOMElements.profileEmail.textContent = data.content[0].admin_email
+        } else {
+            console.log(data)
+        }
+    } catch(err) {
+
+    }
+}
+
+getAdminData()
 
 menuBtn.addEventListener('click', function() {
     sidebar.classList.toggle('active');
@@ -97,7 +221,7 @@ function navigateTo(page) {
 // Calendar
 const calendar = flatpickr("#datePicker", {
     dateFormat: "n/j/Y",
-    clickOpens: false, // ⛔ don't open on input click
+    clickOpens: false,
     allowInput: false,
     onChange: function(selectedDates, dateStr) {
         const rows = document.querySelectorAll('#attendanceBody tr');
@@ -114,7 +238,6 @@ function editField(field) {
     const newValue = prompt(`Enter new ${field}:`);
     if (newValue) {
         alert(`${field} updated successfully!`);
-        // Update the display value here
     }
 }
 
@@ -247,7 +370,7 @@ document.getElementById('searchGuardInput').addEventListener('input', function(e
 // Render Programs
 async function renderPrograms() {
     try {
-        const res = await fetch('http://localhost:3000/api/v1/programs/program_get_data')
+        const res = await fetch(`${URL_BASED}/programs/program_get_data`)
 
         const programsList = document.getElementById('programsList');
         programsList.innerHTML = '';
@@ -306,7 +429,7 @@ async function addProgram() {
     }
 
     try {
-        const res = await fetch('http://localhost:3000/api/v1/admin/add_program', {
+        const res = await fetch(`${URL_BASED}/admin/add_program`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -358,8 +481,7 @@ async function deleteProgram(id, name) {
     if (!result.isConfirmed) return;
 
     try {
-
-        const response = await fetch(`http://localhost:3000/api/v1/admin/delete_program/${id}`, {
+        const response = await fetch(`${URL_BASED}/admin/delete_program/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -427,7 +549,7 @@ function switchRole(role) {
 // Generate program on Teacher Selection
 async function generateProgramSelectionOnTeacher() {
     try {
-        const res = await fetch('http://localhost:3000/api/v1/programs/program_get_data')
+        const res = await fetch(`${URL_BASED}/programs/program_get_data`)
         const teacherDepartment = document.getElementById('teacher_department')
         teacherDepartment.innerHTML = '<option value="">Select Department</option>';
 
@@ -446,7 +568,7 @@ async function generateProgramSelectionOnTeacher() {
         alert(err)
     }
 }
-generateProgramSelectionOnTeacher()
+
 
 function goBack() {
     window.history.back();
@@ -455,7 +577,7 @@ function goBack() {
 // Reusable function to fetch accounts
 async function fetchAccountCount(tableName) {
     try {
-        const url = `http://localhost:3000/api/v1/admin/get_whole_campus_accounts_count/${tableName}`;
+        const url = `${URL_BASED}/admin/get_whole_campus_accounts_count/${tableName}`;
 
         const response = await fetch(url, {
             method: 'GET',
@@ -578,7 +700,7 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
     };
 
     try {
-        const res = await fetch('http://localhost:3000/api/v1/authentication/guard_registration', {
+        const res = await fetch(`${URL_BASED}/authentication/guard_registration`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -636,7 +758,7 @@ document.getElementById('teacherForm').addEventListener('submit', async function
     };
 
     try {
-        const res = await fetch('http://localhost:3000/api/v1/authentication/teacher_registration', {
+        const res = await fetch(`${URL_BASED}/authentication/teacher_registration`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -703,7 +825,7 @@ document.getElementById('studentForm').addEventListener('submit', async function
 
 
     try {
-        const res = await fetch('http://localhost:3000/api/v1/authentication/student_registration', {
+        const res = await fetch(`${URL_BASED}/authentication/student_registration`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -760,7 +882,7 @@ async function handleSetEvent() {
     }
 
     try {
-        const response = await fetch('http://localhost:3000/api/v1/admin/set_event', {
+        const response = await fetch(`${URL_BASED}/admin/set_event`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -799,7 +921,7 @@ async function handleSetEvent() {
                 title: 'Session Expired',
                 text: error.message
             }).then(() => {
-                window.location.href = 'login.html';
+                window.location.href = '../admin/admin_login.html';
             });
         } else {
             Swal.fire({

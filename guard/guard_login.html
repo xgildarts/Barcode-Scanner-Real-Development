@@ -52,6 +52,9 @@
     </div>
 
     <script>
+
+        const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+
         document.addEventListener('DOMContentLoaded', () => {
             const savedEmail = localStorage.getItem('guard_email_remember');
             if(savedEmail) {
@@ -73,7 +76,7 @@
                     didOpen: () => Swal.showLoading()
                 });
 
-                const response = await fetch('http://localhost:3000/api/v1/guard/login', {
+                const response = await fetch(`${URL_BASED}/guard/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })

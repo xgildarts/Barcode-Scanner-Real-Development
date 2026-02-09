@@ -337,6 +337,31 @@ teacher.post('/manual_attendance', async (req, res) => {
     }
 })
 
+// Get attendance event for teacher
+teacher.get('/get_event_attendance', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getAttendanceEventsForTeacher(decodedToken.teacher_id, 'event_attendance_record')
+        res.json({ ok: true, message: 'Successfully retrieved events record!', content: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Get attendance event history for teacher
+teacher.get('/get_event_attendance_history', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getAttendanceEventsForTeacher(decodedToken.teacher_id, 'event_attendance_history_record')
+        res.json({ ok: true, message: 'Successfully retrieved events record!', content: result})
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+
 
 // Export route
 module.exports = teacher

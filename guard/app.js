@@ -1,3 +1,150 @@
+const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const video = document.getElementById("camera");
+let scanning = false;
+let stream = null;
 
-const URL_BASED = 'http://localhost:3000'
+// Start Camera
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: "environment" } }
+        });
+        video.srcObject = stream;
+    } catch (e) {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+        } catch (err) {
+            Swal.fire("Error", "Camera access denied", "error");
+        }
+    }
+    // Start scanning only when video is ready
+    video.onloadedmetadata = () => {
+        startScan();
+    };
+}
 
+async function startScan() {
+    if (!("BarcodeDetector" in window)) return;
+
+    if (scanning) return; 
+    
+    scanning = true;
+
+    const detector = new BarcodeDetector({
+        formats: ["ean_13", "ean_8", "code_128", "code_39", "qr_code"]
+    });
+
+    const scanLoop = async () => {
+        if (!scanning) return;
+
+        try {
+            const barcodes = await detector.detect(video);
+            if (barcodes.length > 0) {
+                scanning = false;
+                const code = barcodes[0].rawValue;
+                showActionModal(code);
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        if (scanning) {
+            requestAnimationFrame(scanLoop);
+        }
+    };
+
+    scanLoop();
+}
+
+// 3. Modal
+async function showActionModal(scannedCode) {
+    new Audio('../sounds/Barcode scanner beep sound (sound effect).mp3').play();
+    
+    const result = await Swal.fire({
+        title: 'Barcode Detected!',
+        text: `Code: ${scannedCode}`,
+        icon: 'question',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Time IN',
+        confirmButtonColor: '#28a745',
+        denyButtonText: 'Time OUT',
+        denyButtonColor: '#d33',
+        cancelButtonText: 'Cancel',
+        allowOutsideClick: false
+    });
+
+    if (result.isConfirmed) {
+        processAttendance(scannedCode, 'TIME IN'); // Ensure string matches DB
+    } else if (result.isDenied) {
+        processAttendance(scannedCode, 'TIME OUT');
+    } else {
+        startScan();
+    }
+}
+
+// 4. Process Attendance
+function processAttendance(code, type) {
+    console.log(`Processing ${type} for ${code}`);
+    
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
+
+    fetch(`${URL_BASED}/guard/event_attendance`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('guard_token')}`
+        },
+        body: JSON.stringify({ barcode: code, status: type })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.ok) {
+            Swal.fire({
+                title: 'Success!',
+                text: data.message,
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                startScan(); 
+            });
+        } else {
+             Swal.fire("Error", data.message, "error").then(() => {
+                startScan(); 
+            });
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        Swal.fire("Error", "Connection failed", "error").then(() => {
+            startScan();
+        });
+    });
+
+}
+
+// Manual Entry
+async function manualEntry() {
+    scanning = false;
+
+    const { value: code } = await Swal.fire({
+        title: 'Manual Entry',
+        input: 'text',
+        showCancelButton: true
+    });
+
+    if (code) {
+        showActionModal(code);
+    } else {
+        startScan();
+    }
+}
+
+// Init
+startCamera();

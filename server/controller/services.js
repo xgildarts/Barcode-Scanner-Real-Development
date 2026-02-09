@@ -1087,6 +1087,16 @@ async function adminLogin(email, password) {
     });
 }
 
+// Get Admin data
+function getAdminData(adminID) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT admin_id, admin_name, admin_email FROM admin_accounts;', [], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
 // Admin Set Event Name
 async function setEventName(eventName, adminID) {
     return new Promise((resolve, reject) => {
@@ -1153,7 +1163,7 @@ async function studentCheckEventIfExists(studentIDNumber, status) {
 async function getEventSet() {
     return new Promise((resolve, reject) => {
         // We order by ID DESC to get the latest event set by Admin
-        const query = "SELECT event_name_set FROM subject_and_year_level_setter ORDER BY id DESC LIMIT 1";
+        const query = "SELECT event_name_set FROM event_setter;";
         
         db.execute(query, [], (err, result) => {
             if(err) { return reject(err) }
@@ -1163,58 +1173,79 @@ async function getEventSet() {
     })
 }
 
-// Main Insert Function
+// Insert Event Attendance
 async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guardName, guardLocation) {
     return new Promise(async (resolve, reject) => {
         try {
-            // Check if student exists
             const student = await studentBarcodeFinder(studentBarcode);
             if (!student) { 
                 return reject('Student does not exist in records!'); 
             }
-
-            // Check for Duplicates (Prevent double scanning)
             const alreadyScanned = await studentCheckEventIfExists(student.student_id_number, status);
-            
             if (alreadyScanned) {
                 return reject(`Student has already scanned for ${status}!`);
             }
-
-            // STEP 3: Get the Active Event
             const eventData = await getEventSet();
             if (!eventData || !eventData.event_name_set) {
                 return reject('No active event found. Please contact Admin.');
             }
             const activeEventName = eventData.event_name_set;
-
-            // STEP 4: Insert the Record
             const insertQuery = `
                 INSERT INTO event_attendance_record 
-                (student_id, student_name, student_id_number, student_program, event_name, guard_name, guard_location, status, guard_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
-
-            // Combine First and Last name
-            const fullName = `${student.student_firstname} ${student.student_middlename} ${student.student_lastname}`;
-
+            const fullName = `${student.student_firstname} ${student.student_middlename}. ${student.student_lastname}`;
             const values = [
                 student.student_id,       
                 fullName,                 
                 student.student_id_number,
                 student.student_program,  
+                student.student_year_level,
                 activeEventName,          
                 guardName || 'Guard',     
                 guardLocation,            
                 status,                   
                 guardID
             ];
+            db.execute(insertQuery, values, async (err, result) => {
+                if (err) { return reject(err); }
+
+                try {
+                    await guardInsertAttendanceHistoryRecord(values);
+                    
+                    resolve({
+                        ok: true,
+                        message: `${status} Recorded Successfully`,
+                        student: fullName,
+                        event: activeEventName
+                    });
+                } catch (historyErr) {
+                    console.error("History insert failed:", historyErr);
+                    reject(historyErr);
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// Insert Event Attendance History
+async function guardInsertAttendanceHistoryRecord(values) {
+    return new Promise((resolve, reject) => {
+        try {
+            const insertQuery = `
+                INSERT INTO event_attendance_history_record 
+                (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
 
             db.execute(insertQuery, values, (err, result) => {
                 if (err) { return reject(err); }
                 resolve({
-                    message: `${status} Recorded Successfully`,
-                    student: fullName,
-                    event: activeEventName
+                    ok: true,
+                    message: `Recorded Successfully`
                 });
             });
 
@@ -1224,18 +1255,7 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
     });
 }
 
-// Debugger
-// async function tester() {
-//     try {
-//        const result = await guardLogin('gray@panpacificu.edu.ph', 'q09481239328')
-//        console.log(result)
-//     } catch(err) {
-//        console.log(err)
-//     }
-// }
-
-// tester()
-
+// Guard Login
 async function guardLogin(email, password) {
     return new Promise((resolve, reject) => {
         const query = "SELECT * FROM guards WHERE guard_email = ? LIMIT 1"; 
@@ -1247,18 +1267,17 @@ async function guardLogin(email, password) {
                 return reject({ message: "Account not found", code: 404 });
             }
             const guard = result[0];
-            console.log(guard)
             try {
                 const isMatch = await comparePassword(password, guard.guard_password);
                 if (!isMatch) {
                     return reject({ message: "Invalid password", code: 401 });
                 }
                 const payload = {
-                    id: guard.id,
-                    name: guard.guard_name,
+                    guard_id: guard.guard_id,
+                    guard_name: guard.guard_name,
+                    guard_location: guard.guard_designated_location,
                     role: 'guard'
-                };
-                
+                };         
                 const token = generateToken(payload);
                 resolve({
                     message: "Login Successful",
@@ -1273,9 +1292,55 @@ async function guardLogin(email, password) {
     });
 }
 
+// Get Events
+function getAttendanceEventRecords(adminID) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM event_attendance_record WHERE admin_id = ?', [ adminID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Get Events History
+function getAttendanceEventHistoryRecords(adminID) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT * FROM event_attendance_history_record WHERE admin_id = ?', [ adminID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
+
+// Debugger
+// async function tester() {
+//     try {
+//        const result = await getAttendanceEventsForTeacher(7)
+//        console.log(result)
+//     } catch(err) {
+//        console.log(err)
+//     }
+// }
+
+// tester()
+
+// Get Student Attendance Events for Teacher
+function getAttendanceEventsForTeacher(teacherID, tableName) {
+    return new Promise(async (resolve, reject) => {
+        const teacherData = await getTeacherData(teacherID)
+        db.execute(`SELECT * FROM ${tableName} WHERE student_program = ?`, [ teacherData[0].teacher_program ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve(result)
+        })
+    })
+}
 
 // Export functions
 module.exports= {
+    getAttendanceEventsForTeacher,
+    getAdminData,
+    getAttendanceEventHistoryRecords,
+    getAttendanceEventRecords,
     guardLogin,
     guardInsertAttendanceRecord,
     setEventName,

@@ -39,7 +39,9 @@ const DOM = {
     sidebar: document.getElementById('sidebar'),
     sidebarOverlay: document.getElementById('sidebarOverlay'),
     menuBtn: document.getElementById('menuBtn'),
-    headerTitle: document.getElementById('headerTitle')
+    headerTitle: document.getElementById('headerTitle'),
+    eventAttendanceBody: document.getElementById('eventAttendanceBody'),
+    eventAttendanceHistoryBody: document.getElementById('attendanceHistoryBody')
 };
 
 let state = {
@@ -48,6 +50,51 @@ let state = {
     attendanceStatus: {}, // For manual entry
     manualStudents: []
 };
+
+function dateFormat(stringDate) {
+    return stringDate.split('T')[0]
+}
+
+// Get Event Attendance Record
+async function renderEventAttendanceRecord() {
+    const data = await apiCall('/teacher/get_event_attendance', 'GET')
+    DOM.eventAttendanceBody.innerHTML = data.content.map(d => 
+        `
+        <tr>
+            <td>${d.student_id_number}</td>
+            <td>${d.student_name}</td>
+            <td>${d.student_program}</td>
+            <td>${d.student_year_level}</td>
+            <td>${dateFormat(d.date)}</td>
+            <td>${formatTime(d.time)}</td>
+            <td>${d.event_name}</td>
+            <td>${d.status}</td>
+        </tr>
+        `
+    ).join('')
+    
+}
+
+// Get Event Attendance History Record
+async function renderEventAttendanceHistoryRecord() {
+    const data = await apiCall('/teacher/get_event_attendance_history', 'GET')
+    DOM.eventAttendanceHistoryBody.innerHTML = data.content.map(d => 
+        `
+        <tr>
+            <td>${d.student_id_number}</td>
+            <td>${d.student_name}</td>
+            <td>${d.student_program}</td>
+            <td>${d.student_year_level}</td>
+            <td>${dateFormat(d.date)}</td>
+            <td>${formatTime(d.time)}</td>
+            <td>${d.event_name}</td>
+            <td>${d.status}</td>
+        </tr>
+        `
+    ).join('')
+    
+}
+
 
 // Generic API Fetcher
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -721,6 +768,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSubjects()
     renderYearLevel()
     renderPrograms()
+    renderEventAttendanceRecord()
+    renderEventAttendanceHistoryRecord()
     radiusSlider.dispatchEvent(new Event('input')); 
 
     // 4. Setup Global Search Listeners
@@ -1081,7 +1130,7 @@ function setupManualEntryFilterSearch() {
     });
 }
 
-// 2. The function triggered by the buttons
+// The function triggered by the buttons
 function addToAttendance(
     id,
     studentIDNumber,
@@ -1105,8 +1154,6 @@ function addToAttendance(
 
 
 
-
-
 // Realtime refresh
-setInterval(getStudentAttendanceRecords, 1000)
-setInterval(getStudentAttendanceHistoryRecords, 1000)
+// setInterval(getStudentAttendanceRecords, 1000)
+// setInterval(getStudentAttendanceHistoryRecords, 1000)

@@ -1,3 +1,6 @@
+
+const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
+
 document.getElementById('registrationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -47,7 +50,7 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     };
 
     try {
-        const res = await fetch('http://localhost:3000/api/v1/authentication/student_registration', {
+        const res = await fetch(`${URL_BASED}/authentication/student_registration`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -90,7 +93,7 @@ async function loadProgramsDropdown() {
     const programSelect = document.getElementById('program');
 
     try {
-        const response = await fetch('http://localhost:3000/api/v1/programs/program_get_data');
+        const response = await fetch(`${URL_BASED}/programs/program_get_data`);
         
         const data = await response.json();
 

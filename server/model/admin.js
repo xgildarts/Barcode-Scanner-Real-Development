@@ -85,5 +85,41 @@ admin.post('/set_event', async (req, res) => {
     }
 })
 
+// Get Events Record
+admin.get('/get_events', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getAttendanceEventRecords(decodedToken.admin_id)
+        res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Get Events Record
+admin.get('/get_events_history', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getAttendanceEventHistoryRecords(decodedToken.admin_id)
+        res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Get Admin data
+admin.get('/get_admin_data', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getAdminData(decodedToken.admin_id)
+        res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
 // Export route
 module.exports = admin
