@@ -70,7 +70,11 @@
             const email = document.getElementById('emailInput').value.trim();
             const password = document.getElementById('passwordInput').value;
             const rememberMe = document.getElementById('rememberMe').checked;
-
+            // Show loading
+            Swal.fire({
+                    title: 'Logging in...',
+                    didOpen: () => Swal.showLoading()
+            });
             try {
                 const response = await fetch(`${URL_BASED}/authentication/admin_login`, {
                     method: 'POST',
@@ -83,7 +87,7 @@
                 if (!response.ok) {
                     throw new Error(data.message || 'Invalid credentials');
                 }
-
+                
                 localStorage.setItem('admin_token', data.token);
                 
                 if (data.user) {

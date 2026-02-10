@@ -146,5 +146,35 @@ async function manualEntry() {
     }
 }
 
+function logout() {
+    Swal.fire({
+        title: 'Logout?',
+        text: 'You will be logged out of the guard panel.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        allowOutsideClick: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem('guard_token');
+            localStorage.removeItem('guard_user');
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Logging out...',
+                timer: 1500,
+                showConfirmButton: false,
+                allowOutsideClick: false
+            }).then(() => {
+                window.location.href = 'guard_login.html';
+            });
+        }
+    });
+}
+
+
 // Init
 startCamera();

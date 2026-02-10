@@ -1,12 +1,33 @@
+const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
+const emailInput = document.getElementById('email');
+const rememberMeCheckbox = document.getElementById('rememberMe');
+const rememberedEmail = localStorage.getItem('remembered_email');
 
+if (rememberedEmail) {
+    emailInput.value = rememberedEmail;
+    rememberMeCheckbox.checked = true;
+}
 
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const email = document.getElementById('email').value;
+    // Show loading
+    Swal.fire({
+        title: 'Logging in...',
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+    });
+
+    const email = emailInput.value.trim();
     const password = document.getElementById('password').value;
+
+    // 👉 Remember Me logic
+    if (rememberMeCheckbox.checked) {
+        localStorage.setItem('remembered_email', email);
+    } else {
+        localStorage.removeItem('remembered_email');
+    }
 
     try {
         const res = await fetch(`${URL_BASED}/authentication/teacher_login`, {
@@ -19,6 +40,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
 
         if (res.ok) {
             localStorage.setItem('teacher_token', data.token);
+            localStorage.setItem('teacher_user', JSON.stringify(data.user)); // optional
 
             Swal.fire({
                 icon: 'success',
@@ -47,8 +69,12 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     }
 });
 
-
+// Placeholder for forgot password
 document.querySelector('.forgot-password').addEventListener('click', function(e) {
     e.preventDefault();
-    alert('Password reset functionality would be implemented here.');
+    Swal.fire({
+        icon: 'info',
+        title: 'Forgot Password',
+        text: 'Password recovery feature coming soon!'
+    });
 });

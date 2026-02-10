@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    checkToken()
     navigateTo('dashboard')
     // Initial render
     renderPrograms();
@@ -14,9 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const sidebar = document.getElementById('sidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 const menuBtn = document.querySelector('.menu-btn');
-
 const TOKEN = localStorage.getItem('admin_token');
-
 const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 
 const DOMElements = {
@@ -32,13 +31,18 @@ const DOMElements = {
     statsValue: document.getElementById('statsValue'),
     sideBarName: document.querySelector('.sidebar-name'),
     profileName: document.querySelector('.profile-name'),
-    profileEmail: document.querySelector('.profile-email')
+    profileEmail: document.querySelector('.profile-email'),
+    searchFilterEventAttendance: document.getElementById('searchFilterEventAttendance'),
+    searchFilterEventAttendanceHistory: document.getElementById('searchFilterEventAttendanceHistory'),
+    attendanceBody: document.getElementById('attendanceBody'),
+    attendanceHistory: document.getElementById('attendanceHistory')
 }
 
 function dateFormat(stringDate) {
     return stringDate.split('T')[0]
 }
 
+// Format time
 function formatTime(timeString) {
     if (!timeString) return '--:--';
     const [hours, minutes] = timeString.split(':');
@@ -50,6 +54,59 @@ function formatTime(timeString) {
     return `${h}:${m} ${suffix}`;
 }
 
+// Check token
+async function checkToken() {
+    try {
+        // No token at all
+        if (!TOKEN) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Please login first!',
+                text: 'Your session is missing or expired.',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
+
+            window.location.href = 'admin_login.html';
+            return;
+        }
+
+        // Verify token
+        const res = await fetch(`${URL_BASED}/authentication/verify_token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        });
+
+        const data = await res.json();
+
+        // Token invalid
+        if (!res.ok) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: data.message || 'Please login again.',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
+
+            window.location.href = 'admin_login.html';
+        }
+
+    } catch (err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || 'Something went wrong.',
+            confirmButtonColor: '#d33'
+        });
+
+        console.error(err);
+    }
+}
+
+
 // Event Attendance
 async function renderEventAttendanceRecord() {
     try {
@@ -59,15 +116,16 @@ async function renderEventAttendanceRecord() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${TOKEN}`
             }
-        })
-        const data = await res.json()
-        // Set total attendees
-        DOMElements.statsValue.textContent = data.content.length
-        DOMElements.sideBarStatsValue.textContent = data.content.length
+        });
 
-        if(res.ok) {
-            DOMElements.attendanceBody.innerHTML = data.content.map(d => 
-                `
+        const data = await res.json();
+
+        // Set total attendees
+        DOMElements.statsValue.textContent = data.content.length;
+        DOMElements.sideBarStatsValue.textContent = data.content.length;
+
+        if (res.ok) {
+            DOMElements.attendanceBody.innerHTML = data.content.map(d => `
                 <tr>
                     <td>${d.student_id_number}</td>
                     <td>${d.student_name}</td>
@@ -77,16 +135,28 @@ async function renderEventAttendanceRecord() {
                     <td>${formatTime(d.time)}</td>
                     <td>${d.event_name}</td>
                 </tr>
-                `
-            ).join('')
-            console.log(data)
+            `).join('');
+
+            console.log(data);
         } else {
-            console.log(data)
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed to load records',
+                text: data.message || 'Something went wrong while fetching attendance data.',
+                confirmButtonColor: '#d33'
+            });
         }
-    } catch(err) {
-        alert(err)
+    } catch (err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: err.message || 'Unable to connect to the server.',
+            confirmButtonColor: '#d33'
+        });
+        console.error(err);
     }
 }
+
 
 // Event Attendance History
 async function renderEventHistoryAttendanceRecord() {
@@ -278,11 +348,47 @@ function logout() {
         confirmButtonText: 'Yes, log out!'
     }).then((result) => {
         if (result.isConfirmed) {
-            localStorage.removeItem('admin_token');
-            localStorage.removeItem('admin_user'); 
-            window.location.href = 'admin_login.html';
+            Swal.fire({
+                icon: 'success',
+                title: 'Logged out',
+                text: 'Redirecting to login...',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_user');
+                window.location.href = 'admin_login.html';
+            });
         }
     });
+}
+
+function exportTableToExcel(tableId, fileName) {
+    const table = document.getElementById(tableId);
+    if (!table) {
+        return Swal.fire({
+            icon: 'info',
+            title: 'Export Failed',
+            text: 'No table data found to export.'
+        });
+    }
+    
+    try {
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.table_to_sheet(table);
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+        XLSX.writeFile(workbook, `${fileName}.xlsx`);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Exported!',
+            text: 'Your Excel file has been downloaded.',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    } catch (e) {
+        Swal.fire('Error', 'Failed to generate Excel file', 'error');
+    }
 }
 
 
@@ -932,3 +1038,29 @@ async function handleSetEvent() {
         }
     }
 }
+
+// Search filter for Event Attendance
+DOMElements.searchFilterEventAttendance.addEventListener('input', function() {
+    const input = this.value.toLowerCase();
+    const tr = DOMElements.attendanceBody.getElementsByTagName('tr');
+    for(let i = 0; i < tr.length; i++) {
+       if(tr[i].textContent.includes(input)) {
+        tr[i].style.display = '';
+       } else {
+        tr[i].style.display = 'none';
+       }
+    }
+})
+
+// Search filter for Event Attendance History
+DOMElements.searchFilterEventAttendanceHistory.addEventListener('input', function() {
+    const input = this.value.toLowerCase();
+    const rows = DOMElements.attendanceHistory.getElementsByTagName('tr');
+    for(let i = 0; i < rows.length; i++) {
+        if(rows[i].textContent.includes(input)) {
+            rows[i].style.display = '';
+        } else {
+            rows[i].style.display = 'none';
+        }
+    }
+})

@@ -41,7 +41,11 @@ const DOM = {
     menuBtn: document.getElementById('menuBtn'),
     headerTitle: document.getElementById('headerTitle'),
     eventAttendanceBody: document.getElementById('eventAttendanceBody'),
-    eventAttendanceHistoryBody: document.getElementById('attendanceHistoryBody')
+    eventAttendanceHistoryBody: document.getElementById('attendanceHistoryBody'),
+    searchFilterEventHistory: document.getElementById('searchFilterEventHistory'),
+    searchFilterEvent: document.getElementById('searchFilterEvent'),
+    eventAttendanceYearLevelFilter: document.getElementById('eventAttendanceYearLevelFilter'),
+    eventAttendanceHistoryYearLevelFilter: document.getElementById('eventAttendanceHistoryYearLevelFilter')
 };
 
 let state = {
@@ -1151,8 +1155,57 @@ function addToAttendance(
     
 }
 
+DOM.searchFilterEventHistory.addEventListener('input', function() {
+    const typed = this.value.toLowerCase()
+    const rows = DOM.eventAttendanceHistoryBody.getElementsByTagName('tr');
+    for(let i = 0; i < rows.length; i++) {
+        if(rows[i].textContent.toLowerCase().includes(typed)) {
+            rows[i].style.display = '';
+        } else {
+            rows[i].style.display = 'none';
+        }
+    }
+})
 
+DOM.searchFilterEvent.addEventListener('input', function() {
+    const typed = this.value.toLowerCase()
+    const rows = DOM.eventAttendanceBody.getElementsByTagName('tr');
+    for(let i = 0; i < rows.length; i++) {
+        if(rows[i].textContent.toLowerCase().includes(typed)) {
+            rows[i].style.display = '';
+        } else {
+            rows[i].style.display = 'none';
+        }
+    }
+})
 
+DOM.eventAttendanceYearLevelFilter.addEventListener('change', function() {
+    const yearInput = this.value.toLowerCase()
+    const rows = DOM.eventAttendanceBody.getElementsByTagName('tr')
+    for(let i = 0; i < rows.length; i++) {
+        if(rows[i].textContent.toLowerCase().includes(yearInput)) {
+            rows[i].style.display = ''
+        } else {
+            rows[i].style.display = 'none'
+        }
+    }
+})
+
+DOM.eventAttendanceHistoryYearLevelFilter.addEventListener('change', function() {
+    const yearInput = this.value.toLowerCase()
+    const rows = DOM.eventAttendanceHistoryBody.getElementsByTagName('tr')
+    for(let i = 0; i < rows.length; i++) {
+        if(rows[i].textContent.toLowerCase().includes(yearInput)) {
+            rows[i].style.display = ''
+        } else {
+            rows[i].style.display = 'none'
+        }
+    }
+})
+
+function printAttendance() {
+    window.print()
+}
 
 // Realtime refresh
 // setInterval(getStudentAttendanceRecords, 1000)

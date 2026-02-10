@@ -12,8 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
 const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
 
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
 
+    // Show loading
+    Swal.fire({
+        title: 'Logging in...',
+        didOpen: () => Swal.showLoading()
+    });
+
+    e.preventDefault();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('rememberMe').checked;
