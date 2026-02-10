@@ -62,6 +62,8 @@
             }
         });
 
+        const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
+
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -70,7 +72,7 @@
             const rememberMe = document.getElementById('rememberMe').checked;
 
             try {
-                const response = await fetch('http://localhost:3000/api/v1/authentication/admin_login', {
+                const response = await fetch(`${URL_BASED}/authentication/admin_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })

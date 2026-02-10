@@ -1,3 +1,7 @@
+
+const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
+
+
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
@@ -5,7 +9,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     const password = document.getElementById('password').value;
 
     try {
-        const res = await fetch('http://localhost:3000/api/v1/authentication/teacher_login', {
+        const res = await fetch(`${URL_BASED}/authentication/teacher_login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

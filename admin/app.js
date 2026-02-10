@@ -91,7 +91,7 @@ async function renderEventAttendanceRecord() {
 // Event Attendance History
 async function renderEventHistoryAttendanceRecord() {
     try {
-        const res = await fetch(`${URL_BASED}/admin/get_events`, {
+        const res = await fetch(`${URL_BASED}/admin/get_events_history`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

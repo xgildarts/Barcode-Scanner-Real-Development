@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -27,7 +29,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     }
 
     try {
-        const res = await fetch('http://192.168.1.50:3000/api/v1/authentication/student_login', {
+        const res = await fetch(`${URL_BASED}/authentication/student_login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, device_id })

@@ -1,5 +1,5 @@
 
-const BASE_URL = 'http://localhost:3000/api/v1';
+const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const TOKEN = localStorage.getItem('teacher_token');
 
 // Check TOKEN
