@@ -625,13 +625,13 @@ async function insertStudentAttendance(
     student_program,
     teacher_barcode_scanner_serial_number
 ) {
-    // 1️ Check if student already exists in attendance
+    // Check if student already exists in attendance
     const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
     if (exists) {
         throw new Error('Student already recorded in attendance.')
     }
 
-    // 2️ Check teacher serial number + year level
+    // Check teacher serial number + year level
     const result = await checkYearLevelAndSerialNumber(
         teacher_barcode_scanner_serial_number,
         student_year_level
@@ -641,7 +641,7 @@ async function insertStudentAttendance(
         throw new Error('Year level not authorized for this teacher.')
     }
 
-    // 3️ Insert attendance record
+    // Insert attendance record
     await new Promise((resolve, reject) => {
         db.execute(
             `INSERT INTO attendance_record (
@@ -673,7 +673,7 @@ async function insertStudentAttendance(
         )
     })
 
-    // 4 Insert attendance history (SAFE to await)
+    // Insert attendance history (SAFE to await)
     await insertStudentAttendanceHistory(
         student_id,
         student_id_number,
@@ -1312,18 +1312,6 @@ function getAttendanceEventHistoryRecords(adminID) {
     })
 }
 
-// Debugger
-// async function tester() {
-//     try {
-//        const result = await getAttendanceEventsForTeacher(7)
-//        console.log(result)
-//     } catch(err) {
-//        console.log(err)
-//     }
-// }
-
-// tester()
-
 // Get Student Attendance Events for Teacher
 function getAttendanceEventsForTeacher(teacherID, tableName) {
     return new Promise(async (resolve, reject) => {
@@ -1335,8 +1323,48 @@ function getAttendanceEventsForTeacher(teacherID, tableName) {
     })
 }
 
+// Change Admin Name
+function changeAdminName(newName, adminID) {
+    return new Promise((resolve, reject) => {
+        db.execute('UPDATE admin_accounts SET admin_name = ? WHERE admin_id = ?', [ newName, adminID ], (err, result) => {
+            if(err) { return reject(err) }
+            resolve({ message: 'Successfully updated!' })
+        })
+    })
+}
+
+function updateAdminPassword(adminID, currentPassword, newPassword) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT admin_password FROM admin_accounts WHERE admin_id = ?', [ adminID ], async (err, result) => {
+            if(err) { return reject({ ok: false, message: err, status_code: 500 }) }
+            const match = comparePassword(newPassword, currentPassword);
+            if(!match) { return reject({ ok: false, message: 'Invalid password', status_code: 401 }) }
+            const hashedPassword = await hashPassword(newPassword)
+            db.execute('UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?', [ hashedPassword, adminID ], (err, result) => {
+                if(err) { return reject({ ok: false, message: err, status_code: 500 }) }
+                resolve({ ok: true, message: 'Password updated', status_code: 200 })
+            })
+        })
+    })
+}
+
+// Debugger
+// async function tester() {
+//     try {
+//        const result = await updateAdminPassword(1, 'q09481239328', 'q09097616254')
+//        console.log(result)
+//     } catch(err) {
+//        console.log(err)
+//     }
+// }
+
+// tester()
+
+
 // Export functions
 module.exports= {
+    updateAdminPassword,
+    changeAdminName,
     getAttendanceEventsForTeacher,
     getAdminData,
     getAttendanceEventHistoryRecords,

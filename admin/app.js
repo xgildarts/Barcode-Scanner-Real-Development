@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkToken()
     navigateTo('dashboard')
     // Initial render
+    getAdminData();
     renderPrograms();
     fetchStudentAccounts()
     fetchTeacherAccounts()
@@ -35,7 +36,11 @@ const DOMElements = {
     searchFilterEventAttendance: document.getElementById('searchFilterEventAttendance'),
     searchFilterEventAttendanceHistory: document.getElementById('searchFilterEventAttendanceHistory'),
     attendanceBody: document.getElementById('attendanceBody'),
-    attendanceHistory: document.getElementById('attendanceHistory')
+    attendanceHistory: document.getElementById('attendanceHistory'),
+    eventHistoryYearFilter: document.getElementById('eventHistoryYearFilter'),
+    adminProfileName: document.getElementById('adminProfileName'),
+    profileEmail: document.getElementById('profileEmail'),
+    profileEmailTop: document.getElementById('profileEmailTop')
 }
 
 function dateFormat(stringDate) {
@@ -120,9 +125,16 @@ async function renderEventAttendanceRecord() {
 
         const data = await res.json();
 
+        
+        let profileStatsValueCounts = 0;
+
+        data.content.forEach(d => {
+            if(d.status === 'TIME IN') { profileStatsValueCounts += 1 }
+        })
+
         // Set total attendees
-        DOMElements.statsValue.textContent = data.content.length;
-        DOMElements.sideBarStatsValue.textContent = data.content.length;
+        DOMElements.statsValue.textContent = profileStatsValueCounts;
+        DOMElements.sideBarStatsValue.textContent = profileStatsValueCounts;
 
         if (res.ok) {
             DOMElements.attendanceBody.innerHTML = data.content.map(d => `
@@ -133,6 +145,7 @@ async function renderEventAttendanceRecord() {
                     <td>${d.student_year_level}</td>
                     <td>${dateFormat(d.date)}</td>
                     <td>${formatTime(d.time)}</td>
+                    <td>${d.status}</td>
                     <td>${d.event_name}</td>
                 </tr>
             `).join('');
@@ -179,6 +192,7 @@ async function renderEventHistoryAttendanceRecord() {
                     <td>${d.student_year_level}</td>
                     <td>${dateFormat(d.date)}</td>
                     <td>${formatTime(d.time)}</td>
+                    <td>${d.status}</td>
                     <td>${d.event_name}</td>
                 </tr>
                 `
@@ -207,15 +221,16 @@ async function getAdminData() {
             DOMElements.sideBarName.textContent = data.content[0].admin_name
             DOMElements.profileName.textContent = data.content[0].admin_name
             DOMElements.profileEmail.textContent = data.content[0].admin_email
+            DOMElements.adminProfileName.textContent = data.content[0].admin_name
+            DOMElements.profileEmailTop.textContent = data.content[0].admin_email
         } else {
             console.log(data)
         }
     } catch(err) {
-
+        console.error(err)
     }
 }
 
-getAdminData()
 
 menuBtn.addEventListener('click', function() {
     sidebar.classList.toggle('active');
@@ -303,38 +318,67 @@ const calendar = flatpickr("#datePicker", {
     }
 });
 
-// Settings
-function editField(field) {
-    const newValue = prompt(`Enter new ${field}:`);
-    if (newValue) {
-        alert(`${field} updated successfully!`);
-    }
-}
 
-function updatePassword() {
-    const current = document.getElementById('currentPassword').value;
-    const newPass = document.getElementById('newPassword').value;
-    const confirm = document.getElementById('confirmPassword').value;
+async function updatePassword() {
+    // Get Values
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
 
-    if (!current || !newPass || !confirm) {
-        alert('Please fill in all password fields.');
-        return;
+    // Client-Side Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Missing Fields',
+            text: 'Please fill in all password fields.'
+        });
     }
 
-    if (newPass !== confirm) {
-        alert('New passwords do not match!');
-        return;
+    if (newPassword !== confirmPassword) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Password Mismatch',
+            text: 'The new passwords do not match. Please try again.'
+        });
     }
 
-    if (newPass.length < 8) {
-        alert('Password must be at least 8 characters long!');
-        return;
+    if (newPassword.length < 6) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Weak Password',
+            text: 'New password must be at least 6 characters long.'
+        });
     }
 
-    alert('Password updated successfully!');
-    document.getElementById('currentPassword').value = '';
-    document.getElementById('newPassword').value = '';
-    document.getElementById('confirmPassword').value = '';
+    // 3. Prepare Payload
+    const payload = {
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+    };
+
+    const res = await fetch(URL_BASED + '/admin/admin_change_password', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + TOKEN 
+        },
+        body: JSON.stringify(payload)
+    });
+
+    // 5. Handle Success
+    if (res) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Your password has been updated successfully.'
+        });
+
+        // Clear the inputs
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+    }
 }
 
 function logout() {
@@ -1044,7 +1088,7 @@ DOMElements.searchFilterEventAttendance.addEventListener('input', function() {
     const input = this.value.toLowerCase();
     const tr = DOMElements.attendanceBody.getElementsByTagName('tr');
     for(let i = 0; i < tr.length; i++) {
-       if(tr[i].textContent.includes(input)) {
+       if(tr[i].textContent.toLowerCase().includes(input)) {
         tr[i].style.display = '';
        } else {
         tr[i].style.display = 'none';
@@ -1057,10 +1101,65 @@ DOMElements.searchFilterEventAttendanceHistory.addEventListener('input', functio
     const input = this.value.toLowerCase();
     const rows = DOMElements.attendanceHistory.getElementsByTagName('tr');
     for(let i = 0; i < rows.length; i++) {
-        if(rows[i].textContent.includes(input)) {
+        if(rows[i].textContent.toLowerCase().includes(input)) {
             rows[i].style.display = '';
         } else {
             rows[i].style.display = 'none';
         }
     }
 })
+
+// Year Filter
+DOMElements.eventHistoryYearFilter.addEventListener('change', function() {
+    const typed = this.value.toLowerCase();
+    console.log(typed)
+    const rows = DOMElements.attendanceHistory.getElementsByTagName('tr');
+    for(let i = 0; i < rows.length; i++) {
+        if(rows[i].textContent.toLowerCase().includes(typed)) {
+            rows[i].style.display = ''
+        } else {
+            rows[i].style.display = 'none'
+        }
+    }
+})
+
+
+// Edit Profile
+async function editProfileName() {
+    const currentName = DOMElements.adminProfileName.textContent
+    const { value: newName } = await Swal.fire({
+        title: 'Change Name',
+        input: 'text',
+        inputLabel: 'New name',
+        inputValue: currentName,
+        inputPlaceholder: 'Enter new name',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Name cannot be empty!'
+            }
+        }
+    })
+    if (newName) {
+        console.log('New name:', newName)
+        const data = await fetch(`${URL_BASED}/admin/admin_change_name`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN 
+            },
+            body: JSON.stringify({ newName })
+        })
+        if(!data) { return }
+        Swal.fire({
+            icon: 'success',
+            title: 'Updated!',
+            text: 'Name has been changed successfully'
+        }).then(() => {
+            // Reload Admin data
+           getAdminData()
+        })
+    }
+}

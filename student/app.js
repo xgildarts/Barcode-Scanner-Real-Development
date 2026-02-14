@@ -31,8 +31,8 @@ async function authFetch(endpoint, method = 'GET', body = null) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    tab('generateBarcode')
     checkToken()
+    tab('generateBarcode')
     loadProfileData()
     initialCheckBarcodeExpiration()
     getAttendanceHistory()
@@ -43,26 +43,52 @@ document.addEventListener('DOMContentLoaded', () => {
 // Check token
 async function checkToken() {
     try {
-        // If no token provided, redirect the user to login page
+        // No token at all
         if (!CONFIG.TOKEN) {
-            Swal.fire({ icon: 'error', title: 'Please login first!', message: 'Please login first!' })
-                .then(() => {
-                    window.location.href = 'student_login.html'
-                })
+            await Swal.fire({
+                icon: 'error',
+                title: 'Please login first!',
+                text: 'Your session is missing or expired.',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
+
+            window.location.href = 'student_login.html';
             return;
         }
 
-        const { res, data } = await authFetch('/authentication/verify_token', 'POST');
+        // Verify token
+        const res = await fetch(`${CONFIG.BASE_URL}/authentication/verify_token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + CONFIG.TOKEN
+            }
+        });
 
+        const data = await res.json();
+
+        // Token invalid
         if (!res.ok) {
-            Swal.fire({ icon: 'error', title: data.message, message: data.message })
-                .then(() => {
-                    window.location.href = 'student_login.html'
-                })
+            await Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: data.message || 'Please login again.',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
+
+            window.location.href = 'student_login.html';
         }
 
     } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Error', message: err.message || err })
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || 'Something went wrong.',
+            confirmButtonColor: '#d33'
+        });
+
+        console.error(err);
     }
 }
 

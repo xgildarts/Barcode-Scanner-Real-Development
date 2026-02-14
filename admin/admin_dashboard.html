@@ -230,6 +230,7 @@
                                 <th>Year Level</th>
                                 <th>Date</th>
                                 <th>Time</th>
+                                <th>Status</th>
                                 <th>Event Name</th>
                             </tr>
                         </thead>
@@ -268,12 +269,12 @@
                     </div>
             
                     <div class="filters-row">
-                        <select class="filter-select" id="yearFilter">
+                        <select class="filter-select" id="eventHistoryYearFilter">
                             <option value="">Year Level All</option>
-                            <option value="1">1st Year</option>
-                            <option value="2">2nd Year</option>
-                            <option value="3">3rd Year</option>
-                            <option value="4">4th Year</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
                         </select>
                     </div>
                 </div>
@@ -288,6 +289,7 @@
                                 <th>Year Level</th>
                                 <th>Date</th>
                                 <th>Time</th>
+                                <th>Status</th>
                                 <th>Event Name</th>
                             </tr>
                         </thead>
@@ -316,8 +318,8 @@
                     </div>
                 </div>
                 <div class="profile-name">Mr. Henry</div>
-                <div class="profile-email">henry@gmail.com</div>
-                <button class="edit-profile-btn">
+                <div class="profile-email" id="profileEmailTop">henry@gmail.com</div>
+                <button class="edit-profile-btn" onclick="editProfileName()">
                     <svg viewBox="0 0 24 24">
                         <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                     </svg>
@@ -331,8 +333,8 @@
                 <div class="info-card">
                     <div class="info-row">
                         <span class="info-label">Name</span>
-                        <span class="info-value">Mr. Henry</span>
-                        <button class="edit-btn" onclick="editField('name')">
+                        <span class="info-value" id="adminProfileName">Mr. Henry</span>
+                        <button class="edit-btn" onclick="editProfileName()">
                             <svg viewBox="0 0 24 24">
                                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                             </svg>
@@ -342,7 +344,7 @@
         
                     <div class="info-row">
                         <span class="info-label">Email</span>
-                        <span class="info-value">henry@gmail.com</span>
+                        <span class="info-value" id="profileEmail">henry@gmail.com</span>
                         <button class="edit-btn" onclick="editField('email')">
                             <svg viewBox="0 0 24 24">
                                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>

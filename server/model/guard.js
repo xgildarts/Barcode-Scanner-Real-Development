@@ -25,7 +25,7 @@ guard.post('/login', async (req, res) => {
     }
 });
 
-// Continue here tomorrow
+// Attendance inserting
 guard.post('/event_attendance', async (req, res) => {
     try {
         const { barcode, status } = req.body

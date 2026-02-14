@@ -121,5 +121,36 @@ admin.get('/get_admin_data', async (req, res) => {
     }
 })
 
+admin.post('/admin_change_name', async (req, res) => {
+    const { newName } = req.body
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.changeAdminName(newName, decodedToken.admin_id)
+        res.json({ ok: true, message: result.message })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Admin change password
+admin.put('/admin_change_password', async (req, res) => {
+    const { current_password, new_password } = req.body
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.updateAdminPassword(decodedToken.admin_id, current_password, new_password)
+        res.json(result)
+    } catch(err) {
+        if(err.status_code === 401) {
+            res.status(err.status_code).json(err)
+        } else if(err.status_code === 500) {
+            res.status(err.status_code).json(err)
+        } else {
+            res.status(409).json(err)
+        }
+    }
+})
+
 // Export route
 module.exports = admin

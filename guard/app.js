@@ -2,6 +2,7 @@ const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const video = document.getElementById("camera");
 let scanning = false;
 let stream = null;
+const TOKEN = localStorage.getItem('guard_token')
 
 // Start Camera
 async function startCamera() {
@@ -56,6 +57,57 @@ async function startScan() {
     };
 
     scanLoop();
+}
+
+async function checkToken() {
+    try {
+        // No token at all
+        if (!TOKEN) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Please login first!',
+                text: 'Your session is missing or expired.',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
+
+            window.location.href = 'guard_login.html';
+            return;
+        }
+
+        // Verify token
+        const res = await fetch(`${URL_BASED}/authentication/verify_token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        });
+
+        const data = await res.json();
+
+        // Token invalid
+        if (!res.ok) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: data.message || 'Please login again.',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
+
+            window.location.href = 'guard_login.html';
+        }
+
+    } catch (err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || 'Something went wrong.',
+            confirmButtonColor: '#d33'
+        });
+
+        console.error(err);
+    }
 }
 
 // 3. Modal
@@ -175,6 +227,8 @@ function logout() {
     });
 }
 
-
 // Init
-startCamera();
+document.addEventListener('DOMContentLoaded', () => {
+    checkToken();
+    startCamera();
+})
