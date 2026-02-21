@@ -152,5 +152,83 @@ admin.put('/admin_change_password', async (req, res) => {
     }
 })
 
+// Admin delete student account
+admin.delete('/delete_student_account/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
+        const result = await services.adminDeleteStudents(id)
+        res.json(result)
+    } catch(err) {
+        if(err.status_code === 401) {
+            res.status(err.status_code).json(err)
+        } else if(err.status_code === 500) {
+            res.status(err.status_code).json(err)
+        } else {
+            res.status(409).json(err)
+        }
+    }
+})
+
+// Admin delete teacher account
+admin.delete('/delete_teacher_account/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
+        const result = await services.adminDeleteTeacher(id, decodedToken.admin_id)
+        res.json(result)
+    } catch(err) {
+        if(err.status_code === 401) {
+            res.status(err.status_code).json(err)
+        } else if(err.status_code === 500) {
+            res.status(err.status_code).json(err)
+        } else {
+            res.status(409).json(err)
+        }
+    }
+})
+
+// Admin get present programs count
+admin.get('/present_program_counts', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
+        const result = await services.getPresentPrograms()
+        res.json(result)
+    } catch(err) {
+        if(err.status_code === 401) {
+            res.status(err.status_code).json(err)
+        } else if(err.status_code === 500) {
+            res.status(err.status_code).json(err)
+        } else {
+            res.status(409).json(err)
+        }
+    }
+})
+
+// Admin delete teacher account
+admin.delete('/delete_guard_account/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
+        const result = await services.adminDeleteGuard(id, decodedToken.admin_id)
+        res.json(result)
+    } catch(err) {
+        if(err.status_code === 401) {
+            res.status(err.status_code).json(err)
+        } else if(err.status_code === 500) {
+            res.status(err.status_code).json(err)
+        } else {
+            res.status(409).json(err)
+        }
+    }
+})
 // Export route
 module.exports = admin

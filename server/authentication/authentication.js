@@ -83,7 +83,9 @@ router.post('/teacher_registration', async (req, res) => {
                 email,
                 password,
                 department  } = req.body
-        const result = await services.teacherRegistration(fullName, email, password, department)
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.teacherRegistration(fullName, email, password, department, decodedToken.admin_id)
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
@@ -105,7 +107,9 @@ router.post('/teacher_login', async (req, res) => {
 router.post('/guard_registration', async (req, res) => {
     const { guard_name, guard_email, guard_password, guard_designated_location } = req.body
     try {
-        const result = await services.guardRegistration(guard_name, guard_email, guard_password, guard_designated_location)
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.guardRegistration(guard_name, guard_email, guard_password, guard_designated_location, decodedToken.admin_id)
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(401).json({ ok: false, message: err })

@@ -1,9 +1,58 @@
 
 const bcrypt = require('bcrypt')
+const axios = require('axios');
 const jwt = require('jsonwebtoken')
 const db = require('../configuration/db');
 const SALT_ROUNDS = 10
 const JWT_SECRET = 'q09481239328'
+
+// async function t() {
+//     try {
+//         const result = await sendSMS('+09763891308', 'Hello World')
+//         console.log(result)
+//     } catch(err) {
+//         console.log(err)
+//     }
+// }
+
+// t()
+
+// async function sendSMS(to, message) {
+//     const username = 'xnatsu25@gmail.com';
+//     const apiKey = 'E6A2B53D-2C42-BE75-D8DD-62B57D76D984';
+
+//     const auth = Buffer.from(`${username}:${apiKey}`).toString('base64');
+
+//     try {
+//         const response = await axios.post(
+//             'https://rest.clicksend.com/v3/sms/send',
+//             {
+//                 messages: [
+//                     {
+//                         source: "nodejs",
+//                         from: "+639763891308", // Registered sender ID
+//                         body: message,
+//                         to: to
+//                     }
+//                 ]
+//             },
+//             {
+//                 headers: {
+//                     Authorization: `Basic ${auth}`,
+//                     "Content-Type": "application/json"
+//                 }
+//             }
+//         );
+
+//         return response.data;
+//     } catch (error) {
+//         throw error.response?.data || error.message;
+//     }
+// }
+
+// module.exports = { sendSMS };
+
+
 
 // Generate Barcode
 const generateBarcode = () => {
@@ -198,6 +247,7 @@ function verifyToken(token) {
     }
 }
 
+
 // Remove the prepend Bearer
 function removeBearer(authorization) {
     const token = authorization.split(' ')[1]
@@ -351,7 +401,7 @@ function getAllPrograms() {
 }
 
 // Teacher registration
-async function teacherRegistration(fullName, email, password, department) {
+async function teacherRegistration(fullName, email, password, department, admin_id) {
     const hashedPassword = await hashPassword(password);
 
     const teacherBarcodeScannerSerialNumber = generateTeacherSerialNumber();
@@ -359,8 +409,8 @@ async function teacherRegistration(fullName, email, password, department) {
     return new Promise( async (resolve, reject) => {
         const sql = `
             INSERT INTO teacher 
-            (teacher_name, teacher_email, teacher_password, teacher_program, teacher_barcode_scanner_serial_number) 
-            VALUES (?, ?, ?, ?, ?)
+            (teacher_name, teacher_email, teacher_password, teacher_program, teacher_barcode_scanner_serial_number, admin_id) 
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
 
         const emailExists = await emailFinder('teacher_email', email, 'teacher');
@@ -370,7 +420,7 @@ async function teacherRegistration(fullName, email, password, department) {
 
         db.execute(
             sql,
-            [fullName, email, hashedPassword, department, teacherBarcodeScannerSerialNumber],
+            [fullName, email, hashedPassword, department, teacherBarcodeScannerSerialNumber, admin_id],
             (err, result) => {
                 if (err) { return reject(err); }
                 try {
@@ -946,7 +996,8 @@ async function guardRegistration(
     guard_name, 
     guard_email, 
     guard_password, 
-    guard_designated_location
+    guard_designated_location,
+    admin_id
 ) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -960,13 +1011,13 @@ async function guardRegistration(
 
             const sql = `
                 INSERT INTO guards 
-                (guard_name, guard_email, guard_password, guard_designated_location)
-                VALUES (?, ?, ?, ?)
+                (guard_name, guard_email, guard_password, guard_designated_location, admin_id)
+                VALUES (?, ?, ?, ?, ?)
             `;
 
             db.query(
                 sql,
-                [guard_name, guard_email, hashedPassword, guard_designated_location],
+                [guard_name, guard_email, hashedPassword, guard_designated_location, admin_id],
                 (err, result) => {
                     if (err) return reject(err);
                     resolve('Successfully registered!');
@@ -1348,10 +1399,72 @@ function updateAdminPassword(adminID, currentPassword, newPassword) {
     })
 }
 
+// Admin delete students account
+function adminDeleteStudents(student_id) {
+    return new Promise((resolve, reject) => {
+        db.execute('DELETE FROM student_accounts WHERE student_id = ?', [ student_id ], (err, result) => {
+            if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
+            if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+            resolve({ ok: true, message: 'Successfully delete student data!', status_code: 200})
+        })
+    })
+}
+
+// Admin delete teachers account
+function adminDeleteTeacher(teacher_id, admin_id) {
+    return new Promise((resolve, reject) => {
+        db.execute('DELETE FROM teacher WHERE teacher_id = ? AND admin_id = ?', [ teacher_id, admin_id ], (err, result) => {
+            if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
+            if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200})
+        })
+    })
+}
+
+// Admin delete guard account
+function adminDeleteGuard(teacher_id, admin_id) {
+    return new Promise((resolve, reject) => {
+        db.execute('DELETE FROM guards WHERE guard_id = ? AND admin_id = ?', [ teacher_id, admin_id ], (err, result) => {
+            if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
+            if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200})
+        })
+    })
+}
+
+// Admin get event program's present
+function getPresentPrograms() {
+    return new Promise((resolve, reject) => {
+        db.execute(
+        `   SELECT student_program, COUNT(*) AS total_attended
+            FROM event_attendance_record
+            WHERE status = 'TIME IN'
+            GROUP BY student_program;  `,
+            [],
+            (err, result) => {
+                if (err) {
+                    return reject({ 
+                        ok: false, 
+                        message: err, 
+                        status_code: 500 
+                    });
+                }
+
+                resolve({ 
+                    ok: true, 
+                    message: 'Successfully retrieved data!', 
+                    content: result 
+                });
+            }
+        );
+    });
+}
+
+
 // Debugger
 // async function tester() {
 //     try {
-//        const result = await updateAdminPassword(1, 'q09481239328', 'q09097616254')
+//        const result = await getPresentPrograms()
 //        console.log(result)
 //     } catch(err) {
 //        console.log(err)
@@ -1363,6 +1476,10 @@ function updateAdminPassword(adminID, currentPassword, newPassword) {
 
 // Export functions
 module.exports= {
+    getPresentPrograms,
+    adminDeleteGuard,
+    adminDeleteTeacher,
+    adminDeleteStudents,
     updateAdminPassword,
     changeAdminName,
     getAttendanceEventsForTeacher,

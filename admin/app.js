@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderEventAttendanceRecord()
     renderEventHistoryAttendanceRecord()
     generateProgramSelectionOnTeacher()
-    
+    chart()
 })
 
 const sidebar = document.getElementById('sidebar');
@@ -40,7 +40,8 @@ const DOMElements = {
     eventHistoryYearFilter: document.getElementById('eventHistoryYearFilter'),
     adminProfileName: document.getElementById('adminProfileName'),
     profileEmail: document.getElementById('profileEmail'),
-    profileEmailTop: document.getElementById('profileEmailTop')
+    profileEmailTop: document.getElementById('profileEmailTop'),
+    ctx: document.getElementById('myChart')
 }
 
 function dateFormat(stringDate) {
@@ -796,8 +797,8 @@ async function fetchTeacherAccounts() {
                 <div class="teacher-meta">
                     <div class="teacher-course">${d.teacher_program}</div>
                     <div class="teacher-actions">
-                        <button class="action-btn edit-btn-account-management" onclick="editStudent(${d.teacher_id})">Edit</button>
-                        <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.teacher_id})">Delete</button>
+                        <button class="action-btn edit-btn-account-management" onclick="editTeacher(${d.teacher_id})">Edit</button>
+                        <button class="action-btn delete-btn-account-management" onclick="deleteTeacher(${d.teacher_id})">Delete</button>
                     </div>
                 </div>
             </div>
@@ -823,8 +824,8 @@ async function fetchGuardAccounts() {
                 <div class="guard-meta">
                     <div class="guard-domain-gate">${d.guard_designated_location}</div>
                     <div class="guard-actions">
-                        <button class="action-btn edit-btn-account-management" onclick="editStudent(${d.guard_id})">Edit</button>
-                        <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.guard_id})">Delete</button>
+                        <button class="action-btn edit-btn-account-management" onclick="editGuard(${d.guard_id})">Edit</button>
+                        <button class="action-btn delete-btn-account-management" onclick="deleteGuard(${d.guard_id})">Delete</button>
                     </div>
                 </div>
             </div>
@@ -854,7 +855,8 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Accept': 'application/json' 
+                'Accept': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
             },
             body: JSON.stringify(guardData)
         });
@@ -869,6 +871,8 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
             icon: 'success',
             title: 'Success',
             text: 'Guard registered successfully!'
+        }).then(() => {
+            fetchGuardAccounts();
         });
         
         document.getElementById('guardForm').reset();
@@ -912,7 +916,8 @@ document.getElementById('teacherForm').addEventListener('submit', async function
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
             },
             body: JSON.stringify(teacherData)
         });
@@ -931,6 +936,8 @@ document.getElementById('teacherForm').addEventListener('submit', async function
             icon: 'success',
             title: 'Success!',
             text: 'Teacher registered successfully.'
+        }).then(() => {
+            fetchTeacherAccounts();
         });
 
         document.getElementById('teacherForm').reset();
@@ -1019,7 +1026,7 @@ async function handleSetEvent() {
             title: 'Unauthorized',
             text: 'You must be logged in to perform this action.'
         }).then(() => {
-            window.location.href = 'admin_login.html'; // Redirect to login
+            window.location.href = 'admin_login.html';
         });
     }
 
@@ -1123,6 +1130,224 @@ DOMElements.eventHistoryYearFilter.addEventListener('change', function() {
     }
 })
 
+// Delete Student accounts
+async function deleteStudent(id) {
+
+    const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure?',
+        text: 'This action will permanently delete the student account.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d33'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+        const res = await fetch(URL_BASED + `/admin/delete_student_account/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            return Swal.fire({
+                icon: 'success',
+                title: 'Student Account Deleted',
+                text: 'The student account has been successfully deleted.'
+            }).then(() => {
+                // Reload
+                fetchStudentAccounts();
+            });
+        }
+
+        // 401 - Unauthorized
+        if (res.status === 401) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again.'
+            }).then(() => {
+                window.location.href = 'admin_login.html';
+            });
+        }
+
+        // 403 - Forbidden
+        if (res.status === 403) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: 'You do not have permission to delete student accounts.'
+            });
+        }
+
+        // Other errors
+        return Swal.fire({
+            icon: 'error',
+            title: 'Deletion Failed',
+            text: data.message || 'An unexpected error occurred.'
+        });
+
+    } catch (err) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Unable to connect to the server. Please try again.'
+        });
+    }
+}
+
+// Delete Teacher accounts
+async function deleteTeacher(id) {
+
+    const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure?',
+        text: 'This action will permanently delete the teacher account.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d33'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+        const res = await fetch(URL_BASED + `/admin/delete_teacher_account/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            return Swal.fire({
+                icon: 'success',
+                title: 'Teacher Account Deleted',
+                text: 'The teacher account has been successfully deleted.'
+            }).then(() => {
+                // Reload
+                fetchTeacherAccounts();
+            });
+        }
+
+        // 401 - Unauthorized
+        if (res.status === 401) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again.'
+            }).then(() => {
+                window.location.href = 'admin_login.html';
+            });
+        }
+
+        // 403 - Forbidden
+        if (res.status === 403) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: 'You do not have permission to delete student accounts.'
+            });
+        }
+
+        // Other errors
+        return Swal.fire({
+            icon: 'error',
+            title: 'Deletion Failed',
+            text: data.message || 'An unexpected error occurred.'
+        });
+
+    } catch (err) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Unable to connect to the server. Please try again.'
+        });
+    }
+}
+
+// Delete guard
+async function deleteGuard(id) {
+    const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure?',
+        text: 'This action will permanently delete the guard account.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d33'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+        const res = await fetch(URL_BASED + `/admin/delete_guard_account/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            return Swal.fire({
+                icon: 'success',
+                title: 'Teacher Account Deleted',
+                text: 'The teacher account has been successfully deleted.'
+            }).then(() => {
+                // Reload
+                fetchGuardAccounts();
+            });
+        }
+
+        // 401 - Unauthorized
+        if (res.status === 401) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again.'
+            }).then(() => {
+                window.location.href = 'admin_login.html';
+            });
+        }
+
+        // 403 - Forbidden
+        if (res.status === 403) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: 'You do not have permission to delete guard accounts.'
+            });
+        }
+
+        // Other errors
+        return Swal.fire({
+            icon: 'error',
+            title: 'Deletion Failed',
+            text: data.message || 'An unexpected error occurred.'
+        });
+
+    } catch (err) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Unable to connect to the server. Please try again.'
+        });
+    }
+}
+
 
 // Edit Profile
 async function editProfileName() {
@@ -1163,3 +1388,119 @@ async function editProfileName() {
         })
     }
 }
+
+
+// Fetch Present Programs
+async function fetchPrograms() {
+    try {
+        const res = await fetch(URL_BASED + '/admin/present_program_counts', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            }
+        })
+        const data = await res.json()
+        if(res.ok) {
+            
+            let programs = []
+            let total_attended = []
+
+            data.content.forEach(d => {
+                programs.push(d.student_program)
+                total_attended.push(d.total_attended)
+            })
+            return { programs, total_attended }
+
+        } 
+        // 401 - Unauthorized
+        if (res.status === 401) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again.'
+            }).then(() => {
+                window.location.href = 'admin_login.html';
+            });
+        }
+
+        // 403 - Forbidden
+        if (res.status === 403) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: 'You do not have permission to delete student accounts.'
+            });
+        }
+
+        // Other errors
+        return Swal.fire({
+            icon: 'error',
+            title: 'Deletion Failed',
+            text: data.message || 'An unexpected error occurred.'
+        });
+
+    } catch(err) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Unable to connect to the server. Please try again.'
+        });
+    }
+}
+
+
+// Chart
+async function chart() {
+
+    const result = await fetchPrograms()
+
+    console.log(result)
+
+    ctx = document.getElementById('myChart');
+    
+    Chart.register(ChartDataLabels);
+
+    const myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: result.programs,
+            datasets: [{
+                label: 'Event Attendance',
+                data: result.total_attended,
+                borderWidth: 1,
+                backgroundColor: '#5a8a7a',
+                borderColor: '#4e7c6d',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: {
+                duration: 1500
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            },
+            plugins: {
+                datalabels: {
+                    color: '#000',        // number color
+                    anchor: 'end',        // position relative to bar
+                    align: 'top',         // place above bar
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value) {
+                        return value; // add % symbol
+                    }
+                }
+            }
+        }
+    });
+}
+
+
