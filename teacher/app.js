@@ -725,8 +725,7 @@ function openRecordModal(id,
     student_middlename,
     student_lastname, 
     student_program, 
-    student_year_level, 
-    date_created) {
+    student_year_level) {
     document.getElementById("recordModal").style.display = "flex";
     document.getElementById('id').value = id
     document.getElementById('id_number').value = student_id_number

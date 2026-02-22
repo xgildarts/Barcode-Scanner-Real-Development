@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 15, 2026 at 06:58 PM
+-- Generation Time: Feb 22, 2026 at 06:42 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -40,7 +40,7 @@ CREATE TABLE `admin_accounts` (
 --
 
 INSERT INTO `admin_accounts` (`admin_id`, `admin_name`, `admin_email`, `admin_password`, `date_account_created`) VALUES
-(1, 'Administrator', 'admin@panpacificu.edu.ph', '$2b$10$KfPb8h2eZntTAbvUibj0sOqNPTFMvtFtNom1r8su4qMVxaZ3yc/HO', '2026-02-09 00:02:44');
+(1, 'Charimea Selga', 'admin@panpacificu.edu.ph', '$2b$10$O.S3WP0dLXIr3e9zMvzMWOqLn3puZpbzMJd78DuHNBCtq6wT16Mh.', '2026-02-09 00:02:44');
 
 -- --------------------------------------------------------
 
@@ -214,18 +214,17 @@ CREATE TABLE `guards` (
   `guard_name` varchar(255) NOT NULL,
   `guard_email` varchar(255) NOT NULL,
   `guard_password` varchar(255) NOT NULL,
-  `guard_designated_location` varchar(255) DEFAULT NULL
+  `guard_designated_location` varchar(255) DEFAULT NULL,
+  `admin_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `guards`
 --
 
-INSERT INTO `guards` (`guard_id`, `guard_name`, `guard_email`, `guard_password`, `guard_designated_location`) VALUES
-(1, 'Officer Roberto', 'roberto@school.edu', 'securePass123', 'Main Entrance Gate'),
-(2, 'Officer Sarah', 'sarah@school.edu', 'myPassword456', 'Library Entrance'),
-(3, 'Officer Juan dela Cruz', 'juan.delacruz@school.edu', '$2b$10$X9YGPlLtTSxas5nxa2dNpebsGLwa2pB2JCcD3LBC44v78bsi8UKdG', 'North Gate Entrance'),
-(5, 'Gray Fullbuster', 'gray@panpacificu.edu.ph', '$2b$10$NGqhdmtbZyNS91U8YY4Deu6/.9MO.i7qy.rHRQG68OXmqDoCj1w5e', 'main-gate');
+INSERT INTO `guards` (`guard_id`, `guard_name`, `guard_email`, `guard_password`, `guard_designated_location`, `admin_id`) VALUES
+(5, 'Gray Fullbuster', 'gray@panpacificu.edu.ph', '$2b$10$NGqhdmtbZyNS91U8YY4Deu6/.9MO.i7qy.rHRQG68OXmqDoCj1w5e', 'main-gate', 1),
+(6, 'Metalman', 'metal@panpacificu.edu.ph', '$2b$10$1T70awsl2.pNGdvZflKI6.fBURIm1foeww1VA.HMojcCatgOvrPVi', 'main-gate', 1);
 
 -- --------------------------------------------------------
 
@@ -248,7 +247,8 @@ INSERT INTO `program` (`program_id`, `program_name`, `program_date_created`, `te
 (1, 'BS in Information Technology', '2026-01-31 00:30:28', 7),
 (2, 'BS in Computer Science', '2026-01-31 00:30:28', 7),
 (6, 'BS Education', '2026-02-02 18:40:44', 7),
-(13, 'BS in Criminology', '2026-02-08 20:59:23', 0);
+(13, 'BS in Criminology', '2026-02-08 20:59:23', 0),
+(19, 'BS in Computer Engineering', '2026-02-19 00:33:54', 0);
 
 -- --------------------------------------------------------
 
@@ -270,20 +270,19 @@ CREATE TABLE `student_accounts` (
   `location_generated` varchar(255) NOT NULL,
   `barcode` varchar(255) NOT NULL,
   `barcode_date_generated` datetime NOT NULL DEFAULT current_timestamp(),
-  `device_id` varchar(255) NOT NULL
+  `device_id` varchar(255) NOT NULL,
+  `admin_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `student_accounts`
 --
 
-INSERT INTO `student_accounts` (`student_id`, `student_id_number`, `student_firstname`, `student_middlename`, `student_lastname`, `student_email`, `password`, `student_year_level`, `student_guardian_number`, `student_program`, `location_generated`, `barcode`, `barcode_date_generated`, `device_id`) VALUES
-(13, '1231345', 'Natsu', 'A', 'Dragneel', 'natsu@panpacificu.edu.ph', '$2b$10$gBCkERGwmBMsKJbp5TZMouY.ONQnEDU2eocNOT0njkDa76Mt1U16C', '3rd Year', '09481239328', 'BS in Information Technology', '', 'BC17708340193488101', '2026-02-12 02:20:19', 'DEV17700095450473735'),
-(16, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '$2b$10$Y384z3Ayo0fAuk6ydGfRNunH0GNoWuK.nToMMwfblwAkkL0NyDs2m', '3rd Year', '09481239328', 'BS in Information Technology', '', 'BC17709112699981461', '2026-02-12 23:47:51', 'DEV17706414047308316'),
-(17, '123', 'Andrea', 'A', 'Lachica', 'andrea@gmail.com', '$2b$10$vak/1WF451HjD7St6kgNbum3321Jz.ZCfOdFUbt2ZvmqgqtZDUfYS', '3rd Year', '09192921611', 'BS in Information Technology', '', 'BC17708941329739487', '2026-02-12 19:02:12', 'DEV17708941329736948'),
-(18, '1233345', 'Agrifina', 'A', 'Agustin', 'agrifina@panpacificu.edu.ph', '$2b$10$OuBrVjLjQIjpZ6DNU.rpROthB9qekSgTqujfjA0B/gsMIrH9WFaJG', '3rd Year', '09481239328', 'BS Education', '', 'BC17708947181891836', '2026-02-12 19:11:58', 'DEV17708947181898475'),
-(19, '1231422', 'Charimea', 'M.', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '$2b$10$.VzGuTyj7ZlUsdb/Vd5cUeDKBMqawDkcEZEUlKF9jug/E28aFC9/W', '3rd Year', '09563543429', 'BS in Information Technology', '', 'BC17708952022486423', '2026-02-12 19:20:02', 'DEV17708952022489448'),
-(20, '1231392', 'janray', 'agmata', 'aquino', 'janrayaquino9@gmail.com', '$2b$10$ctavRc80RzUCbfxZf9AEWOCQ7pQ3BYtx9RgjPqX8KSJ/wdPhv58Hu', '3rd Year', '09661672889', 'BS in Information Technology', '', 'BC17708954440162803', '2026-02-12 19:24:04', 'DEV17708954440162150');
+INSERT INTO `student_accounts` (`student_id`, `student_id_number`, `student_firstname`, `student_middlename`, `student_lastname`, `student_email`, `password`, `student_year_level`, `student_guardian_number`, `student_program`, `location_generated`, `barcode`, `barcode_date_generated`, `device_id`, `admin_id`) VALUES
+(17, '1234567', 'Andrea', 'A', 'Lachica', 'andrea@gmail.com', '$2b$10$vak/1WF451HjD7St6kgNbum3321Jz.ZCfOdFUbt2ZvmqgqtZDUfYS', '3rd Year', '09192921611', 'BS in Information Technology', '', 'BC17708941329739487', '2026-02-12 19:02:12', 'DEV17708941329736948', 1),
+(18, '1233345', 'Agrifina', 'A', 'Agaran', 'agrifina@panpacificu.edu.ph', '$2b$10$OuBrVjLjQIjpZ6DNU.rpROthB9qekSgTqujfjA0B/gsMIrH9WFaJG', '3rd Year', '09481239328', 'BS Education', '', 'BC17708947181891836', '2026-02-12 19:11:58', 'DEV17708947181898475', 1),
+(19, '1231422', 'Charimea', 'M', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '$2b$10$.VzGuTyj7ZlUsdb/Vd5cUeDKBMqawDkcEZEUlKF9jug/E28aFC9/W', '3rd Year', '09563543429', 'BS in Information Technology', '', 'BC17708952022486423', '2026-02-12 19:20:02', 'DEV17708952022489448', 1),
+(22, '1231377', 'Natsu', 'A', 'Dragneel', 'natsu@panpacificu.edu.ph', '$2b$10$VfMFImgD2cXWTGlNwdtCJeFW6bkGx4Hae6pQkUPmg7V7tkPUav8qu', '3rd Year', '09481239328', 'BS in Information Technology', '', 'BC17717813336784318', '2026-02-23 01:28:53', 'DEV17717813336788766', 0);
 
 -- --------------------------------------------------------
 
@@ -313,8 +312,7 @@ INSERT INTO `student_records_regular_class` (`student_id`, `student_id_number`, 
 (5, '1231377', 'Steven', 'A', 'Agustin', 'stevenjohnagustin25@panpacificu.edu.ph', '3rd Year', '09481239328', 'BS in Information Technology', 'TSN17698767256291441', '2026-02-01 13:52:02'),
 (7, '1231374', 'Andrea', 'A', 'Lachica', 'andrea@panpacificu.edu.ph', '3rd Year', '09481239328', 'BS in Information Technology', 'TSN17698767256291441', '2026-02-01 14:26:20'),
 (9, '1231379', 'Charimea', 'A', 'Selga', 'chari@panpacificu.edu.ph', '3rd Year', '09481239328', 'BS in Information Technology', 'TSN17698767256291441', '2026-02-01 17:31:09'),
-(10, '1231373', 'Janray', 'B', 'Aquino', 'janray@panpacificu.edu.ph', '3rd Year', '09481239328', 'BS in Information Technology', 'TSN17698767256291441', '2026-02-01 20:29:02'),
-(12, '1231345', 'Natsu', 'A', 'Dragneel', 'natsu@panpacificu.edu.ph', '3rd Year', '+639763891308', 'BS in Computer Science', 'TSN17698767256291441', '2026-02-02 13:40:43'),
+(12, '1231377', 'Natsu', 'A', 'Dragneel', 'natsu@panpacificu.edu.ph', '3rd Year', '+639763891308', 'BS in Computer Science', 'TSN17698767256291441', '2026-02-02 13:40:43'),
 (15, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '3rd Year', '09481239328', 'BS in Information Technology', 'TSN17698767256291441', '2026-02-09 20:53:57');
 
 -- --------------------------------------------------------
@@ -339,7 +337,8 @@ INSERT INTO `subject` (`subject_id`, `subject_name`, `subject_date_created`, `te
 (2, 'Programming', '2026-02-02 16:33:05', 7),
 (3, 'Event-Driven Programming', '2026-02-02 20:36:23', 7),
 (4, 'Integrative Programming', '2026-02-02 20:37:05', 7),
-(5, 'Digital Marketing', '2026-02-02 20:37:47', 7);
+(5, 'Digital Marketing', '2026-02-02 20:37:47', 7),
+(7, 'Programming Lec', '2026-02-23 01:39:46', 11);
 
 -- --------------------------------------------------------
 
@@ -362,7 +361,10 @@ INSERT INTO `subject_and_year_level_setter` (`id`, `subject_name_set`, `year_lev
 (2, 'Digital Marketing', '3rd Year', 'TSN17698767256291441'),
 (3, '', '', 'TSN17704826980131949'),
 (4, '', '', 'TSN17704837387017092'),
-(5, '', '', 'TSN17704837433987368');
+(5, '', '', 'TSN17704837433987368'),
+(6, 'Programming Lec', '3rd Year', 'TSN17713351187271590'),
+(7, '', '', 'TSN17713353120404545'),
+(8, '', '', 'TSN17713354408022460');
 
 -- --------------------------------------------------------
 
@@ -379,15 +381,17 @@ CREATE TABLE `teacher` (
   `teacher_current_subject` varchar(255) DEFAULT NULL,
   `teacher_location` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL
+  `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL,
+  `admin_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `teacher`
 --
 
-INSERT INTO `teacher` (`teacher_id`, `teacher_name`, `teacher_email`, `teacher_password`, `teacher_program`, `teacher_current_subject`, `teacher_location`, `created_at`, `teacher_barcode_scanner_serial_number`) VALUES
-(7, 'Steven John A. Agustin', 'stevenjohnagustin25@panpacificu.edu.ph', '$2b$10$4a3jnJ0RjJBtUXneQZQg0.vXoA7KiS1EmKgjOEr977jsXvDRptDsC', 'BS in Information Technology', NULL, NULL, '2026-01-31 16:25:25', 'TSN17698767256291441');
+INSERT INTO `teacher` (`teacher_id`, `teacher_name`, `teacher_email`, `teacher_password`, `teacher_program`, `teacher_current_subject`, `teacher_location`, `created_at`, `teacher_barcode_scanner_serial_number`, `admin_id`) VALUES
+(7, 'Steven John A. Agustin', 'stevenjohnagustin25@panpacificu.edu.ph', '$2b$10$4a3jnJ0RjJBtUXneQZQg0.vXoA7KiS1EmKgjOEr977jsXvDRptDsC', 'BS in Information Technology', NULL, NULL, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
+(11, 'Bill Gates', 'bill@panpacificu.edu.ph', '$2b$10$3mjbRSABRIncKUWJOdc/XeWc7vMhQJbV77ORpCNHh//Wt3MsHePGu', 'BS in Information Technology', NULL, NULL, '2026-02-17 13:31:58', 'TSN17713351187271590', 1);
 
 -- --------------------------------------------------------
 
@@ -545,19 +549,19 @@ ALTER TABLE `event_setter`
 -- AUTO_INCREMENT for table `guards`
 --
 ALTER TABLE `guards`
-  MODIFY `guard_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `guard_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `program`
 --
 ALTER TABLE `program`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `student_accounts`
 --
 ALTER TABLE `student_accounts`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `student_records_regular_class`
@@ -569,19 +573,19 @@ ALTER TABLE `student_records_regular_class`
 -- AUTO_INCREMENT for table `subject`
 --
 ALTER TABLE `subject`
-  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `subject_and_year_level_setter`
 --
 ALTER TABLE `subject_and_year_level_setter`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `teacher`
 --
 ALTER TABLE `teacher`
-  MODIFY `teacher_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `teacher_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `year_level`

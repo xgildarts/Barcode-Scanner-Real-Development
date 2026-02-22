@@ -41,7 +41,17 @@ const DOMElements = {
     adminProfileName: document.getElementById('adminProfileName'),
     profileEmail: document.getElementById('profileEmail'),
     profileEmailTop: document.getElementById('profileEmailTop'),
-    ctx: document.getElementById('myChart')
+    ctx: document.getElementById('myChart'),
+    studentIDTracking: document.getElementById('studentIDTracking'),
+    studentIdNumber: document.getElementById('studentIdNumber'),
+    studentFirstName: document.getElementById('studentFirstName'),
+    studentMiddleName: document.getElementById('studentMiddleName'),
+    studentLastName: document.getElementById('studentLastName'),
+    studentAccountManagementModal: document.getElementById('studentAccountManagementModal'),
+    studentProgram: document.getElementById('studentProgram'),
+    studentYearLevel: document.getElementById('studentYearLevel'),
+    studentAccountManagementForm: document.getElementById('studentAccountManagementForm')
+
 }
 
 function dateFormat(stringDate) {
@@ -150,8 +160,6 @@ async function renderEventAttendanceRecord() {
                     <td>${d.event_name}</td>
                 </tr>
             `).join('');
-
-            console.log(data);
         } else {
             Swal.fire({
                 icon: 'error',
@@ -198,7 +206,6 @@ async function renderEventHistoryAttendanceRecord() {
                 </tr>
                 `
             ).join('')
-            console.log(data)
         } else {
             console.log(data)
         }
@@ -445,45 +452,9 @@ document.querySelector('.settings-btn').addEventListener('click', function() {
     
 });
 
-// Render students
-function renderStudents(studentsToRender) {
-    const studentsList = document.getElementById('studentsList');
-    studentsList.innerHTML = '';
-
-    studentsToRender.forEach((student, index) => {
-        const card = document.createElement('div');
-        card.className = 'student-card';
-        card.innerHTML = `
-            <div class="student-header">
-                <div>
-                    <div class="student-name">${student.name}</div>
-                </div>
-            </div>
-            <div class="student-info">
-                <div class="info-item">${student.id}</div>
-            </div>
-            <div class="student-meta">
-                <div class="student-course">${student.course}</div>
-                <div class="student-actions">
-                    <button class="action-btn edit-btn-account-management" onclick="editStudent(${index})">Edit</button>
-                    <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${index})">Delete</button>
-                </div>
-            </div>
-        `;
-        studentsList.appendChild(card);
-    });
-}
-
-function editStudent(index) {
-    alert(`Editing ${students[index].name}`);
-}
 
 function deleteStudent(index) {
-    if (confirm(`Are you sure you want to delete ${students[index].name}?`)) {
-        students.splice(index, 1);
-        renderStudents(students);
-        alert('Student deleted successfully!');
-    }
+
 }
 
 function register() {
@@ -496,7 +467,6 @@ document.getElementById('searchStudentInput').addEventListener('input', function
         student.name.toLowerCase().includes(searchStudent) ||
         student.id.toLowerCase().includes(searchStudent)
     );
-    renderStudents(filteredStudents);
 });
 
 document.getElementById('searchTeacherInput').addEventListener('input', (e) => {
@@ -515,7 +485,6 @@ document.getElementById('searchGuardInput').addEventListener('input', function(e
         guard.name.toLowerCase().includes(searchGuard) ||
         guard.id.toLowerCase().includes(searchGuard)
     );
-    renderStudents(filteredGuards);
 });
 
 // Render Programs
@@ -527,8 +496,6 @@ async function renderPrograms() {
         programsList.innerHTML = '';
 
         const data = await res.json()
-
-        console.log(data)
 
         if(!res.ok) { return alert(data.message) }
 
@@ -754,7 +721,8 @@ async function fetchAccountCount(tableName) {
 
 // Fetch student accounts
 async function fetchStudentAccounts() {
-    const result = await fetchAccountCount('student_accounts')
+    const result = await fetchAccountCount('student_accounts');
+    console.log("Student accounts: ", result);
     DOMElements.studentAccountCounts.textContent = result.length
     DOMElements.studentsList.innerHTML = result.map(d =>
         `
@@ -770,13 +738,117 @@ async function fetchStudentAccounts() {
                     <div class="student-meta">
                         <div class="student-course">${d.student_program}</div>
                         <div class="student-actions">
-                            <button class="action-btn edit-btn-account-management" onclick="editStudent(${d.student_id})">Edit</button>
+                            <button class="action-btn edit-btn-account-management" onclick="editStudent(
+                            ${d.student_id}, 
+                            '${d.student_id_number}',
+                            '${d.student_firstname}',
+                            '${d.student_middlename}',
+                            '${d.student_lastname}',
+                            '${d.student_program}',
+                            '${d.student_year_level}',
+                            )">Edit</button>
                             <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.student_id})">Delete</button>
                         </div>
                     </div>
             </div>
         `
     ).join('')
+}
+
+// Edit Student Account Management
+function editStudent(
+    id, 
+    student_id_number,
+    student_firstname,
+    student_middlename,
+    student_lastname,
+    student_program,
+    student_year_level
+) { 
+    // Log to console to verify data is passing correctly (optional)
+    console.log("Editing:", student_firstname, student_lastname);
+
+    openStudentAccountManagementModal(
+        id, 
+        student_id_number, 
+        student_firstname, 
+        student_middlename,
+        student_lastname, 
+        student_program, 
+        student_year_level
+    );
+}
+
+function openStudentAccountManagementModal(id, 
+    student_id_number, 
+    student_firstname, 
+    student_middlename,
+    student_lastname, 
+    student_program, 
+    student_year_level) {
+
+    DOMElements.studentAccountManagementModal.style.display = "flex";
+    DOMElements.studentIDTracking.value = id
+    DOMElements.studentIdNumber.value = student_id_number
+    DOMElements.studentFirstName.value = student_firstname
+    DOMElements.studentMiddleName.value = student_middlename
+    DOMElements.studentLastName.value = student_lastname
+    DOMElements.studentProgram.value = student_program
+    DOMElements.studentYearLevel.value = student_year_level
+
+
+}
+
+DOMElements.studentAccountManagementForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    // 1. Updated keys to match what your Express backend expects
+    const payload = {
+        student_id: DOMElements.studentIDTracking.value,
+        id_number: DOMElements.studentIdNumber.value.trim(),
+        firstname: DOMElements.studentFirstName.value.trim(),
+        middlename: DOMElements.studentMiddleName.value.trim(),
+        lastname: DOMElements.studentLastName.value.trim(),
+        program: DOMElements.studentProgram.value,
+        year_level: DOMElements.studentYearLevel.value,
+    };
+
+    console.log(payload.program);
+
+    try {
+
+        const res = await fetch(`${URL_BASED}/admin/edit_student_account/${payload.student_id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            },
+            // 3. Added the body payload
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        // 4. Proper response handling
+        if (!data.ok) {
+            Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
+            return;
+        }
+
+        Swal.fire('Updated!', 'Record has been updated successfully.', 'success');
+
+        DOMElements.studentAccountManagementForm.reset();
+        closeRecordModal();
+        fetchStudentAccounts();
+        
+    } catch (error) {
+        console.error("Failed to update student:", error);
+        Swal.fire('Error!', 'Failed to connect to the server.', 'error');
+    }
+});
+// Close the Modal
+function closeRecordModal() {
+    DOMElements.studentAccountManagementModal.style.display = "none";
 }
 
 // Fetch teacher accounts
@@ -1389,6 +1461,10 @@ async function editProfileName() {
     }
 }
 
+// Close Student Modal
+function closeStudentAccountManagementModal() {
+    DOMElements.studentAccountManagementModal.style.display = "none";
+}
 
 // Fetch Present Programs
 async function fetchPrograms() {
@@ -1452,15 +1528,9 @@ async function fetchPrograms() {
 
 // Chart
 async function chart() {
-
     const result = await fetchPrograms()
-
-    console.log(result)
-
     ctx = document.getElementById('myChart');
-    
     Chart.register(ChartDataLabels);
-
     const myChart = new Chart(ctx, {
         type: 'bar',
         data: {

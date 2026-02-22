@@ -653,6 +653,68 @@
             </div>  
         </section>
 
+        <!--Student Account Management Modal -->
+        <div id="studentAccountManagementModal" class="student-account-management-modal" style="display: none;">
+            <div class="record-modal-content">
+                
+                <div class="modal-header-account-management">
+                    <h2>Student Record Details</h2>
+                    <span class="close-btn-record" onclick="closeStudentAccountManagementModal()">×</span>
+                </div>
+        
+                <div class="modal-body">
+                    <form id="studentAccountManagementForm">
+    
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input type="text" id="studentIDTracking" name="id" disabled="">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>ID Number</label>
+                            <input type="text" id="studentIdNumber" name="id_number" placeholder="e.g. 1231377">
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label>Firstname</label>
+                                <input id="studentFirstName" type="text" name="firstname">
+                            </div>
+                            <div class="form-group" style="flex: 0.5;">
+                                <label>M.I</label>
+                                <input id="studentMiddleName" type="text" name="mi" maxlength="2">
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label>Lastname</label>
+                                <input id="studentLastName" type="text" name="lastname">
+                            </div>
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Program</label>
+                                <select name="program" id="studentProgram"><option value="">Select Program</option><option value="BS in Information Technology">BS in Information Technology</option><option value="BS in Computer Science">BS in Computer Science</option><option value="BS Education">BS Education</option><option value="BS in Criminology">BS in Criminology</option><option value="BS in Computer Engineering">BS in Computer Engineering</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Year Level</label>
+                                <select name="year_level" id="studentYearLevel">
+                                    <option value="">Select Year</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeRecordModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Save Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

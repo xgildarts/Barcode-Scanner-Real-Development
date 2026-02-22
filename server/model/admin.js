@@ -230,5 +230,47 @@ admin.delete('/delete_guard_account/:id', async (req, res) => {
         }
     }
 })
+
+// Admin edit student account
+admin.put('/edit_student_account/:id', async (req, res) => {
+    const id = req.params.id;
+    const { 
+        id_number, 
+        firstname, 
+        middlename, 
+        lastname, 
+        program, 
+        year_level 
+    } = req.body;
+
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decodedToken = services.verifyToken(token);
+        
+        if (decodedToken === null) { 
+            return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }); 
+        }
+        
+        const result = await services.adminEditStudentAccounts(
+            id, 
+            id_number, 
+            firstname, 
+            middlename, 
+            lastname, 
+            program, 
+            year_level
+        );
+        
+        res.json(result);
+    } catch (err) {
+        if (err.status_code === 401) {
+            res.status(err.status_code).json(err);
+        } else if (err.status_code === 500) {
+            res.status(err.status_code).json(err);
+        } else {
+            res.status(409).json(err);
+        }
+    }
+});
 // Export route
 module.exports = admin

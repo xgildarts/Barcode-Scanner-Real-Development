@@ -1460,6 +1460,58 @@ function getPresentPrograms() {
     });
 }
 
+// Admin edit student accounts
+function adminEditStudentAccounts(
+    id, 
+    id_number, 
+    firstname, 
+    middlename, 
+    lastname, 
+    program, 
+    year_level
+) {
+return new Promise((resolve, reject) => {
+
+    const updateQuery = `
+        UPDATE student_accounts 
+        SET 
+            student_id_number = ?, 
+            student_firstname = ?, 
+            student_middlename = ?, 
+            student_lastname = ?, 
+            student_program = ?, 
+            student_year_level = ?
+        WHERE student_id = ?
+    `;
+
+    const values = [
+        id_number,
+        firstname,
+        middlename,
+        lastname,
+        program,
+        year_level,
+        id
+    ];
+
+    db.execute(updateQuery, values, (err, result) => {
+        if (err) {
+            console.error("Database error updating student account:", err);
+            return reject(err);
+        }
+
+        if (result.affectedRows === 0) {
+            return reject(new Error("Update failed: Student not found or no changes were made."));
+        }
+
+        resolve({
+            ok: true,
+            message: "Student account updated successfully!",
+            affectedRows: result.affectedRows
+        });
+    });
+});
+}
 
 // Debugger
 // async function tester() {
@@ -1476,6 +1528,7 @@ function getPresentPrograms() {
 
 // Export functions
 module.exports= {
+    adminEditStudentAccounts,
     getPresentPrograms,
     adminDeleteGuard,
     adminDeleteTeacher,

@@ -253,3 +253,99 @@ body {
     font-weight: 700;
 }
 
+/*Student Modal*/
+.student-account-management-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.student-account-management-modal .modal-header-account-management {
+    background-color: #3f6864;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.student-account-management-modal .modal-body {
+    padding: 20px;
+}
+
+.student-account-management-modal .form-group {
+    margin-bottom: 16px;
+}
+
+.student-account-management-modal .record-modal-content {
+    background-color: white;
+    width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: fadeIn 0.3s;
+}
+
+
+.student-account-management-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #555;
+    font-weight: bold;
+}
+
+.student-account-management-modal .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.student-account-management-modal .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.student-account-management-modal .save-btn {
+    padding: 8px 16px;
+    background: #5a8a7a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.student-account-management-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.student-account-management-modal .cancel-btn {
+    background: #e0e0e0;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.student-account-management-modal .close-btn-record {
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+}
