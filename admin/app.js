@@ -42,6 +42,7 @@ const DOMElements = {
     profileEmail: document.getElementById('profileEmail'),
     profileEmailTop: document.getElementById('profileEmailTop'),
     ctx: document.getElementById('myChart'),
+    // Student
     studentIDTracking: document.getElementById('studentIDTracking'),
     studentIdNumber: document.getElementById('studentIdNumber'),
     studentFirstName: document.getElementById('studentFirstName'),
@@ -50,7 +51,28 @@ const DOMElements = {
     studentAccountManagementModal: document.getElementById('studentAccountManagementModal'),
     studentProgram: document.getElementById('studentProgram'),
     studentYearLevel: document.getElementById('studentYearLevel'),
-    studentAccountManagementForm: document.getElementById('studentAccountManagementForm')
+    studentAccountManagementForm: document.getElementById('studentAccountManagementForm'),
+    // Teacher
+    teacherAccountManagementModal: document.getElementById('teacherAccountManagementModal'),
+    teacherAccountManagementModal: document.getElementById('teacherAccountManagementModal'),
+    teacherIDTracking: document.getElementById('teacherIDTracking'),
+    teacherIdNumber: document.getElementById('teacherIdNumber'),
+    teacherFullName: document.getElementById('teacherFullName'),
+    teacherEmail: document.getElementById('teacherEmail'),
+    teacherProgram: document.getElementById('teacherProgram'),
+    teacherBarcodeSerialNumber: document.getElementById('teacherBarcodeSerialNumber'),
+    teacherAccountManagementForm: document.getElementById('teacherAccountManagementForm'),
+    // Guard
+    guardAccountManagementModal: document.getElementById('guardAccountManagementModal'),
+    guardAccountManagementForm: document.getElementById('guardAccountManagementForm'),
+    guardIDTracking: document.getElementById('guardIDTracking'),
+    guardEmail: document.getElementById('guardEmail'),
+    guardFullName: document.getElementById('guardFullName'),
+    guardLocation: document.getElementById('guardLocation'),
+    // Search filter teacher accounts
+    searchFilterTeachersAccounts: document.getElementById('searchFilterTeachersAccounts'),
+    searchFilterStudentsAccounts: document.getElementById('searchFilterStudentsAccounts'),
+    searchFilterGuardAccounts: document.getElementById('searchFilterGuardAccounts')
 
 }
 
@@ -228,7 +250,7 @@ async function getAdminData() {
         if(data.ok) {
             DOMElements.sideBarName.textContent = data.content[0].admin_name
             DOMElements.profileName.textContent = data.content[0].admin_name
-            DOMElements.profileEmail.textContent = data.content[0].admin_email
+            // DOMElements.profileEmail.textContent = data.content[0].admin_email
             DOMElements.adminProfileName.textContent = data.content[0].admin_name
             DOMElements.profileEmailTop.textContent = data.content[0].admin_email
         } else {
@@ -461,31 +483,7 @@ function register() {
     navigateTo("registration");
 }
 
-document.getElementById('searchStudentInput').addEventListener('input', function(e) {
-    const searchStudent = e.target.value.toLowerCase();
-    const filteredStudents = students.filter(student => 
-        student.name.toLowerCase().includes(searchStudent) ||
-        student.id.toLowerCase().includes(searchStudent)
-    );
-});
 
-document.getElementById('searchTeacherInput').addEventListener('input', (e) => {
-    const searchTeacher = e.target.value.toLowerCase();
-    const filteredTeachers = teachers.filter(teacher => 
-        teacher.name.toLowerCase().includes(searchTeacher) ||
-        teacher.id.toLowerCase().includes(searchTeacher)
-    );
-    
-    renderTeachers(filteredTeachers);
-});
-
-document.getElementById('searchGuardInput').addEventListener('input', function(e) {
-    const searchGuard = e.target.value.toLowerCase();
-    const filteredGuards = guards.filter(guard => 
-        guard.name.toLowerCase().includes(searchGuard) ||
-        guard.id.toLowerCase().includes(searchGuard)
-    );
-});
 
 // Render Programs
 async function renderPrograms() {
@@ -546,6 +544,12 @@ async function addProgram() {
         });
     }
 
+    // Show Loading
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
+
     try {
         const res = await fetch(`${URL_BASED}/admin/add_program`, {
             method: 'POST',
@@ -597,6 +601,11 @@ async function deleteProgram(id, name) {
     });
 
     if (!result.isConfirmed) return;
+     // Show Loading
+     Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
 
     try {
         const response = await fetch(`${URL_BASED}/admin/delete_program/${id}`, {
@@ -779,6 +788,44 @@ function editStudent(
     );
 }
 
+// Edit Student Account Management
+function editTeacher(
+    id, 
+    teacher_name,
+    teacher_email,
+    teacher_program,
+    teacher_barcode_scanner_serial_number
+) { 
+    // Log to console to verify data is passing correctly (optional)
+    console.log("Editing:", teacher_name, teacher_email);
+
+    openTeacherAccountManagementModal(
+        id, 
+        teacher_name,
+        teacher_email,
+        teacher_program,
+        teacher_barcode_scanner_serial_number
+    );
+}
+// Edit Student Account Management
+function editGuard(
+    id, 
+    guard_name,
+    guard_email,
+    guard_assigned_location
+) { 
+    // Log to console to verify data is passing correctly (optional)
+    console.log("Editing:", guard_name, guard_email);
+
+    openGuardAccountManagementModal(
+        id, 
+        guard_name,
+        guard_email,
+        guard_assigned_location
+    );
+}
+
+// Open Student Modal
 function openStudentAccountManagementModal(id, 
     student_id_number, 
     student_firstname, 
@@ -796,9 +843,39 @@ function openStudentAccountManagementModal(id,
     DOMElements.studentProgram.value = student_program
     DOMElements.studentYearLevel.value = student_year_level
 
+}
+
+// Open Teacher Modal
+function openTeacherAccountManagementModal(id, 
+    teacher_name,
+    teacher_email,
+    teacher_program,
+    teacher_barcode_scanner_serial_number) {
+
+    DOMElements.teacherAccountManagementModal.style.display = "flex";
+    DOMElements.teacherIDTracking.value = id
+    DOMElements.teacherEmail.value = teacher_email
+    DOMElements.teacherFullName.value = teacher_name
+    DOMElements.teacherProgram.value = teacher_program
+    DOMElements.teacherBarcodeSerialNumber.value = teacher_barcode_scanner_serial_number
 
 }
 
+// Open Guard Modal
+function openGuardAccountManagementModal(id, 
+    guard_name,
+    guard_email,
+    guard_assigned_location) {
+    
+    DOMElements.guardIDTracking.value = id;
+    DOMElements.guardFullName.value = guard_name;
+    DOMElements.guardEmail.value = guard_email;
+    DOMElements.guardLocation.value = guard_assigned_location;
+    DOMElements.guardAccountManagementModal.style.display = 'flex';
+    
+}
+
+// Student Account Management Form
 DOMElements.studentAccountManagementForm.addEventListener('submit', async function (e) {
     e.preventDefault();
 
@@ -814,6 +891,11 @@ DOMElements.studentAccountManagementForm.addEventListener('submit', async functi
     };
 
     console.log(payload.program);
+    // Show Loading
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
 
     try {
 
@@ -846,15 +928,118 @@ DOMElements.studentAccountManagementForm.addEventListener('submit', async functi
         Swal.fire('Error!', 'Failed to connect to the server.', 'error');
     }
 });
+
+// Teacher Account Management Form
+DOMElements.teacherAccountManagementForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    // 1. Updated keys to match what your Express backend expects
+    const payload = {
+        teacher_id: DOMElements.teacherIDTracking.value,
+        teacher_name: DOMElements.teacherFullName.value,
+        teacher_email: DOMElements.teacherEmail.value,
+        teacher_program: DOMElements.teacherProgram.value
+    };
+
+    console.log(payload.teacher_program);
+    // Show Loading
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+
+        const res = await fetch(`${URL_BASED}/admin/edit_teacher_account/${payload.teacher_id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            },
+            // 3. Added the body payload
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        // 4. Proper response handling
+        if (!data.ok) {
+            Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
+            return;
+        }
+
+        Swal.fire('Updated!', 'Record has been updated successfully.', 'success');
+
+        DOMElements.teacherAccountManagementForm.reset();
+        closeRecordModal();
+        fetchTeacherAccounts();
+        
+    } catch (error) {
+        console.error("Failed to update teacher:", error);
+        Swal.fire('Error!', 'Failed to connect to the server.', 'error');
+    }
+});
+
+// Guard Account Management Form
+DOMElements.guardAccountManagementForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const payload = {
+        guard_id: DOMElements.guardIDTracking.value,
+        guard_name: DOMElements.guardFullName.value,
+        guard_email: DOMElements.guardEmail.value,
+        guard_designated_location: DOMElements.guardLocation.value
+    };
+
+    console.log(payload.guard_email);
+
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+
+        const res = await fetch(`${URL_BASED}/admin/edit_guard_account/${payload.guard_id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+            Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
+            return;
+        }
+
+        Swal.fire('Updated!', 'Record has been updated successfully.', 'success');
+
+        DOMElements.guardAccountManagementForm.reset();
+        closeRecordModal();
+        fetchGuardAccounts();
+        
+    } catch (error) {
+        console.error("Failed to update guard:", error);
+        Swal.fire('Error!', 'Failed to connect to the server.', 'error');
+    }
+});
+
 // Close the Modal
 function closeRecordModal() {
     DOMElements.studentAccountManagementModal.style.display = "none";
+    DOMElements.teacherAccountManagementModal.style.display = 'none';
+    DOMElements.guardAccountManagementModal.style.display = 'none';
 }
 
 // Fetch teacher accounts
 async function fetchTeacherAccounts() {
     const result = await fetchAccountCount('teacher')
     DOMElements.teacherAccountCounts.textContent = result.length
+    console.log('Teacher accounts: ', result);
     DOMElements.teacherList.innerHTML = result.map(d => 
         `
             <div class="teacher-card">
@@ -869,7 +1054,12 @@ async function fetchTeacherAccounts() {
                 <div class="teacher-meta">
                     <div class="teacher-course">${d.teacher_program}</div>
                     <div class="teacher-actions">
-                        <button class="action-btn edit-btn-account-management" onclick="editTeacher(${d.teacher_id})">Edit</button>
+                        <button class="action-btn edit-btn-account-management" onclick="editTeacher(
+                        ${d.teacher_id},
+                        '${d.teacher_name}',
+                        '${d.teacher_email}',
+                        '${d.teacher_program}',
+                        '${d.teacher_barcode_scanner_serial_number}')">Edit</button>
                         <button class="action-btn delete-btn-account-management" onclick="deleteTeacher(${d.teacher_id})">Delete</button>
                     </div>
                 </div>
@@ -881,6 +1071,7 @@ async function fetchTeacherAccounts() {
 // Fetch guard accounts
 async function fetchGuardAccounts() {
     const result = await fetchAccountCount('guards')
+    console.log('Guard accounts: ', result)
     DOMElements.guardAccountCounts.textContent = result.length
     DOMElements.guardList.innerHTML = result.map(d =>
         `
@@ -896,7 +1087,11 @@ async function fetchGuardAccounts() {
                 <div class="guard-meta">
                     <div class="guard-domain-gate">${d.guard_designated_location}</div>
                     <div class="guard-actions">
-                        <button class="action-btn edit-btn-account-management" onclick="editGuard(${d.guard_id})">Edit</button>
+                        <button class="action-btn edit-btn-account-management" onclick="openGuardAccountManagementModal(
+                        ${d.guard_id},
+                        '${d.guard_name}', 
+                        '${d.guard_email}',
+                        '${d.guard_designated_location}')">Edit</button>
                         <button class="action-btn delete-btn-account-management" onclick="deleteGuard(${d.guard_id})">Delete</button>
                     </div>
                 </div>
@@ -906,14 +1101,23 @@ async function fetchGuardAccounts() {
     
 }
 
-// Handle form submissions
+// Guard Registration
 document.getElementById('guardForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const fullName = document.getElementById('guard_fullname').value;
     const email = document.getElementById('guard_email').value;
     const password = document.getElementById('guard_password').value;
+    const confirmPassword = document.getElementById('guard_confirm_password').value;
     const location = document.getElementById('guard_location').value;
+
+    if(password !== confirmPassword){
+        return Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: "Password doesn't match!"
+        });
+    }
 
     const guardData = {
         guard_name: fullName,
@@ -921,7 +1125,11 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
         guard_password: password,
         guard_designated_location: location
     };
-
+    // Show Loading
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
     try {
         const res = await fetch(`${URL_BASED}/authentication/guard_registration`, {
             method: 'POST',
@@ -959,6 +1167,7 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
     }
 });
 
+// Teacher Registration
 document.getElementById('teacherForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -982,6 +1191,11 @@ document.getElementById('teacherForm').addEventListener('submit', async function
         password: teacherPassword,
         department: teacherDepartment
     };
+    // Show Loading
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
 
     try {
         const res = await fetch(`${URL_BASED}/authentication/teacher_registration`, {
@@ -1024,6 +1238,7 @@ document.getElementById('teacherForm').addEventListener('submit', async function
     }
 });
 
+// Student Registration
 document.getElementById('studentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -1052,6 +1267,11 @@ document.getElementById('studentForm').addEventListener('submit', async function
         idNumber, program, yearLevel, guardianContact, password
     };
 
+    // Show Loading
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    });
 
     try {
         const res = await fetch(`${URL_BASED}/authentication/student_registration`, {
@@ -1420,7 +1640,6 @@ async function deleteGuard(id) {
     }
 }
 
-
 // Edit Profile
 async function editProfileName() {
     const currentName = DOMElements.adminProfileName.textContent
@@ -1459,11 +1678,6 @@ async function editProfileName() {
            getAdminData()
         })
     }
-}
-
-// Close Student Modal
-function closeStudentAccountManagementModal() {
-    DOMElements.studentAccountManagementModal.style.display = "none";
 }
 
 // Fetch Present Programs
@@ -1573,4 +1787,56 @@ async function chart() {
     });
 }
 
+// Search filter teacher accounts
+function searchFilterTeachersAccounts() {
+    let input = DOMElements.searchFilterTeachersAccounts.value.toLowerCase();
+    let cards = document.querySelectorAll("#teacherList .teacher-card");
+
+    cards.forEach(function(card) {
+        let name = card.querySelector(".teacher-name").textContent.toLowerCase();
+        let email = card.querySelector(".info-item").textContent.toLowerCase();
+        let course = card.querySelector(".teacher-course").textContent.toLowerCase();
+
+        if (name.includes(input) || email.includes(input) || course.includes(input)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+// Search filter student accounts
+function searchFilterStudentsAccounts() {
+    let input = DOMElements.searchFilterStudentsAccounts.value.toLowerCase();
+    let cards = document.querySelectorAll("#studentsList .student-card");
+
+    cards.forEach(function(card) {
+        let name = card.querySelector(".student-name").textContent.toLowerCase();
+        let email = card.querySelector(".student-info").textContent.toLowerCase();
+        let course = card.querySelector(".student-course").textContent.toLowerCase();
+
+        if (name.includes(input) || email.includes(input) || course.includes(input)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+// Search filter guard accounts
+function searchFilterGuardAccounts() {
+    let input = DOMElements.searchFilterGuardAccounts.value.toLowerCase();
+    let cards = document.querySelectorAll("#guardList .teacher-card");
+
+    cards.forEach(function(card) {
+        let name = card.querySelector(".guard-name").textContent.toLowerCase();
+        let domainGate = card.querySelector(".guard-domain-gate").textContent.toLowerCase();
+
+        if (name.includes(input) || domainGate.includes(input)) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
 

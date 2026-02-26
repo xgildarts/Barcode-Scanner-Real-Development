@@ -105,14 +105,18 @@
                         window.location.href = 'guard_camera_scan.html'; // Change to your actual file path
                     });
                 } else {
-                    throw new Error(result.message);
+                    Swal.fire({
+                    icon: 'error',
+                    title: 'Login Failed',
+                    text: 'Invalid username or password!'
+                });
                 }
 
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Login Failed',
-                    text: error.message || 'Server connection error'
+                    text: 'Server connection error'
                 });
             }
         });

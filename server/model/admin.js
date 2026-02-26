@@ -272,5 +272,80 @@ admin.put('/edit_student_account/:id', async (req, res) => {
         }
     }
 });
+
+
+// Admin edit teacher account
+admin.put('/edit_teacher_account/:id', async (req, res) => {
+    const id = req.params.id;
+    const { 
+        teacher_name,
+        teacher_email,
+        teacher_program, 
+    } = req.body;
+
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decodedToken = services.verifyToken(token);
+        
+        if (decodedToken === null) { 
+            return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }); 
+        }
+        
+        const result = await services.adminEditTeacherAccounts(
+            id, 
+            teacher_name, 
+            teacher_email, 
+            teacher_program,
+            decodedToken.admin_id
+        );
+        res.json(result);
+    } catch (err) {
+        if (err.status_code === 401) {
+            res.status(err.status_code).json(err);
+        } else if (err.status_code === 500) {
+            res.status(err.status_code).json(err);
+        } else {
+            res.status(409).json(err);
+        }
+    }
+});
+
+// Admin edit teacher account
+admin.put('/edit_guard_account/:id', async (req, res) => {
+    const id = req.params.id;
+    const { 
+        guard_name,
+        guard_email,
+        guard_designated_location, 
+    } = req.body;
+
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decodedToken = services.verifyToken(token);
+        
+        if (decodedToken === null) { 
+            return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }); 
+        }
+        
+        const result = await services.adminEditGuardAccounts(
+            id, 
+            guard_name, 
+            guard_email, 
+            guard_designated_location,
+            decodedToken.admin_id
+        );
+        res.json(result);
+    } catch (err) {
+        if (err.status_code === 401) {
+            res.status(err.status_code).json(err);
+        } else if (err.status_code === 500) {
+            res.status(err.status_code).json(err);
+        } else {
+            res.status(409).json(err);
+        }
+    }
+});
+
+
 // Export route
 module.exports = admin

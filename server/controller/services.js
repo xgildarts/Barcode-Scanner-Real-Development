@@ -1513,6 +1513,97 @@ return new Promise((resolve, reject) => {
 });
 }
 
+// Admin edit student accounts
+function adminEditTeacherAccounts(
+    id, 
+    teacher_name,
+    teacher_email, 
+    teacher_program,
+    admin_id
+) {
+return new Promise((resolve, reject) => {
+
+    const updateQuery = `
+        UPDATE teacher 
+        SET 
+            teacher_name = ?, 
+            teacher_email = ?, 
+            teacher_program = ?
+        WHERE teacher_id = ? AND admin_id = ?
+    `;
+
+    const values = [
+        teacher_name,
+        teacher_email,
+        teacher_program,
+        id,
+        admin_id
+    ];
+
+    db.execute(updateQuery, values, (err, result) => {
+        if (err) {
+            console.error("Database error updating teacher account:", err);
+            return reject(err);
+        }
+
+        if (result.affectedRows === 0) {
+            return reject(new Error("Update failed: Teacher not found or no changes were made."));
+        }
+
+        resolve({
+            ok: true,
+            message: "Teacher account updated successfully!",
+            affectedRows: result.affectedRows
+        });
+    });
+});
+}
+
+function adminEditGuardAccounts(
+    id, 
+    guard_name,
+    guard_email, 
+    guard_designated_location,
+    admin_id
+) {
+return new Promise((resolve, reject) => {
+
+    const updateQuery = `
+        UPDATE guards 
+        SET 
+            guard_name = ?, 
+            guard_email = ?, 
+            guard_designated_location = ?
+        WHERE guard_id = ? AND admin_id = ?
+    `;
+
+    const values = [
+        guard_name,
+        guard_email,
+        guard_designated_location,
+        id,
+        admin_id
+    ];
+
+    db.execute(updateQuery, values, (err, result) => {
+        if (err) {
+            console.error("Database error updating guard account:", err);
+            return reject(err);
+        }
+
+        if (result.affectedRows === 0) {
+            return reject(new Error("Update failed: Guard not found or no changes were made."));
+        }
+
+        resolve({
+            ok: true,
+            message: "Guard account updated successfully!",
+            affectedRows: result.affectedRows
+        });
+    });
+});
+}
+
 // Debugger
 // async function tester() {
 //     try {
@@ -1528,6 +1619,8 @@ return new Promise((resolve, reject) => {
 
 // Export functions
 module.exports= {
+    adminEditGuardAccounts,
+    adminEditTeacherAccounts,
     adminEditStudentAccounts,
     getPresentPrograms,
     adminDeleteGuard,

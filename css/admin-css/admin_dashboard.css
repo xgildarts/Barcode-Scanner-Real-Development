@@ -349,3 +349,197 @@ body {
     cursor: pointer;
     color: white;
 }
+
+/*Teacher Modal*/
+.teacher-account-management-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.teacher-account-management-modal .modal-header-account-management {
+    background-color: #3f6864;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.teacher-account-management-modal .modal-body {
+    padding: 20px;
+}
+
+.teacher-account-management-modal .form-group {
+    margin-bottom: 16px;
+}
+
+.teacher-account-management-modal .record-modal-content {
+    background-color: white;
+    width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: fadeIn 0.3s;
+}
+
+
+.teacher-account-management-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #555;
+    font-weight: bold;
+}
+
+.teacher-account-management-modal .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.teacher-account-management-modal .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.teacher-account-management-modal .save-btn {
+    padding: 8px 16px;
+    background: #5a8a7a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.teacher-account-management-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.teacher-account-management-modal .cancel-btn {
+    background: #e0e0e0;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.teacher-account-management-modal .close-btn-record {
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+}
+
+/*Guard Modal*/
+.guard-account-management-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.guard-account-management-modal .modal-header-account-management {
+    background-color: #3f6864;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.guard-account-management-modal .modal-body {
+    padding: 20px;
+}
+
+.guard-account-management-modal .form-group {
+    margin-bottom: 16px;
+}
+
+.guard-account-management-modal .record-modal-content {
+    background-color: white;
+    width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: fadeIn 0.3s;
+}
+
+
+.guard-account-management-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #555;
+    font-weight: bold;
+}
+
+.guard-account-management-modal .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.guard-account-management-modal .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.guard-account-management-modal .save-btn {
+    padding: 8px 16px;
+    background: #5a8a7a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.guard-account-management-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.guard-account-management-modal .cancel-btn {
+    background: #e0e0e0;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.guard-account-management-modal .close-btn-record {
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+}
