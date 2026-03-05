@@ -15,6 +15,10 @@
     border-radius: 2px;
 }
 
+#donutChart circle {
+    transition: stroke-dashoffset 0.8s ease;
+}
+
 /*Add student button*/
 .add-student-btn {
     display: flex;

@@ -2,6 +2,51 @@
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const TOKEN = localStorage.getItem('teacher_token');
 
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Check TOKEN first
+    checkToken()
+    
+
+    // Navigation Init
+    navigateTo('dashboard');
+    
+    // Data Loading
+    // initAttendanceChart();
+    getStudentAttendanceRecords();
+    loadStudentsRegistered();
+    getStudentAttendanceHistoryRecords();
+    getTeacherDataToServer();
+    loadManualEntryStudents()
+    
+    // UI Renders
+    renderSubjects()
+    renderYearLevel()
+    renderPrograms()
+    renderEventAttendanceRecord()
+    renderEventAttendanceHistoryRecord()
+    radiusSlider.dispatchEvent(new Event('input')); 
+
+    // Setup Global Search Listeners
+    setupTableSearch('searchInputAttendance', 'attendanceBody');
+    setupTableSearch('searchInputAttendanceHistory', 'attendanceHistoryTableBody');
+    setupTableSearch('searchInput', 'studentsBody'); 
+    setupManualEntryFilterSearch()
+
+    // Setup Filter Dropdowns
+    setupHistoryDropdownFilter('subjectFilterAttendanceHistory', 4);
+    setupHistoryDropdownFilter('yearFilterAttendanceHistory', 5);
+    setupManualEntryFilter()
+
+    // Registration
+    studentRegisteredDropdownFilter('recordYearFilter', 5)
+
+    // Generic Close Buttons
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', e => e.target.closest('.stat-card').style.display = 'none');
+    });
+});
+
 // Check TOKEN
 async function checkToken() {
     try {
@@ -251,6 +296,37 @@ function setDonutProgress(percent) {
     progressCircle.style.strokeDashoffset = -offset;
 }
 
+// let attendanceChart;
+
+// function initAttendanceChart() {
+//     const ctx = document.getElementById('attendanceChart').getContext('2d');
+
+//     attendanceChart = new Chart(ctx, {
+//         type: 'doughnut',
+//         data: {
+//             labels: ['Present', 'Absent'],
+//             datasets: [{
+//                 data: [0, 0],
+//                 backgroundColor: ['#5a8a7a', '#d88888'],
+//                 borderWidth: 0
+//             }]
+//         },
+//         options: {
+//             responsive: true,
+//             maintainAspectRatio: false,
+//             cutout: '70%',
+//             animation: {
+//                 duration: 800
+//             },
+//             plugins: {
+//                 legend: {
+//                     display: false
+//                 }
+//             }
+//         }
+//     });
+// }
+
 function buildAttendanceRow(d) {
     return `
         <td>${d.student_id_number}</td>
@@ -270,21 +346,29 @@ async function getStudentAttendanceRecords() {
     if (!data) return;
 
     state.totalPresent = data.content.length;
-    document.getElementById('totalPresents').textContent = state.totalPresent;
-    document.getElementById('bottomTotalPresent').textContent = "Presents " + state.totalPresent;
-    
     const absentCount = state.totalStudentRegistered - state.totalPresent;
     const finalAbsent = absentCount > 0 ? absentCount : 0;
-    
+
+    const percent = state.totalStudentRegistered > 0
+        ? (state.totalPresent / state.totalStudentRegistered) * 100
+        : 0;
+
+    // Update donut FIRST (fast UI feedback)
+    setDonutProgress(percent);
+
+    // Update summary numbers
+    document.getElementById('totalPresents').textContent = state.totalPresent;
+    document.getElementById('bottomTotalPresent').textContent = "Presents " + state.totalPresent;
     document.getElementById('totalStudentAbsent').textContent = finalAbsent;
     document.getElementById('bottomTotalAbsent').textContent = "Absent " + finalAbsent;
 
-    const percent = state.totalStudentRegistered > 0 ? (state.totalPresent / state.totalStudentRegistered) * 100 : 0;
-
-    setDonutProgress(percent);
-
-    const tbody = document.getElementById('attendanceBody');
-    tbody.innerHTML = data.content.map(d => `<tr>${buildAttendanceRow(d)}</tr>`).join('');
+    // Delay heavy table rendering slightly
+    setTimeout(() => {
+        const tbody = document.getElementById('attendanceBody');
+        tbody.innerHTML = data.content
+            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
+            .join('');
+    }, 0);
 }
 
 async function getStudentAttendanceHistoryRecords() {
@@ -578,7 +662,10 @@ async function addSubject() {
     if (!programName) {
         return Swal.fire('Input Required', 'Please enter a program name.', 'warning');
     }
-
+    Swal.fire({
+        title: 'Processing...',
+        didOpen: () => Swal.showLoading()
+    })
     const res = await apiCall('/teacher/programs/add', 'POST', { program_name: programName });
     if (res && res.ok) {
         renderSubjects();
@@ -606,6 +693,10 @@ function deleteProgram(program_id, program_name) {
         confirmButtonText: 'Yes, delete it'
     }).then(async (result) => {
         if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Processing...',
+                didOpen: () => Swal.showLoading()
+            })
             const res = await apiCall(
                 `/teacher/delete_program/${program_id}`,
                 'DELETE'
@@ -752,48 +843,6 @@ window.onclick = function(event) {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-
-    // Check TOKEN first
-    checkToken()
-
-    // 1. Navigation Init
-    navigateTo('dashboard');
-    
-    // 2. Data Loading
-    loadStudentsRegistered();
-    getStudentAttendanceRecords();
-    getStudentAttendanceHistoryRecords();
-    getTeacherDataToServer();
-    loadManualEntryStudents()
-    
-    // 3. UI Renders
-    renderSubjects()
-    renderYearLevel()
-    renderPrograms()
-    renderEventAttendanceRecord()
-    renderEventAttendanceHistoryRecord()
-    radiusSlider.dispatchEvent(new Event('input')); 
-
-    // 4. Setup Global Search Listeners
-    setupTableSearch('searchInputAttendance', 'attendanceBody');
-    setupTableSearch('searchInputAttendanceHistory', 'attendanceHistoryTableBody');
-    setupTableSearch('searchInput', 'studentsBody'); 
-    setupManualEntryFilterSearch()
-
-    // 5. Setup Filter Dropdowns
-    setupHistoryDropdownFilter('subjectFilterAttendanceHistory', 4);
-    setupHistoryDropdownFilter('yearFilterAttendanceHistory', 5);
-    setupManualEntryFilter()
-
-    // Registration
-    studentRegisteredDropdownFilter('recordYearFilter', 5)
-
-    // 6. Generic Close Buttons
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.addEventListener('click', e => e.target.closest('.stat-card').style.display = 'none');
-    });
-});
 
 function logout() {
     Swal.fire({
@@ -882,8 +931,7 @@ document.getElementById('recordForm').addEventListener('submit', async function 
         mi: document.getElementById('mi').value.trim(),
         lastname: document.getElementById('lastname').value.trim(),
         program: document.getElementById('editProgram').value,
-        year_level: document.getElementById('year_level').value,
-        record_date: document.getElementById('record_date').value
+        year_level: document.getElementById('year_level').value
     };
 
     console.log(payload.program)

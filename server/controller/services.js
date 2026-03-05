@@ -1,57 +1,40 @@
 
 const bcrypt = require('bcrypt')
-const axios = require('axios');
 const jwt = require('jsonwebtoken')
 const db = require('../configuration/db');
 const SALT_ROUNDS = 10
 const JWT_SECRET = 'q09481239328'
 
-// async function t() {
-//     try {
-//         const result = await sendSMS('+09763891308', 'Hello World')
-//         console.log(result)
-//     } catch(err) {
-//         console.log(err)
-//     }
-// }
+const clickSendUsername = 'steven.agustin.ecoast@panpacificu.edu.ph';   // from dashboard
+const clickSendAPI = 'FA142E33-E8CD-0664-FB80-64EBBE1BAFAC';    // from dashboard
 
-// t()
-
-// async function sendSMS(to, message) {
-//     const username = 'xnatsu25@gmail.com';
-//     const apiKey = 'E6A2B53D-2C42-BE75-D8DD-62B57D76D984';
-
-//     const auth = Buffer.from(`${username}:${apiKey}`).toString('base64');
-
-//     try {
-//         const response = await axios.post(
-//             'https://rest.clicksend.com/v3/sms/send',
-//             {
-//                 messages: [
-//                     {
-//                         source: "nodejs",
-//                         from: "+639763891308", // Registered sender ID
-//                         body: message,
-//                         to: to
-//                     }
-//                 ]
-//             },
-//             {
-//                 headers: {
-//                     Authorization: `Basic ${auth}`,
-//                     "Content-Type": "application/json"
-//                 }
-//             }
-//         );
-
-//         return response.data;
-//     } catch (error) {
-//         throw error.response?.data || error.message;
-//     }
-// }
-
-// module.exports = { sendSMS };
-
+// // Create SMS message object
+async function sendSMS(phone, message) {
+    try {
+      const resp = await fetch('https://rest.clicksend.com/v3/sms/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + Buffer.from(clickSendUsername + ':' + clickSendAPI).toString('base64')
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              source: 'nodejs',
+              body: message,
+              to: phone
+            }
+          ]
+        })
+      });
+  
+      const data = await resp.json();
+      console.log('SMS Response:', data);
+    } catch (err) {
+      console.error('Error sending SMS:', err);
+    }
+  }
+  
 
 
 // Generate Barcode
@@ -596,6 +579,17 @@ async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, teache
                     })
     })
 }
+
+// async function test() {
+//     try {
+//         const result = await checkStudentIfExistsInRegistration('BC17708941329739487');
+//         console.log(result);
+//     } catch(err) {
+//         console.log(err);
+//     }
+// }
+
+// test();
 
 // Check Student If Exists in Registration
 async function checkStudentIfExistsInRegistration(barcode) {
@@ -1619,6 +1613,7 @@ return new Promise((resolve, reject) => {
 
 // Export functions
 module.exports= {
+    sendSMS,
     adminEditGuardAccounts,
     adminEditTeacherAccounts,
     adminEditStudentAccounts,

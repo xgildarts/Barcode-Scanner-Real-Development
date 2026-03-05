@@ -98,7 +98,7 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
     console.log("Serial Number:", teacher_barcode_scanner_serial_number)
 
     try {
-        // 1️⃣ Check registration
+        // Check registration
         const result = await services.checkStudentIfExistsInRegistration(barcode)
 
         if (result.length === 0) {
@@ -117,14 +117,14 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
             student_program
         } = result[0]
 
-        // 2️⃣ Check regular class
+        // Check regular class
         const exists = await services.checkStudentToRegularClass(student_id_number)
 
         if (!exists) {
             return res.json({ ok: false, message: 'Student not register to this subject!' })
         }
 
-        // 3️⃣ Insert attendance
+        // Insert attendance
         const response = await services.insertStudentAttendance(
             student_id,
             student_id_number,
@@ -135,6 +135,9 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
             student_program,
             teacher_barcode_scanner_serial_number
         )
+
+        // Send SMS to Guardian
+        await services.sendSMS(student_guardian_number, `${student_firstname} ${student_middlename}. ${student_lastname} Your child has attended school today.`);
 
         res.json({ ok: true, message: response })
 

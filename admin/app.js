@@ -497,6 +497,7 @@ async function renderPrograms() {
 
         if(!res.ok) { return alert(data.message) }
 
+        // Load Programs and Academic Setup
         data.content.forEach((program, index) => {
 
             const { program_id, program_name, program_date_created } = program
@@ -513,6 +514,16 @@ async function renderPrograms() {
             `;
             programsList.appendChild(card);
         });
+
+        // Load Student Program Selector
+        DOMElements.studentProgram.innerHTML = "<option value=''>Select Program</option>" + data.content.map(d => 
+            `<option value='${d.program_name}'>${d.program_name}</option>`
+        ).join('');
+
+        // Load Teacher Program Selector
+        DOMElements.teacherProgram.innerHTML = "<option value=''>Select Program</option>" + data.content.map(d => 
+            `<option value='${d.program_name}'>${d.program_name}</option>`
+        ).join('');
 
     } catch(err) {
         alert(err)
