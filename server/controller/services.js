@@ -1,4 +1,3 @@
-
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const db = require('../configuration/db');
@@ -898,6 +897,7 @@ function getTeacherData(teacherID) {
                             teacher_program, 
                             teacher_current_subject, 
                             teacher_location,
+                            teacher_location_radius,
                             teacher_barcode_scanner_serial_number 
                        FROM teacher 
                        WHERE teacher_id = ?`
@@ -1611,6 +1611,181 @@ return new Promise((resolve, reject) => {
 // tester()
 
 
+// Haversine formula — returns distance in meters between two lat/lng points
+function haversineDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // Earth radius in metres
+    const toRad = deg => deg * (Math.PI / 180);
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Get teacher location + radius by serial number (used by barcode scanner device)
+function getTeacherLocationBySerial(teacherSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT teacher_location, teacher_location_radius 
+             FROM teacher 
+             WHERE teacher_barcode_scanner_serial_number = ? 
+             LIMIT 1`,
+            [teacherSerialNumber],
+            (err, result) => {
+                if (err) return reject(err);
+                if (result.length === 0) return reject(new Error('Teacher not found.'));
+                resolve(result[0]);
+            }
+        );
+    });
+}
+
+// Get the teacher serial number linked to a student via their regular class record
+function getTeacherSerialByStudentIDNumber(studentIDNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT teacher_barcode_scanner_serial_number 
+             FROM student_records_regular_class 
+             WHERE student_id_number = ? 
+             LIMIT 1`,
+            [studentIDNumber],
+            (err, result) => {
+                if (err) return reject(err);
+                if (result.length === 0) return reject(new Error('Student is not registered to any class.'));
+                resolve(result[0].teacher_barcode_scanner_serial_number);
+            }
+        );
+    });
+}
+
+// Verify if student coordinates are within teacher's allowed radius
+async function verifyStudentLocation(studentIDNumber, studentLat, studentLng) {
+    // 1. Find which teacher this student belongs to
+    const teacherSerial = await getTeacherSerialByStudentIDNumber(studentIDNumber);
+
+    // 2. Get that teacher's saved location + radius
+    const teacher = await getTeacherLocationBySerial(teacherSerial);
+
+    if (!teacher.teacher_location) {
+        throw new Error('Teacher has not set a location yet.');
+    }
+
+    const { latitude: teacherLat, longitude: teacherLng } = JSON.parse(teacher.teacher_location);
+    const radius   = teacher.teacher_location_radius || 50;
+    const distance = haversineDistance(teacherLat, teacherLng, studentLat, studentLng);
+
+    return {
+        withinRange: distance <= radius,
+        distance:    Math.round(distance),
+        radius
+    };
+}
+
+// Manual Attendance Insertion
+// Flow: check student in regular class → check not already in attendance → check year level/subject → insert → SMS
+async function manualInsertAttendance(
+    student_id,
+    student_id_number,
+    student_firstname,
+    student_middlename,
+    student_lastname,
+    student_email,
+    student_year_level,
+    student_guardian_number,
+    student_program,
+    teacher_barcode_scanner_serial_number
+) {
+    // 1. Check student is registered to this teacher's regular class
+    const inClass = await checkStudentToRegularClass(student_id_number);
+    if (!inClass) {
+        throw new Error('Student is not registered to this subject.');
+    }
+
+    // 2. Check student is not already in today's attendance
+    const alreadyIn = await checkStudentIfAlreadyExistsInAttendance(student_id_number);
+    if (alreadyIn) {
+        throw new Error('Student is already recorded in attendance.');
+    }
+
+    // 3. Check subject and year level are set for this teacher
+    const subjectData = await checkYearLevelAndSerialNumber(teacher_barcode_scanner_serial_number, student_year_level);
+    if (subjectData.length === 0) {
+        throw new Error('No subject set for this year level. Please set a subject first.');
+    }
+
+    // 4. Insert into attendance_record
+    await new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT INTO attendance_record (
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                year_level,
+                subject,
+                student_program,
+                teacher_barcode_scanner_serial_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                student_year_level,
+                subjectData[0].subject_name_set,
+                student_program,
+                teacher_barcode_scanner_serial_number
+            ],
+            (err) => {
+                if (err) return reject(err);
+                resolve();
+            }
+        );
+    });
+
+    // 5. Insert into attendance_history_record
+    await insertStudentAttendanceHistory(
+        student_id,
+        student_id_number,
+        student_firstname,
+        student_middlename,
+        student_lastname,
+        student_year_level,
+        subjectData[0].subject_name_set,
+        student_program,
+        teacher_barcode_scanner_serial_number
+    );
+
+    // 6. Send SMS to guardian
+    await sendSMS(
+        student_guardian_number,
+        `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`
+    );
+
+    return 'Attendance recorded successfully!';
+}
+
+// Set Teacher Location
+function setTeacherLocation(teacherID, latitude, longitude, radius) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `UPDATE teacher 
+             SET teacher_location = ?, teacher_location_radius = ? 
+             WHERE teacher_id = ?`,
+            [JSON.stringify({ latitude, longitude }), radius, teacherID],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Teacher not found.'))
+                resolve('Location saved successfully!')
+            }
+        )
+    })
+}
+
 // Export functions
 module.exports= {
     sendSMS,
@@ -1676,5 +1851,9 @@ module.exports= {
     emailFinder,
     guardRegistration,
     getWholeCampusAccounts,
-    addProgram
+    addProgram,
+    setTeacherLocation,
+    verifyStudentLocation,
+    getTeacherSerialByStudentIDNumber,
+    manualInsertAttendance
 }

@@ -88,4 +88,46 @@ student.get('/get_attendance_history_record', async (req, res) => {
 })
 
 
+// Verify student location against their teacher's set location
+student.post('/verify_location', async (req, res) => {
+    const { latitude, longitude } = req.body
+
+    if (latitude === undefined || longitude === undefined) {
+        return res.status(400).json({ ok: false, message: 'latitude and longitude are required.' })
+    }
+
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+
+        const result = await services.verifyStudentLocation(
+            decodedToken.student_id_number,
+            parseFloat(latitude),
+            parseFloat(longitude)
+        )
+
+        if (!result.withinRange) {
+            return res.json({
+                ok: false,
+                withinRange: false,
+                message: `You are ${result.distance}m away. Must be within ${result.radius}m to generate a barcode.`,
+                distance: result.distance,
+                radius: result.radius
+            })
+        }
+
+        res.json({
+            ok: true,
+            withinRange: true,
+            message: `You are within range (${result.distance}m away).`,
+            distance: result.distance,
+            radius: result.radius
+        })
+
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+
 module.exports = student

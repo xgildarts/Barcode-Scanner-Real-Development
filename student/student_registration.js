@@ -1,128 +1,65 @@
+const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
+document.addEventListener('DOMContentLoaded', loadProgramsDropdown);
 
-document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+document.getElementById('registrationForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    // Inputs (get values)
-    const firstName = document.getElementById('firstName').value.trim();
-    const middleName = document.getElementById('middleName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const idNumber = document.getElementById('idNumber').value.trim();
-    const program = document.getElementById('program').value;
-    const yearLevel = document.getElementById('yearLevel').value;
+    const firstName      = document.getElementById('firstName').value.trim();
+    const middleName     = document.getElementById('middleName').value.trim();
+    const lastName       = document.getElementById('lastName').value.trim();
+    const email          = document.getElementById('email').value.trim();
+    const idNumber       = document.getElementById('idNumber').value.trim();
+    const program        = document.getElementById('program').value;
+    const yearLevel      = document.getElementById('yearLevel').value;
     const guardianContact = document.getElementById('guardianContactNumber').value.trim();
-    const password = document.getElementById('password').value;
+    const password       = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    // Password length
-    if (password.length < 8) {
-        Swal.fire({
-            icon: "error",
-            title: "Weak Password",
-            text: "Password must be at least 8 characters long."
-        });
-        return;
-    }
+    if (password.length < 8)
+        return Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 8 characters long.' });
 
-    // Password match
-    if (password !== confirmPassword) {
-        Swal.fire({
-            icon: "error",
-            title: "Password Mismatch",
-            text: "Passwords do not match."
-        });
-        return;
-    }
+    if (password !== confirmPassword)
+        return Swal.fire({ icon: 'error', title: 'Password Mismatch', text: 'Passwords do not match.' });
 
-    // Data object to send
-    const payload = {
-        firstName,
-        middleName,
-        lastName,
-        email,
-        idNumber,
-        program,
-        yearLevel,
-        guardianContact,
-        password
-    };
+    Swal.fire({ title: 'Creating account...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
-        const res = await fetch(`${URL_BASED}/authentication/student_registration`, {
+        const res  = await fetch(`${BASE_URL}/authentication/student_registration`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ firstName, middleName, lastName, email, idNumber, program, yearLevel, guardianContact, password })
         });
+        const data = await res.json();
 
-        const response = await res.json();
-
-        if(res.ok && response.ok) {
-
-            localStorage.setItem('device_id', response.device_id)
-
-            Swal.fire({
-                icon: "success",
-                title: response.message,
-                text: `Welcome, ${firstName}!`,
-                confirmButtonColor: "#3085d6"
-            });
-
+        if (res.ok && data.ok) {
+            localStorage.setItem('device_id', data.device_id);
+            Swal.fire({ icon: 'success', title: data.message, text: `Welcome, ${firstName}!`, confirmButtonColor: '#3085d6' });
+            this.reset();
         } else {
-            Swal.fire({
-                icon: "error",
-                title: "Registration Failed",
-                text: response.message || "Unknown error occurred"
-            });
+            Swal.fire({ icon: 'error', title: 'Registration Failed', text: data.message || 'Unknown error occurred.' });
         }
-    } catch(err) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Network or Server Error',
-            text: err.message || err
-        });
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Network Error', text: err.message || 'Please try again later.' });
     }
-
-    // Reset inputs value
-    document.getElementById('registrationForm').reset();
-
 });
 
 async function loadProgramsDropdown() {
-    const programSelect = document.getElementById('program');
-
+    const select = document.getElementById('program');
     try {
-        const response = await fetch(`${URL_BASED}/programs/program_get_data`);
-        
-        const data = await response.json();
+        Swal.fire({ title: 'Loading programs...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const res  = await fetch(`${BASE_URL}/programs/program_get_data`);
+        const data = await res.json();
 
-        console.log(data)
+        if (!res.ok) throw new Error(data.message || 'Failed to load programs');
+        Swal.close();
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to load programs');
-        }
+        select.innerHTML = '<option value="">Select Program</option>' +
+            data.content.map(p => `<option value="${p.program_name}">${p.program_name}</option>`).join('');
 
-        programSelect.innerHTML = '<option value="">Select Program</option>';
-
-        data.content.forEach(program => {
-            const option = document.createElement('option');
-            
-            option.value = program.program_name; 
-            option.textContent = program.program_name;
-            
-            programSelect.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error('Error loading programs:', error);
-        // Optional: Show an error option
-        const errorOption = document.createElement('option');
-        errorOption.textContent = "Error loading programs";
-        programSelect.appendChild(errorOption);
+    } catch (err) {
+        Swal.close();
+        console.error('Error loading programs:', err);
+        select.innerHTML = '<option value="">Error loading programs</option>';
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadProgramsDropdown()
-});

@@ -1,82 +1,41 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const emailInput = document.getElementById('email');
-    const rememberMeCheckbox = document.getElementById('rememberMe');
+const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 
+document.addEventListener('DOMContentLoaded', () => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
-        emailInput.value = rememberedEmail;
-        rememberMeCheckbox.checked = true;
+        document.getElementById('email').value      = rememberedEmail;
+        document.getElementById('rememberMe').checked = true;
     }
 });
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1'
-
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-
-    // Show loading
-    Swal.fire({
-        title: 'Logging in...',
-        didOpen: () => Swal.showLoading()
-    });
-
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
+
+    Swal.fire({ title: 'Logging in...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const email     = document.getElementById('email').value.trim();
+    const password  = document.getElementById('password').value;
     const rememberMe = document.getElementById('rememberMe').checked;
     const device_id = localStorage.getItem('device_id') || '';
 
-    if (!email || !password) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Missing Fields',
-            text: 'Please enter both email and password.'
-        });
-        return;
-    }
-
     try {
-        const res = await fetch(`${URL_BASED}/authentication/student_login`, {
+        const res  = await fetch(`${BASE_URL}/authentication/student_login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, device_id })
         });
-
         const data = await res.json();
 
         if (res.ok && data.ok) {
-
-            // Save token
             localStorage.setItem('student_token', data.token);
+            localStorage[rememberMe ? 'setItem' : 'removeItem']('rememberedEmail', email);
 
-            // Remember Me logic
-            if (rememberMe) {
-                localStorage.setItem('rememberedEmail', email);
-            } else {
-                localStorage.removeItem('rememberedEmail');
-            }
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Login Successful',
-                text: `Welcome back, ${data.student_firstname}!`,
-                confirmButtonColor: '#3085d6'
-            }).then(() => {
-                window.location.href = 'student_dashboard.html';
-            });
-
+            Swal.fire({ icon: 'success', title: 'Login Successful', text: `Welcome back, ${data.student_firstname}!`, confirmButtonColor: '#3085d6' })
+                .then(() => window.location.href = 'student_dashboard.html');
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
-                text: data.message || 'Invalid email or password.'
-            });
+            Swal.fire({ icon: 'error', title: 'Login Failed', text: data.message || 'Invalid email or password.' });
         }
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Server Error',
-            text: 'Please try again later.'
-        });
-        console.error('Login error:', error);
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Server Error', text: 'Please try again later.' });
     }
 });

@@ -13,6 +13,91 @@
     <link rel="stylesheet" href="/css/teacher-css/teacher_manual_entry.css">
     <link rel="stylesheet" href="/css/teacher-css/teacher_academic_setup.css">
     <link rel="stylesheet" href="/css/teacher-css/teacher_settings.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+        /* Location Search Box */
+        .location-search-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .location-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            fill: #5a8a7a;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .location-search-input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            border: 2px solid #c8ddd9;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .location-search-input:focus {
+            border-color: #5a8a7a;
+        }
+
+        .location-search-results {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #c8ddd9;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+            z-index: 1000;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .location-search-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .location-search-item:hover {
+            background: #eef5f3;
+        }
+
+        .result-pin-icon {
+            width: 16px;
+            height: 16px;
+            fill: #5a8a7a;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .location-search-no-result {
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #999;
+            text-align: center;
+        }
+    </style>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
     <!-- Sidebar Overlay -->
@@ -205,27 +290,45 @@
         <section class="sections" id="location">
             <div class="content">
                 <div class="map-container">
-                    <div class="map-view">
-                        <div class="radius-circle"></div>
-                        <div class="map-marker">
-                            <div class="marker-pin"></div>
-                        </div>
+                    <div class="location-search-wrapper">
+                        <svg class="location-search-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        <input
+                            type="text"
+                            id="locationSearchInput"
+                            class="location-search-input"
+                            placeholder="Search for a place..."
+                            autocomplete="off"
+                        >
+                        <ul id="locationSearchResults" class="location-search-results"></ul>
                     </div>
+                    <div id="map" class="map-view"></div>
                     <div class="radius-control">
                         <h2 class="control-title">Location Radius Check</h2>
+                
                         <div class="radius-info">
                             <span>Allowed Radius:</span>
-                            <span class="radius-value"><span id="radiusValue">50</span> meters</span>
+                            <span class="radius-value">
+                                <span id="radiusValue">50</span> meters
+                            </span>
                         </div>
                         <div class="slider-container">
-                            <input type="range" class="radius-slider" id="radiusSlider" min="10" max="100" value="50" step="5">
+                            <input type="range"
+                                   class="radius-slider"
+                                   id="radiusSlider"
+                                   min="10"
+                                   max="100"
+                                   value="50"
+                                   step="5">
                         </div>
                     </div>
                 </div>
         
                 <div class="action-buttons">
+                    <button class="btn default-location-btn" onclick="setDefaultLocation()">Default</button>
                     <button class="btn set-location-btn" onclick="setLocation()">Set Location</button>
-                    <button class="btn cancel-btn" onclick="cancel()">Cancel</button>
+                    <button class="btn location-cancel-btn" onclick="cancel()">Cancel</button>
                 </div>
             </div>
         </section>
@@ -324,21 +427,9 @@
                 </div>
         
                 <div class="filters-row">
-                    <select class="filter-select" id="subjectFilterAttendanceHistory">
-                        <option value="">All Subject</option>
-                        <option value="Database">Database</option>
-                        <option value="Big Data">Big Data</option>
-                        <option value="Networking">Networking</option>
-                        <option value="Web Development">Web Development</option>
-                    </select>
+                    <select class="filter-select" id="subjectFilterAttendanceHistory"></select>
         
-                    <select class="filter-select" id="yearFilterAttendanceHistory">
-                        <option value="">All</option>
-                        <option value="1st Year">1st Year</option>
-                        <option value="2nd Year">2nd Year</option>
-                        <option value="3rd Year">3rd Year</option>
-                        <option value="4th Year">4th Year</option>
-                    </select>
+                    <select class="filter-select" id="yearFilterAttendanceHistory"></select>
                 </div>
             </div>
         
@@ -396,7 +487,7 @@
             </div>
         
             <div class="table-container">
-                <table class="students-table">
+                <table class="students-table" id="studentsTable">
                     <thead>
                         <tr>
                             <th>ID Number</th>
@@ -671,120 +762,85 @@
     </main>
 
     <!-- Add Student Modal -->
-    <div id="addStudentModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h2>Add Student</h2>
-            <button class="modal-close" onclick="closeAddStudentModal()">✕</button>
-        </div>
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="custom-modal">
+        <div class="record-modal-content">
 
-        <!-- FORM (your provided format) -->
-        <div class="form-container">
-            <h2 class="form-title">Student Registration</h2>
-            
-            <form id="registrationForm">
-                <!-- FIRST NAME -->
-                <div class="form-group">
-                    <label class="form-label">
-                        First Name <span class="required">*</span>
-                    </label>
-                    <div class="input-wrapper">
-                        <input id="firstName" type="text" class="form-input" placeholder="First Name" required>
-                    </div>
-                </div>
-    
-                <!-- MIDDLE + LAST -->
-                <div class="name-row">
+            <div class="modal-header-student-registered">
+                <h2>Add Student</h2>
+                <span class="close-btn-record" onclick="closeAddStudentModal()">&times;</span>
+            </div>
+
+            <div class="modal-body">
+                <form id="registrationForm">
+
                     <div class="form-group">
-                        <label class="form-label">Middle Name</label>
-                        <div class="input-wrapper">
-                            <input id="middleName" type="text" class="form-input" placeholder="Middle Name">
+                        <label>ID Number <span class="required">*</span></label>
+                        <input id="idNumber" type="text" name="idNumber" placeholder="e.g. 1231377" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>First Name <span class="required">*</span></label>
+                            <input id="firstName" type="text" name="firstName" placeholder="First Name" required>
+                        </div>
+                        <div class="form-group" style="flex: 0.5;">
+                            <label>M.I</label>
+                            <input id="middleName" type="text" name="middleName" maxlength="2" placeholder="M.I">
+                        </div>
+                        <div class="form-group" style="flex: 2;">
+                            <label>Last Name <span class="required">*</span></label>
+                            <input id="lastName" type="text" name="lastName" placeholder="Last Name" required>
                         </div>
                     </div>
-    
+
                     <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <div class="input-wrapper">
-                            <input id="lastName" type="text" class="form-input" placeholder="Last Name">
-                        </div>
-                    </div>
-                </div>
-    
-                <!-- EMAIL -->
-                <div class="form-group">
-                    <label class="form-label">
-                        Email <span class="required">*</span>
-                    </label>
-                    <div class="input-wrapper">
+                        <label>Email <span class="required">*</span></label>
                         <input
                             type="email"
-                            id="email"
-                            class="form-input"
+                            id="studentEmail"
+                            name="studentEmail"
                             placeholder="example@panpacificu.edu.ph"
                             required
                             pattern="^[a-zA-Z0-9._%+-]+@panpacificu\.edu\.ph$"
-                        />
+                        >
                     </div>
-                </div>
-    
-                <!-- ID NUMBER -->
-                <div class="form-group">
-                    <label class="form-label">
-                        ID Number <span class="required">*</span>
-                    </label>
-                    <div class="input-wrapper">
-                        <input id="idNumber" type="text" class="form-input" placeholder="ID Number" required>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Program <span class="required">*</span></label>
+                            <select id="program" name="program" required>
+                                <option value="">Select Program</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Year Level <span class="required">*</span></label>
+                            <select id="yearLevel" name="yearLevel" required>
+                                <option value="">Select Year</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-    
-                <!-- PROGRAM -->
-                <div class="form-group">
-                    <label class="form-label">
-                        Program <span class="required">*</span>
-                    </label>
-                    <div class="input-wrapper">
-                        <select id="program" class="form-select" required>
-                            <option value="">Select Program</option>
-                            <option value="BSIT">BS in Information Technology</option>
-                            <option value="BSCS">BS in Computer Science</option>
-                            <option value="BSCpE">BS in Computer Engineering</option>
-                        </select>
+
+                    <div class="form-group">
+                        <label>Parent/Guardian Contact <span class="required">*</span></label>
+                        <input id="guardianContactNumber" type="tel" name="guardianContactNumber" placeholder="+63XXXXXXXXXX" required>
                     </div>
-                </div>
-    
-                <!-- YEAR LEVEL -->
-                <div class="form-group">
-                    <label class="form-label">
-                        Year Level <span class="required">*</span>
-                    </label>
-                    <div class="input-wrapper">
-                        <select id="yearLevel" class="form-select" required>
-                            <option value="">Select Year</option>
-                            <option value="1st Year">1st Year</option>
-                            <option value="2nd Year">2nd Year</option>
-                            <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
-                        </select>
+
+                    <div class="modal-footer">
+                        <button type="button" class="cancel-btn" onclick="closeAddStudentModal()">Cancel</button>
+                        <button type="submit" class="save-btn">Add Student</button>
                     </div>
-                </div>
-    
-                <!-- GUARDIAN CONTACT -->
-                <div class="form-group">
-                    <label class="form-label">
-                        Parent/Guardian Contact <span class="required">*</span>
-                    </label>
-                    <div class="input-wrapper">
-                        <input id="guardianContactNumber" type="tel" class="form-input" placeholder="+63XXXXXXXXXX" required>
-                    </div>
-                </div>
-    
-                <button type="submit" class="modal-submit-btn">Add Student</button>
-            </form>
+
+                </form>
+            </div>
         </div>
     </div>
-    </div>
 
-    <!--Record Modal-->
+        <!--Record Modal-->
     <div id="recordModal" class="custom-modal">
         <div class="record-modal-content">
             

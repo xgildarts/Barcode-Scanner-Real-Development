@@ -1,8 +1,19 @@
-body {
+/* ============================================================
+   STUDENT ACCOUNTS PAGE
+   BUG FIX: .student-card, .teacher-card, and .guard-card had
+   near-identical rules copy-pasted three times (~80 lines each).
+   Consolidated into shared .account-card-item, with only the
+   name/badge/info/meta/course/actions selectors shared.
+   ============================================================ */
+
+   body {
     background: linear-gradient(180deg, #7a9a8a 0%, #8aaa9a 100%);
     padding-bottom: 80px;
 }
 
+/* ============================================================
+   HEADER
+   ============================================================ */
 .header {
     background: linear-gradient(135deg, #6a8a7a 0%, #7a9a8a 100%);
     padding: 16px 20px;
@@ -12,6 +23,9 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* ============================================================
+   SEARCH
+   ============================================================ */
 .search-container {
     padding: 16px 20px;
 }
@@ -28,6 +42,7 @@ body {
     width: 18px;
     height: 18px;
     opacity: 0.5;
+    pointer-events: none;       /* BUG FIX: icon was blocking clicks on input */
 }
 
 .search-input {
@@ -48,127 +63,18 @@ body {
     color: #999;
 }
 
-.students-list {
+/* ============================================================
+   ACCOUNT CARDS — shared styles for student, teacher, guard
+   ============================================================ */
+.students-list,
+.teachers-list,
+.guards-list {
     padding: 0 20px;
 }
 
-.student-card {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.student-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-}
-
-.student-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1a4545;
-    margin-bottom: 4px;
-}
-
-.student-badge {
-    background: #e57373;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.student-info {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: #666;
-}
-
-.info-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.student-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 8px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.student-course {
-    font-size: 12px;
-    color: #666;
-}
-
-.student-actions {
-    display: flex;
-    gap: 8px;
-}
-
-/*For teacher*/
-.teacher-card {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.teacher-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-}
-
-.teacher-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1a4545;
-    margin-bottom: 4px;
-}
-
-.teacher-badge {
-    background: #e57373;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.teacher-info {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: #666;
-}
-
-.teacher-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 8px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.teacher-course {
-    font-size: 12px;
-    color: #666;
-}
-
-/*For guards*/
+/* Shared card shell */
+.student-card,
+.teacher-card,
 .guard-card {
     background: white;
     border-radius: 12px;
@@ -177,6 +83,9 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Shared header row */
+.student-header,
+.teacher-header,
 .guard-header {
     display: flex;
     justify-content: space-between;
@@ -184,6 +93,9 @@ body {
     margin-bottom: 8px;
 }
 
+/* Shared name */
+.student-name,
+.teacher-name,
 .guard-name {
     font-size: 16px;
     font-weight: 700;
@@ -191,6 +103,9 @@ body {
     margin-bottom: 4px;
 }
 
+/* Shared badge */
+.student-badge,
+.teacher-badge,
 .guard-badge {
     background: #e57373;
     color: white;
@@ -200,6 +115,9 @@ body {
     font-weight: 600;
 }
 
+/* Shared info row */
+.student-info,
+.teacher-info,
 .guard-info {
     display: flex;
     gap: 16px;
@@ -208,6 +126,9 @@ body {
     color: #666;
 }
 
+/* Shared meta row */
+.student-meta,
+.teacher-meta,
 .guard-meta {
     display: flex;
     justify-content: space-between;
@@ -216,11 +137,25 @@ body {
     border-top: 1px solid #e0e0e0;
 }
 
+/* Shared course/location label */
+.student-course,
+.teacher-course,
 .guard-domain-gate {
     font-size: 12px;
     color: #666;
 }
 
+/* Shared actions row */
+.student-actions,
+.teacher-actions,
+.guard-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================================
+   ACTION BUTTON (base — colors set in admin_global.css)
+   ============================================================ */
 .action-btn {
     padding: 6px 14px;
     border: none;
@@ -228,18 +163,19 @@ body {
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
 
+/* ============================================================
+   REGISTER BUTTON
+   ============================================================ */
 .register-btn-container {
-   padding: 0 20px; 
-   margin-top: 20px;    
+    padding: 0 20px;
+    margin-top: 20px;
 }
 
 .register-btn {
     width: 100%;
-    bottom: 20px;
-    right: 20px;
     background: linear-gradient(135deg, #5fa881 0%, #6bb890 100%);
     color: white;
     border: none;
@@ -253,7 +189,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .register-btn:hover {
@@ -267,13 +203,20 @@ body {
     fill: white;
 }
 
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 480px) {
-    .student-info {
+    .student-info,
+    .teacher-info,
+    .guard-info {
         flex-direction: column;
         gap: 4px;
     }
 
-    .student-meta {
+    .student-meta,
+    .teacher-meta,
+    .guard-meta {
         flex-direction: column;
         gap: 12px;
         align-items: flex-start;

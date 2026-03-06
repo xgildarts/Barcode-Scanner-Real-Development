@@ -328,15 +328,40 @@ teacher.put('/change_teacher_name', async (req, res) => {
     }
 })
 
+// Manual Attendance Insertion
 teacher.post('/manual_attendance', async (req, res) => {
-    const { newName } = req.body;
+    const {
+        student_id,
+        student_id_number,
+        student_firstname,
+        student_middlename,
+        student_lastname,
+        student_email,
+        student_year_level,
+        student_guardian_number,
+        student_program
+    } = req.body
+
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
-        const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
-        res.json({ ok: true, message: 'Successfully updated new name!', content: result})
-    } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+
+        const result = await services.manualInsertAttendance(
+            student_id,
+            student_id_number,
+            student_firstname,
+            student_middlename,
+            student_lastname,
+            student_email,
+            student_year_level,
+            student_guardian_number,
+            student_program,
+            decodedToken.teacher_barcode_scanner_serial_number
+        )
+
+        res.json({ ok: true, message: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
     }
 })
 
@@ -365,6 +390,68 @@ teacher.get('/get_event_attendance_history', async (req, res) => {
 })
 
 
+
+// Verify Student Location against teacher's set location
+// Called by the student app before generating a barcode
+teacher.post('/verify_student_location', async (req, res) => {
+    const { latitude, longitude } = req.body
+
+    if (latitude === undefined || longitude === undefined) {
+        return res.status(400).json({ ok: false, message: 'latitude and longitude are required.' })
+    }
+
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+
+        // student token carries teacher_barcode_scanner_serial_number
+        // because the student is linked to a teacher via their registration
+        const result = await services.verifyStudentLocation(
+            decodedToken.teacher_barcode_scanner_serial_number,
+            parseFloat(latitude),
+            parseFloat(longitude)
+        )
+
+        if (!result.withinRange) {
+            return res.json({
+                ok: false,
+                withinRange: false,
+                message: `You are ${result.distance}m away. Must be within ${result.radius}m to generate a barcode.`,
+                distance: result.distance,
+                radius: result.radius
+            })
+        }
+
+        res.json({
+            ok: true,
+            withinRange: true,
+            message: `You are within range (${result.distance}m away).`,
+            distance: result.distance,
+            radius: result.radius
+        })
+
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Set Teacher Location
+teacher.post('/set_location', async (req, res) => {
+    const { latitude, longitude, radius } = req.body
+
+    if (!latitude || !longitude || !radius) {
+        return res.status(400).json({ ok: false, message: 'latitude, longitude, and radius are required.' })
+    }
+
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.setTeacherLocation(decodedToken.teacher_id, latitude, longitude, radius)
+        res.json({ ok: true, message: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
 
 // Export route
 module.exports = teacher

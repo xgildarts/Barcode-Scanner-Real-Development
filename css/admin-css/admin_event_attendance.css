@@ -1,5 +1,8 @@
+/* ============================================================
+   EVENT ATTENDANCE — page-specific styles
+   ============================================================ */
 
-.set-event-button {
+   .set-event-button {
     background: linear-gradient(135deg, #ffffff 0%, #e8f0ed 100%);
     color: #3d6b6b;
     border: none;
@@ -9,7 +12,7 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.25s ease;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
     white-space: nowrap;
 }
 
@@ -35,7 +38,7 @@
     color: #333;
     min-width: 240px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
-    transition: all 0.2s ease;
+    transition: outline 0.2s ease, box-shadow 0.2s ease;
 }
 
 .event-name-input::placeholder {
@@ -45,6 +48,5 @@
 
 .event-name-input:focus {
     outline: 2px solid #5a8a7a;
-    box-shadow: 0 0 0 2px rgba(90, 138, 122, 0.25);
+    box-shadow: 0 0 0 4px rgba(90, 138, 122, 0.2);
 }
-

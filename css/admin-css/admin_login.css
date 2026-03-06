@@ -1,8 +1,12 @@
-body {
+/* ============================================================
+   LOGIN PAGE
+   ============================================================ */
+   body {
     background: linear-gradient(135deg, #2c5f5f 0%, #4a8080 100%);
     display: flex;
     flex-direction: column;
     padding: 20px;
+    /* min-height already set in admin_global.css */
 }
 
 .login-container {
@@ -15,6 +19,9 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+/* ============================================================
+   LOGO
+   ============================================================ */
 .logo {
     width: 120px;
     height: 120px;
@@ -26,14 +33,17 @@ body {
     margin: 0 auto 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     overflow: hidden;
-  }
-  
-  .logo img {
-    object-fit: fill;
+}
+
+.logo img {
     width: 100%;
     height: 100%;
-  }
+    object-fit: cover;      /* BUG FIX: 'fill' stretches/distorts the logo image; 'cover' preserves aspect ratio */
+}
 
+/* ============================================================
+   WELCOME TEXT
+   ============================================================ */
 .welcome-text {
     text-align: center;
     color: #1a4545;
@@ -51,6 +61,9 @@ body {
     font-weight: 500;
 }
 
+/* ============================================================
+   FORM
+   ============================================================ */
 .form-group {
     margin-bottom: 20px;
 }
@@ -70,6 +83,7 @@ body {
     width: 20px;
     height: 20px;
     opacity: 0.5;
+    pointer-events: none;   /* BUG FIX: icon was intercepting clicks meant for the input */
 }
 
 .form-input {
@@ -89,6 +103,9 @@ body {
     color: #999;
 }
 
+/* ============================================================
+   FORM OPTIONS
+   ============================================================ */
 .form-options {
     display: flex;
     justify-content: space-between;
@@ -103,12 +120,14 @@ body {
     gap: 6px;
     color: #1a4545;
     font-weight: 500;
+    cursor: pointer;
 }
 
 .remember-me input[type="checkbox"] {
     width: 16px;
     height: 16px;
     cursor: pointer;
+    accent-color: #2c5f5f;  /* tints the native checkbox to match theme */
 }
 
 .forgot-password {
@@ -121,6 +140,9 @@ body {
     text-decoration: underline;
 }
 
+/* ============================================================
+   LOGIN BUTTON
+   ============================================================ */
 .login-btn {
     width: 100%;
     padding: 14px;
@@ -144,6 +166,9 @@ body {
     transform: translateY(0);
 }
 
+/* ============================================================
+   SIGNUP LINK (unused in current HTML but kept for future use)
+   ============================================================ */
 .signup-link {
     text-align: center;
     margin-top: 20px;
@@ -161,6 +186,9 @@ body {
     text-decoration: underline;
 }
 
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 480px) {
     .login-container {
         padding: 30px 24px;
