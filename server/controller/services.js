@@ -1,8 +1,109 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const db = require('../configuration/db');
+const nodemailer = require('nodemailer')
 const SALT_ROUNDS = 10
 const JWT_SECRET = 'q09481239328'
+
+// ============================================================
+// EMAIL TRANSPORTER (Nodemailer / Gmail SMTP)
+// ============================================================
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'xnatsu25@gmail.com',   // set in .env: GMAIL_USER=yourschool@gmail.com
+        pass: 'wwrvbqfogbczibbi'   // set in .env: GMAIL_PASS=your_app_password
+    }
+})
+
+// In-memory OTP store: { email: { otp, expiresAt } }
+// For production, swap this out for a DB table or Redis.
+const otpStore = {}
+
+const OTP_EXPIRY_MS = 5 * 60 * 1000 // 5 minutes
+
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString() // 6 digits
+}
+
+async function sendPasswordResetOTP(email) {
+    // Check if teacher email exists
+    const teacher = await new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT teacher_id, teacher_name, teacher_email FROM teacher WHERE teacher_email = ?',
+            [email],
+            (err, rows) => {
+                if (err) return reject(err)
+                resolve(rows[0] ?? null)
+            }
+        )
+    })
+
+    if (!teacher) throw new Error('No account found with that email address.')
+
+    const otp       = generateOTP()
+    const expiresAt = Date.now() + OTP_EXPIRY_MS
+
+    otpStore[email] = { otp, expiresAt }
+
+    await transporter.sendMail({
+        from: `"PanPacific University" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Your Password Reset Code',
+        html: `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
+                <h2 style="color:#3d6b6b;margin-bottom:8px">Password Reset</h2>
+                <p style="color:#555">Hello <strong>${teacher.teacher_name}</strong>,</p>
+                <p style="color:#555">Use the code below to reset your password. It expires in <strong>5 minutes</strong>.</p>
+                <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#3d6b6b;text-align:center;padding:24px 0">${otp}</div>
+                <p style="color:#999;font-size:12px">If you did not request this, you can safely ignore this email.</p>
+            </div>
+        `
+    })
+
+    return 'OTP sent successfully.'
+}
+
+function verifyPasswordResetOTP(email, otp) {
+    const record = otpStore[email]
+    if (!record)                      throw new Error('No OTP requested for this email.')
+    if (Date.now() > record.expiresAt) {
+        delete otpStore[email]
+        throw new Error('OTP has expired. Please request a new one.')
+    }
+    if (record.otp !== otp)           throw new Error('Incorrect OTP. Please try again.')
+
+    // Mark as verified — allow one reset attempt
+    otpStore[email].verified = true
+    return true
+}
+
+async function resetPasswordWithOTP(email, newPassword) {
+    const record = otpStore[email]
+    if (!record || !record.verified) throw new Error('OTP not verified. Please verify your code first.')
+    if (Date.now() > record.expiresAt) {
+        delete otpStore[email]
+        throw new Error('OTP has expired. Please start over.')
+    }
+
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+
+    await new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE teacher SET teacher_password = ? WHERE teacher_email = ?',
+            [hashed, email],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Teacher not found.'))
+                resolve()
+            }
+        )
+    })
+
+    // Clean up OTP after successful reset
+    delete otpStore[email]
+    return 'Password reset successfully.'
+}
 
 const clickSendUsername = 'steven.agustin.ecoast@panpacificu.edu.ph';   // from dashboard
 const clickSendAPI = 'FA142E33-E8CD-0664-FB80-64EBBE1BAFAC';    // from dashboard
@@ -504,6 +605,22 @@ async function teacherAddStudent(
     studentGuardianNumber, 
     teacherBarcodeScannerSerialNumber
 ) {
+    // Check if ID number already exists anywhere in the class records
+    const existing = await new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT student_id FROM student_records_regular_class WHERE student_id_number = ?`,
+            [studentIDNumber],
+            (err, rows) => {
+                if (err) return reject(err)
+                resolve(rows)
+            }
+        )
+    })
+
+    if (existing.length > 0) {
+        throw new Error(`Student ID number "${studentIDNumber}" is already registered.`)
+    }
+
     return new Promise((resolve, reject) => {
         db.execute(
             `INSERT INTO student_records_regular_class (
@@ -530,9 +647,7 @@ async function teacherAddStudent(
             ],
             (err, result) => {
                 if (err) return reject(err);
-                resolve({
-                    message: 'Successfully added new student!',
-                });
+                resolve({ message: 'Successfully added new student!' });
             }
         );
     });
@@ -1855,5 +1970,8 @@ module.exports= {
     setTeacherLocation,
     verifyStudentLocation,
     getTeacherSerialByStudentIDNumber,
-    manualInsertAttendance
+    manualInsertAttendance,
+    sendPasswordResetOTP,
+    verifyPasswordResetOTP,
+    resetPasswordWithOTP
 }

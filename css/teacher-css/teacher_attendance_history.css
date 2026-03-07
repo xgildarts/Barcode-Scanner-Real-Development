@@ -1,4 +1,3 @@
-
 .search-row {
     display: flex;
     gap: 12px;
@@ -95,14 +94,18 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 600px;
+    table-layout: fixed;
 }
 
 .attendance-table thead {
     background: #3d6b6b;
     color: white;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+}
+
+.attendance-table thead tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
 }
 
 .attendance-table th {
@@ -113,7 +116,17 @@
     white-space: nowrap;
 }
 
+.attendance-table tbody {
+    display: block;
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .attendance-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -129,6 +142,9 @@
     padding: 16px 12px;
     font-size: 13px;
     color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 @media (max-width: 768px) {

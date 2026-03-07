@@ -272,19 +272,155 @@ function buildAttendanceRow(d) {
     `;
 }
 
+// ============================================================
+// REALTIME POLLING
+// Silently fetches attendance every 5s. Only re-renders the
+// table when the record count actually changes — so search
+// filters and scroll position are never disrupted needlessly.
+// Covers: attendance now, event attendance, event history.
+// ============================================================
+let _pollInterval        = null;
+let _lastKnownCount      = -1; // regular attendance
+let _lastHistCount       = -1; // attendance history
+let _lastEventCount      = -1; // event attendance
+let _lastEventHistCount  = -1; // event attendance history
+
+function startAttendancePolling() {
+    if (_pollInterval) return;
+    _pollInterval = setInterval(pollAllSilently, 5000);
+}
+
+function stopAttendancePolling() {
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+}
+
+async function pollAllSilently() {
+    await Promise.all([
+        pollAttendanceSilently(),
+        pollAttendanceHistorySilently(),
+        pollEventAttendanceSilently(),
+        pollEventAttendanceHistorySilently()
+    ]);
+}
+
+async function pollAttendanceSilently() {
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/teacher_attendance_record`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (!res.ok) return;
+        const data    = await res.json();
+        const records = data.content ?? [];
+        if (records.length === _lastKnownCount) return;
+
+        _lastKnownCount    = records.length;
+        state.totalPresent = records.length;
+        document.getElementById('attendanceBody').innerHTML = records
+            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`).join('');
+        if (state.totalStudentRegistered > 0) updateDashboardChart();
+        showLiveIndicator('liveIndicatorDot');
+    } catch (_) {}
+}
+
+async function pollAttendanceHistorySilently() {
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/teacher_attendance_history_record`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (!res.ok) return;
+        const data    = await res.json();
+        const records = data.content ?? [];
+        if (records.length === _lastHistCount) return;
+
+        _lastHistCount = records.length;
+        document.getElementById('attendanceHistoryTableBody').innerHTML = records
+            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`).join('');
+        showLiveIndicator('liveIndicatorDotHist');
+    } catch (_) {}
+}
+
+async function pollEventAttendanceSilently() {
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/get_event_attendance`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (!res.ok) return;
+        const data    = await res.json();
+        const records = data.content ?? [];
+        if (records.length === _lastEventCount) return;
+
+        _lastEventCount = records.length;
+        DOM.eventAttendanceBody.innerHTML = records.map(d => `
+            <tr>
+                <td>${d.student_id_number}</td>
+                <td>${d.student_name}</td>
+                <td>${d.student_program}</td>
+                <td>${d.student_year_level}</td>
+                <td>${formatDate(d.date)}</td>
+                <td>${formatTime(d.time)}</td>
+                <td>${d.event_name}</td>
+                <td>${d.status}</td>
+            </tr>
+        `).join('');
+        showLiveIndicator('liveIndicatorDotEvent');
+    } catch (_) {}
+}
+
+async function pollEventAttendanceHistorySilently() {
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/get_event_attendance_history`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (!res.ok) return;
+        const data    = await res.json();
+        const records = data.content ?? [];
+        if (records.length === _lastEventHistCount) return;
+
+        _lastEventHistCount = records.length;
+        DOM.eventAttendanceHistoryBody.innerHTML = records.map(d => `
+            <tr>
+                <td>${d.student_id_number}</td>
+                <td>${d.student_name}</td>
+                <td>${d.student_program}</td>
+                <td>${d.student_year_level}</td>
+                <td>${formatDate(d.date)}</td>
+                <td>${formatTime(d.time)}</td>
+                <td>${d.event_name}</td>
+                <td>${d.status}</td>
+            </tr>
+        `).join('');
+        showLiveIndicator('liveIndicatorDotEventHist');
+    } catch (_) {}
+}
+
+function showLiveIndicator(dotId) {
+    const dot = document.getElementById(dotId);
+    if (!dot) return;
+    dot.classList.remove('live-blink');
+    void dot.offsetWidth;
+    dot.classList.add('live-blink');
+}
+
+// ============================================================
+// ATTENDANCE (initial load + manual refresh)
+// ============================================================
 async function getStudentAttendanceRecords() {
     Swal.fire({ title: 'Loading attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     const data = await apiCall('/teacher/teacher_attendance_record');
     Swal.close();
     if (!data) return;
 
+    _lastKnownCount    = data.content.length;
     state.totalPresent = data.content.length;
-    // Only draw chart if registered count is already loaded; otherwise loadStudentsRegistered() will call it
     if (state.totalStudentRegistered > 0) updateDashboardChart();
 
     document.getElementById('attendanceBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
+
+    // Kick off silent polling after first successful load
+    startAttendancePolling();
 }
 
 async function getStudentAttendanceHistoryRecords() {
@@ -292,12 +428,14 @@ async function getStudentAttendanceHistoryRecords() {
     const data = await apiCall('/teacher/teacher_attendance_history_record');
     Swal.close();
     if (!data) return;
+    _lastHistCount = data.content.length;
     document.getElementById('attendanceHistoryTableBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
 }
 
 async function refreshAttendance() {
+    _lastKnownCount = -1; // force re-render even if count didn't change
     await getStudentAttendanceRecords();
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Attendance list refreshed', showConfirmButton: false, timer: 1500, timerProgressBar: true });
 }
@@ -315,6 +453,7 @@ async function renderEventAttendanceRecord() {
     const data = await apiCall('/teacher/get_event_attendance', 'GET');
     Swal.close();
     if (!data) return;
+    _lastEventCount = data.content.length;
     DOM.eventAttendanceBody.innerHTML = data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
@@ -334,6 +473,7 @@ async function renderEventAttendanceHistoryRecord() {
     const data = await apiCall('/teacher/get_event_attendance_history', 'GET');
     Swal.close();
     if (!data) return;
+    _lastEventHistCount = data.content.length;
     DOM.eventAttendanceHistoryBody.innerHTML = data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
@@ -924,6 +1064,10 @@ async function addToAttendance(student_id, student_id_number, student_firstname,
     if (!res) return;
 
     Swal.fire({ icon: 'success', title: 'Recorded!', text: res.message, timer: 2000, showConfirmButton: false });
+
+    // Reload attendance
+    refreshAttendance();
+    refreshAttendanceHistory();
 
     // Disable the button so the same student can't be added twice in the same session
     if (btn) {

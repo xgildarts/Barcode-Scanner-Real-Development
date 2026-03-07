@@ -9,6 +9,51 @@ teacher.get('/', (req, res) => {
     res.send('Teacher API Working!')
 })
 
+// ============================================================
+// FORGOT PASSWORD (public — no token required)
+// ============================================================
+
+// Step 1: Request OTP
+teacher.post('/forgot_password/request_otp', async (req, res) => {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' })
+    try {
+        const message = await services.sendPasswordResetOTP(email)
+        res.json({ ok: true, message })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Step 2: Verify OTP
+teacher.post('/forgot_password/verify_otp', async (req, res) => {
+    const { email, otp } = req.body
+    if (!email || !otp) return res.status(400).json({ ok: false, message: 'Email and OTP are required.' })
+    try {
+        services.verifyPasswordResetOTP(email, otp)
+        res.json({ ok: true, message: 'OTP verified.' })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Step 3: Reset Password
+teacher.post('/forgot_password/reset_password', async (req, res) => {
+    const { email, new_password, confirm_password } = req.body
+    if (!email || !new_password || !confirm_password)
+        return res.status(400).json({ ok: false, message: 'All fields are required.' })
+    if (new_password !== confirm_password)
+        return res.status(400).json({ ok: false, message: 'Passwords do not match.' })
+    if (new_password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
+    try {
+        const message = await services.resetPasswordWithOTP(email, new_password)
+        res.json({ ok: true, message })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err })
+    }
+})
+
 // Get total students
 teacher.get('/get_students_total_count', async (req, res) => {
     try {  
@@ -46,10 +91,10 @@ teacher.post('/add_student', async (req, res) => {
             student_year_level,
             student_guardian_number,
             decodedToken.teacher_barcode_scanner_serial_number
-            )
+        )
         res.json({ ok: true, message: 'Successfully added student!', content: result })
     } catch(err) {
-
+        res.status(400).json({ ok: false, message: err.message || err })
     }
 })
 
@@ -167,7 +212,7 @@ teacher.get('/teacher_attendance_history_record', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
-        const result = await services.getStudentAttendanceNow(decodedToken.teacher_barcode_scanner_serial_number)
+        const result = await services.getStudentAttendanceHistory(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved attendance history!', content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
