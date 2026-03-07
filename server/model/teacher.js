@@ -1,8 +1,31 @@
 const express = require('express')
 const services = require('../controller/services')
+const multer  = require('multer')
+const path    = require('path')
 const teacher = express.Router()
 
 teacher.use(express.json())
+
+// ============================================================
+// MULTER — Teacher Profile Picture Upload
+// ============================================================
+const teacherPicStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
+    filename:    (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e6)
+        cb(null, 'teacher-' + unique + path.extname(file.originalname))
+    }
+})
+const uploadTeacherPic = multer({
+    storage: teacherPicStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = /jpeg|jpg|png|webp/
+        const valid   = allowed.test(path.extname(file.originalname).toLowerCase())
+                     && allowed.test(file.mimetype)
+        valid ? cb(null, true) : cb(new Error('Only JPEG, PNG, or WEBP images are allowed.'))
+    }
+})
 
 // Debugging API
 teacher.get('/', (req, res) => {
@@ -12,8 +35,6 @@ teacher.get('/', (req, res) => {
 // ============================================================
 // FORGOT PASSWORD (public — no token required)
 // ============================================================
-
-// Step 1: Request OTP
 teacher.post('/forgot_password/request_otp', async (req, res) => {
     const { email } = req.body
     if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' })
@@ -25,7 +46,6 @@ teacher.post('/forgot_password/request_otp', async (req, res) => {
     }
 })
 
-// Step 2: Verify OTP
 teacher.post('/forgot_password/verify_otp', async (req, res) => {
     const { email, otp } = req.body
     if (!email || !otp) return res.status(400).json({ ok: false, message: 'Email and OTP are required.' })
@@ -37,7 +57,6 @@ teacher.post('/forgot_password/verify_otp', async (req, res) => {
     }
 })
 
-// Step 3: Reset Password
 teacher.post('/forgot_password/reset_password', async (req, res) => {
     const { email, new_password, confirm_password } = req.body
     if (!email || !new_password || !confirm_password)
@@ -62,7 +81,7 @@ teacher.get('/get_students_total_count', async (req, res) => {
         const result = await services.teacherGetAllStudentDataTotalCount(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -91,10 +110,10 @@ teacher.post('/add_student', async (req, res) => {
             student_year_level,
             student_guardian_number,
             decodedToken.teacher_barcode_scanner_serial_number
-        )
+            )
         res.json({ ok: true, message: 'Successfully added student!', content: result })
     } catch(err) {
-        res.status(400).json({ ok: false, message: err.message || err })
+
     }
 })
 
@@ -106,7 +125,7 @@ teacher.get('/get_student_registered', async (req, res) => {
         const result = await services.teacherGetStudentRegistered(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     } 
 })
 
@@ -118,7 +137,7 @@ teacher.get('/get_total_attendance_record', async (req, res) => {
         const result = await services.teacherGetTotalAttendanceRecord(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -131,7 +150,7 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
         const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -203,7 +222,7 @@ teacher.get('/teacher_attendance_record', async (req, res) => {
         const result = await services.getStudentAttendanceNow(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved attendance!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -215,7 +234,7 @@ teacher.get('/teacher_attendance_history_record', async (req, res) => {
         const result = await services.getStudentAttendanceHistory(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved attendance history!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -227,7 +246,7 @@ teacher.get('/get_subjects', async (req, res) => {
         const result = await services.getStudentSubjects(decodedToken.teacher_id)
         res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -240,7 +259,7 @@ teacher.delete('/delete_program/:id', async (req, res) => {
         const result = await services.deleteSubject(subjectID)
         res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -253,7 +272,7 @@ teacher.post('/programs/add', async (req, res) => {
         const result = await services.addSubject(program_name, decodedToken.teacher_id)
         res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -265,7 +284,7 @@ teacher.get('/get_year_levels', async (req, res) => {
         const result = await services.teacherGetYearLevel()
         res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 });
 
@@ -277,7 +296,7 @@ teacher.get('/get_programs', async (req, res) => {
         const result = await services.getAllPrograms()
         res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -331,7 +350,7 @@ teacher.delete('/delete_student_record/:id', async (req, res) => {
         const result = await services.deleteStudentRegisteredRecord(id)
         res.json({ ok: true, message: result})
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -343,7 +362,7 @@ teacher.get('/get_teacher_data', async (req, res) => {
         const result = await services.getTeacherData(decodedToken.teacher_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result})
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -356,7 +375,7 @@ teacher.put('/change_password', async (req, res) => {
         const result = await services.updateTeacherPassword(decodedToken.teacher_id, current_password, new_password)
         res.json({ ok: true, message: 'Password updated successfully!', content: result})
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -369,11 +388,10 @@ teacher.put('/change_teacher_name', async (req, res) => {
         const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
         res.json({ ok: true, message: 'Successfully updated new name!', content: result})
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
-// Manual Attendance Insertion
 teacher.post('/manual_attendance', async (req, res) => {
     const {
         student_id,
@@ -406,7 +424,7 @@ teacher.post('/manual_attendance', async (req, res) => {
 
         res.json({ ok: true, message: result })
     } catch (err) {
-        res.status(500).json({ ok: false, message: err.message || err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -418,7 +436,7 @@ teacher.get('/get_event_attendance', async (req, res) => {
         const result = await services.getAttendanceEventsForTeacher(decodedToken.teacher_id, 'event_attendance_record')
         res.json({ ok: true, message: 'Successfully retrieved events record!', content: result})
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -430,33 +448,39 @@ teacher.get('/get_event_attendance_history', async (req, res) => {
         const result = await services.getAttendanceEventsForTeacher(decodedToken.teacher_id, 'event_attendance_history_record')
         res.json({ ok: true, message: 'Successfully retrieved events record!', content: result})
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
 
 
-// Verify Student Location against teacher's set location
-// Called by the student app before generating a barcode
-teacher.post('/verify_student_location', async (req, res) => {
-    const { latitude, longitude } = req.body
-
-    if (latitude === undefined || longitude === undefined) {
-        return res.status(400).json({ ok: false, message: 'latitude and longitude are required.' })
-    }
-
+// Upload Teacher Profile Picture
+teacher.post('/upload_profile_picture', uploadTeacherPic.single('teacher_profile_picture'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded.' })
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        const filename = await services.updateTeacherProfilePicture(decodedToken.teacher_id, req.file.filename)
+        res.json({ ok: true, message: 'Profile picture updated!', filename })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
 
-        // student token carries teacher_barcode_scanner_serial_number
-        // because the student is linked to a teacher via their registration
+// Verify Student Location against teacher's set location
+teacher.post('/verify_student_location', async (req, res) => {
+    const { latitude, longitude } = req.body
+    if (latitude === undefined || longitude === undefined) {
+        return res.status(400).json({ ok: false, message: 'latitude and longitude are required.' })
+    }
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
         const result = await services.verifyStudentLocation(
             decodedToken.teacher_barcode_scanner_serial_number,
             parseFloat(latitude),
             parseFloat(longitude)
         )
-
         if (!result.withinRange) {
             return res.json({
                 ok: false,
@@ -466,7 +490,6 @@ teacher.post('/verify_student_location', async (req, res) => {
                 radius: result.radius
             })
         }
-
         res.json({
             ok: true,
             withinRange: true,
@@ -474,7 +497,6 @@ teacher.post('/verify_student_location', async (req, res) => {
             distance: result.distance,
             radius: result.radius
         })
-
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || err })
     }
@@ -483,11 +505,9 @@ teacher.post('/verify_student_location', async (req, res) => {
 // Set Teacher Location
 teacher.post('/set_location', async (req, res) => {
     const { latitude, longitude, radius } = req.body
-
     if (!latitude || !longitude || !radius) {
         return res.status(400).json({ ok: false, message: 'latitude, longitude, and radius are required.' })
     }
-
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)

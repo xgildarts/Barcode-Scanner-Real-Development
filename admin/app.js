@@ -189,12 +189,14 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateTo('dashboard');
     getAdminData();
     renderPrograms();
+    renderYearLevels();
     fetchStudentAccounts();
     fetchTeacherAccounts();
     fetchGuardAccounts();
     renderEventAttendanceRecord();
     renderEventHistoryAttendanceRecord();
     generateProgramSelectionOnTeacher();
+    generateYearLevelSelections();
     initChart();
     initEventListeners();
 });
@@ -348,6 +350,20 @@ async function updatePassword() {
 // ============================================================
 // EVENT ATTENDANCE
 // ============================================================
+// ============================================================
+// EVENT ATTENDANCE — REALTIME POLLING
+// ============================================================
+let _adminPollInterval      = null;
+let _lastEventCount         = -1;
+let _lastEventHistCount     = -1;
+
+function showAdminLiveIndicator(dotId) {
+    const dot = document.getElementById(dotId);
+    if (!dot) return;
+    dot.classList.add('live-blink');
+    setTimeout(() => dot.classList.remove('live-blink'), 2000);
+}
+
 async function renderEventAttendanceRecord() {
     try {
         const res = await apiFetch('/admin/get_events');
@@ -373,6 +389,9 @@ async function renderEventAttendanceRecord() {
                 <td>${d.event_name}</td>
             </tr>
         `).join('');
+
+        _lastEventCount = data.content.length;
+        startAdminPolling();
     } catch (err) {
         console.error(err);
         Swal.fire({ icon: 'error', title: 'Network Error', text: err.message || 'Unable to connect to the server.' });
@@ -397,9 +416,70 @@ async function renderEventHistoryAttendanceRecord() {
                 <td>${d.event_name}</td>
             </tr>
         `).join('');
+
+        _lastEventHistCount = data.content.length;
     } catch (err) {
         console.error(err);
     }
+}
+
+async function pollAdminSilently() {
+    try {
+        // Poll event attendance
+        const r1 = await apiFetch('/admin/get_events');
+        if (r1.ok) {
+            const d1 = await r1.json();
+            if (_lastEventCount !== -1 && d1.content.length !== _lastEventCount) {
+                _lastEventCount = d1.content.length;
+                const attendeeCount = d1.content.filter(d => d.status === 'TIME IN').length;
+                DOM.statsValue.textContent = attendeeCount;
+                DOM.sideBarStatsValue.textContent = attendeeCount;
+                DOM.attendanceBody.innerHTML = d1.content.map(d => `
+                    <tr>
+                        <td>${d.student_id_number}</td>
+                        <td>${d.student_name}</td>
+                        <td>${d.student_program}</td>
+                        <td>${d.student_year_level}</td>
+                        <td>${dateFormat(d.date)}</td>
+                        <td>${formatTime(d.time)}</td>
+                        <td>${d.status}</td>
+                        <td>${d.event_name}</td>
+                    </tr>
+                `).join('');
+                showAdminLiveIndicator('adminLiveDotEvent');
+                updateChart();
+            }
+        }
+
+        // Poll event history
+        const r2 = await apiFetch('/admin/get_events_history');
+        if (r2.ok) {
+            const d2 = await r2.json();
+            if (_lastEventHistCount !== -1 && d2.content.length !== _lastEventHistCount) {
+                _lastEventHistCount = d2.content.length;
+                DOM.attendanceHistory.innerHTML = d2.content.map(d => `
+                    <tr>
+                        <td>${d.student_id_number}</td>
+                        <td>${d.student_name}</td>
+                        <td>${d.student_program}</td>
+                        <td>${d.student_year_level}</td>
+                        <td>${dateFormat(d.date)}</td>
+                        <td>${formatTime(d.time)}</td>
+                        <td>${d.status}</td>
+                        <td>${d.event_name}</td>
+                    </tr>
+                `).join('');
+                showAdminLiveIndicator('adminLiveDotEventHist');
+            }
+        }
+    } catch (err) {
+        console.error('[Poll]', err);
+    }
+}
+
+function startAdminPolling() {
+    if (_adminPollInterval) return;
+    _adminPollInterval = setInterval(pollAdminSilently, 5000);
 }
 
 async function handleSetEvent() {
@@ -437,17 +517,28 @@ async function handleSetEvent() {
     }
 }
 
-// Calendar (flatpickr)
+// Calendar (flatpickr) — filters Event Attendance History by date
 const calendar = flatpickr('#datePicker', {
-    dateFormat: 'n/j/Y',
+    dateFormat: 'Y-m-d',       // matches dateFormat() output (YYYY-MM-DD)
     clickOpens: false,
     allowInput: false,
     onChange(selectedDates, dateStr) {
-        document.querySelectorAll('#attendanceBody tr').forEach(row => {
-            row.style.display = row.children[6]?.textContent.trim() === dateStr ? '' : 'none';
+        // Date is column index 4 in the history table
+        document.querySelectorAll('#attendanceHistory tr').forEach(row => {
+            const cellDate = row.children[4]?.textContent.trim();
+            row.style.display = (!dateStr || cellDate === dateStr) ? '' : 'none';
         });
+        const clearBtn = document.getElementById('clearDateFilter');
+        if (clearBtn) clearBtn.style.display = dateStr ? '' : 'none';
     }
 });
+
+function clearDateFilter() {
+    calendar.clear();
+    document.querySelectorAll('#attendanceHistory tr').forEach(row => row.style.display = '');
+    const clearBtn = document.getElementById('clearDateFilter');
+    if (clearBtn) clearBtn.style.display = 'none';
+}
 
 // ============================================================
 // PROGRAMS / ACADEMIC SETUP
@@ -571,6 +662,114 @@ async function deleteProgram(id, name) {
 }
 
 // ============================================================
+// YEAR LEVELS
+// ============================================================
+async function renderYearLevels() {
+    try {
+        const res = await fetch(`${URL_BASED}/admin/get_year_levels`);
+        const data = await res.json();
+        if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+
+        // Render the list cards (only exists on academic setup page)
+        const list = document.getElementById('yearLevelsList');
+        if (list) {
+            list.innerHTML = '';
+            data.content.forEach(({ year_level_id, year_level_name }) => {
+                const card = document.createElement('div');
+                card.className = 'program-card';
+                card.innerHTML = `
+                    <div class="program-name">${year_level_name}</div>
+                    <button class="delete-btn" onclick="deleteYearLevel(${year_level_id}, '${year_level_name}')">
+                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>`;
+                list.appendChild(card);
+            });
+        }
+
+        // Always repopulate year level dropdowns regardless of current page
+        const yearOptions = '<option value="">Select Year</option>' +
+            data.content.map(d => `<option value="${d.year_level_name}">${d.year_level_name}</option>`).join('');
+        const historyOptions = '<option value="">Year Level All</option>' +
+            data.content.map(d => `<option value="${d.year_level_name}">${d.year_level_name}</option>`).join('');
+
+        ['std_year_level', 'studentYearLevel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = yearOptions;
+        });
+        const historyFilter = document.getElementById('eventHistoryYearFilter');
+        if (historyFilter) historyFilter.innerHTML = historyOptions;
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+async function generateYearLevelSelections() {
+    // Alias — renderYearLevels already handles dropdown population
+    await renderYearLevels();
+}
+
+function openAddYearLevelModal() {
+    document.getElementById('addYearLevelModal').classList.add('active');
+    const input = document.getElementById('yearLevelNameInput');
+    input.value = '';
+    input.focus();
+}
+
+function closeAddYearLevelModal() {
+    document.getElementById('addYearLevelModal').classList.remove('active');
+}
+
+async function addYearLevel() {
+    const input = document.getElementById('yearLevelNameInput');
+    const yearLevelName = input.value.trim();
+    if (!yearLevelName) return Swal.fire({ icon: 'warning', title: 'Missing Input', text: 'Please enter a year level name.' });
+
+    showLoading();
+    try {
+        const res = await apiFetch('/admin/add_year_level', {
+            method: 'POST',
+            body: JSON.stringify({ yearLevelName })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to add year level.');
+        Swal.fire({ icon: 'success', title: 'Success', text: 'Year level added successfully!' });
+        input.value = '';
+        closeAddYearLevelModal();
+        renderYearLevels();
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+async function deleteYearLevel(id, name) {
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Delete "${name}"? This cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+
+    showLoading();
+    try {
+        const res = await apiFetch(`/admin/delete_year_level/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to delete year level.');
+        await Swal.fire('Deleted!', `"${name}" has been deleted.`, 'success');
+        renderYearLevels();
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+// ============================================================
 // ACCOUNTS — FETCH
 // ============================================================
 
@@ -592,7 +791,7 @@ async function fetchAccountCount(tableName) {
 async function fetchStudentAccounts() {
     const result = await fetchAccountCount('student_accounts');
     if (!result) return;
-    DOM.studentAccountCounts.textContent = result.length;
+    DOM.studentAccountCounts.textContent = `${result.length} Accounts`;
     DOM.studentsList.innerHTML = result.map(d => `
         <div class="student-card">
             <div class="student-header">
@@ -622,7 +821,7 @@ async function fetchStudentAccounts() {
 async function fetchTeacherAccounts() {
     const result = await fetchAccountCount('teacher');
     if (!result) return;
-    DOM.teacherAccountCounts.textContent = result.length;
+    DOM.teacherAccountCounts.textContent = `${result.length} Accounts`;
     DOM.teacherList.innerHTML = result.map(d => `
         <div class="teacher-card">
             <div class="teacher-header">
@@ -650,7 +849,7 @@ async function fetchTeacherAccounts() {
 async function fetchGuardAccounts() {
     const result = await fetchAccountCount('guards');
     if (!result) return;
-    DOM.guardAccountCounts.textContent = result.length;
+    DOM.guardAccountCounts.textContent = `${result.length} Accounts`;
     DOM.guardList.innerHTML = result.map(d => `
         <div class="guard-card">
             <div class="guard-header">
@@ -736,6 +935,14 @@ DOM.studentAccountManagementForm.addEventListener('submit', async function(e) {
             body: JSON.stringify(payload)
         });
         const data = await res.json();
+        Swal.close();
+        if (data.duplicate) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'ID Number Already Exists',
+                text: `The ID number "${payload.id_number}" is already assigned to another student.`
+            });
+        }
         if (!data.ok) return Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
         Swal.fire('Updated!', 'Record has been updated successfully.', 'success');
         DOM.studentAccountManagementForm.reset();
@@ -1008,12 +1215,14 @@ async function fetchPrograms() {
     }
 }
 
+let _adminChart = null;
+
 async function initChart() {
     const result = await fetchPrograms();
     if (!result) return;
 
     Chart.register(ChartDataLabels);
-    new Chart(document.getElementById('myChart'), {
+    _adminChart = new Chart(document.getElementById('myChart'), {
         type: 'bar',
         data: {
             labels: result.programs,
@@ -1040,6 +1249,15 @@ async function initChart() {
             }
         }
     });
+}
+
+async function updateChart() {
+    if (!_adminChart) return;
+    const result = await fetchPrograms();
+    if (!result) return;
+    _adminChart.data.labels = result.programs;
+    _adminChart.data.datasets[0].data = result.total_attended;
+    _adminChart.update();
 }
 
 // ============================================================
@@ -1083,5 +1301,8 @@ function initEventListeners() {
     // Close modal on backdrop click
     document.getElementById('addModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeAddModal();
+    });
+    document.getElementById('addYearLevelModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeAddYearLevelModal();
     });
 }

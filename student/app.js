@@ -382,7 +382,13 @@ async function toggleEdit() {
         const { res, data } = await apiCall('/students/student_update_profile', 'PUT', payload);
         Swal.close();
 
-        if (!res.ok) { Swal.close(); return Swal.fire({ icon: 'error', title: 'Update Failed', text: data.message || 'Something went wrong.' }); }
+        if (data.duplicate) {
+            isEditing = true;
+            fieldIds.forEach(id => document.getElementById(id).disabled = false);
+            return Swal.fire({ icon: 'warning', title: 'ID Number Already Exists', text: data.message });
+        }
+
+        if (!res.ok) { return Swal.fire({ icon: 'error', title: 'Update Failed', text: data.message || 'Something went wrong.' }); }
 
         btn.textContent      = 'Edit Profile';
         btn.style.background = '#5fa881';

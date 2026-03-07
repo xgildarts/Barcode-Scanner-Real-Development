@@ -222,3 +222,11 @@
         align-items: flex-start;
     }
 }
+/* ============================================================
+   SCROLLABLE CARDS LIST
+   ============================================================ */
+.students-list {
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}

@@ -1,18 +1,21 @@
-const express = require('express')
-const cors = require('cors')
-const path = require('path')
-const auth = require('../authentication/authentication')
-const student = require('../model/student')
-const programs = require('../model/program')
-const teacher = require('../model/teacher')
-const admin = require('../model/admin')
-const guard = require('../model/guard')
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const auth = require('../authentication/authentication');
+const student = require('../model/student');
+const programs = require('../model/program');
+const teacher = require('../model/teacher');
+const admin = require('../model/admin');
+const guard = require('../model/guard');
+require('dotenv').config();
 
-const app = express()
-const PORT = 3000
+const app = express();
+const PORT = process.env.PORT;
 
-app.use(express.json())
-app.use(cors())
+app.use(express.json());
+app.use(cors());
+app.use('/api/v1/uploads', express.static(path.join(__dirname, '../../uploads')))
+
 
 // Static folders
 // app.use('/admin', express.static(path.join(__dirname, '../../admin')))

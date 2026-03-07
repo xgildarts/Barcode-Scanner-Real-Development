@@ -120,9 +120,96 @@
             }
         });
 
-        document.querySelector('.forgot-password').addEventListener('click', function(e) {
+        document.querySelector('.forgot-password').addEventListener('click', async function(e) {
             e.preventDefault();
-            Swal.fire('Info', 'Please contact the IT department to reset your password.', 'info');
+
+            // Step 1 — Email
+            const { value: email, isConfirmed: step1ok } = await Swal.fire({
+                title: 'Forgot Password',
+                text: 'Enter your admin email address.',
+                input: 'email',
+                inputPlaceholder: 'admin@panpacificu.edu.ph',
+                showCancelButton: true,
+                confirmButtonText: 'Send OTP',
+                confirmButtonColor: '#3d6b6b',
+                inputValidator: v => !v && 'Please enter your email.'
+            });
+            if (!step1ok || !email) return;
+
+            Swal.fire({ title: 'Sending OTP...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r1 = await fetch(`${URL_BASED}/admin/forgot_password/request_otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const d1 = await r1.json();
+                if (!r1.ok) throw new Error(d1.message);
+            } catch (err) {
+                return Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+
+            // Step 2 — OTP
+            const { value: otp, isConfirmed: step2ok } = await Swal.fire({
+                title: 'Enter OTP',
+                html: `<p style="margin-bottom:12px;font-size:14px;color:#666">A 6-digit code was sent to <strong>${email}</strong>. Valid for 5 minutes.</p>
+                       <input id="swal-otp" class="swal2-input" maxlength="6" placeholder="_ _ _ _ _ _"
+                              style="font-size:28px;letter-spacing:10px;text-align:center;width:200px">`,
+                showCancelButton: true,
+                confirmButtonText: 'Verify',
+                confirmButtonColor: '#3d6b6b',
+                preConfirm: () => {
+                    const v = document.getElementById('swal-otp').value.trim();
+                    if (!/^\d{6}$/.test(v)) { Swal.showValidationMessage('Enter the 6-digit code.'); return false; }
+                    return v;
+                }
+            });
+            if (!step2ok || !otp) return;
+
+            Swal.fire({ title: 'Verifying...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r2 = await fetch(`${URL_BASED}/admin/forgot_password/verify_otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp })
+                });
+                const d2 = await r2.json();
+                if (!r2.ok) throw new Error(d2.message);
+            } catch (err) {
+                return Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+
+            // Step 3 — New Password
+            const { value: passwords, isConfirmed: step3ok } = await Swal.fire({
+                title: 'Set New Password',
+                html: `<input id="swal-newpw" type="password" class="swal2-input" placeholder="New password">
+                       <input id="swal-confirmpw" type="password" class="swal2-input" placeholder="Confirm new password">`,
+                showCancelButton: true,
+                confirmButtonText: 'Reset Password',
+                confirmButtonColor: '#3d6b6b',
+                preConfirm: () => {
+                    const np = document.getElementById('swal-newpw').value;
+                    const cp = document.getElementById('swal-confirmpw').value;
+                    if (np.length < 6) { Swal.showValidationMessage('Password must be at least 6 characters.'); return false; }
+                    if (np !== cp)     { Swal.showValidationMessage('Passwords do not match.'); return false; }
+                    return { new_password: np, confirm_password: cp };
+                }
+            });
+            if (!step3ok || !passwords) return;
+
+            Swal.fire({ title: 'Resetting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r3 = await fetch(`${URL_BASED}/admin/forgot_password/reset_password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, ...passwords })
+                });
+                const d3 = await r3.json();
+                if (!r3.ok) throw new Error(d3.message);
+                Swal.fire({ icon: 'success', title: 'Password Reset!', text: 'You can now log in with your new password.', confirmButtonColor: '#3d6b6b' });
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
         });
     </script>
 </body>

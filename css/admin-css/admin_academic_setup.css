@@ -54,6 +54,21 @@
     padding: 24px 20px;
     max-width: 500px;
     margin: 0 auto;
+    max-height: calc(100vh - 80px);
+}
+
+/* ============================================================
+   SECTION LABEL (Programs / Year Levels heading)
+   ============================================================ */
+.setup-section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a4545;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 8px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(90,138,122,0.3);
 }
 
 /* ============================================================
@@ -96,11 +111,11 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 40px;
-    /* BUG FIX: fixed pixel height (700px) caused overflow on small screens.
-       Use max-height instead so the list adapts. */
-    max-height: 60vh;
+    margin-bottom: 24px;
+    max-height: 35vh;
     overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
 }
 
 .program-card {

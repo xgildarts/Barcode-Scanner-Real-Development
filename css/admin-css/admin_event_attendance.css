@@ -50,3 +50,24 @@
     outline: 2px solid #5a8a7a;
     box-shadow: 0 0 0 4px rgba(90, 138, 122, 0.2);
 }
+/* ============================================================
+   SCROLLABLE TBODY — header stays fixed, body scrolls
+   controls-section (~120px) + header bar (~60px) = ~180px
+   Add extra for the set-event filters row (~52px)
+   ============================================================ */
+#eventAttendance .table-container {
+    max-height: calc(100vh - 240px);
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+#eventAttendance .attendance-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#eventAttendance .attendance-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}

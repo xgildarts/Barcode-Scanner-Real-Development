@@ -29,3 +29,24 @@
     opacity: 0;
     pointer-events: none;
 }
+/* ============================================================
+   SCROLLABLE TBODY — header stays fixed, body scrolls
+   controls-section (~120px) + header bar (~60px) = ~180px
+   History has extra filter row (~52px)
+   ============================================================ */
+#eventAttendanceHistory .table-container {
+    max-height: calc(100vh - 240px);
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+#eventAttendanceHistory .attendance-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#eventAttendanceHistory .attendance-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}

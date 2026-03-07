@@ -347,5 +347,83 @@ admin.put('/edit_guard_account/:id', async (req, res) => {
 });
 
 
+// Get Year Levels
+admin.get('/get_year_levels', async (req, res) => {
+    try {
+        const result = await services.getYearLevels()
+        res.json({ ok: true, message: 'Successfully retrieved year levels!', content: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Add Year Level
+admin.post('/add_year_level', async (req, res) => {
+    const { yearLevelName } = req.body
+    if (!yearLevelName) return res.status(400).json({ ok: false, message: 'Year level name is required.' })
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        services.verifyToken(token)
+        const result = await services.addYearLevel(yearLevelName)
+        res.status(201).json({ ok: true, message: result })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Delete Year Level
+admin.delete('/delete_year_level/:id', async (req, res) => {
+    const id = req.params.id
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        services.verifyToken(token)
+        const result = await services.deleteYearLevel(id)
+        res.json({ ok: true, message: result })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Admin Forgot Password — Request OTP
+admin.post('/forgot_password/request_otp', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' });
+    try {
+        const result = await services.sendAdminPasswordResetOTP(email);
+        res.json({ ok: true, message: result });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err });
+    }
+});
+
+// Admin Forgot Password — Verify OTP
+admin.post('/forgot_password/verify_otp', async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ ok: false, message: 'Email and OTP are required.' });
+    try {
+        services.verifyAdminPasswordResetOTP(email, otp);
+        res.json({ ok: true, message: 'OTP verified successfully.' });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err });
+    }
+});
+
+// Admin Forgot Password — Reset Password
+admin.post('/forgot_password/reset_password', async (req, res) => {
+    const { email, new_password, confirm_password } = req.body;
+    if (!email || !new_password || !confirm_password)
+        return res.status(400).json({ ok: false, message: 'All fields are required.' });
+    if (new_password !== confirm_password)
+        return res.status(400).json({ ok: false, message: 'Passwords do not match.' });
+    if (new_password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' });
+    try {
+        const result = await services.resetAdminPasswordWithOTP(email, new_password);
+        res.json({ ok: true, message: result });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || err });
+    }
+});
+
 // Export route
 module.exports = admin

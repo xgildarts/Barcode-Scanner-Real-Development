@@ -27,7 +27,7 @@
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
             </div>
-            <div class="sidebar-name">Mr. Henry</div>
+            <div class="sidebar-name" id="sideBarName">Admin</div>
             <div class="sidebar-role">ADMIN</div>
         </div>
 
@@ -80,6 +80,54 @@
                         </svg>
                     </div>
                     <span class="menu-item-text">Academic Setup</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('studentAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Student Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('teacherAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Teacher Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('guardAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Guard Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('adminSettings')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Settings</span>
                 </div>
                 <span class="menu-item-arrow">›</span>
             </button>
@@ -206,7 +254,10 @@
                             </svg>
                             <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendance">
                         </div>
-                        
+                        <div class="live-badge">
+                            <span class="live-dot" id="adminLiveDotEvent"></span>
+                            LIVE
+                        </div>
                         <button class="export-btn" onclick="exportTableToExcel('eventAttendanceTable', 'Event Attendance')">
                             <svg viewBox="0 0 24 24">
                                 <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
@@ -254,11 +305,21 @@
                             </svg>
                             <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendanceHistory">
                         </div>
+                        <div class="live-badge">
+                            <span class="live-dot" id="adminLiveDotEventHist"></span>
+                            LIVE
+                        </div>
                         <button class="export-btn calendar-btn">
                             <svg viewBox="0 0 24 24">
                                 <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
                             </svg>
                             Date
+                        </button>
+                        <button class="export-btn" id="clearDateFilter" onclick="clearDateFilter()" style="display:none;">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                            Clear
                         </button>
                         <button class="export-btn" onclick="exportTableToExcel('eventAttendanceHistoryTable', 'Event Attendance History')">
                             <svg viewBox="0 0 24 24">
@@ -272,10 +333,7 @@
                     <div class="filters-row">
                         <select class="filter-select" id="eventHistoryYearFilter">
                             <option value="">Year Level All</option>
-                            <option value="1st Year">1st Year</option>
-                            <option value="2nd Year">2nd Year</option>
-                            <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
+                            <!-- Populated dynamically from year_level table -->
                         </select>
                     </div>
                 </div>
@@ -319,7 +377,7 @@
                     </div>
                 </div>
                 <div class="profile-name">Mr. Henry</div>
-                <div class="profile-email" id="profileEmailTop">henry@gmail.com</div>
+                <div class="profile-email" id="profileEmailTop"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae2efe4f8f3caede7ebe3e6a4e9e5e7">[email&#160;protected]</a></div>
                 <button class="edit-profile-btn" onclick="editProfileName()">
                     <svg viewBox="0 0 24 24">
                         <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
@@ -465,6 +523,7 @@
         <!--Academic Setup-->
         <section class="sections" id="academicSetup">
             <div class="content-modal">
+                <p class="setup-section-label">Programs</p>
                 <button class="add-program-btn" onclick="openAddModal()">
                     <svg viewBox="0 0 24 24">
                         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -474,6 +533,18 @@
         
                 <div class="programs-list" id="programsList">
                     <!-- Programs will be dynamically added here -->
+                </div>
+
+                <p class="setup-section-label">Year Levels</p>
+                <button class="add-program-btn" onclick="openAddYearLevelModal()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Year Level
+                </button>
+
+                <div class="programs-list" id="yearLevelsList">
+                    <!-- Year levels will be dynamically added here -->
                 </div>
             </div>
         
@@ -490,7 +561,22 @@
                         <button class="modal-btn confirm-btn" onclick="addProgram()">Add</button>
                     </div>
                 </div>
-            </div>        
+            </div>
+
+            <!-- Add Year Level Modal -->
+            <div class="modal" id="addYearLevelModal">
+                <div class="modal-content">
+                    <h2 class="modal-header">Add New Year Level</h2>
+                    <div class="form-group">
+                        <label class="form-label">Year Level Name</label>
+                        <input type="text" class="form-input" id="yearLevelNameInput" placeholder="e.g. 1st Year">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel-btn" onclick="closeAddYearLevelModal()">Cancel</button>
+                        <button class="modal-btn confirm-btn" onclick="addYearLevel()">Add</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!--Registration-->
@@ -569,11 +655,7 @@
                             <label class="form-label" for="teacher_department">Department <span class="required">*</span></label>
                             <select class="form-select" id="teacher_department" name="department" required>
                                 <option value="">Select Department</option>
-                                <option value="Information Technology">Information Technology</option>
-                                <option value="Computer Science">Computer Science</option>
-                                <option value="Computer Engineering">Computer Engineering</option>
-                                <option value="Business Administration">Business Administration</option>
-                                <option value="Education">Education</option>
+                                <!-- Populated dynamically from program table -->
                             </select>
                         </div>
                     
@@ -613,11 +695,7 @@
                             <label class="form-label">Program <span class="required">*</span></label>
                             <select id="std_program" class="form-select" required>
                                 <option value="">Select Program</option>
-                                <option value="BS in Information Technology">BS in Information Technology</option>
-                                <option value="BS in Computer Science">BS in Computer Science</option>
-                                <option value="BS in Computer Engineering">BS in Computer Engineering</option>
-                                <option value="BS in Business Administration">BS in Business Administration</option>
-                                <option value="BS in Education">BS in Education</option>
+                                <!-- Populated dynamically from program table -->
                             </select>
                         </div>
                     
@@ -625,10 +703,7 @@
                             <label class="form-label">Year Level <span class="required">*</span></label>
                             <select id="std_year_level" class="form-select" required>
                                 <option value="">Select Year</option>
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
+                                <!-- Populated dynamically from year_level table -->
                             </select>
                         </div>
                     
@@ -701,10 +776,7 @@
                                 <label>Year Level</label>
                                 <select name="year_level" id="studentYearLevel">
                                     <option value="">Select Year</option>
-                                    <option value="1st Year">1st Year</option>
-                                    <option value="2nd Year">2nd Year</option>
-                                    <option value="3rd Year">3rd Year</option>
-                                    <option value="4th Year">4th Year</option>
+                                    <!-- Populated dynamically from year_level table -->
                                 </select>
                             </div>
                         </div>

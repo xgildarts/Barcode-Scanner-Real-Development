@@ -19,14 +19,17 @@ student.get('/student_get_data', async (req, res) => {
 // Update Student Data
 student.put('/student_update_profile', async (req, res) => {
     try {
-        // Get token from header and decode
         const token = services.removeBearer(req.headers['authorization']);
         const decodedToken = services.verifyToken(token);
         if (!decodedToken) return res.status(401).json({ message: 'Unauthorized' });
 
-        const studentId = decodedToken.student_id_number;
+        const studentId = decodedToken.student_id;
 
-        await services.studentUpdateProfile(studentId, req.body);
+        const result = await services.studentUpdateProfile(studentId, req.body);
+
+        if (result.duplicate) {
+            return res.status(409).json({ ok: false, duplicate: true, message: `ID number "${req.body.idNumber}" is already assigned to another student.` });
+        }
 
         res.json({ ok: true, message: 'Profile updated successfully' });
 
@@ -129,5 +132,43 @@ student.post('/verify_location', async (req, res) => {
     }
 })
 
+
+// ============================================================
+// STUDENT FORGOT PASSWORD — public routes (no token required)
+// ============================================================
+student.post('/forgot_password/request_otp', async (req, res) => {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' })
+    try {
+        await services.sendStudentPasswordResetOTP(email)
+        res.json({ ok: true, message: 'OTP sent to your email.' })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message })
+    }
+})
+
+student.post('/forgot_password/verify_otp', (req, res) => {
+    const { email, otp } = req.body
+    if (!email || !otp) return res.status(400).json({ ok: false, message: 'Email and OTP are required.' })
+    try {
+        services.verifyStudentPasswordResetOTP(email, otp)
+        res.json({ ok: true, message: 'OTP verified.' })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message })
+    }
+})
+
+student.post('/forgot_password/reset_password', async (req, res) => {
+    const { email, new_password, confirm_password } = req.body
+    if (!email || !new_password || !confirm_password) return res.status(400).json({ ok: false, message: 'All fields are required.' })
+    if (new_password !== confirm_password) return res.status(400).json({ ok: false, message: 'Passwords do not match.' })
+    if (new_password.length < 8) return res.status(400).json({ ok: false, message: 'Password must be at least 8 characters.' })
+    try {
+        await services.resetStudentPasswordWithOTP(email, new_password)
+        res.json({ ok: true, message: 'Password reset successfully.' })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message })
+    }
+})
 
 module.exports = student

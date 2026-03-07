@@ -105,6 +105,45 @@
    }
    
    /* ============================================================
+      LIVE BADGE
+      ============================================================ */
+   .live-badge {
+       display: flex;
+       align-items: center;
+       gap: 6px;
+       background: rgba(255,255,255,0.15);
+       color: white;
+       font-size: 11px;
+       font-weight: 700;
+       letter-spacing: 1px;
+       padding: 6px 10px;
+       border-radius: 20px;
+       white-space: nowrap;
+   }
+
+   .live-dot {
+       width: 8px;
+       height: 8px;
+       background: #4cff91;
+       border-radius: 50%;
+       animation: livePulse 2s infinite;
+   }
+
+   @keyframes livePulse {
+       0%, 100% { opacity: 1; transform: scale(1); }
+       50%       { opacity: 0.4; transform: scale(0.8); }
+   }
+
+   .live-dot.live-blink {
+       animation: liveBlink 0.3s steps(1) 6;
+   }
+
+   @keyframes liveBlink {
+       0%, 100% { background: #4cff91; }
+       50%       { background: white; }
+   }
+
+   /* ============================================================
       EXPORT BUTTON
       ============================================================ */
    .export-btn {

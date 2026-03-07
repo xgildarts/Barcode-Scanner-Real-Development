@@ -1,108 +1,321 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const db = require('../configuration/db');
+const cron = require('node-cron')
 const nodemailer = require('nodemailer')
 const SALT_ROUNDS = 10
-const JWT_SECRET = 'q09481239328'
+const JWT_SECRET = process.env.TOKEN_KEYWORD;
 
 // ============================================================
-// EMAIL TRANSPORTER (Nodemailer / Gmail SMTP)
+// DAILY ATTENDANCE CLEANUP — runs at midnight Manila time
+// ============================================================
+cron.schedule('0 0 * * *', () => {
+    // Clear regular attendance records older than today
+    db.execute(
+        `DELETE FROM attendance_record WHERE attendance_date < CURDATE()`,
+        [],
+        (err, result) => {
+            if (err) { console.error('[Cron] Failed to clean attendance_record:', err); return }
+            console.log(`[Cron] Deleted ${result.affectedRows} old attendance record(s) at ${new Date().toLocaleString()}`)
+        }
+    )
+    // Clear event attendance records older than today
+    db.execute(
+        `DELETE FROM event_attendance_record WHERE date < CURDATE()`,
+        [],
+        (err, result) => {
+            if (err) { console.error('[Cron] Failed to clean event_attendance_record:', err); return }
+            console.log(`[Cron] Deleted ${result.affectedRows} old event attendance record(s) at ${new Date().toLocaleString()}`)
+        }
+    )
+}, { timezone: 'Asia/Manila' })
+
+// ============================================================
+// EMAIL / OTP (Forgot Password)
 // ============================================================
 const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: {
-        user: 'xnatsu25@gmail.com',   // set in .env: GMAIL_USER=yourschool@gmail.com
-        pass: 'wwrvbqfogbczibbi'   // set in .env: GMAIL_PASS=your_app_password
-    }
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
 })
 
-// In-memory OTP store: { email: { otp, expiresAt } }
-// For production, swap this out for a DB table or Redis.
 const otpStore = {}
-
-const OTP_EXPIRY_MS = 5 * 60 * 1000 // 5 minutes
+const OTP_EXPIRY_MS = 5 * 60 * 1000
 
 function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString() // 6 digits
+    return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 async function sendPasswordResetOTP(email) {
-    // Check if teacher email exists
     const teacher = await new Promise((resolve, reject) => {
-        db.execute(
-            'SELECT teacher_id, teacher_name, teacher_email FROM teacher WHERE teacher_email = ?',
-            [email],
-            (err, rows) => {
-                if (err) return reject(err)
-                resolve(rows[0] ?? null)
-            }
-        )
+        db.execute('SELECT teacher_id, teacher_name FROM teacher WHERE teacher_email = ?', [email],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
     })
-
     if (!teacher) throw new Error('No account found with that email address.')
-
-    const otp       = generateOTP()
-    const expiresAt = Date.now() + OTP_EXPIRY_MS
-
-    otpStore[email] = { otp, expiresAt }
-
+    const otp = generateOTP()
+    otpStore[email] = { otp, expiresAt: Date.now() + OTP_EXPIRY_MS }
     await transporter.sendMail({
         from: `"PanPacific University" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: 'Your Password Reset Code',
-        html: `
-            <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
-                <h2 style="color:#3d6b6b;margin-bottom:8px">Password Reset</h2>
-                <p style="color:#555">Hello <strong>${teacher.teacher_name}</strong>,</p>
-                <p style="color:#555">Use the code below to reset your password. It expires in <strong>5 minutes</strong>.</p>
-                <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#3d6b6b;text-align:center;padding:24px 0">${otp}</div>
-                <p style="color:#999;font-size:12px">If you did not request this, you can safely ignore this email.</p>
-            </div>
-        `
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
+            <h2 style="color:#3d6b6b">Password Reset</h2>
+            <p>Hello <strong>${teacher.teacher_name}</strong>, use the code below. Expires in <strong>5 minutes</strong>.</p>
+            <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#3d6b6b;text-align:center;padding:24px 0">${otp}</div>
+            <p style="color:#999;font-size:12px">If you did not request this, ignore this email.</p></div>`
     })
-
     return 'OTP sent successfully.'
 }
 
 function verifyPasswordResetOTP(email, otp) {
     const record = otpStore[email]
-    if (!record)                      throw new Error('No OTP requested for this email.')
-    if (Date.now() > record.expiresAt) {
-        delete otpStore[email]
-        throw new Error('OTP has expired. Please request a new one.')
-    }
-    if (record.otp !== otp)           throw new Error('Incorrect OTP. Please try again.')
-
-    // Mark as verified — allow one reset attempt
+    if (!record) throw new Error('No OTP requested for this email.')
+    if (Date.now() > record.expiresAt) { delete otpStore[email]; throw new Error('OTP has expired. Please request a new one.') }
+    if (record.otp !== otp) throw new Error('Incorrect OTP. Please try again.')
     otpStore[email].verified = true
     return true
 }
 
 async function resetPasswordWithOTP(email, newPassword) {
     const record = otpStore[email]
-    if (!record || !record.verified) throw new Error('OTP not verified. Please verify your code first.')
-    if (Date.now() > record.expiresAt) {
-        delete otpStore[email]
-        throw new Error('OTP has expired. Please start over.')
-    }
-
+    if (!record || !record.verified) throw new Error('OTP not verified.')
+    if (Date.now() > record.expiresAt) { delete otpStore[email]; throw new Error('OTP has expired. Please start over.') }
     const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
-
     await new Promise((resolve, reject) => {
+        db.execute('UPDATE teacher SET teacher_password = ? WHERE teacher_email = ?', [hashed, email],
+            (err, result) => { if (err) return reject(err); if (result.affectedRows === 0) return reject(new Error('Teacher not found.')); resolve() })
+    })
+    delete otpStore[email]
+    return 'Password reset successfully.'
+}
+
+// ============================================================
+// ADMIN FORGOT PASSWORD OTP
+// Uses 'admin:' prefix in otpStore to avoid colliding with teacher OTPs
+// ============================================================
+async function sendAdminPasswordResetOTP(email) {
+    const admin = await new Promise((resolve, reject) => {
+        db.execute('SELECT admin_id, admin_name FROM admin_accounts WHERE admin_email = ?', [email],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
+    })
+    if (!admin) throw new Error('No admin account found with that email address.')
+    const otp = generateOTP()
+    otpStore[`admin:${email}`] = { otp, expiresAt: Date.now() + OTP_EXPIRY_MS }
+    await transporter.sendMail({
+        from: `"PanPacific University" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Admin Password Reset Code',
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
+            <h2 style="color:#3d6b6b">Admin Password Reset</h2>
+            <p>Hello <strong>${admin.admin_name}</strong>, use the code below. Expires in <strong>5 minutes</strong>.</p>
+            <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#3d6b6b;text-align:center;padding:24px 0">${otp}</div>
+            <p style="color:#999;font-size:12px">If you did not request this, ignore this email.</p></div>`
+    })
+    return 'OTP sent successfully.'
+}
+
+function verifyAdminPasswordResetOTP(email, otp) {
+    const record = otpStore[`admin:${email}`]
+    if (!record) throw new Error('No OTP requested for this email.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`admin:${email}`]; throw new Error('OTP has expired. Please request a new one.') }
+    if (record.otp !== otp) throw new Error('Incorrect OTP. Please try again.')
+    otpStore[`admin:${email}`].verified = true
+    return true
+}
+
+async function resetAdminPasswordWithOTP(email, newPassword) {
+    const record = otpStore[`admin:${email}`]
+    if (!record || !record.verified) throw new Error('OTP not verified.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`admin:${email}`]; throw new Error('OTP has expired. Please start over.') }
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    await new Promise((resolve, reject) => {
+        db.execute('UPDATE admin_accounts SET admin_password = ? WHERE admin_email = ?', [hashed, email],
+            (err, result) => { if (err) return reject(err); if (result.affectedRows === 0) return reject(new Error('Admin not found.')); resolve() })
+    })
+    delete otpStore[`admin:${email}`]
+    return 'Password reset successfully.'
+}
+
+// ============================================================
+// STUDENT FORGOT PASSWORD OTP
+// Uses 'student:' prefix in otpStore to avoid collisions
+// ============================================================
+async function sendStudentPasswordResetOTP(email) {
+    const student = await new Promise((resolve, reject) => {
+        db.execute('SELECT student_id, student_firstname FROM student_accounts WHERE student_email = ?', [email],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
+    })
+    if (!student) throw new Error('No account found with that email address.')
+    const otp = generateOTP()
+    otpStore[`student:${email}`] = { otp, expiresAt: Date.now() + OTP_EXPIRY_MS }
+    await transporter.sendMail({
+        from: `"PanPacific University" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Your Password Reset Code',
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
+            <h2 style="color:#3d6b6b">Password Reset</h2>
+            <p>Hello <strong>${student.student_firstname}</strong>, use the code below. Expires in <strong>5 minutes</strong>.</p>
+            <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#3d6b6b;text-align:center;padding:24px 0">${otp}</div>
+            <p style="color:#999;font-size:12px">If you did not request this, ignore this email.</p></div>`
+    })
+    return 'OTP sent successfully.'
+}
+
+function verifyStudentPasswordResetOTP(email, otp) {
+    const record = otpStore[`student:${email}`]
+    if (!record) throw new Error('No OTP requested for this email.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`student:${email}`]; throw new Error('OTP has expired. Please request a new one.') }
+    if (record.otp !== otp) throw new Error('Incorrect OTP. Please try again.')
+    otpStore[`student:${email}`].verified = true
+    return true
+}
+
+async function resetStudentPasswordWithOTP(email, newPassword) {
+    const record = otpStore[`student:${email}`]
+    if (!record || !record.verified) throw new Error('OTP not verified.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`student:${email}`]; throw new Error('OTP has expired. Please start over.') }
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    await new Promise((resolve, reject) => {
+        db.execute('UPDATE student_accounts SET password = ? WHERE student_email = ?', [hashed, email],
+            (err, result) => { if (err) return reject(err); if (result.affectedRows === 0) return reject(new Error('Student not found.')); resolve() })
+    })
+    delete otpStore[`student:${email}`]
+    return 'Password reset successfully.'
+}
+
+// ============================================================
+// GUARD FORGOT PASSWORD OTP
+// Uses 'guard:' prefix in otpStore to avoid collisions
+// ============================================================
+async function sendGuardPasswordResetOTP(email) {
+    const guard = await new Promise((resolve, reject) => {
+        db.execute('SELECT guard_id, guard_name FROM guards WHERE guard_email = ?', [email],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
+    })
+    if (!guard) throw new Error('No account found with that email address.')
+    const otp = generateOTP()
+    otpStore[`guard:${email}`] = { otp, expiresAt: Date.now() + OTP_EXPIRY_MS }
+    await transporter.sendMail({
+        from: `"PanPacific University" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Your Password Reset Code',
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
+            <h2 style="color:#3d6b6b">Password Reset</h2>
+            <p>Hello <strong>${guard.guard_name}</strong>, use the code below. Expires in <strong>5 minutes</strong>.</p>
+            <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#3d6b6b;text-align:center;padding:24px 0">${otp}</div>
+            <p style="color:#999;font-size:12px">If you did not request this, ignore this email.</p></div>`
+    })
+    return 'OTP sent successfully.'
+}
+
+function verifyGuardPasswordResetOTP(email, otp) {
+    const record = otpStore[`guard:${email}`]
+    if (!record) throw new Error('No OTP requested for this email.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`guard:${email}`]; throw new Error('OTP has expired. Please request a new one.') }
+    if (record.otp !== otp) throw new Error('Incorrect OTP. Please try again.')
+    otpStore[`guard:${email}`].verified = true
+    return true
+}
+
+async function resetGuardPasswordWithOTP(email, newPassword) {
+    const record = otpStore[`guard:${email}`]
+    if (!record || !record.verified) throw new Error('OTP not verified.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`guard:${email}`]; throw new Error('OTP has expired. Please start over.') }
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    await new Promise((resolve, reject) => {
+        db.execute('UPDATE guards SET guard_password = ? WHERE guard_email = ?', [hashed, email],
+            (err, result) => { if (err) return reject(err); if (result.affectedRows === 0) return reject(new Error('Guard not found.')); resolve() })
+    })
+    delete otpStore[`guard:${email}`]
+    return 'Password reset successfully.'
+}
+
+// ============================================================
+// LOCATION HELPERS
+// ============================================================
+function haversineDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000
+    const toRad = d => d * Math.PI / 180
+    const dLat = toRad(lat2 - lat1)
+    const dLng = toRad(lng2 - lng1)
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+async function getTeacherLocationBySerial(teacherSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT teacher_location, teacher_location_radius FROM teacher WHERE teacher_barcode_scanner_serial_number = ?',
+            [teacherSerialNumber], (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
+    })
+}
+
+async function getTeacherSerialByStudentIDNumber(studentIDNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT teacher_barcode_scanner_serial_number FROM student_records_regular_class WHERE student_id_number = ?',
+            [studentIDNumber], (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
+    })
+}
+
+async function verifyStudentLocation(studentIDNumber, studentLat, studentLng) {
+    const studentTeacher = await getTeacherSerialByStudentIDNumber(studentIDNumber)
+    if (!studentTeacher) throw new Error('Student not registered to any class.')
+    const teacherData = await getTeacherLocationBySerial(studentTeacher.teacher_barcode_scanner_serial_number)
+    if (!teacherData || !teacherData.teacher_location) throw new Error('Teacher has not set a location yet.')
+    const { latitude, longitude } = JSON.parse(teacherData.teacher_location)
+    const radius   = teacherData.teacher_location_radius || 50
+    const distance = Math.round(haversineDistance(latitude, longitude, studentLat, studentLng))
+    return { withinRange: distance <= radius, distance, radius }
+}
+
+async function setTeacherLocation(teacherID, latitude, longitude, radius) {
+    return new Promise((resolve, reject) => {
         db.execute(
-            'UPDATE teacher SET teacher_password = ? WHERE teacher_email = ?',
-            [hashed, email],
+            `UPDATE teacher SET teacher_location = ?, teacher_location_radius = ? WHERE teacher_id = ?`,
+            [JSON.stringify({ latitude, longitude }), radius, teacherID],
             (err, result) => {
                 if (err) return reject(err)
                 if (result.affectedRows === 0) return reject(new Error('Teacher not found.'))
-                resolve()
+                resolve('Location updated.')
             }
         )
     })
+}
 
-    // Clean up OTP after successful reset
-    delete otpStore[email]
-    return 'Password reset successfully.'
+// ============================================================
+// MANUAL ATTENDANCE
+// ============================================================
+async function manualInsertAttendance(
+    student_id, student_id_number, student_firstname, student_middlename,
+    student_lastname, student_email, student_year_level, student_guardian_number,
+    student_program, teacher_barcode_scanner_serial_number
+) {
+    const inClass = await checkStudentToRegularClass(student_id_number)
+    if (!inClass) throw new Error('Student is not registered to this subject.')
+
+    const alreadyIn = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
+    if (alreadyIn) throw new Error('Student is already recorded in attendance.')
+
+    const subjectData = await checkYearLevelAndSerialNumber(teacher_barcode_scanner_serial_number, student_year_level)
+    if (subjectData.length === 0) throw new Error('No subject set for this year level. Please set a subject first.')
+
+    await new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT INTO attendance_record (student_id, student_id_number, student_firstname, student_middlename, student_lastname, year_level, subject, student_program, teacher_barcode_scanner_serial_number)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [student_id, student_id_number, student_firstname, student_middlename, student_lastname,
+             student_year_level, subjectData[0].subject_name_set, student_program, teacher_barcode_scanner_serial_number],
+            (err) => { if (err) return reject(err); resolve() }
+        )
+    })
+
+    await insertStudentAttendanceHistory(
+        student_id, student_id_number, student_firstname, student_middlename, student_lastname,
+        student_year_level, subjectData[0].subject_name_set, student_program, teacher_barcode_scanner_serial_number
+    )
+
+    await sendSMS(student_guardian_number,
+        `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`)
+
+    return 'Attendance recorded successfully!'
 }
 
 const clickSendUsername = 'steven.agustin.ecoast@panpacificu.edu.ph';   // from dashboard
@@ -361,27 +574,35 @@ function deviceIDChecker(deviceID, student_email) {
 // Student update profile
 function studentUpdateProfile(studentId, profileData) {
     return new Promise((resolve, reject) => {
-        const { firstName, middleName, lastName, yearLevel, program } = profileData;
+        const { firstName, middleName, lastName, idNumber, yearLevel, program } = profileData;
 
-        const sql = `
-            UPDATE student_accounts
-            SET student_firstname = ?,
-                student_middlename = ?,
-                student_lastname = ?,
-                student_year_level = ?,
-                student_program = ?
-            WHERE student_id_number = ?
-        `;
-
+        // Check if idNumber is already used by a different student
         db.execute(
-            sql,
-            [firstName, middleName, lastName, yearLevel, program, studentId],
-            (err, result) => {
-                if (err) {
-                    console.error('Database update error:', err);
-                    return reject(err);
-                }
-                resolve(result);
+            `SELECT student_id FROM student_accounts WHERE student_id_number = ? AND student_id != ?`,
+            [idNumber, studentId],
+            (err, rows) => {
+                if (err) return reject(err);
+                if (rows.length > 0) return resolve({ duplicate: true });
+
+                const sql = `
+                    UPDATE student_accounts
+                    SET student_firstname = ?,
+                        student_middlename = ?,
+                        student_lastname = ?,
+                        student_id_number = ?,
+                        student_year_level = ?,
+                        student_program = ?
+                    WHERE student_id = ?
+                `;
+
+                db.execute(
+                    sql,
+                    [firstName, middleName, lastName, idNumber, yearLevel, program, studentId],
+                    (err, result) => {
+                        if (err) { console.error('Database update error:', err); return reject(err); }
+                        resolve({ duplicate: false, result });
+                    }
+                );
             }
         );
     });
@@ -605,21 +826,11 @@ async function teacherAddStudent(
     studentGuardianNumber, 
     teacherBarcodeScannerSerialNumber
 ) {
-    // Check if ID number already exists anywhere in the class records
     const existing = await new Promise((resolve, reject) => {
-        db.execute(
-            `SELECT student_id FROM student_records_regular_class WHERE student_id_number = ?`,
-            [studentIDNumber],
-            (err, rows) => {
-                if (err) return reject(err)
-                resolve(rows)
-            }
-        )
+        db.execute('SELECT student_id FROM student_records_regular_class WHERE student_id_number = ?',
+            [studentIDNumber], (err, rows) => { if (err) return reject(err); resolve(rows) })
     })
-
-    if (existing.length > 0) {
-        throw new Error(`Student ID number "${studentIDNumber}" is already registered.`)
-    }
+    if (existing.length > 0) throw new Error(`Student ID number "${studentIDNumber}" is already registered.`)
 
     return new Promise((resolve, reject) => {
         db.execute(
@@ -964,32 +1175,42 @@ function updateStudentRegisteredRecord(
     student_program
 ) {
     return new Promise((resolve, reject) => {
-        const query = `
-            UPDATE student_records_regular_class
-            SET
-                student_id_number = ?,
-                student_firstname = ?,
-                student_middlename = ?,
-                student_lastname = ?,
-                student_year_level = ?,
-                student_program = ?
-            WHERE student_id = ?
-        `;
+        // Check if the id_number is already used by a different student
+        db.execute(
+            `SELECT student_id FROM student_records_regular_class WHERE student_id_number = ? AND student_id != ?`,
+            [student_id_number, student_id],
+            (err, rows) => {
+                if (err) return reject(err);
+                if (rows.length > 0) return resolve({ duplicate: true });
 
-        const values = [
-            student_id_number,
-            student_firstname,
-            student_middlename,
-            student_lastname,
-            student_year_level,
-            student_program,
-            student_id
-        ];
+                const query = `
+                    UPDATE student_records_regular_class
+                    SET
+                        student_id_number = ?,
+                        student_firstname = ?,
+                        student_middlename = ?,
+                        student_lastname = ?,
+                        student_year_level = ?,
+                        student_program = ?
+                    WHERE student_id = ?
+                `;
 
-        db.execute(query, values, (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-        });
+                const values = [
+                    student_id_number,
+                    student_firstname,
+                    student_middlename,
+                    student_lastname,
+                    student_year_level,
+                    student_program,
+                    student_id
+                ];
+
+                db.execute(query, values, (err, result) => {
+                    if (err) return reject(err);
+                    resolve({ duplicate: false, result });
+                });
+            }
+        );
     });
 }
 
@@ -1013,7 +1234,8 @@ function getTeacherData(teacherID) {
                             teacher_current_subject, 
                             teacher_location,
                             teacher_location_radius,
-                            teacher_barcode_scanner_serial_number 
+                            teacher_barcode_scanner_serial_number,
+                            teacher_profile_picture
                        FROM teacher 
                        WHERE teacher_id = ?`
 
@@ -1021,6 +1243,20 @@ function getTeacherData(teacherID) {
             if(err) { return reject(err) }
             resolve(result)
         })
+    })
+}
+
+// Update Teacher Profile Picture
+function updateTeacherProfilePicture(teacherID, filename) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE teacher SET teacher_profile_picture = ? WHERE teacher_id = ?',
+            [filename, teacherID],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve(filename)
+            }
+        )
     })
 }
 
@@ -1067,20 +1303,6 @@ function getWholeCampusAccounts(tableName) {
     })
 }
 
-
-// Manual Insert Attendance
-// function manualInsertAttendance(id,
-//     studentIDNumber,
-//     studentFirstName,
-//     studentMiddleName,
-//     studentLastName,
-//     studentProgram,
-//     studentYearLevel,
-//     teacher_barcode_scanner_serial_number) {
-//     return new Promise((resolve, reject) => {
-//         db.execute('INSERT INTO attendance_record(student_id_number ,student_middlename, student_lastname, student_firstname, student_program, year_level)')
-//     })
-// }
 
 
 // Email finder
@@ -1581,6 +1803,16 @@ function adminEditStudentAccounts(
 ) {
 return new Promise((resolve, reject) => {
 
+    // Check if id_number is already used by another student
+    db.execute(
+        `SELECT student_id FROM student_accounts WHERE student_id_number = ? AND student_id != ?`,
+        [id_number, id],
+        (err, rows) => {
+            if (err) return reject(err);
+            if (rows.length > 0) {
+                return resolve({ ok: false, duplicate: true, message: `ID number "${id_number}" is already assigned to another student.` });
+            }
+
     const updateQuery = `
         UPDATE student_accounts 
         SET 
@@ -1619,6 +1851,8 @@ return new Promise((resolve, reject) => {
             affectedRows: result.affectedRows
         });
     });
+        }
+    );
 });
 }
 
@@ -1726,176 +1960,46 @@ return new Promise((resolve, reject) => {
 // tester()
 
 
-// Haversine formula — returns distance in meters between two lat/lng points
-function haversineDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371000; // Earth radius in metres
-    const toRad = deg => deg * (Math.PI / 180);
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Get teacher location + radius by serial number (used by barcode scanner device)
-function getTeacherLocationBySerial(teacherSerialNumber) {
+// ============================================================
+// YEAR LEVEL CRUD
+// ============================================================
+function getYearLevels() {
     return new Promise((resolve, reject) => {
         db.execute(
-            `SELECT teacher_location, teacher_location_radius 
-             FROM teacher 
-             WHERE teacher_barcode_scanner_serial_number = ? 
-             LIMIT 1`,
-            [teacherSerialNumber],
-            (err, result) => {
-                if (err) return reject(err);
-                if (result.length === 0) return reject(new Error('Teacher not found.'));
-                resolve(result[0]);
-            }
-        );
-    });
+            `SELECT year_level_id, year_level_name, year_level_created FROM year_level ORDER BY year_level_id ASC`,
+            [],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
 }
 
-// Get the teacher serial number linked to a student via their regular class record
-function getTeacherSerialByStudentIDNumber(studentIDNumber) {
+function addYearLevel(yearLevelName) {
     return new Promise((resolve, reject) => {
         db.execute(
-            `SELECT teacher_barcode_scanner_serial_number 
-             FROM student_records_regular_class 
-             WHERE student_id_number = ? 
-             LIMIT 1`,
-            [studentIDNumber],
-            (err, result) => {
-                if (err) return reject(err);
-                if (result.length === 0) return reject(new Error('Student is not registered to any class.'));
-                resolve(result[0].teacher_barcode_scanner_serial_number);
+            `SELECT year_level_id FROM year_level WHERE year_level_name = ?`,
+            [yearLevelName],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (rows.length > 0) return reject(new Error('Year level already exists.'))
+                db.execute(
+                    `INSERT INTO year_level (year_level_name) VALUES (?)`,
+                    [yearLevelName],
+                    (err2) => { if (err2) return reject(err2); resolve('Year level added successfully.') }
+                )
             }
-        );
-    });
+        )
+    })
 }
 
-// Verify if student coordinates are within teacher's allowed radius
-async function verifyStudentLocation(studentIDNumber, studentLat, studentLng) {
-    // 1. Find which teacher this student belongs to
-    const teacherSerial = await getTeacherSerialByStudentIDNumber(studentIDNumber);
-
-    // 2. Get that teacher's saved location + radius
-    const teacher = await getTeacherLocationBySerial(teacherSerial);
-
-    if (!teacher.teacher_location) {
-        throw new Error('Teacher has not set a location yet.');
-    }
-
-    const { latitude: teacherLat, longitude: teacherLng } = JSON.parse(teacher.teacher_location);
-    const radius   = teacher.teacher_location_radius || 50;
-    const distance = haversineDistance(teacherLat, teacherLng, studentLat, studentLng);
-
-    return {
-        withinRange: distance <= radius,
-        distance:    Math.round(distance),
-        radius
-    };
-}
-
-// Manual Attendance Insertion
-// Flow: check student in regular class → check not already in attendance → check year level/subject → insert → SMS
-async function manualInsertAttendance(
-    student_id,
-    student_id_number,
-    student_firstname,
-    student_middlename,
-    student_lastname,
-    student_email,
-    student_year_level,
-    student_guardian_number,
-    student_program,
-    teacher_barcode_scanner_serial_number
-) {
-    // 1. Check student is registered to this teacher's regular class
-    const inClass = await checkStudentToRegularClass(student_id_number);
-    if (!inClass) {
-        throw new Error('Student is not registered to this subject.');
-    }
-
-    // 2. Check student is not already in today's attendance
-    const alreadyIn = await checkStudentIfAlreadyExistsInAttendance(student_id_number);
-    if (alreadyIn) {
-        throw new Error('Student is already recorded in attendance.');
-    }
-
-    // 3. Check subject and year level are set for this teacher
-    const subjectData = await checkYearLevelAndSerialNumber(teacher_barcode_scanner_serial_number, student_year_level);
-    if (subjectData.length === 0) {
-        throw new Error('No subject set for this year level. Please set a subject first.');
-    }
-
-    // 4. Insert into attendance_record
-    await new Promise((resolve, reject) => {
-        db.execute(
-            `INSERT INTO attendance_record (
-                student_id,
-                student_id_number,
-                student_firstname,
-                student_middlename,
-                student_lastname,
-                year_level,
-                subject,
-                student_program,
-                teacher_barcode_scanner_serial_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                student_id,
-                student_id_number,
-                student_firstname,
-                student_middlename,
-                student_lastname,
-                student_year_level,
-                subjectData[0].subject_name_set,
-                student_program,
-                teacher_barcode_scanner_serial_number
-            ],
-            (err) => {
-                if (err) return reject(err);
-                resolve();
-            }
-        );
-    });
-
-    // 5. Insert into attendance_history_record
-    await insertStudentAttendanceHistory(
-        student_id,
-        student_id_number,
-        student_firstname,
-        student_middlename,
-        student_lastname,
-        student_year_level,
-        subjectData[0].subject_name_set,
-        student_program,
-        teacher_barcode_scanner_serial_number
-    );
-
-    // 6. Send SMS to guardian
-    await sendSMS(
-        student_guardian_number,
-        `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`
-    );
-
-    return 'Attendance recorded successfully!';
-}
-
-// Set Teacher Location
-function setTeacherLocation(teacherID, latitude, longitude, radius) {
+function deleteYearLevel(yearLevelId) {
     return new Promise((resolve, reject) => {
         db.execute(
-            `UPDATE teacher 
-             SET teacher_location = ?, teacher_location_radius = ? 
-             WHERE teacher_id = ?`,
-            [JSON.stringify({ latitude, longitude }), radius, teacherID],
+            `DELETE FROM year_level WHERE year_level_id = ?`,
+            [yearLevelId],
             (err, result) => {
                 if (err) return reject(err)
-                if (result.affectedRows === 0) return reject(new Error('Teacher not found.'))
-                resolve('Location saved successfully!')
+                if (result.affectedRows === 0) return reject(new Error('Year level not found.'))
+                resolve('Year level deleted successfully.')
             }
         )
     })
@@ -1960,6 +2064,7 @@ module.exports= {
     updateStudentRegisteredRecord,
     deleteStudentRegisteredRecord,
     getTeacherData,
+    updateTeacherProfilePicture,
     updateTeacherPassword,
     updateTeacherName,
     getAttendanceHistoryForStudentOnly,
@@ -1973,5 +2078,17 @@ module.exports= {
     manualInsertAttendance,
     sendPasswordResetOTP,
     verifyPasswordResetOTP,
-    resetPasswordWithOTP
+    resetPasswordWithOTP,
+    sendAdminPasswordResetOTP,
+    verifyAdminPasswordResetOTP,
+    resetAdminPasswordWithOTP,
+    sendStudentPasswordResetOTP,
+    verifyStudentPasswordResetOTP,
+    resetStudentPasswordWithOTP,
+    sendGuardPasswordResetOTP,
+    verifyGuardPasswordResetOTP,
+    resetGuardPasswordWithOTP,
+    addYearLevel,
+    deleteYearLevel,
+    getYearLevels
 }

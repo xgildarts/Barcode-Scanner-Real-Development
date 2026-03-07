@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', e => e.target.closest('.stat-card').style.display = 'none');
     });
+
+    // Teacher profile picture upload
+    const picInput = document.getElementById('teacherProfilePicInput');
+    if (picInput) picInput.addEventListener('change', function() { uploadTeacherProfilePicture(this); });
 });
 
 // ============================================================
@@ -82,7 +86,6 @@ async function checkToken() {
     }
 
     try {
-        // FIX: was hardcoded to localhost, now uses BASE_URL
         const res = await fetch(`${BASE_URL}/authentication/verify_token`, {
             method: 'POST',
             headers: {
@@ -135,11 +138,12 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         const res = await fetch(`${BASE_URL}${endpoint}`, options);
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.message || 'API Error');
+        if (!res.ok) throw new Error(data.message || data.error || JSON.stringify(data));
         return data;
     } catch (err) {
-        console.error(err);
-        Swal.fire({ icon: 'error', title: 'Oops...', text: err.message || 'Something went wrong!' });
+        const msg = err.message || 'Something went wrong!';
+        console.error(`apiCall ${endpoint}:`, msg);
+        Swal.fire({ icon: 'error', title: 'Oops...', text: msg });
         return null;
     }
 }
@@ -182,7 +186,6 @@ function navigateTo(navName) {
         if (el) el.classList.toggle('active', nav === navName);
     });
 
-    // Initialize or resize map only when navigating to location tab
     if (navName === 'location') {
         if (map) {
             setTimeout(() => map.invalidateSize(), 300);
@@ -191,7 +194,6 @@ function navigateTo(navName) {
         }
     }
 
-    // Remind teacher to set a subject when opening Attendance Now
     if (navName === 'attendanceNow') {
         checkSubjectReminder();
     }
@@ -200,7 +202,6 @@ function navigateTo(navName) {
     DOM.sidebarOverlay.classList.remove('active');
 }
 
-// Sidebar toggle
 DOM.menuBtn.addEventListener('click', () => {
     DOM.sidebar.classList.toggle('active');
     DOM.sidebarOverlay.classList.toggle('active');
@@ -234,22 +235,18 @@ function updateDashboardChart() {
     const absent  = Math.max(total - present, 0);
     const percent = total > 0 ? (present / total) * 100 : 0;
 
-    // Update stat cards
     document.getElementById('totalPresents').textContent      = present;
     document.getElementById('bottomTotalPresent').textContent = 'Presents ' + present;
     document.getElementById('totalStudentAbsent').textContent = absent;
     document.getElementById('bottomTotalAbsent').textContent  = 'Absent ' + absent;
 
-    // Draw donut chart
     const svg = document.getElementById('donutChart');
     if (!svg) return;
     const progressCircle = svg.querySelectorAll('circle')[1];
     const circumference  = 2 * Math.PI * progressCircle.r.baseVal.value;
-    // Remove CSS transition temporarily so the chart snaps to its value immediately on load
     progressCircle.style.transition    = 'none';
     progressCircle.style.strokeDasharray  = `${circumference} ${circumference}`;
     progressCircle.style.strokeDashoffset = -(circumference * (1 - percent / 100));
-    // Re-enable transition after the initial paint so future updates animate smoothly
     requestAnimationFrame(() => {
         progressCircle.style.transition = '';
     });
@@ -272,155 +269,21 @@ function buildAttendanceRow(d) {
     `;
 }
 
-// ============================================================
-// REALTIME POLLING
-// Silently fetches attendance every 5s. Only re-renders the
-// table when the record count actually changes — so search
-// filters and scroll position are never disrupted needlessly.
-// Covers: attendance now, event attendance, event history.
-// ============================================================
-let _pollInterval        = null;
-let _lastKnownCount      = -1; // regular attendance
-let _lastHistCount       = -1; // attendance history
-let _lastEventCount      = -1; // event attendance
-let _lastEventHistCount  = -1; // event attendance history
-
-function startAttendancePolling() {
-    if (_pollInterval) return;
-    _pollInterval = setInterval(pollAllSilently, 5000);
-}
-
-function stopAttendancePolling() {
-    clearInterval(_pollInterval);
-    _pollInterval = null;
-}
-
-async function pollAllSilently() {
-    await Promise.all([
-        pollAttendanceSilently(),
-        pollAttendanceHistorySilently(),
-        pollEventAttendanceSilently(),
-        pollEventAttendanceHistorySilently()
-    ]);
-}
-
-async function pollAttendanceSilently() {
-    try {
-        const res = await fetch(`${BASE_URL}/teacher/teacher_attendance_record`, {
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
-        });
-        if (!res.ok) return;
-        const data    = await res.json();
-        const records = data.content ?? [];
-        if (records.length === _lastKnownCount) return;
-
-        _lastKnownCount    = records.length;
-        state.totalPresent = records.length;
-        document.getElementById('attendanceBody').innerHTML = records
-            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`).join('');
-        if (state.totalStudentRegistered > 0) updateDashboardChart();
-        showLiveIndicator('liveIndicatorDot');
-    } catch (_) {}
-}
-
-async function pollAttendanceHistorySilently() {
-    try {
-        const res = await fetch(`${BASE_URL}/teacher/teacher_attendance_history_record`, {
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
-        });
-        if (!res.ok) return;
-        const data    = await res.json();
-        const records = data.content ?? [];
-        if (records.length === _lastHistCount) return;
-
-        _lastHistCount = records.length;
-        document.getElementById('attendanceHistoryTableBody').innerHTML = records
-            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`).join('');
-        showLiveIndicator('liveIndicatorDotHist');
-    } catch (_) {}
-}
-
-async function pollEventAttendanceSilently() {
-    try {
-        const res = await fetch(`${BASE_URL}/teacher/get_event_attendance`, {
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
-        });
-        if (!res.ok) return;
-        const data    = await res.json();
-        const records = data.content ?? [];
-        if (records.length === _lastEventCount) return;
-
-        _lastEventCount = records.length;
-        DOM.eventAttendanceBody.innerHTML = records.map(d => `
-            <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_name}</td>
-                <td>${d.student_program}</td>
-                <td>${d.student_year_level}</td>
-                <td>${formatDate(d.date)}</td>
-                <td>${formatTime(d.time)}</td>
-                <td>${d.event_name}</td>
-                <td>${d.status}</td>
-            </tr>
-        `).join('');
-        showLiveIndicator('liveIndicatorDotEvent');
-    } catch (_) {}
-}
-
-async function pollEventAttendanceHistorySilently() {
-    try {
-        const res = await fetch(`${BASE_URL}/teacher/get_event_attendance_history`, {
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
-        });
-        if (!res.ok) return;
-        const data    = await res.json();
-        const records = data.content ?? [];
-        if (records.length === _lastEventHistCount) return;
-
-        _lastEventHistCount = records.length;
-        DOM.eventAttendanceHistoryBody.innerHTML = records.map(d => `
-            <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_name}</td>
-                <td>${d.student_program}</td>
-                <td>${d.student_year_level}</td>
-                <td>${formatDate(d.date)}</td>
-                <td>${formatTime(d.time)}</td>
-                <td>${d.event_name}</td>
-                <td>${d.status}</td>
-            </tr>
-        `).join('');
-        showLiveIndicator('liveIndicatorDotEventHist');
-    } catch (_) {}
-}
-
-function showLiveIndicator(dotId) {
-    const dot = document.getElementById(dotId);
-    if (!dot) return;
-    dot.classList.remove('live-blink');
-    void dot.offsetWidth;
-    dot.classList.add('live-blink');
-}
-
-// ============================================================
-// ATTENDANCE (initial load + manual refresh)
-// ============================================================
 async function getStudentAttendanceRecords() {
     Swal.fire({ title: 'Loading attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     const data = await apiCall('/teacher/teacher_attendance_record');
     Swal.close();
     if (!data) return;
 
-    _lastKnownCount    = data.content.length;
     state.totalPresent = data.content.length;
+    _lastAttendanceCount = data.content.length;
     if (state.totalStudentRegistered > 0) updateDashboardChart();
 
     document.getElementById('attendanceBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
 
-    // Kick off silent polling after first successful load
-    startAttendancePolling();
+    startPolling();
 }
 
 async function getStudentAttendanceHistoryRecords() {
@@ -428,14 +291,13 @@ async function getStudentAttendanceHistoryRecords() {
     const data = await apiCall('/teacher/teacher_attendance_history_record');
     Swal.close();
     if (!data) return;
-    _lastHistCount = data.content.length;
+    _lastHistoryCount = data.content.length;
     document.getElementById('attendanceHistoryTableBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
 }
 
 async function refreshAttendance() {
-    _lastKnownCount = -1; // force re-render even if count didn't change
     await getStudentAttendanceRecords();
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Attendance list refreshed', showConfirmButton: false, timer: 1500, timerProgressBar: true });
 }
@@ -473,7 +335,7 @@ async function renderEventAttendanceHistoryRecord() {
     const data = await apiCall('/teacher/get_event_attendance_history', 'GET');
     Swal.close();
     if (!data) return;
-    _lastEventHistCount = data.content.length;
+    _lastEventHistoryCount = data.content.length;
     DOM.eventAttendanceHistoryBody.innerHTML = data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
@@ -561,7 +423,6 @@ function setupManualEntryFilterSearch() {
     });
 }
 
-// Event attendance filters — shared helper
 function filterTableRows(tbody, term) {
     const lower = term.toLowerCase();
     Array.from(tbody.getElementsByTagName('tr')).forEach(row => {
@@ -597,7 +458,6 @@ async function loadStudentsRegistered() {
     state.totalStudentRegistered = data.content.length;
     document.getElementById('totalStudents').textContent       = state.totalStudentRegistered;
     document.getElementById('centerTotalStudents').textContent = state.totalStudentRegistered;
-    // Draw chart now that we have both totals (attendance may have already loaded)
     updateDashboardChart();
 
     document.getElementById('studentsBody').innerHTML = data.content.map(s => {
@@ -649,32 +509,46 @@ function deleteStudent(student_id) {
 // ============================================================
 // REGISTRATION FORM
 // ============================================================
-document.getElementById('registrationForm').addEventListener('submit', async function (e) {
+
+const registrationForm = document.getElementById('registrationForm');
+if (registrationForm) registrationForm.addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const studentData = {
-        student_firstname:       document.getElementById('firstName').value,
-        student_middlename:      document.getElementById('middleName').value,
-        student_lastname:        document.getElementById('lastName').value,
-        // FIX: was id="email" which conflicts — HTML updated to id="studentEmail"
-        student_email:           document.getElementById('studentEmail').value,
-        student_id_number:       document.getElementById('idNumber').value,
-        student_program:         document.getElementById('program').value,
-        student_year_level:      document.getElementById('yearLevel').value,
-        student_guardian_number: document.getElementById('guardianContactNumber').value
-    };
-
-    if (!studentData.student_email.endsWith('@panpacificu.edu.ph')) {
+    const email = document.getElementById('studentEmail').value;
+    if (!email.endsWith('@panpacificu.edu.ph')) {
         return Swal.fire('Invalid Email', 'Please use a valid Panpacific University email (@panpacificu.edu.ph).', 'warning');
     }
 
+    const payload = {
+        student_firstname:       document.getElementById('firstName').value,
+        student_middlename:      document.getElementById('middleName').value,
+        student_lastname:        document.getElementById('lastName').value,
+        student_email:           email,
+        student_id_number:       document.getElementById('idNumber').value,
+        student_program:         document.getElementById('program').value,
+        student_year_level:      document.getElementById('yearLevel').value,
+        student_guardian_number: document.getElementById('guardianContactNumber').value,
+    };
+
     Swal.fire({ title: 'Registering student...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    const res = await apiCall('/teacher/add_student', 'POST', studentData);
-    if (res) {
-        Swal.fire('Success', res.message, 'success');
+
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/add_student`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire('Success', data.message, 'success');
         this.reset();
         closeAddStudentModal();
         loadStudentsRegistered();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.message || 'Something went wrong.' });
     }
 });
 
@@ -704,7 +578,8 @@ window.onclick = function (event) {
     if (event.target === modal) modal.style.display = 'none';
 };
 
-document.getElementById('recordForm').addEventListener('submit', async function (e) {
+const recordForm = document.getElementById('recordForm');
+if (recordForm) recordForm.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const payload = {
@@ -875,7 +750,6 @@ locationSearchInput.addEventListener('input', function () {
                         circle.setLatLng([lat, lng]);
                         map.setView([lat, lng], 18);
                     } else {
-                        // Map not initialized yet — initialize it at searched location
                         initMap(lat, lng);
                     }
 
@@ -890,7 +764,6 @@ locationSearchInput.addEventListener('input', function () {
     }, 400);
 });
 
-// Close dropdown when clicking outside
 document.addEventListener('click', function (e) {
     if (!locationSearchInput.contains(e.target) && !locationSearchResults.contains(e.target)) {
         locationSearchResults.style.display = 'none';
@@ -975,10 +848,14 @@ async function renderYearLevel() {
     if (!data) return;
 
     const optionsHtml = data.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('');
-    document.getElementById('yearFilter').innerHTML                  = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('yearFilterAttendanceHistory').innerHTML = `<option value="">All</option>` + optionsHtml;
-    document.getElementById('recordYearFilter').innerHTML            = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('manualEntryYearFilter').innerHTML       = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('yearFilter').innerHTML                              = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('yearFilterAttendanceHistory').innerHTML             = `<option value="">All</option>` + optionsHtml;
+    document.getElementById('recordYearFilter').innerHTML                        = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('manualEntryYearFilter').innerHTML                   = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('yearLevel').innerHTML                               = `<option value="">Select Year</option>` + optionsHtml;
+    document.getElementById('year_level').innerHTML                              = `<option value="">Select Year</option>` + optionsHtml;
+    document.getElementById('eventAttendanceYearLevelFilter').innerHTML          = `<option value="">Year Level All</option>` + optionsHtml;
+    document.getElementById('eventAttendanceHistoryYearLevelFilter').innerHTML   = `<option value="">Year Level All</option>` + optionsHtml;
 }
 
 async function renderPrograms() {
@@ -1006,7 +883,6 @@ async function loadManualEntryStudents() {
         const id  = student.student_id;
         const mid = student.student_middlename ?? '';
         const fullName = `${student.student_firstname} ${mid} ${student.student_lastname}`.trim();
-        // Escape values for safe inline onclick usage
         const esc = v => (v ?? '').toString().replace(/'/g, "\\'");
         return `
             <div class="student-row">
@@ -1065,11 +941,9 @@ async function addToAttendance(student_id, student_id_number, student_firstname,
 
     Swal.fire({ icon: 'success', title: 'Recorded!', text: res.message, timer: 2000, showConfirmButton: false });
 
-    // Reload attendance
     refreshAttendance();
     refreshAttendanceHistory();
 
-    // Disable the button so the same student can't be added twice in the same session
     if (btn) {
         btn.textContent      = '✓ Present';
         btn.disabled         = true;
@@ -1078,9 +952,93 @@ async function addToAttendance(student_id, student_id_number, student_firstname,
     }
 }
 
-// FIX: removed call to undefined renderManualStudents()
 function markManualStatus(name, status) {
     state.attendanceStatus[name] = status;
+}
+
+// ============================================================
+// LIVE POLLING
+// ============================================================
+let _pollInterval = null;
+let _lastAttendanceCount = -1;
+let _lastHistoryCount = -1;
+let _lastEventCount = -1;
+let _lastEventHistoryCount = -1;
+
+function flashLiveDot(dotId) {
+    const dot = document.getElementById(dotId);
+    if (!dot) return;
+    dot.classList.add('live-blink');
+    setTimeout(() => dot.classList.remove('live-blink'), 1200);
+}
+
+async function pollTeacherSilently() {
+    try {
+        const r = await fetch(`${BASE_URL}/teacher/teacher_attendance_record`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const d = await r.json();
+        if (d.ok && d.content.length !== _lastAttendanceCount) {
+            _lastAttendanceCount = d.content.length;
+            state.totalPresent = d.content.length;
+            updateDashboardChart();
+            document.getElementById('attendanceBody').innerHTML = d.content.map(x => `<tr>${buildAttendanceRow(x)}</tr>`).join('');
+            flashLiveDot('liveDotAttendance');
+        }
+    } catch (e) {}
+
+    try {
+        const r = await fetch(`${BASE_URL}/teacher/teacher_attendance_history_record`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const d = await r.json();
+        if (d.ok && d.content.length !== _lastHistoryCount) {
+            _lastHistoryCount = d.content.length;
+            document.getElementById('attendanceHistoryTableBody').innerHTML = d.content.map(x => `<tr>${buildAttendanceRow(x)}</tr>`).join('');
+            flashLiveDot('liveDotHistory');
+        }
+    } catch (e) {}
+
+    try {
+        const r = await fetch(`${BASE_URL}/teacher/get_event_attendance`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const d = await r.json();
+        if (d.ok && d.content.length !== _lastEventCount) {
+            _lastEventCount = d.content.length;
+            DOM.eventAttendanceBody.innerHTML = d.content.map(x => `
+                <tr>
+                    <td>${x.student_id_number}</td>
+                    <td>${x.student_name}</td>
+                    <td>${x.student_program}</td>
+                    <td>${x.student_year_level}</td>
+                    <td>${formatDate(x.date)}</td>
+                    <td>${formatTime(x.time)}</td>
+                    <td>${x.event_name}</td>
+                    <td>${x.status}</td>
+                </tr>`).join('');
+            flashLiveDot('liveDotEvent');
+        }
+    } catch (e) {}
+
+    try {
+        const r = await fetch(`${BASE_URL}/teacher/get_event_attendance_history`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const d = await r.json();
+        if (d.ok && d.content.length !== _lastEventHistoryCount) {
+            _lastEventHistoryCount = d.content.length;
+            DOM.eventAttendanceHistoryBody.innerHTML = d.content.map(x => `
+                <tr>
+                    <td>${x.student_id_number}</td>
+                    <td>${x.student_name}</td>
+                    <td>${x.student_program}</td>
+                    <td>${x.student_year_level}</td>
+                    <td>${formatDate(x.date)}</td>
+                    <td>${formatTime(x.time)}</td>
+                    <td>${x.event_name}</td>
+                    <td>${x.status}</td>
+                </tr>`).join('');
+            flashLiveDot('liveDotEventHistory');
+        }
+    } catch (e) {}
+}
+
+function startPolling() {
+    if (_pollInterval) return;
+    _pollInterval = setInterval(pollTeacherSilently, 5000);
 }
 
 // ============================================================
@@ -1094,6 +1052,67 @@ async function getTeacherDataToServer() {
     document.querySelector('.profile-name').textContent           = teacher.teacher_name;
     document.querySelector('.profile-email').textContent          = teacher.teacher_email;
     document.getElementById('accountInformationName').textContent = teacher.teacher_name;
+
+    // Load profile picture if set
+    const avatar = document.getElementById('teacherAvatar');
+    const sidebarAvatar = document.getElementById('sidebarAvatar');
+    if (teacher.teacher_profile_picture) {
+        const imgHtml = `<img src="${BASE_URL}/uploads/profile_pictures/${teacher.teacher_profile_picture}" 
+                             alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        if (avatar) avatar.innerHTML = imgHtml;
+        if (sidebarAvatar) sidebarAvatar.innerHTML = imgHtml;
+    }
+}
+
+async function uploadTeacherProfilePicture(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Compress image using canvas before uploading
+    const compressedBlob = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX = 800;
+                let w = img.width, h = img.height;
+                if (w > h && w > MAX) { h = h * MAX / w; w = MAX; }
+                else if (h > MAX) { w = w * MAX / h; h = MAX; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
+            };
+            img.src = e.target.result;
+
+            // Preview immediately
+            const previewImg = `<img src="${e.target.result}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+            document.getElementById('teacherAvatar').innerHTML = previewImg;
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+            if (sidebarAvatar) sidebarAvatar.innerHTML = previewImg;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    const formData = new FormData();
+    formData.append('teacher_profile_picture', compressedBlob, 'profile.jpg');
+
+    Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/upload_profile_picture`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + TOKEN },
+            body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Profile picture updated!', showConfirmButton: false, timer: 2000, timerProgressBar: true });
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Upload Failed', text: err.message || 'Something went wrong.' });
+    }
+
+    input.value = '';
 }
 
 // Show a once-per-day reminder to set a subject before taking attendance
@@ -1101,7 +1120,6 @@ async function checkSubjectReminder() {
     const today     = new Date().toISOString().split('T')[0];
     const lastShown = localStorage.getItem('subject_reminder_last_shown');
 
-    // Already reminded today — skip
     if (lastShown === today) return;
 
     const data = await apiCall('/teacher/get_teacher_data', 'GET');
@@ -1180,9 +1198,48 @@ function exportTableToExcel(tableId, fileName) {
     if (!table) return Swal.fire({ icon: 'info', title: 'Export Failed', text: 'No table data found to export.' });
 
     try {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, XLSX.utils.table_to_sheet(table), 'Sheet1');
-        XLSX.writeFile(workbook, `${fileName}.xlsx`);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.table_to_sheet(table);
+
+        // Column widths
+        const colCount = table.rows[0]?.cells.length || 10;
+        ws['!cols'] = Array(colCount).fill({ wch: 22 });
+
+        // Style every cell
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[cellAddr]) ws[cellAddr] = { v: '', t: 's' };
+
+                const isHeader = R === 0;
+                ws[cellAddr].s = {
+                    font: {
+                        name: 'Arial',
+                        sz: isHeader ? 11 : 10,
+                        bold: isHeader,
+                        color: { rgb: isHeader ? 'FFFFFF' : '333333' }
+                    },
+                    fill: {
+                        fgColor: { rgb: isHeader ? '3D6B6B' : (R % 2 === 0 ? 'EEF5F3' : 'FFFFFF') }
+                    },
+                    alignment: {
+                        horizontal: 'center',
+                        vertical: 'center',
+                        wrapText: true
+                    },
+                    border: {
+                        top:    { style: 'thin', color: { rgb: 'C8DDD9' } },
+                        bottom: { style: 'thin', color: { rgb: 'C8DDD9' } },
+                        left:   { style: 'thin', color: { rgb: 'C8DDD9' } },
+                        right:  { style: 'thin', color: { rgb: 'C8DDD9' } }
+                    }
+                };
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
         Swal.fire({ icon: 'success', title: 'Exported!', text: 'Your Excel file has been downloaded.', timer: 1500, showConfirmButton: false });
     } catch (e) {
         Swal.fire('Error', 'Failed to generate Excel file', 'error');
