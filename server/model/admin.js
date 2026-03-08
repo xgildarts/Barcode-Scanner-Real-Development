@@ -1,8 +1,24 @@
 const express = require('express')
 const services = require('../controller/services')
+const multer  = require('multer')
+const path    = require('path')
 const admin = express.Router()
 
 admin.use(express.json())
+
+// Multer — Admin Profile Picture
+const adminPicStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
+    filename:    (req, file, cb) => cb(null, 'admin-' + Date.now() + '-' + Math.round(Math.random() * 1e6) + path.extname(file.originalname))
+})
+const uploadAdminPic = multer({
+    storage: adminPicStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = /jpeg|jpg|png|webp/;
+        cb(null, allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype));
+    }
+})
 
 // Debugging API
 admin.get('/', (req, res) => {
@@ -424,6 +440,19 @@ admin.post('/forgot_password/reset_password', async (req, res) => {
         res.status(400).json({ ok: false, message: err.message || err });
     }
 });
+
+// Upload Admin Profile Picture
+admin.post('/upload_profile_picture', uploadAdminPic.single('admin_profile_picture'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded.' })
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const filename = await services.updateAdminProfilePicture(decodedToken.admin_id, req.file.filename)
+        res.json({ ok: true, message: 'Profile picture updated!', filename })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
 
 // Export route
 module.exports = admin

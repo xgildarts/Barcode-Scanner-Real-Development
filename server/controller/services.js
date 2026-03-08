@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.TOKEN_KEYWORD;
 // ============================================================
 // DAILY ATTENDANCE CLEANUP — runs at midnight Manila time
 // ============================================================
-cron.schedule('0 0 * * *', () => {
+cron.schedule('* * * * *', () => {
     // Clear regular attendance records older than today
     db.execute(
         `DELETE FROM attendance_record WHERE attendance_date < CURDATE()`,
@@ -1472,7 +1472,7 @@ async function adminLogin(email, password) {
 // Get Admin data
 function getAdminData(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT admin_id, admin_name, admin_email FROM admin_accounts;', [], (err, result) => {
+        db.execute('SELECT admin_id, admin_name, admin_email, admin_profile_picture FROM admin_accounts;', [], (err, result) => {
             if(err) { return reject(err) }
             resolve(result)
         })
@@ -2006,6 +2006,19 @@ function deleteYearLevel(yearLevelId) {
 }
 
 // Export functions
+function updateAdminProfilePicture(adminID, filename) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE admin_accounts SET admin_profile_picture = ? WHERE admin_id = ?',
+            [filename, adminID],
+            (err) => {
+                if (err) return reject(err)
+                resolve(filename)
+            }
+        )
+    })
+}
+
 module.exports= {
     sendSMS,
     adminEditGuardAccounts,
@@ -2090,5 +2103,6 @@ module.exports= {
     resetGuardPasswordWithOTP,
     addYearLevel,
     deleteYearLevel,
-    getYearLevels
+    getYearLevels,
+    updateAdminProfilePicture
 }

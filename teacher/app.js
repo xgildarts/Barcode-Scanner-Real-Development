@@ -1199,21 +1199,31 @@ function exportTableToExcel(tableId, fileName) {
 
     try {
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.table_to_sheet(table);
 
-        // Column widths
-        const colCount = table.rows[0]?.cells.length || 10;
-        ws['!cols'] = Array(colCount).fill({ wch: 22 });
+        // Build sheet manually from rows so we control cell types
+        const rows = [];
+        for (let r = 0; r < table.rows.length; r++) {
+            const row = [];
+            const cells = table.rows[r].cells;
+            for (let c = 0; c < cells.length; c++) {
+                row.push(cells[c].innerText.trim());
+            }
+            rows.push(row);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(rows);
 
-        // Style every cell
+        // Force every cell to string type so time/date values never become #NUM!
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let R = range.s.r; R <= range.e.r; R++) {
             for (let C = range.s.c; C <= range.e.c; C++) {
-                const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
-                if (!ws[cellAddr]) ws[cellAddr] = { v: '', t: 's' };
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+                ws[addr].t = 's';
+                ws[addr].v = String(ws[addr].v ?? '');
 
+                // Apply styles
                 const isHeader = R === 0;
-                ws[cellAddr].s = {
+                ws[addr].s = {
                     font: {
                         name: 'Arial',
                         sz: isHeader ? 11 : 10,
@@ -1238,6 +1248,10 @@ function exportTableToExcel(tableId, fileName) {
             }
         }
 
+        // Column widths
+        const colCount = rows[0]?.length || 10;
+        ws['!cols'] = Array(colCount).fill({ wch: 22 });
+
         XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
         XLSX.writeFile(wb, `${fileName}.xlsx`);
         Swal.fire({ icon: 'success', title: 'Exported!', text: 'Your Excel file has been downloaded.', timer: 1500, showConfirmButton: false });
@@ -1245,6 +1259,7 @@ function exportTableToExcel(tableId, fileName) {
         Swal.fire('Error', 'Failed to generate Excel file', 'error');
     }
 }
+
 
 function saveChanges() {
     Swal.fire({ position: 'center', icon: 'success', title: 'Changes saved successfully', showConfirmButton: false, timer: 1500 });

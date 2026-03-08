@@ -22,7 +22,7 @@
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-profile">
+            <div class="sidebar-profile" id="sidebarAvatar">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
@@ -364,17 +364,18 @@
         <section class="sections" id="adminSettings">
             <div class="profile-section">
                 <div class="avatar-container">
-                    <div class="avatar">
+                    <div class="avatar" id="adminAvatar">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                         </svg>
                     </div>
-                    <div class="camera-badge">
+                    <div class="camera-badge" onclick="document.getElementById('adminProfilePicInput').click()">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
                         </svg>
                     </div>
+                    <input type="file" id="adminProfilePicInput" accept="image/*" style="display:none">
                 </div>
                 <div class="profile-name">Mr. Henry</div>
                 <div class="profile-email" id="profileEmailTop"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae2efe4f8f3caede7ebe3e6a4e9e5e7">[email&#160;protected]</a></div>
@@ -892,7 +893,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="app.js"></script>
