@@ -16,7 +16,7 @@
         <button class="settings-btn" onclick="tab('settings')">⚙</button>
     </div>
 
-    <!--Barcode-->
+    <!--Barcode / QR Code-->
     <section id="generateBarcode" class="sections">
         <div class="profile-section">
             <div class="avatar-container">
@@ -41,18 +41,37 @@
         </div>
     
         <div class="barcode-card">
-            <h2 class="barcode-title">Generate Barcode</h2>
-            
+            <h2 class="barcode-title">Generate Code</h2>
+
+            <!-- Type Selector -->
+            <div class="code-type-selector">
+                <button class="code-type-btn active" id="btnBarcode" onclick="setCodeType('barcode')">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                        <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
+                    </svg>
+                    Barcode
+                </button>
+                <button class="code-type-btn" id="btnQr" onclick="setCodeType('qr')">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                        <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm13 3h2v2h-2v-2zm0-5h2v2h-2v-2zm-4 0h2v2h-2v-2zm0 5h2v2h-2v-2zm4-3h-2v-2h2v2z"/>
+                    </svg>
+                    QR Code
+                </button>
+            </div>
+
             <div class="barcode-container">
+                <!-- Barcode SVG -->
                 <svg class="barcode" id="barcodeImage" viewBox="0 0 280 100" preserveAspectRatio="xMidYMid meet">
                     <!-- Barcode will be generated here -->
                 </svg>
+                <!-- QR Code div (hidden by default) -->
+                <div id="qrCanvas" style="display:none; border-radius:8px;"></div>
                 <div class="barcode-text">
-                    This unique barcode is valid for<br>today only.
+                    This unique code is valid for<br>today only.
                 </div>
             </div>
     
-            <button class="generate-btn" onclick="checkBarcodeExpiration()">Generate today's barcode</button>
+            <button class="generate-btn" onclick="checkBarcodeExpiration()">Generate today's code</button>
         </div>
     </section>
 
@@ -216,6 +235,47 @@
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        .code-type-selector {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .code-type-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 20px;
+            border: 2px solid #d0d0d0;
+            border-radius: 10px;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .code-type-btn:hover {
+            border-color: #5a8a7a;
+            color: #3d6b6b;
+        }
+        .code-type-btn.active {
+            border-color: #3d6b6b;
+            background: #3d6b6b;
+            color: white;
+        }
+        .code-type-btn.active svg {
+            fill: white;
+        }
+        #qrCanvas {
+            max-width: 220px;
+            max-height: 220px;
+            width: 220px;
+            height: 220px;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
 </body>

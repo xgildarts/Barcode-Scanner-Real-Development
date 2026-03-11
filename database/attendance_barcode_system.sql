@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 08, 2026 at 10:20 AM
+-- Generation Time: Mar 11, 2026 at 02:14 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -105,7 +105,8 @@ INSERT INTO `attendance_history_record` (`attendance_id`, `student_id_number`, `
 (32, '1231377', 'A', 'Dragneel', 'Natsu', 'BS in Computer Science', '23:00:07', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 12, 'TSN17698767256291441'),
 (33, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '23:00:11', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 16, 'TSN17698767256291441'),
 (34, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '23:00:14', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 17, 'TSN17698767256291441'),
-(35, '1231376', 'A', 'Castillo', 'Gabriel', 'BS in Information Technology', '23:00:16', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 19, 'TSN17698767256291441');
+(35, '1231376', 'A', 'Castillo', 'Gabriel', 'BS in Information Technology', '23:00:16', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 19, 'TSN17698767256291441'),
+(36, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '09:45:14', '2026-03-10', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441');
 
 -- --------------------------------------------------------
 
@@ -172,7 +173,11 @@ INSERT INTO `event_attendance_history_record` (`event_id`, `student_id`, `studen
 (13, 23, 'Lucy A. Heartfilla', '1231333', 'BS in Information Technology', '3rd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '12:31:25', '2026-03-07', 'TIME IN', 5, 1),
 (14, 23, 'Lucy A. Heartfilla', '1231333', 'BS in Information Technology', '3rd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '12:32:01', '2026-03-07', 'TIME OUT', 5, 1),
 (15, 23, 'Lucy A. Heartfilla', '1231333', 'BS in Information Technology', '3rd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '12:39:30', '2026-03-07', 'TIME IN', 5, 1),
-(16, 23, 'Lucy A. Heartfilla', '1231333', 'BS in Information Technology', '3rd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '12:39:44', '2026-03-07', 'TIME OUT', 5, 1);
+(16, 23, 'Lucy A. Heartfilla', '1231333', 'BS in Information Technology', '3rd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '12:39:44', '2026-03-07', 'TIME OUT', 5, 1),
+(17, 26, 'Luna M.. Toka', '123123', 'BS in Criminology', '2nd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '11:20:47', '2026-03-09', 'TIME IN', 5, 1),
+(18, 27, 'David C. Tan', '567', 'RPSEA', '2nd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '11:20:53', '2026-03-09', 'TIME IN', 5, 1),
+(19, 26, 'Luna M.. Toka', '123123', 'BS in Criminology', '2nd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '11:21:06', '2026-03-09', 'TIME OUT', 5, 1),
+(20, 27, 'David C. Tan', '567', 'RPSEA', '2nd Year', 'Foundation day', 'Gray Fullbuster', 'Main Gate', '11:21:09', '2026-03-09', 'TIME OUT', 5, 1);
 
 -- --------------------------------------------------------
 
@@ -264,7 +269,9 @@ INSERT INTO `program` (`program_id`, `program_name`, `program_date_created`, `te
 (6, 'BS Education', '2026-02-02 18:40:44', 7),
 (13, 'BS in Criminology', '2026-02-08 20:59:23', 0),
 (19, 'BS in Computer Engineering', '2026-02-19 00:33:54', 0),
-(24, 'RPSEA', '2026-03-07 12:16:59', 0);
+(24, 'RPSEA', '2026-03-07 12:16:59', 0),
+(25, 'Grade 12', '2026-03-10 22:01:04', 0),
+(26, 'GAS', '2026-03-10 22:01:39', 0);
 
 -- --------------------------------------------------------
 
@@ -295,12 +302,14 @@ CREATE TABLE `student_accounts` (
 --
 
 INSERT INTO `student_accounts` (`student_id`, `student_id_number`, `student_firstname`, `student_middlename`, `student_lastname`, `student_email`, `password`, `student_year_level`, `student_guardian_number`, `student_program`, `location_generated`, `barcode`, `barcode_date_generated`, `device_id`, `admin_id`) VALUES
-(17, '1234567', 'Andrea', 'A', 'Lachica', 'andrea@gmail.com', '$2b$10$vak/1WF451HjD7St6kgNbum3321Jz.ZCfOdFUbt2ZvmqgqtZDUfYS', '3rd Year', '+639192921611', 'BS in Information Technology', '', 'BC17708941329739487', '2026-02-12 19:02:12', 'DEV17708941329736948', 1),
+(17, '123', 'Andrea', 'A.', 'Lachica', 'andrea@gmail.com', '$2b$10$CeL2DVwcFAZx0u4vXXu2/OC5QZPtxRKacHl0IUFuz.GmLLd9NHJTq', '4rd Year', '+639192921611', 'BS in Information Technology', '', 'BC17708941329739487', '2026-02-12 19:02:12', 'DEV17708941329736948', 1),
 (18, '1233345', 'Agrifina', 'A', 'Agaran', 'agrifina@panpacificu.edu.ph', '$2b$10$OuBrVjLjQIjpZ6DNU.rpROthB9qekSgTqujfjA0B/gsMIrH9WFaJG', '3rd Year', '+639481239328', 'BS Education', '', 'BC17708947181891836', '2026-02-12 19:11:58', 'DEV17708947181898475', 1),
 (19, '1231422', 'Charimea', 'M', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '$2b$10$.VzGuTyj7ZlUsdb/Vd5cUeDKBMqawDkcEZEUlKF9jug/E28aFC9/W', '3rd Year', '+639563543429', 'BS in Information Technology', '', 'BC17708952022486423', '2026-02-12 19:20:02', 'DEV17708952022489448', 1),
 (22, '1231377', 'Natsu', 'S', 'Dragneel', 'natsu@panpacificu.edu.ph', '$2b$10$RN//Sz5amZ.Mc7.7PMnJIe2kuH5sPBzxe1lMCeF8Om1gO11KqAmxW', '3rd Year', '+639481239328', 'BS in Information Technology', '', 'BC17728133125295864', '2026-03-07 00:08:32', 'DEV17717813336788766', 0),
-(23, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '$2b$10$617POruNNIa1m8LeMYdKS.9IjOgJqbMX.N1.wInPcKK6hYj26weHy', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17729615959698142', '2026-03-08 17:19:56', 'DEV17724373352405790', 0),
-(25, '14567', 'Dywnna', 'A.', 'Chua', 'dwynna@gmail.com', '$2b$10$haEoY2zIw3gGj0k4wHFHKOIoXTJu2soBKV1/T1tICPwSy5CPd9Ceu', '2nd Year', '+639195364085', 'RPSEA', '', 'BC17728938112284412', '2026-03-07 22:30:11', 'DEV17728938112288581', 0);
+(23, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '$2b$10$617POruNNIa1m8LeMYdKS.9IjOgJqbMX.N1.wInPcKK6hYj26weHy', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17731069196469359', '2026-03-10 09:42:01', 'DEV17724373352405790', 0),
+(25, '14567', 'Dywnna', 'A', 'Chua', 'dwynna@gmail.com', '$2b$10$haEoY2zIw3gGj0k4wHFHKOIoXTJu2soBKV1/T1tICPwSy5CPd9Ceu', '2nd Year', '+639195364085', 'RPSEA', '', 'BC17728938112284412', '2026-03-07 22:30:11', 'DEV17728938112288581', 0),
+(26, '123123', 'Luna', 'M.', 'Toka', 'lunatoka@gmail.com', '$2b$10$5s.sqyEQozw1ukpJCFToSuFsmPmhTvxjspj9koWCt/tmP8ORg7wFC', '2nd Year', '+639455415405', 'BS in Criminology', '', 'BC17730263477958911', '2026-03-09 11:19:07', 'DEV17730263477952164', 0),
+(28, '456', 'Andria', 'A', 'Ramirez', 'andria@gmail.com', '$2b$10$sO26fMQvVakQtiCy4Zoal.Yn09ulCejCe61giWID5iWnna/nuCs0K', '1st Year', '+639615842358', 'BS Education', '', 'BC17731513173571253', '2026-03-10 22:01:57', 'DEV17731513173573442', 0);
 
 -- --------------------------------------------------------
 
@@ -416,7 +425,7 @@ CREATE TABLE `teacher` (
 --
 
 INSERT INTO `teacher` (`teacher_id`, `teacher_name`, `teacher_profile_picture`, `teacher_email`, `teacher_password`, `teacher_program`, `teacher_current_subject`, `teacher_location`, `teacher_location_radius`, `created_at`, `teacher_barcode_scanner_serial_number`, `admin_id`) VALUES
-(7, 'Steven John A. Agustin', 'teacher-1772895240397-136228.jpg', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$j5nYLjVE7BGPwRwM3ELoJez2glRdd8LbnvHq8VDj9qxUMBHDpARCq', 'BS in Information Technology', NULL, '{\"latitude\":16.0179114,\"longitude\":120.749805}', 100, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
+(7, 'Steven John A. Agustin', 'teacher-1772895240397-136228.jpg', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$j5nYLjVE7BGPwRwM3ELoJez2glRdd8LbnvHq8VDj9qxUMBHDpARCq', 'BS in Information Technology', NULL, '{\"latitude\":16.0179111,\"longitude\":120.7498059}', 100, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
 (11, 'Bill Gates', NULL, 'bill@panpacificu.edu.ph', '$2b$10$3mjbRSABRIncKUWJOdc/XeWc7vMhQJbV77ORpCNHh//Wt3MsHePGu', 'BS in Information Technology', NULL, NULL, 50, '2026-02-17 13:31:58', 'TSN17713351187271590', 1),
 (14, 'Elon Musk', NULL, 'elon@panpacificu.edu.ph', '$2b$10$cp3VaryKqBN8RbJNyHHXv.pRp4aciN2qx8J/HMYMcaxCsSMIC74ju', 'BS in Information Technology', NULL, NULL, 50, '2026-02-24 08:13:22', 'TSN17719208025622022', 1),
 (15, 'Mark Zuckerberg', NULL, 'markzuckerberg@panpacificu.edu.ph', '$2b$10$EiyfjHfWwzvzt9KKgS9GfuNbQ4/Z290hQ7fj8m/As.BMSXXLSJsAC', 'BS in Information Technology', NULL, NULL, 50, '2026-02-24 09:09:06', 'TSN17719241460167887', 1);
@@ -548,25 +557,25 @@ ALTER TABLE `admin_accounts`
 -- AUTO_INCREMENT for table `attendance_history_record`
 --
 ALTER TABLE `attendance_history_record`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `attendance_record`
 --
 ALTER TABLE `attendance_record`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `event_attendance_history_record`
 --
 ALTER TABLE `event_attendance_history_record`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `event_attendance_record`
 --
 ALTER TABLE `event_attendance_record`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `event_setter`
@@ -584,13 +593,13 @@ ALTER TABLE `guards`
 -- AUTO_INCREMENT for table `program`
 --
 ALTER TABLE `program`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `student_accounts`
 --
 ALTER TABLE `student_accounts`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `student_records_regular_class`

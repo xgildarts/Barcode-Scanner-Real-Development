@@ -6,6 +6,23 @@
     <title>Guard Login - PanPacific University</title>
     <link rel="stylesheet" href="/css/guard-css/guard_login.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+    .pw-eye{position:absolute;right:10px;background:none;border:none;cursor:pointer;padding:4px;opacity:0.45;display:flex;align-items:center;transition:opacity 0.2s}
+    .pw-eye:hover,.pw-eye.visible{opacity:0.85}
+    .pw-eye svg{width:20px;height:20px;fill:#1a4545}
+    </style>
+    <script>
+    var EYE_OPEN  = 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z';
+    var EYE_CLOSE = 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z';
+    function togglePw(inputId, btn) {
+        var input = document.getElementById(inputId);
+        var show  = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.classList.toggle('visible', show);
+        var path = btn.querySelector('svg path');
+        path.setAttribute('d', show ? EYE_CLOSE : EYE_OPEN);
+    }
+    </script>
 </head>
 <body>
 
@@ -35,7 +52,10 @@
                     <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                     </svg>
-                    <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                    <input type="password" id="password" class="form-input" style="padding-right:42px" placeholder="Enter your password" required>
+                    <button type="button" class="pw-eye" onclick="togglePw('password',this)">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
                 </div>
             </div>
 
@@ -61,104 +81,7 @@
                 document.getElementById('email').value = savedEmail;
                 document.getElementById('rememberMe').checked = true;
             }
-
-            document.querySelector('.forgot-password').addEventListener('click', async (e) => {
-                e.preventDefault();
-                forgotPassword();
-            });
         });
-
-        async function forgotPassword() {
-            // Step 1 — Enter email
-            const { value: email } = await Swal.fire({
-                title: 'Forgot Password',
-                input: 'email',
-                inputLabel: 'Enter your registered email',
-                inputPlaceholder: 'Enter your email',
-                confirmButtonText: 'Send OTP',
-                confirmButtonColor: '#2c5f5f',
-                showCancelButton: true,
-                inputValidator: v => !v ? 'Email is required.' : undefined
-            });
-            if (!email) return;
-
-            Swal.fire({ title: 'Sending OTP...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            try {
-                const r1 = await fetch(`${URL_BASED}/guard/forgot_password/request_otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                const d1 = await r1.json();
-                if (!d1.ok) return Swal.fire({ icon: 'error', title: 'Error', text: d1.message });
-            } catch {
-                return Swal.fire({ icon: 'error', title: 'Network Error', text: 'Please try again later.' });
-            }
-
-            // Step 2 — Enter OTP
-            const { value: otp } = await Swal.fire({
-                title: 'Enter OTP',
-                html: `<p style="margin-bottom:12px;font-size:13px;color:#666">A 6-digit code was sent to <strong>${email}</strong>. Valid for 5 minutes.</p>
-                       <input id="swal-otp" class="swal2-input" maxlength="6" placeholder="000000"
-                        style="font-size:28px;letter-spacing:10px;text-align:center;width:200px">`,
-                confirmButtonText: 'Verify',
-                confirmButtonColor: '#2c5f5f',
-                showCancelButton: true,
-                focusConfirm: false,
-                preConfirm: () => {
-                    const v = document.getElementById('swal-otp').value.trim();
-                    if (!v || v.length !== 6) { Swal.showValidationMessage('Enter the 6-digit OTP.'); return false; }
-                    return v;
-                }
-            });
-            if (!otp) return;
-
-            Swal.fire({ title: 'Verifying...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            try {
-                const r2 = await fetch(`${URL_BASED}/guard/forgot_password/verify_otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, otp })
-                });
-                const d2 = await r2.json();
-                if (!d2.ok) return Swal.fire({ icon: 'error', title: 'Invalid OTP', text: d2.message });
-            } catch {
-                return Swal.fire({ icon: 'error', title: 'Network Error', text: 'Please try again later.' });
-            }
-
-            // Step 3 — New password
-            const { value: passwords } = await Swal.fire({
-                title: 'Reset Password',
-                html: `<input id="swal-new-pass" type="password" class="swal2-input" placeholder="New password (min 6 chars)">
-                       <input id="swal-confirm-pass" type="password" class="swal2-input" placeholder="Confirm new password">`,
-                confirmButtonText: 'Reset Password',
-                confirmButtonColor: '#2c5f5f',
-                showCancelButton: true,
-                focusConfirm: false,
-                preConfirm: () => {
-                    const np = document.getElementById('swal-new-pass').value;
-                    const cp = document.getElementById('swal-confirm-pass').value;
-                    if (np.length < 6) { Swal.showValidationMessage('Password must be at least 6 characters.'); return false; }
-                    if (np !== cp) { Swal.showValidationMessage('Passwords do not match.'); return false; }
-                    return { new_password: np, confirm_password: cp };
-                }
-            });
-            if (!passwords) return;
-
-            Swal.fire({ title: 'Resetting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            try {
-                const r3 = await fetch(`${URL_BASED}/guard/forgot_password/reset_password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, ...passwords })
-                });
-                const d3 = await r3.json();
-                if (!d3.ok) return Swal.fire({ icon: 'error', title: 'Error', text: d3.message });
-                Swal.fire({ icon: 'success', title: 'Password Reset!', text: 'You can now log in with your new password.', confirmButtonColor: '#2c5f5f' });
-            } catch {
-                Swal.fire({ icon: 'error', title: 'Network Error', text: 'Please try again later.' });
-            }
-        }
 
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();

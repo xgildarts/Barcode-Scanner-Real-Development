@@ -202,17 +202,54 @@ async function verifyLocation() {
 }
 
 // ============================================================
-// BARCODE
+// BARCODE / QR CODE
 // ============================================================
-function renderBarcode(value) {
-    JsBarcode('#barcodeImage', value, {
-        format: 'CODE128',
-        width: 15,
-        height: 1000,
-        displayValue: true,
-        fontSize: 200,
-        margin: 60
-    });
+let _codeType = 'barcode'; // 'barcode' | 'qr'
+let _qrInstance = null;
+
+function setCodeType(type) {
+    _codeType = type;
+    document.getElementById('btnBarcode').classList.toggle('active', type === 'barcode');
+    document.getElementById('btnQr').classList.toggle('active', type === 'qr');
+
+    const svg    = document.getElementById('barcodeImage');
+    const canvas = document.getElementById('qrCanvas');
+    const currentValue = svg.getAttribute('data-value') || canvas.getAttribute('data-value');
+    if (currentValue) renderCode(currentValue);
+}
+
+function renderCode(value) {
+    const svg    = document.getElementById('barcodeImage');
+    const qrDiv  = document.getElementById('qrCanvas');
+
+    svg.setAttribute('data-value', value);
+    qrDiv.setAttribute('data-value', value);
+
+    if (_codeType === 'barcode') {
+        svg.style.display   = '';
+        qrDiv.style.display = 'none';
+        JsBarcode('#barcodeImage', value, {
+            format: 'CODE128',
+            width: 15,
+            height: 1000,
+            displayValue: true,
+            fontSize: 200,
+            margin: 60
+        });
+    } else {
+        svg.style.display   = 'none';
+        qrDiv.style.display = '';
+        // qrcodejs: clear previous then render new
+        qrDiv.innerHTML = '';
+        _qrInstance = new QRCode(qrDiv, {
+            text: value,
+            width: 130,
+            height: 130,
+            colorDark: '#1a4545',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
 }
 
 function generateRandomBarcode() {
@@ -244,18 +281,16 @@ async function updateStudentBarcode(barcode) {
 // On page load — show existing barcode or notify if expired
 async function initialCheckBarcodeExpiration() {
     try {
-        // Only show existing barcode on load — no location check needed here
-        // Location is only enforced when generating a new one
         Swal.fire({ title: 'Checking barcode...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const content = await fetchBarcodeData();
         Swal.close();
         if (!content) return;
 
         if (isBarcodeExpired(content.barcode_date_generated)) {
-            Swal.fire({ icon: 'info', title: 'Barcode Expired', text: 'Your barcode has expired. Press "Generate today\'s barcode" to get a new one.' });
+            Swal.fire({ icon: 'info', title: 'Code Expired', text: 'Your code has expired. Press "Generate today\'s code" to get a new one.' });
         } else {
-            renderBarcode(content.barcode);
-            Swal.fire({ icon: 'success', title: 'Barcode Valid', text: 'Your barcode is still valid for today.' });
+            renderCode(content.barcode);
+            Swal.fire({ icon: 'success', title: 'Code Valid', text: 'Your code is still valid for today.' });
         }
     } catch (err) {
         Swal.close();
@@ -266,26 +301,22 @@ async function initialCheckBarcodeExpiration() {
 // Manual trigger — location check → generate new if expired, show existing if still valid
 async function checkBarcodeExpiration() {
     try {
-        // 1. Verify student is within teacher's allowed radius before anything else
         const withinRange = await verifyLocation();
         if (!withinRange) return;
 
-        // 2. Check if current barcode is still valid for today
-        Swal.fire({ title: 'Checking barcode...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Checking...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const content = await fetchBarcodeData();
         Swal.close();
         if (!content) return;
 
         if (isBarcodeExpired(content.barcode_date_generated)) {
-            // Expired — generate a fresh one
             const newBarcode = generateRandomBarcode();
-            renderBarcode(newBarcode);
+            renderCode(newBarcode);
             await updateStudentBarcode(newBarcode);
-            Swal.fire({ icon: 'success', title: 'New Barcode Generated', text: 'Your barcode is valid for today only.' });
+            Swal.fire({ icon: 'success', title: 'New Code Generated', text: 'Your code is valid for today only.' });
         } else {
-            // Still valid — just display it
-            renderBarcode(content.barcode);
-            Swal.fire({ icon: 'success', title: 'Barcode Valid', text: 'Your barcode is still valid for today.' });
+            renderCode(content.barcode);
+            Swal.fire({ icon: 'success', title: 'Code Valid', text: 'Your code is still valid for today.' });
         }
     } catch (err) {
         Swal.close();
@@ -382,13 +413,7 @@ async function toggleEdit() {
         const { res, data } = await apiCall('/students/student_update_profile', 'PUT', payload);
         Swal.close();
 
-        if (data.duplicate) {
-            isEditing = true;
-            fieldIds.forEach(id => document.getElementById(id).disabled = false);
-            return Swal.fire({ icon: 'warning', title: 'ID Number Already Exists', text: data.message });
-        }
-
-        if (!res.ok) { return Swal.fire({ icon: 'error', title: 'Update Failed', text: data.message || 'Something went wrong.' }); }
+        if (!res.ok) { Swal.close(); return Swal.fire({ icon: 'error', title: 'Update Failed', text: data.message || 'Something went wrong.' }); }
 
         btn.textContent      = 'Edit Profile';
         btn.style.background = '#5fa881';

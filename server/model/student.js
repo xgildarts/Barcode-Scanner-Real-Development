@@ -171,4 +171,24 @@ student.post('/forgot_password/reset_password', async (req, res) => {
     }
 })
 
+// Get Year Levels (public — no token required, used on registration page)
+student.get('/year_levels', async (req, res) => {
+    try {
+        const result = await services.getYearLevels();
+        res.json({ ok: true, message: 'Successfully retrieved year levels!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Get Programs (public — no token required, used on registration page)
+student.get('/programs', async (req, res) => {
+    try {
+        const result = await services.getAllPrograms()
+        res.json({ ok: true, message: 'Successfully retrieved programs!', content: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
 module.exports = student
