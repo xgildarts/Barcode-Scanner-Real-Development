@@ -154,8 +154,6 @@ async function loadProfileData() {
 // ============================================================
 // LOCATION VERIFICATION
 // ============================================================
-
-// Get student's current GPS coordinates
 function getStudentCoordinates() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -169,7 +167,6 @@ function getStudentCoordinates() {
     });
 }
 
-// Returns true if within range, false otherwise — shows error if out of range
 async function verifyLocation() {
     Swal.fire({ title: 'Checking your location...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
@@ -219,8 +216,8 @@ function setCodeType(type) {
 }
 
 function renderCode(value) {
-    const svg    = document.getElementById('barcodeImage');
-    const qrDiv  = document.getElementById('qrCanvas');
+    const svg   = document.getElementById('barcodeImage');
+    const qrDiv = document.getElementById('qrCanvas');
 
     svg.setAttribute('data-value', value);
     qrDiv.setAttribute('data-value', value);
@@ -239,7 +236,6 @@ function renderCode(value) {
     } else {
         svg.style.display   = 'none';
         qrDiv.style.display = '';
-        // qrcodejs: clear previous then render new
         qrDiv.innerHTML = '';
         _qrInstance = new QRCode(qrDiv, {
             text: value,
@@ -278,7 +274,6 @@ async function updateStudentBarcode(barcode) {
     if (!res.ok) Swal.fire({ icon: 'error', title: 'Error', text: data.message });
 }
 
-// On page load — show existing barcode or notify if expired
 async function initialCheckBarcodeExpiration() {
     try {
         Swal.fire({ title: 'Checking barcode...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -298,7 +293,6 @@ async function initialCheckBarcodeExpiration() {
     }
 }
 
-// Manual trigger — location check → generate new if expired, show existing if still valid
 async function checkBarcodeExpiration() {
     try {
         const withinRange = await verifyLocation();
@@ -393,7 +387,6 @@ async function toggleEdit() {
     });
 
     if (!result.isConfirmed) {
-        // User cancelled — go back to edit mode
         isEditing = true;
         fieldIds.forEach(id => document.getElementById(id).disabled = false);
         return;

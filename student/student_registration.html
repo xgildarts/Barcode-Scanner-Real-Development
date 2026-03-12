@@ -6,6 +6,9 @@
     <title>Student Registration</title>
     <link rel="stylesheet" href="../css/student-css/student_global.css">
     <link rel="stylesheet" href="/css/student-css/student_registration.css">
+    <style>
+        .swal-on-top { z-index: 99999 !important; }
+    </style>
 </head>
 <body>
     <div class="logo-container">
@@ -116,18 +119,41 @@
                 <label class="form-label">
                     Parent/Guardian Contact Number <span class="required">*</span>
                 </label>
-                <div class="input-wrapper">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                    </svg>
+                <div class="input-wrapper" style="display:flex; align-items:stretch; padding:0; overflow:hidden;">
+                    <select id="countryCode" style="background:#e8f0f0;border:none;border-right:1.5px solid #c0d4d4;padding:0 8px;font-weight:600;color:#1a4545;font-size:0.9rem;height:100%;min-height:44px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;padding-right:24px;background-image:url('data:image/svg+xml;utf8,<svg fill=\'%231a4545\' height=\'12\' viewBox=\'0 0 24 24\' width=\'12\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>');background-repeat:no-repeat;background-position:right 4px center;">
+                        <option value="+63">🇵🇭 +63</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+81">🇯🇵 +81</option>
+                        <option value="+82">🇰🇷 +82</option>
+                        <option value="+86">🇨🇳 +86</option>
+                        <option value="+65">🇸🇬 +65</option>
+                        <option value="+60">🇲🇾 +60</option>
+                        <option value="+66">🇹🇭 +66</option>
+                        <option value="+62">🇮🇩 +62</option>
+                        <option value="+84">🇻🇳 +84</option>
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+971">🇦🇪 +971</option>
+                        <option value="+966">🇸🇦 +966</option>
+                        <option value="+49">🇩🇪 +49</option>
+                        <option value="+33">🇫🇷 +33</option>
+                        <option value="+39">🇮🇹 +39</option>
+                        <option value="+34">🇪🇸 +34</option>
+                        <option value="+55">🇧🇷 +55</option>
+                        <option value="+52">🇲🇽 +52</option>
+                        <option value="+27">🇿🇦 +27</option>
+                        <option value="+234">🇳🇬 +234</option>
+                    </select>
                     <input 
                         id="guardianContactNumber" 
                         type="tel" 
-                        class="form-input" 
-                        placeholder="+63 912 345 6789" 
+                        class="form-input"
+                        placeholder="9XX XXX XXXX"
+                        maxlength="15"
+                        title="Enter phone number"
                         required
-                        pattern="\+63\d{10}"
-                        title="Enter a valid Philippine number, e.g. +639123456789"
+                        style="border-left:none; border-radius:0 8px 8px 0; flex:1;"
                     />
                 </div>
             </div>
@@ -162,13 +188,99 @@
 
             <button type="submit" class="submit-btn">Create Account</button>
 
+            <!-- Divider -->
+            <div style="display:flex; align-items:center; margin:16px 0;">
+                <div style="flex:1; height:1px; background:#ddd;"></div>
+                <span style="margin:0 12px; color:#999; font-size:0.85rem;">or</span>
+                <div style="flex:1; height:1px; background:#ddd;"></div>
+            </div>
+
+            <!-- Google Sign-Up Button -->
+            <div id="googleSignInBtn" style="display:flex; justify-content:center;"></div>
+
             <div class="login-link">
                 Already have an account? <a href="student_login.html">Log in here</a>
             </div>
         </form>
     </div>
 
+    <!-- Google Sign-In Step 2 Modal -->
+    <div id="googleStep2Modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#fff; border-radius:16px; padding:32px; width:90%; max-width:480px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="text-align:center; margin-bottom:24px;">
+                <img id="googleAvatarStep2" src="" alt="" style="width:64px; height:64px; border-radius:50%; margin-bottom:8px; display:none;">
+                <h2 style="margin:0; font-size:1.3rem; color:#1a4545;">Complete Your Registration</h2>
+                <p id="googleNameStep2" style="margin:4px 0 0; color:#666; font-size:0.9rem;"></p>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">ID Number <span style="color:red">*</span></label>
+                <input id="g_idNumber" type="text" placeholder="ID Number" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Program <span style="color:red">*</span></label>
+                <select id="g_program" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none; background:#fff;">
+                    <option value="">Select Program</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Year Level <span style="color:red">*</span></label>
+                <select id="g_yearLevel" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none; background:#fff;">
+                    <option value="">Select Year</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Guardian Contact Number <span style="color:red">*</span></label>
+                <div style="display:flex; align-items:stretch; border:1.5px solid #ddd; border-radius:8px; overflow:hidden;">
+                    <select id="g_countryCode" style="background:#e8f0f0;border:none;border-right:1.5px solid #ddd;padding:0 8px;font-weight:600;color:#1a4545;font-size:0.9rem;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;padding-right:24px;background-image:url('data:image/svg+xml;utf8,<svg fill='%231a4545' height='12' viewBox='0 0 24 24' width='12' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>');background-repeat:no-repeat;background-position:right 4px center;">
+                        <option value="+63">🇵🇭 +63</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+81">🇯🇵 +81</option>
+                        <option value="+82">🇰🇷 +82</option>
+                        <option value="+86">🇨🇳 +86</option>
+                        <option value="+65">🇸🇬 +65</option>
+                        <option value="+60">🇲🇾 +60</option>
+                        <option value="+66">🇹🇭 +66</option>
+                        <option value="+62">🇮🇩 +62</option>
+                        <option value="+84">🇻🇳 +84</option>
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+971">🇦🇪 +971</option>
+                        <option value="+966">🇸🇦 +966</option>
+                        <option value="+49">🇩🇪 +49</option>
+                        <option value="+33">🇫🇷 +33</option>
+                        <option value="+39">🇮🇹 +39</option>
+                        <option value="+34">🇪🇸 +34</option>
+                        <option value="+55">🇧🇷 +55</option>
+                        <option value="+52">🇲🇽 +52</option>
+                        <option value="+27">🇿🇦 +27</option>
+                        <option value="+234">🇳🇬 +234</option>
+                    </select>
+                    <input id="g_guardianContact" type="tel" placeholder="9XX XXX XXXX" maxlength="15" style="flex:1; padding:10px 14px; border:none; font-size:0.95rem; box-sizing:border-box; outline:none;">
+                </div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Password <span style="color:red">*</span></label>
+                <input id="g_password" type="password" placeholder="At least 8 characters" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+            </div>
+
+            <div style="margin-bottom:24px;">
+                <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Confirm Password <span style="color:red">*</span></label>
+                <input id="g_confirmPassword" type="password" placeholder="Confirm password" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+            </div>
+
+            <button onclick="handleGoogleStep2Submit()" style="width:100%; padding:12px; background:#1a4545; color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:10px;">Complete Registration</button>
+            <button onclick="closeGoogleStep2()" style="width:100%; padding:10px; background:transparent; color:#888; border:1.5px solid #ddd; border-radius:8px; font-size:0.9rem; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="student_registration.js"></script>
 </body>
 </html>

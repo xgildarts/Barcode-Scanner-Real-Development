@@ -1,4 +1,3 @@
-
 const express = require('express');
 const services = require('../controller/services');
 
@@ -61,6 +60,19 @@ router.post('/student_registration', async (req, res) => {
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ ok: false, message: 'Server error' });
+    }
+});
+
+// Student Google Login
+router.post('/student_google_login', async (req, res) => {
+    try {
+        const { email, device_id } = req.body;
+        if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' });
+        const result = await services.studentGoogleLogin(email, device_id || '');
+        res.json(result);
+    } catch (err) {
+        console.error('Google login error:', err);
+        res.status(401).json({ ok: false, message: typeof err === 'string' ? err : 'Login failed.' });
     }
 });
 

@@ -86,6 +86,19 @@ teacher.get('/get_students_total_count', async (req, res) => {
 })
 
 // Add Student to Regular Class Records
+// Search students from student_accounts
+teacher.get('/search_students', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        services.verifyToken(token)
+        const query = req.query.q || ''
+        const result = await services.searchStudentAccounts(query)
+        res.json({ ok: true, content: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
 teacher.post('/add_student', async (req, res) => {
     const { 
         student_firstname, 

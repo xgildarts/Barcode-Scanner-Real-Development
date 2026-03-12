@@ -10,6 +10,7 @@
     .pw-eye{position:absolute;right:10px;background:none;border:none;cursor:pointer;padding:4px;opacity:0.45;display:flex;align-items:center;transition:opacity 0.2s}
     .pw-eye:hover,.pw-eye.visible{opacity:0.85}
     .pw-eye svg{width:20px;height:20px;fill:#1a4545}
+    .swal-on-top { z-index: 99999 !important; }
     </style>
     <script>
     var EYE_OPEN  = 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z';
@@ -70,6 +71,16 @@
 
             <button type="submit" class="login-btn">Log In</button>
 
+            <!-- Divider -->
+            <div style="display:flex; align-items:center; margin:16px 0;">
+                <div style="flex:1; height:1px; background:#ddd;"></div>
+                <span style="margin:0 12px; color:#999; font-size:0.85rem;">or</span>
+                <div style="flex:1; height:1px; background:#ddd;"></div>
+            </div>
+
+            <!-- Google Sign-In Button -->
+            <div id="googleSignInBtn" style="display:flex; justify-content:center;"></div>
+
             <div class="signup-link">
                 No account? <a href="student_registration.html">Sign up here</a>
             </div>
@@ -77,6 +88,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="student_login.js"></script>
 </body>
 </html>

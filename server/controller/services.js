@@ -506,6 +506,67 @@ async function studentLogin(email, password, device_id) {
     });
 }
 
+// Google Login — finds student by email, skips password check
+async function studentGoogleLogin(email, device_id) {
+    const query = `
+        SELECT  
+            student_id,
+            student_id_number, 
+            student_firstname, 
+            student_middlename, 
+            student_lastname, 
+            student_email, 
+            student_year_level,
+            student_guardian_number,
+            student_program,
+            device_id
+        FROM student_accounts
+        WHERE student_email = ?
+        LIMIT 1
+    `;
+
+    return new Promise((resolve, reject) => {
+        db.execute(query, [email], async (err, result) => {
+            if (err) return reject({ message: err });
+            if (result.length === 0) return reject('No account found for this Google email. Please register first.');
+
+            const row = result[0];
+
+            // --- Device Binding ---
+            if (!device_id || device_id === '') {
+                // First time on this device — generate and save new device_id
+                const newDeviceID = generateDeviceID();
+                const updateQuery = `UPDATE student_accounts SET device_id = ? WHERE student_email = ?`;
+                db.execute(updateQuery, [newDeviceID, email], (updateErr) => {
+                    if (updateErr) return reject('Failed to register device. Please try again.');
+                    row.device_id = newDeviceID;
+                    const token = generateToken(row);
+                    return resolve({
+                        ok: true,
+                        message: 'Successfully Login!',
+                        token,
+                        student_firstname: row.student_firstname,
+                        device_id: newDeviceID
+                    });
+                });
+            } else if (row.device_id !== device_id) {
+                // device_id exists but doesn't match — wrong device
+                return reject('Device is not registered to this account!');
+            } else {
+                // device_id matches — normal login
+                const token = generateToken(row);
+                return resolve({
+                    ok: true,
+                    message: 'Successfully Login!',
+                    token,
+                    student_firstname: row.student_firstname,
+                    device_id: row.device_id
+                });
+            }
+        });
+    });
+}
+
 // Get Student Attendance
 function getAttendanceHistoryForStudentOnly(studentID) {
     return new Promise((resolve, reject) => {
@@ -815,6 +876,37 @@ async function teacherGetTotalAttendanceRecord(teacherBarcodeScannerSerialNumber
 
 
 // Teacher Add Student
+// Search students from student_accounts by name, email, or ID number
+function searchStudentAccounts(query) {
+    return new Promise((resolve, reject) => {
+        const like = `%${query}%`;
+        db.execute(
+            `SELECT 
+                student_id,
+                student_id_number,
+                student_firstname,
+                student_middlename,
+                student_lastname,
+                student_email,
+                student_year_level,
+                student_program,
+                student_guardian_number
+            FROM student_accounts
+            WHERE student_id_number LIKE ?
+               OR student_firstname LIKE ?
+               OR student_lastname LIKE ?
+               OR student_email LIKE ?
+            ORDER BY student_lastname ASC
+            LIMIT 20`,
+            [like, like, like, like],
+            (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            }
+        );
+    });
+}
+
 async function teacherAddStudent(
     studentIDNumber, 
     studentFirstName, 
@@ -831,6 +923,16 @@ async function teacherAddStudent(
             [studentIDNumber], (err, rows) => { if (err) return reject(err); resolve(rows) })
     })
     if (existing.length > 0) throw new Error(`Student ID number "${studentIDNumber}" is already registered.`)
+
+    // Look up guardian number from student_accounts (from their original registration)
+    const studentAccount = await new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT student_guardian_number FROM student_accounts WHERE student_email = ? OR student_id_number = ? LIMIT 1',
+            [studentEmail, studentIDNumber],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] || null) }
+        )
+    })
+    const resolvedGuardianNumber = studentAccount ? studentAccount.student_guardian_number : studentGuardianNumber;
 
     return new Promise((resolve, reject) => {
         db.execute(
@@ -853,7 +955,7 @@ async function teacherAddStudent(
                 studentEmail, 
                 studentProgram, 
                 studentYearLevel,
-                studentGuardianNumber,
+                resolvedGuardianNumber,
                 teacherBarcodeScannerSerialNumber
             ],
             (err, result) => {
@@ -2046,6 +2148,7 @@ module.exports= {
     checkStudentAccountDuplication,
     studentRegistration,
     studentLogin,
+    studentGoogleLogin,
     generateToken,
     verifyToken,
     removeBearer,
@@ -2061,6 +2164,7 @@ module.exports= {
     teacherLogin,
     teacherGetAllStudentDataTotalCount,
     teacherGetTotalAttendanceRecord,
+    searchStudentAccounts,
     teacherAddStudent,
     teacherGetStudentRegistered,
     teacherSubjectAndYearLevelSetter,

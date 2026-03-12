@@ -62,8 +62,6 @@ const DOM = {
     profileName: document.querySelector('.profile-name'),
     adminProfileName: document.getElementById('adminProfileName'),
     profileEmailTop: document.getElementById('profileEmailTop'),
-    adminAvatar: document.getElementById('adminAvatar'),
-    sidebarAvatar: document.getElementById('sidebarAvatar'),
 
     // Chart
     chartCanvas: document.getElementById('myChart'),
@@ -201,63 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generateYearLevelSelections();
     initChart();
     initEventListeners();
-
-    // Wire admin profile picture upload
-    const picInput = document.getElementById('adminProfilePicInput');
-    if (picInput) picInput.addEventListener('change', () => uploadAdminProfilePicture(picInput));
 });
-
-// ============================================================
-// ADMIN PROFILE PICTURE
-// ============================================================
-async function uploadAdminProfilePicture(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    // Compress via canvas before upload
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const img = new Image();
-        img.onload = async () => {
-            const MAX = 800;
-            let w = img.width, h = img.height;
-            if (w > MAX || h > MAX) {
-                if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-                else       { w = Math.round(w * MAX / h); h = MAX; }
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
-            // Preview immediately
-            const previewSrc = canvas.toDataURL('image/jpeg', 0.8);
-            const previewHTML = `<img src="${previewSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
-            if (DOM.adminAvatar)   DOM.adminAvatar.innerHTML   = previewHTML;
-            if (DOM.sidebarAvatar) DOM.sidebarAvatar.innerHTML = previewHTML;
-
-            canvas.toBlob(async (blob) => {
-                const formData = new FormData();
-                formData.append('admin_profile_picture', blob, 'admin-avatar.jpg');
-
-                try {
-                    const res = await fetch(`${URL_BASED}/admin/upload_profile_picture`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${TOKEN}` },
-                        body: formData
-                    });
-                    const data = await res.json();
-                    if (!data.ok) throw new Error(data.message);
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Profile picture updated!', showConfirmButton: false, timer: 2000 });
-                } catch (err) {
-                    Swal.fire({ icon: 'error', title: 'Upload Failed', text: err.message });
-                }
-                input.value = '';
-            }, 'image/jpeg', 0.8);
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
 
 // ============================================================
 // NAVIGATION
@@ -267,6 +209,12 @@ function navigateTo(page) {
     PAGES.forEach(p => {
         document.getElementById(p)?.classList.toggle('active', p === page);
     });
+
+    // Remind admin about the active event when opening Event Attendance
+    if (page === 'eventAttendance') {
+        checkEventReminder();
+    }
+
     closeSidebar();
 }
 
@@ -342,17 +290,11 @@ async function getAdminData() {
         const res = await apiFetch('/admin/get_admin_data');
         const data = await res.json();
         if (data.ok) {
-            const { admin_name, admin_email, admin_profile_picture } = data.content[0];
+            const { admin_name, admin_email } = data.content[0];
             DOM.sideBarName.textContent = admin_name;
             DOM.profileName.textContent = admin_name;
             DOM.adminProfileName.textContent = admin_name;
             DOM.profileEmailTop.textContent = admin_email;
-
-            const avatarImg = `<img src="${URL_BASED}/uploads/profile_pictures/${admin_profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
-            if (admin_profile_picture) {
-                if (DOM.adminAvatar)  DOM.adminAvatar.innerHTML  = avatarImg;
-                if (DOM.sidebarAvatar) DOM.sidebarAvatar.innerHTML = avatarImg;
-            }
         }
     } catch (err) {
         console.error(err);
@@ -544,6 +486,44 @@ async function pollAdminSilently() {
 function startAdminPolling() {
     if (_adminPollInterval) return;
     _adminPollInterval = setInterval(pollAdminSilently, 5000);
+}
+
+// Show a once-per-day reminder about the active event when opening Event Attendance
+async function checkEventReminder() {
+    const today     = new Date().toISOString().split('T')[0];
+    const lastShown = localStorage.getItem('admin_event_reminder_last_shown');
+
+    // Already reminded today — skip
+    if (lastShown === today) return;
+
+    // Fetch current event records to find the active event name
+    let activeEvent = null;
+    try {
+        const res  = await apiFetch('/admin/get_events');
+        const data = await res.json();
+        if (res.ok && data.content && data.content.length > 0) {
+            // Prefer a record from today, fall back to the most recent
+            const todayRecord = data.content.find(r => {
+                const d = r.date ? r.date.split('T')[0] : '';
+                return d === today;
+            });
+            activeEvent = (todayRecord || data.content[0]).event_name;
+        }
+    } catch (err) {
+        console.warn('[Event Reminder] Could not fetch events:', err);
+    }
+
+    Swal.fire({
+        icon: activeEvent ? 'info' : 'warning',
+        title: '📅 Event Attendance',
+        html: activeEvent
+            ? `The active event is <strong>${activeEvent}</strong>.<br>Make sure guards are scanning students in for the correct event.`
+            : `No event has been set for today yet.<br><br>Use the <strong>Set Event</strong> field above to activate an event before students start scanning.`,
+        confirmButtonText: 'Got it',
+        confirmButtonColor: '#3d6b6b'
+    });
+
+    localStorage.setItem('admin_event_reminder_last_shown', today);
 }
 
 async function handleSetEvent() {
@@ -1243,66 +1223,16 @@ document.getElementById('studentForm').addEventListener('submit', async function
 // ============================================================
 function exportTableToExcel(tableId, fileName) {
     const table = document.getElementById(tableId);
-    if (!table) return Swal.fire({ icon: 'info', title: 'Export Failed', text: 'No table data found to export.' });
-
+    if (!table) {
+        return Swal.fire({ icon: 'info', title: 'Export Failed', text: 'No table data found to export.' });
+    }
     try {
-        const wb = XLSX.utils.book_new();
-
-        // Build rows from DOM so we control cell types (prevents #NUM! on time/date)
-        const rows = [];
-        for (let r = 0; r < table.rows.length; r++) {
-            const row = [];
-            const cells = table.rows[r].cells;
-            for (let c = 0; c < cells.length; c++) {
-                row.push(cells[c].innerText.trim());
-            }
-            rows.push(row);
-        }
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-
-        // Force every cell to string type + apply styles
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; R++) {
-            for (let C = range.s.c; C <= range.e.c; C++) {
-                const addr = XLSX.utils.encode_cell({ r: R, c: C });
-                if (!ws[addr]) ws[addr] = { v: '', t: 's' };
-                ws[addr].t = 's';
-                ws[addr].v = String(ws[addr].v ?? '');
-
-                const isHeader = R === 0;
-                ws[addr].s = {
-                    font: {
-                        name: 'Arial',
-                        sz: isHeader ? 11 : 10,
-                        bold: isHeader,
-                        color: { rgb: isHeader ? 'FFFFFF' : '333333' }
-                    },
-                    fill: {
-                        fgColor: { rgb: isHeader ? '3D6B6B' : (R % 2 === 0 ? 'EEF5F3' : 'FFFFFF') }
-                    },
-                    alignment: {
-                        horizontal: 'center',
-                        vertical: 'center',
-                        wrapText: true
-                    },
-                    border: {
-                        top:    { style: 'thin', color: { rgb: 'C8DDD9' } },
-                        bottom: { style: 'thin', color: { rgb: 'C8DDD9' } },
-                        left:   { style: 'thin', color: { rgb: 'C8DDD9' } },
-                        right:  { style: 'thin', color: { rgb: 'C8DDD9' } }
-                    }
-                };
-            }
-        }
-
-        // Column widths
-        const colCount = rows[0]?.length || 10;
-        ws['!cols'] = Array(colCount).fill({ wch: 22 });
-
-        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-        XLSX.writeFile(wb, `${fileName}.xlsx`);
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.table_to_sheet(table);
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+        XLSX.writeFile(workbook, `${fileName}.xlsx`);
         Swal.fire({ icon: 'success', title: 'Exported!', text: 'Your Excel file has been downloaded.', timer: 1500, showConfirmButton: false });
-    } catch (e) {
+    } catch {
         Swal.fire('Error', 'Failed to generate Excel file', 'error');
     }
 }

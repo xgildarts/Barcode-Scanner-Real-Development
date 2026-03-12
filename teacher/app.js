@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateTo('dashboard');
 
     // Data
-    getStudentAttendanceRecords();
+    getStudentAttendanceRecords().then(() => startTeacherPolling());
     loadStudentsRegistered();
     getStudentAttendanceHistoryRecords();
     getTeacherDataToServer();
@@ -70,10 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', e => e.target.closest('.stat-card').style.display = 'none');
     });
-
-    // Teacher profile picture upload
-    const picInput = document.getElementById('teacherProfilePicInput');
-    if (picInput) picInput.addEventListener('change', function() { uploadTeacherProfilePicture(this); });
 });
 
 // ============================================================
@@ -86,6 +82,7 @@ async function checkToken() {
     }
 
     try {
+        // FIX: was hardcoded to localhost, now uses BASE_URL
         const res = await fetch(`${BASE_URL}/authentication/verify_token`, {
             method: 'POST',
             headers: {
@@ -138,12 +135,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         const res = await fetch(`${BASE_URL}${endpoint}`, options);
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.message || data.error || JSON.stringify(data));
+        if (!res.ok) throw new Error(data.message || 'API Error');
         return data;
     } catch (err) {
-        const msg = err.message || 'Something went wrong!';
-        console.error(`apiCall ${endpoint}:`, msg);
-        Swal.fire({ icon: 'error', title: 'Oops...', text: msg });
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Oops...', text: err.message || 'Something went wrong!' });
         return null;
     }
 }
@@ -186,6 +182,7 @@ function navigateTo(navName) {
         if (el) el.classList.toggle('active', nav === navName);
     });
 
+    // Initialize or resize map only when navigating to location tab
     if (navName === 'location') {
         if (map) {
             setTimeout(() => map.invalidateSize(), 300);
@@ -194,6 +191,7 @@ function navigateTo(navName) {
         }
     }
 
+    // Remind teacher to set a subject when opening Attendance Now
     if (navName === 'attendanceNow') {
         checkSubjectReminder();
     }
@@ -202,6 +200,7 @@ function navigateTo(navName) {
     DOM.sidebarOverlay.classList.remove('active');
 }
 
+// Sidebar toggle
 DOM.menuBtn.addEventListener('click', () => {
     DOM.sidebar.classList.toggle('active');
     DOM.sidebarOverlay.classList.toggle('active');
@@ -235,18 +234,22 @@ function updateDashboardChart() {
     const absent  = Math.max(total - present, 0);
     const percent = total > 0 ? (present / total) * 100 : 0;
 
+    // Update stat cards
     document.getElementById('totalPresents').textContent      = present;
     document.getElementById('bottomTotalPresent').textContent = 'Presents ' + present;
     document.getElementById('totalStudentAbsent').textContent = absent;
     document.getElementById('bottomTotalAbsent').textContent  = 'Absent ' + absent;
 
+    // Draw donut chart
     const svg = document.getElementById('donutChart');
     if (!svg) return;
     const progressCircle = svg.querySelectorAll('circle')[1];
     const circumference  = 2 * Math.PI * progressCircle.r.baseVal.value;
+    // Remove CSS transition temporarily so the chart snaps to its value immediately on load
     progressCircle.style.transition    = 'none';
     progressCircle.style.strokeDasharray  = `${circumference} ${circumference}`;
     progressCircle.style.strokeDashoffset = -(circumference * (1 - percent / 100));
+    // Re-enable transition after the initial paint so future updates animate smoothly
     requestAnimationFrame(() => {
         progressCircle.style.transition = '';
     });
@@ -277,13 +280,55 @@ async function getStudentAttendanceRecords() {
 
     state.totalPresent = data.content.length;
     _lastAttendanceCount = data.content.length;
+    // Only draw chart if registered count is already loaded; otherwise loadStudentsRegistered() will call it
     if (state.totalStudentRegistered > 0) updateDashboardChart();
 
     document.getElementById('attendanceBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
+}
 
-    startPolling();
+// ============================================================
+// REALTIME ATTENDANCE POLLING
+// ============================================================
+let _lastAttendanceCount = -1;
+let _teacherPollInterval  = null;
+
+async function pollAttendanceSilently() {
+    try {
+        const res  = await fetch(`${BASE_URL}/teacher/teacher_attendance_record`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !data.content) return;
+
+        // Only re-render if count changed
+        if (_lastAttendanceCount !== -1 && data.content.length === _lastAttendanceCount) return;
+
+        _lastAttendanceCount  = data.content.length;
+        state.totalPresent    = data.content.length;
+        if (state.totalStudentRegistered > 0) updateDashboardChart();
+
+        document.getElementById('attendanceBody').innerHTML = data.content
+            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
+            .join('');
+
+        // Flash live indicator if it exists
+        const dot = document.getElementById('teacherLiveDot');
+        if (dot) {
+            dot.classList.add('live-blink');
+            setTimeout(() => dot.classList.remove('live-blink'), 2000);
+        }
+    } catch (err) {
+        // Silent fail — don't show any popup during background poll
+        console.warn('[Poll]', err);
+    }
+}
+
+function startTeacherPolling() {
+    if (_teacherPollInterval) return;
+    _teacherPollInterval = setInterval(pollAttendanceSilently, 5000);
 }
 
 async function getStudentAttendanceHistoryRecords() {
@@ -291,7 +336,6 @@ async function getStudentAttendanceHistoryRecords() {
     const data = await apiCall('/teacher/teacher_attendance_history_record');
     Swal.close();
     if (!data) return;
-    _lastHistoryCount = data.content.length;
     document.getElementById('attendanceHistoryTableBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
@@ -315,7 +359,6 @@ async function renderEventAttendanceRecord() {
     const data = await apiCall('/teacher/get_event_attendance', 'GET');
     Swal.close();
     if (!data) return;
-    _lastEventCount = data.content.length;
     DOM.eventAttendanceBody.innerHTML = data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
@@ -335,7 +378,6 @@ async function renderEventAttendanceHistoryRecord() {
     const data = await apiCall('/teacher/get_event_attendance_history', 'GET');
     Swal.close();
     if (!data) return;
-    _lastEventHistoryCount = data.content.length;
     DOM.eventAttendanceHistoryBody.innerHTML = data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
@@ -423,6 +465,7 @@ function setupManualEntryFilterSearch() {
     });
 }
 
+// Event attendance filters — shared helper
 function filterTableRows(tbody, term) {
     const lower = term.toLowerCase();
     Array.from(tbody.getElementsByTagName('tr')).forEach(row => {
@@ -458,6 +501,7 @@ async function loadStudentsRegistered() {
     state.totalStudentRegistered = data.content.length;
     document.getElementById('totalStudents').textContent       = state.totalStudentRegistered;
     document.getElementById('centerTotalStudents').textContent = state.totalStudentRegistered;
+    // Draw chart now that we have both totals (attendance may have already loaded)
     updateDashboardChart();
 
     document.getElementById('studentsBody').innerHTML = data.content.map(s => {
@@ -507,53 +551,117 @@ function deleteStudent(student_id) {
 }
 
 // ============================================================
-// REGISTRATION FORM
+// REGISTRATION — SEARCH & ADD
 // ============================================================
+let _selectedStudent = null;
+let _searchDebounceTimer = null;
 
-const registrationForm = document.getElementById('registrationForm');
-if (registrationForm) registrationForm.addEventListener('submit', async function (e) {
-    e.preventDefault();
+function searchStudentDebounced() {
+    clearTimeout(_searchDebounceTimer);
+    _searchDebounceTimer = setTimeout(runStudentSearch, 350);
+}
 
-    const email = document.getElementById('studentEmail').value;
-    if (!email.endsWith('@panpacificu.edu.ph')) {
-        return Swal.fire('Invalid Email', 'Please use a valid Panpacific University email (@panpacificu.edu.ph).', 'warning');
+async function runStudentSearch() {
+    const q = document.getElementById('studentSearchInput').value.trim();
+    const resultsBox = document.getElementById('studentSearchResults');
+
+    if (q.length < 2) {
+        resultsBox.style.display = 'none';
+        resultsBox.innerHTML = '';
+        return;
     }
 
-    const payload = {
-        student_firstname:       document.getElementById('firstName').value,
-        student_middlename:      document.getElementById('middleName').value,
-        student_lastname:        document.getElementById('lastName').value,
-        student_email:           email,
-        student_id_number:       document.getElementById('idNumber').value,
-        student_program:         document.getElementById('program').value,
-        student_year_level:      document.getElementById('yearLevel').value,
-        student_guardian_number: document.getElementById('guardianContactNumber').value,
-    };
-
-    Swal.fire({ title: 'Registering student...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    resultsBox.style.display = 'block';
+    resultsBox.innerHTML = '<div style="padding:12px; color:#888; text-align:center;">Searching...</div>';
 
     try {
-        const res = await fetch(`${BASE_URL}/teacher/add_student`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + TOKEN
-            },
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-        Swal.fire('Success', data.message, 'success');
-        this.reset();
+        const data = await apiCall(`/teacher/search_students?q=${encodeURIComponent(q)}`, 'GET');
+
+        if (!data || !data.content || data.content.length === 0) {
+            resultsBox.innerHTML = '<div style="padding:12px; color:#888; text-align:center;">No students found.</div>';
+            return;
+        }
+
+        resultsBox.innerHTML = data.content.map(s => `
+            <div onclick="selectStudent(${JSON.stringify(s).replace(/"/g, '&quot;')})"
+                style="padding:12px 16px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;"
+                onmouseover="this.style.background='#f0f7f7'" onmouseout="this.style.background=''"
+            >
+                <div style="font-weight:600; color:#1a4545;">${s.student_firstname} ${s.student_middlename ? s.student_middlename + '.' : ''} ${s.student_lastname}</div>
+                <div style="font-size:0.82rem; color:#666;">${s.student_id_number} · ${s.student_program} · ${s.student_year_level}</div>
+                <div style="font-size:0.8rem; color:#999;">${s.student_email}</div>
+            </div>
+        `).join('');
+    } catch (err) {
+        resultsBox.innerHTML = '<div style="padding:12px; color:#c00; text-align:center;">Error loading results.</div>';
+    }
+}
+
+function selectStudent(student) {
+    _selectedStudent = student;
+
+    // Hide search results, show preview
+    document.getElementById('studentSearchResults').style.display = 'none';
+    document.getElementById('studentSearchInput').value = '';
+
+    const preview = document.getElementById('selectedStudentPreview');
+    preview.style.display = 'block';
+    document.getElementById('previewName').textContent =
+        `${student.student_firstname} ${student.student_middlename ? student.student_middlename + '.' : ''} ${student.student_lastname}`;
+    document.getElementById('previewId').textContent   = `ID: ${student.student_id_number}`;
+    document.getElementById('previewProgram').textContent = `${student.student_program} · ${student.student_year_level}`;
+    document.getElementById('previewEmail').textContent = student.student_email;
+
+    // Enable Add button
+    const btn = document.getElementById('confirmAddStudentBtn');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor  = 'pointer';
+}
+
+function clearSelectedStudent() {
+    _selectedStudent = null;
+    document.getElementById('selectedStudentPreview').style.display = 'none';
+    const btn = document.getElementById('confirmAddStudentBtn');
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor  = 'not-allowed';
+}
+
+async function confirmAddStudent() {
+    if (!_selectedStudent) return;
+
+    const s = _selectedStudent;
+    const studentData = {
+        student_firstname:       s.student_firstname,
+        student_middlename:      s.student_middlename,
+        student_lastname:        s.student_lastname,
+        student_email:           s.student_email,
+        student_id_number:       s.student_id_number,
+        student_program:         s.student_program,
+        student_year_level:      s.student_year_level,
+        student_guardian_number: s.student_guardian_number || ''
+    };
+
+    Swal.fire({ title: 'Adding student...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    const res = await apiCall('/teacher/add_student', 'POST', studentData);
+    if (res) {
+        Swal.fire('Success', res.message, 'success');
         closeAddStudentModal();
         loadStudentsRegistered();
-    } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Failed', text: err.message || 'Something went wrong.' });
     }
-});
+}
 
-function openAddStudentModal()  { document.getElementById('addStudentModal').style.display = 'flex'; }
-function closeAddStudentModal() { document.getElementById('addStudentModal').style.display = 'none'; }
+function openAddStudentModal() {
+    document.getElementById('addStudentModal').style.display = 'flex';
+    clearSelectedStudent();
+    document.getElementById('studentSearchInput').value = '';
+    document.getElementById('studentSearchResults').style.display = 'none';
+}
+function closeAddStudentModal() {
+    document.getElementById('addStudentModal').style.display = 'none';
+    clearSelectedStudent();
+}
 
 // ============================================================
 // RECORD MODAL
@@ -578,8 +686,7 @@ window.onclick = function (event) {
     if (event.target === modal) modal.style.display = 'none';
 };
 
-const recordForm = document.getElementById('recordForm');
-if (recordForm) recordForm.addEventListener('submit', async function (e) {
+document.getElementById('recordForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const payload = {
@@ -750,6 +857,7 @@ locationSearchInput.addEventListener('input', function () {
                         circle.setLatLng([lat, lng]);
                         map.setView([lat, lng], 18);
                     } else {
+                        // Map not initialized yet — initialize it at searched location
                         initMap(lat, lng);
                     }
 
@@ -764,6 +872,7 @@ locationSearchInput.addEventListener('input', function () {
     }, 400);
 });
 
+// Close dropdown when clicking outside
 document.addEventListener('click', function (e) {
     if (!locationSearchInput.contains(e.target) && !locationSearchResults.contains(e.target)) {
         locationSearchResults.style.display = 'none';
@@ -848,14 +957,10 @@ async function renderYearLevel() {
     if (!data) return;
 
     const optionsHtml = data.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('');
-    document.getElementById('yearFilter').innerHTML                              = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('yearFilterAttendanceHistory').innerHTML             = `<option value="">All</option>` + optionsHtml;
-    document.getElementById('recordYearFilter').innerHTML                        = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('manualEntryYearFilter').innerHTML                   = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('yearLevel').innerHTML                               = `<option value="">Select Year</option>` + optionsHtml;
-    document.getElementById('year_level').innerHTML                              = `<option value="">Select Year</option>` + optionsHtml;
-    document.getElementById('eventAttendanceYearLevelFilter').innerHTML          = `<option value="">Year Level All</option>` + optionsHtml;
-    document.getElementById('eventAttendanceHistoryYearLevelFilter').innerHTML   = `<option value="">Year Level All</option>` + optionsHtml;
+    document.getElementById('yearFilter').innerHTML                  = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('yearFilterAttendanceHistory').innerHTML = `<option value="">All</option>` + optionsHtml;
+    document.getElementById('recordYearFilter').innerHTML            = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('manualEntryYearFilter').innerHTML       = `<option value="">Select Year Level</option>` + optionsHtml;
 }
 
 async function renderPrograms() {
@@ -863,8 +968,8 @@ async function renderPrograms() {
     if (!data) return;
     const optionsHtml = `<option value="">Select Program</option>` +
         data.content.map(d => `<option value="${d.program_name}">${d.program_name}</option>`).join('');
-    document.getElementById('program').innerHTML     = optionsHtml;
-    document.getElementById('editProgram').innerHTML = optionsHtml;
+    const editProgram = document.getElementById('editProgram');
+    if (editProgram) editProgram.innerHTML = optionsHtml;
 }
 
 function openAddModal()  { document.getElementById('addModal').classList.add('active'); document.getElementById('programNameInput').focus(); }
@@ -883,6 +988,7 @@ async function loadManualEntryStudents() {
         const id  = student.student_id;
         const mid = student.student_middlename ?? '';
         const fullName = `${student.student_firstname} ${mid} ${student.student_lastname}`.trim();
+        // Escape values for safe inline onclick usage
         const esc = v => (v ?? '').toString().replace(/'/g, "\\'");
         return `
             <div class="student-row">
@@ -941,9 +1047,11 @@ async function addToAttendance(student_id, student_id_number, student_firstname,
 
     Swal.fire({ icon: 'success', title: 'Recorded!', text: res.message, timer: 2000, showConfirmButton: false });
 
+    // Reload attendance
     refreshAttendance();
     refreshAttendanceHistory();
 
+    // Disable the button so the same student can't be added twice in the same session
     if (btn) {
         btn.textContent      = '✓ Present';
         btn.disabled         = true;
@@ -952,93 +1060,9 @@ async function addToAttendance(student_id, student_id_number, student_firstname,
     }
 }
 
+// FIX: removed call to undefined renderManualStudents()
 function markManualStatus(name, status) {
     state.attendanceStatus[name] = status;
-}
-
-// ============================================================
-// LIVE POLLING
-// ============================================================
-let _pollInterval = null;
-let _lastAttendanceCount = -1;
-let _lastHistoryCount = -1;
-let _lastEventCount = -1;
-let _lastEventHistoryCount = -1;
-
-function flashLiveDot(dotId) {
-    const dot = document.getElementById(dotId);
-    if (!dot) return;
-    dot.classList.add('live-blink');
-    setTimeout(() => dot.classList.remove('live-blink'), 1200);
-}
-
-async function pollTeacherSilently() {
-    try {
-        const r = await fetch(`${BASE_URL}/teacher/teacher_attendance_record`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
-        const d = await r.json();
-        if (d.ok && d.content.length !== _lastAttendanceCount) {
-            _lastAttendanceCount = d.content.length;
-            state.totalPresent = d.content.length;
-            updateDashboardChart();
-            document.getElementById('attendanceBody').innerHTML = d.content.map(x => `<tr>${buildAttendanceRow(x)}</tr>`).join('');
-            flashLiveDot('liveDotAttendance');
-        }
-    } catch (e) {}
-
-    try {
-        const r = await fetch(`${BASE_URL}/teacher/teacher_attendance_history_record`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
-        const d = await r.json();
-        if (d.ok && d.content.length !== _lastHistoryCount) {
-            _lastHistoryCount = d.content.length;
-            document.getElementById('attendanceHistoryTableBody').innerHTML = d.content.map(x => `<tr>${buildAttendanceRow(x)}</tr>`).join('');
-            flashLiveDot('liveDotHistory');
-        }
-    } catch (e) {}
-
-    try {
-        const r = await fetch(`${BASE_URL}/teacher/get_event_attendance`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
-        const d = await r.json();
-        if (d.ok && d.content.length !== _lastEventCount) {
-            _lastEventCount = d.content.length;
-            DOM.eventAttendanceBody.innerHTML = d.content.map(x => `
-                <tr>
-                    <td>${x.student_id_number}</td>
-                    <td>${x.student_name}</td>
-                    <td>${x.student_program}</td>
-                    <td>${x.student_year_level}</td>
-                    <td>${formatDate(x.date)}</td>
-                    <td>${formatTime(x.time)}</td>
-                    <td>${x.event_name}</td>
-                    <td>${x.status}</td>
-                </tr>`).join('');
-            flashLiveDot('liveDotEvent');
-        }
-    } catch (e) {}
-
-    try {
-        const r = await fetch(`${BASE_URL}/teacher/get_event_attendance_history`, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
-        const d = await r.json();
-        if (d.ok && d.content.length !== _lastEventHistoryCount) {
-            _lastEventHistoryCount = d.content.length;
-            DOM.eventAttendanceHistoryBody.innerHTML = d.content.map(x => `
-                <tr>
-                    <td>${x.student_id_number}</td>
-                    <td>${x.student_name}</td>
-                    <td>${x.student_program}</td>
-                    <td>${x.student_year_level}</td>
-                    <td>${formatDate(x.date)}</td>
-                    <td>${formatTime(x.time)}</td>
-                    <td>${x.event_name}</td>
-                    <td>${x.status}</td>
-                </tr>`).join('');
-            flashLiveDot('liveDotEventHistory');
-        }
-    } catch (e) {}
-}
-
-function startPolling() {
-    if (_pollInterval) return;
-    _pollInterval = setInterval(pollTeacherSilently, 5000);
 }
 
 // ============================================================
@@ -1052,67 +1076,6 @@ async function getTeacherDataToServer() {
     document.querySelector('.profile-name').textContent           = teacher.teacher_name;
     document.querySelector('.profile-email').textContent          = teacher.teacher_email;
     document.getElementById('accountInformationName').textContent = teacher.teacher_name;
-
-    // Load profile picture if set
-    const avatar = document.getElementById('teacherAvatar');
-    const sidebarAvatar = document.getElementById('sidebarAvatar');
-    if (teacher.teacher_profile_picture) {
-        const imgHtml = `<img src="${BASE_URL}/uploads/profile_pictures/${teacher.teacher_profile_picture}" 
-                             alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-        if (avatar) avatar.innerHTML = imgHtml;
-        if (sidebarAvatar) sidebarAvatar.innerHTML = imgHtml;
-    }
-}
-
-async function uploadTeacherProfilePicture(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    // Compress image using canvas before uploading
-    const compressedBlob = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX = 800;
-                let w = img.width, h = img.height;
-                if (w > h && w > MAX) { h = h * MAX / w; w = MAX; }
-                else if (h > MAX) { w = w * MAX / h; h = MAX; }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
-            };
-            img.src = e.target.result;
-
-            // Preview immediately
-            const previewImg = `<img src="${e.target.result}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-            document.getElementById('teacherAvatar').innerHTML = previewImg;
-            const sidebarAvatar = document.getElementById('sidebarAvatar');
-            if (sidebarAvatar) sidebarAvatar.innerHTML = previewImg;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    const formData = new FormData();
-    formData.append('teacher_profile_picture', compressedBlob, 'profile.jpg');
-
-    Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-    try {
-        const res = await fetch(`${BASE_URL}/teacher/upload_profile_picture`, {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + TOKEN },
-            body: formData
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Profile picture updated!', showConfirmButton: false, timer: 2000, timerProgressBar: true });
-    } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Upload Failed', text: err.message || 'Something went wrong.' });
-    }
-
-    input.value = '';
 }
 
 // Show a once-per-day reminder to set a subject before taking attendance
@@ -1120,6 +1083,7 @@ async function checkSubjectReminder() {
     const today     = new Date().toISOString().split('T')[0];
     const lastShown = localStorage.getItem('subject_reminder_last_shown');
 
+    // Already reminded today — skip
     if (lastShown === today) return;
 
     const data = await apiCall('/teacher/get_teacher_data', 'GET');
@@ -1191,7 +1155,7 @@ async function editProfileName() {
 }
 
 // ============================================================
-// UTILITIES
+// EXPORT TO EXCEL — FORMATTED
 // ============================================================
 function exportTableToExcel(tableId, fileName) {
     const table = document.getElementById(tableId);
@@ -1200,72 +1164,126 @@ function exportTableToExcel(tableId, fileName) {
     try {
         const wb = XLSX.utils.book_new();
 
-        // Build sheet manually from rows so we control cell types
+        // --- Extract headers ---
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => headers.push(th.innerText.trim()));
+
+        // --- Extract rows ---
         const rows = [];
-        for (let r = 0; r < table.rows.length; r++) {
+        table.querySelectorAll('tbody tr').forEach(tr => {
             const row = [];
-            const cells = table.rows[r].cells;
-            for (let c = 0; c < cells.length; c++) {
-                row.push(cells[c].innerText.trim());
-            }
-            rows.push(row);
-        }
-        const ws = XLSX.utils.aoa_to_sheet(rows);
+            tr.querySelectorAll('td').forEach(td => row.push(td.innerText.trim()));
+            if (row.some(cell => cell !== '')) rows.push(row);
+        });
 
-        // Force every cell to string type so time/date values never become #NUM!
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; R++) {
-            for (let C = range.s.c; C <= range.e.c; C++) {
-                const addr = XLSX.utils.encode_cell({ r: R, c: C });
-                if (!ws[addr]) ws[addr] = { v: '', t: 's' };
-                ws[addr].t = 's';
-                ws[addr].v = String(ws[addr].v ?? '');
+        if (rows.length === 0)
+            return Swal.fire({ icon: 'info', title: 'No Data', text: 'The table has no records to export.' });
 
-                // Apply styles
-                const isHeader = R === 0;
-                ws[addr].s = {
-                    font: {
-                        name: 'Arial',
-                        sz: isHeader ? 11 : 10,
-                        bold: isHeader,
-                        color: { rgb: isHeader ? 'FFFFFF' : '333333' }
-                    },
-                    fill: {
-                        fgColor: { rgb: isHeader ? '3D6B6B' : (R % 2 === 0 ? 'EEF5F3' : 'FFFFFF') }
-                    },
-                    alignment: {
-                        horizontal: 'center',
-                        vertical: 'center',
-                        wrapText: true
-                    },
-                    border: {
-                        top:    { style: 'thin', color: { rgb: 'C8DDD9' } },
-                        bottom: { style: 'thin', color: { rgb: 'C8DDD9' } },
-                        left:   { style: 'thin', color: { rgb: 'C8DDD9' } },
-                        right:  { style: 'thin', color: { rgb: 'C8DDD9' } }
-                    }
-                };
-            }
-        }
+        const now       = new Date();
+        const dateStr   = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStr   = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+        const colCount  = headers.length;
 
-        // Column widths
-        const colCount = rows[0]?.length || 10;
-        ws['!cols'] = Array(colCount).fill({ wch: 22 });
+        // --- Build sheet data ---
+        // Row 1: School name (merged visually via full-width value)
+        // Row 2: Report title
+        // Row 3: Date generated
+        // Row 4: blank
+        // Row 5: headers
+        // Row 6+: data
+        const sheetData = [
+            ['PanPacific University'],
+            [fileName + ' Report'],
+            [`Generated: ${dateStr} ${timeStr}`],
+            [],
+            headers,
+            ...rows,
+            [],
+            [`Total Records: ${rows.length}`]
+        ];
 
-        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-        XLSX.writeFile(wb, `${fileName}.xlsx`);
-        Swal.fire({ icon: 'success', title: 'Exported!', text: 'Your Excel file has been downloaded.', timer: 1500, showConfirmButton: false });
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+        // --- Column widths (auto-fit by max content length) ---
+        const colWidths = headers.map((h, i) => {
+            const maxData = rows.reduce((max, row) => {
+                const len = (row[i] || '').toString().length;
+                return len > max ? len : max;
+            }, h.length);
+            return { wch: Math.min(Math.max(maxData + 4, 12), 40) };
+        });
+        ws['!cols'] = colWidths;
+
+        // --- Merge title rows across all columns ---
+        const mergeEnd = colCount - 1;
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: mergeEnd } }, // School name
+            { s: { r: 1, c: 0 }, e: { r: 1, c: mergeEnd } }, // Report title
+            { s: { r: 2, c: 0 }, e: { r: 2, c: mergeEnd } }, // Date
+            { s: { r: rows.length + 6, c: 0 }, e: { r: rows.length + 6, c: mergeEnd } } // Total
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, fileName.substring(0, 31));
+        XLSX.writeFile(wb, `${fileName}_${now.toISOString().split('T')[0]}.xlsx`);
+
+        Swal.fire({ icon: 'success', title: 'Exported!', text: `${rows.length} records exported to Excel.`, timer: 1800, showConfirmButton: false });
     } catch (e) {
-        Swal.fire('Error', 'Failed to generate Excel file', 'error');
+        console.error(e);
+        Swal.fire('Error', 'Failed to generate Excel file: ' + e.message, 'error');
     }
 }
 
+// ============================================================
+// PRINT — Section specific
+// ============================================================
+function printSection(tableId, title) {
+    const table = document.getElementById(tableId);
+    if (!table) return window.print();
+
+    const now     = new Date().toLocaleString('en-PH');
+    const rows    = table.querySelectorAll('tbody tr').length;
+    const content = table.outerHTML;
+
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                .header { text-align: center; margin-bottom: 18px; }
+                .header h2 { margin: 0; font-size: 1.1rem; text-transform: uppercase; color: #1a4545; }
+                .header h3 { margin: 4px 0 2px; font-size: 1.3rem; }
+                .header p  { margin: 0; font-size: 0.85rem; color: #555; }
+                table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 12px; }
+                th { background: #1a4545; color: #fff; padding: 8px 10px; text-align: left; }
+                td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+                tr:nth-child(even) td { background: #f5f9f9; }
+                .footer { margin-top: 16px; font-size: 0.78rem; color: #777; text-align: right; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>PanPacific University</h2>
+                <h3>${title}</h3>
+                <p>Generated: ${now} &nbsp;|&nbsp; Total Records: ${rows}</p>
+            </div>
+            ${content}
+            <div class="footer">PanPacific University Attendance System</div>
+            <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+        </body>
+        </html>
+    `);
+    printWin.document.close();
+}
 
 function saveChanges() {
     Swal.fire({ position: 'center', icon: 'success', title: 'Changes saved successfully', showConfirmButton: false, timer: 1500 });
 }
 
-function printList()       { window.print(); }
-function printAttendance() { window.print(); }
-function printPage()       { window.print(); }
+function printList()       { printSection('attendanceNowTable', 'Attendance Now'); }
+function printAttendance() { printSection('eventAttendanceTable', 'Event Attendance'); }
+function printPage()       { printSection('attendanceHistoryTable', 'Attendance History'); }
 function applyFilters()    { /* hook in filter logic here */ }
