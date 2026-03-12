@@ -126,7 +126,7 @@ teacher.post('/add_student', async (req, res) => {
             )
         res.json({ ok: true, message: 'Successfully added student!', content: result })
     } catch(err) {
-
+        res.status(400).json({ ok: false, message: err.message || 'Failed to add student.' })
     }
 })
 

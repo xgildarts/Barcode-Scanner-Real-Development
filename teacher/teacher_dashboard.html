@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/css/teacher-css/teacher_manual_entry.css">
     <link rel="stylesheet" href="/css/teacher-css/teacher_academic_setup.css">
     <link rel="stylesheet" href="/css/teacher-css/teacher_settings.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         /* Location Search Box */
         .location-search-wrapper {
@@ -296,13 +296,10 @@
                 <div class="overview-section">
                     <h2 class="section-title">Attendance Overview</h2>
                     <div class="chart-container">
-                        <svg id="donutChart" class="donut-chart" width="200" height="200" viewBox="0 0 200 200">
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#d88888" stroke-width="35" stroke-dasharray="427 47" />
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#5a8a7a" stroke-width="35" stroke-dasharray="47 427" stroke-dashoffset="-427" />
-                        </svg>
+                        <canvas id="donutChart" width="220" height="220"></canvas>
                         <div class="chart-center">
                             <div class="chart-label">Total of Students</div>
-                            <div class="chart-value" id="centerTotalStudents">200</div>
+                            <div class="chart-value" id="centerTotalStudents">0</div>
                         </div>
                     </div>
                     <div class="legend">
@@ -723,7 +720,7 @@
                             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
                         </svg>
                     </div>
-                    <input type="file" id="teacherProfilePicInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+                    <input type="file" id="teacherProfilePicInput" accept="image/*" style="display:none">
                 </div>
                 <div class="profile-name">Unknown</div>
                 <div class="profile-email">Unknown</div>
@@ -904,6 +901,8 @@
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

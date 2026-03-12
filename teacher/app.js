@@ -33,7 +33,44 @@ let state = {
 };
 
 // Map state
-let map, marker, circle;
+let map = null, marker = null, circle = null;
+
+// ============================================================
+// OFFLINE BANNER
+// ============================================================
+function showOfflineBanner() {
+    let banner = document.getElementById('offlineBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'offlineBanner';
+        banner.innerHTML = `
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:white;flex-shrink:0">
+                <path d="M1 1l22 22-1.41 1.41-2.64-2.64A10.49 10.49 0 0112 23C6.48 23 2 18.52 2 13c0-2.76 1.12-5.26 2.93-7.07L1 2.41 2.41 1zm10 18c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-5.47-5.47l1.42 1.42A4.978 4.978 0 0111 13c0-.55.45-1 1-1s1 .45 1 1l1.42 1.42A6.943 6.943 0 0012 11c-1.48 0-2.84.46-3.95 1.24l-2.52-2.52A9.954 9.954 0 0112 8c2.22 0 4.27.73 5.93 1.95l1.42 1.42C17.55 9.77 14.93 8 12 8 9.74 8 7.67 8.82 6.04 10.23l-1.51-1.51z"/>
+            </svg>
+            <span>No internet connection</span>`;
+        banner.style.cssText = `
+            position:fixed; top:0; left:0; right:0; z-index:99999;
+            background:#c0392b; color:white; padding:10px 20px;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            font-size:13px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+            transform:translateY(-100%); transition:transform 0.3s ease;`;
+        document.body.appendChild(banner);
+    }
+    requestAnimationFrame(() => banner.style.transform = 'translateY(0)');
+}
+
+function hideOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    if (banner) banner.style.transform = 'translateY(-100%)';
+}
+
+window.addEventListener('offline', () => showOfflineBanner());
+window.addEventListener('online',  () => {
+    hideOfflineBanner();
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Back online!', showConfirmButton: false, timer: 2500, timerProgressBar: true });
+});
+
+if (!navigator.onLine) showOfflineBanner();
 
 // ============================================================
 // INIT
@@ -51,8 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSubjects();
     renderYearLevel();
     renderPrograms();
-    renderEventAttendanceRecord();
-    renderEventAttendanceHistoryRecord();
+    Swal.fire({ title: 'Loading event data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Promise.all([renderEventAttendanceRecord(), renderEventAttendanceHistoryRecord()])
+        .then(() => { Swal.close(); startEventPolling(); })
+        .catch(() => Swal.close());
 
     // Search
     setupTableSearch('searchInputAttendance', 'attendanceBody');
@@ -70,6 +109,61 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', e => e.target.closest('.stat-card').style.display = 'none');
     });
+
+    // Profile picture upload
+    const picInput = document.getElementById('teacherProfilePicInput');
+    if (picInput) {
+        picInput.addEventListener('change', async function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            console.log('[ProfilePic] File selected:', file.name, file.size, file.type);
+
+            if (file.size > 5 * 1024 * 1024)
+                return Swal.fire({ icon: 'warning', title: 'File too large', text: 'Please choose an image under 5MB.' });
+
+            // Instant preview
+            const reader = new FileReader();
+            reader.onload = e => setTeacherAvatar(e.target.result);
+            reader.readAsDataURL(file);
+
+            // Upload to server — read token fresh (const TOKEN may be stale)
+            const token = localStorage.getItem('teacher_token');
+            console.log('[ProfilePic] Token:', token ? 'found' : 'MISSING');
+
+            const formData = new FormData();
+            formData.append('teacher_profile_picture', file);
+
+            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                const res = await fetch(`${BASE_URL}/teacher/upload_profile_picture`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                console.log('[ProfilePic] Response status:', res.status);
+                const data = await res.json();
+                console.log('[ProfilePic] Response data:', data);
+                Swal.close();
+
+                if (res.ok && data.ok) {
+                    const url = `${BASE_URL}/uploads/profile_pictures/${data.filename}`;
+                    setTeacherAvatar(url);
+                    Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+                }
+            } catch (err) {
+                Swal.close();
+                console.error('[ProfilePic] Fetch error:', err);
+                Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message || 'Network error.' });
+            }
+
+            // Reset after upload so same file can be re-selected
+            this.value = '';
+        });
+    }
 });
 
 // ============================================================
@@ -185,9 +279,10 @@ function navigateTo(navName) {
     // Initialize or resize map only when navigating to location tab
     if (navName === 'location') {
         if (map) {
-            setTimeout(() => map.invalidateSize(), 300);
+            setTimeout(() => map.invalidateSize(), 150);
+            setTimeout(() => map.invalidateSize(), 400);
         } else {
-            setTimeout(() => loadLocation(), 300);
+            setTimeout(() => loadLocation(), 150);
         }
     }
 
@@ -228,30 +323,57 @@ function cancel() {
 // ============================================================
 // DASHBOARD
 // ============================================================
+let _dashboardChart = null;
+
 function updateDashboardChart() {
     const total   = state.totalStudentRegistered;
     const present = state.totalPresent;
     const absent  = Math.max(total - present, 0);
-    const percent = total > 0 ? (present / total) * 100 : 0;
 
     // Update stat cards
     document.getElementById('totalPresents').textContent      = present;
     document.getElementById('bottomTotalPresent').textContent = 'Presents ' + present;
     document.getElementById('totalStudentAbsent').textContent = absent;
     document.getElementById('bottomTotalAbsent').textContent  = 'Absent ' + absent;
+    document.getElementById('centerTotalStudents').textContent = total;
 
-    // Draw donut chart
-    const svg = document.getElementById('donutChart');
-    if (!svg) return;
-    const progressCircle = svg.querySelectorAll('circle')[1];
-    const circumference  = 2 * Math.PI * progressCircle.r.baseVal.value;
-    // Remove CSS transition temporarily so the chart snaps to its value immediately on load
-    progressCircle.style.transition    = 'none';
-    progressCircle.style.strokeDasharray  = `${circumference} ${circumference}`;
-    progressCircle.style.strokeDashoffset = -(circumference * (1 - percent / 100));
-    // Re-enable transition after the initial paint so future updates animate smoothly
-    requestAnimationFrame(() => {
-        progressCircle.style.transition = '';
+    const canvas = document.getElementById('donutChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const data    = total > 0 ? [present, absent] : [0, 1];
+    const colors  = total > 0 ? ['#5a8a7a', '#d88888'] : ['#e0e0e0', '#e0e0e0'];
+
+    if (_dashboardChart) {
+        _dashboardChart.data.datasets[0].data   = data;
+        _dashboardChart.data.datasets[0].backgroundColor = colors;
+        _dashboardChart.update();
+        return;
+    }
+
+    _dashboardChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Present', 'Absent'],
+            datasets: [{
+                data,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            cutout: '72%',
+            animation: { animateRotate: true, duration: 600 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.parsed} student${ctx.parsed !== 1 ? 's' : ''}`
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -291,8 +413,87 @@ async function getStudentAttendanceRecords() {
 // ============================================================
 // REALTIME ATTENDANCE POLLING
 // ============================================================
-let _lastAttendanceCount = -1;
-let _teacherPollInterval  = null;
+let _lastAttendanceCount      = -1;
+let _teacherPollInterval      = null;
+let _lastEventHash            = '';
+let _lastEventHistoryHash     = '';
+let _eventPollInterval        = null;
+
+function _hashContent(arr) {
+    return JSON.stringify(arr);
+}
+
+async function pollEventAttendanceSilently() {
+    const liveToken = localStorage.getItem('teacher_token');
+    try {
+        // Poll event attendance
+        const res1 = await fetch(`${BASE_URL}/teacher/get_event_attendance`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + liveToken }
+        });
+        if (res1.ok) {
+            const data1 = await res1.json();
+            if (data1.ok && data1.content) {
+                const hash1 = _hashContent(data1.content);
+                if (hash1 !== _lastEventHash) {
+                    _lastEventHash = hash1;
+                    DOM.eventAttendanceBody.innerHTML = data1.content.length
+                        ? data1.content.map(d => `
+                        <tr>
+                            <td>${d.student_id_number}</td>
+                            <td>${d.student_name}</td>
+                            <td>${d.student_program}</td>
+                            <td>${d.student_year_level}</td>
+                            <td>${formatDate(d.date)}</td>
+                            <td>${formatTime(d.time)}</td>
+                            <td>${d.event_name}</td>
+                            <td>${d.status}</td>
+                        </tr>`).join('')
+                        : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
+                    const dot1 = document.getElementById('liveDotEvent');
+                    if (dot1) { dot1.classList.add('live-blink'); setTimeout(() => dot1.classList.remove('live-blink'), 2000); }
+                }
+            }
+        }
+
+        // Poll event attendance history
+        const res2 = await fetch(`${BASE_URL}/teacher/get_event_attendance_history`, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + liveToken }
+        });
+        if (res2.ok) {
+            const data2 = await res2.json();
+            if (data2.ok && data2.content) {
+                const hash2 = _hashContent(data2.content);
+                if (hash2 !== _lastEventHistoryHash) {
+                    _lastEventHistoryHash = hash2;
+                    DOM.eventAttendanceHistoryBody.innerHTML = data2.content.length
+                        ? data2.content.map(d => `
+                        <tr>
+                            <td>${d.student_id_number}</td>
+                            <td>${d.student_name}</td>
+                            <td>${d.student_program}</td>
+                            <td>${d.student_year_level}</td>
+                            <td>${formatDate(d.date)}</td>
+                            <td>${formatTime(d.time)}</td>
+                            <td>${d.event_name}</td>
+                            <td>${d.status}</td>
+                        </tr>`).join('')
+                        : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
+                    const dot2 = document.getElementById('liveDotEventHistory');
+                    if (dot2) { dot2.classList.add('live-blink'); setTimeout(() => dot2.classList.remove('live-blink'), 2000); }
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[EventPoll]', err);
+    }
+}
+
+function startEventPolling() {
+    if (_eventPollInterval) return;
+    // Poll immediately then every 3s for near-realtime updates
+    pollEventAttendanceSilently();
+    _eventPollInterval = setInterval(pollEventAttendanceSilently, 3000);
+}
 
 async function pollAttendanceSilently() {
     try {
@@ -355,11 +556,11 @@ async function refreshAttendanceHistory() {
 // EVENT ATTENDANCE
 // ============================================================
 async function renderEventAttendanceRecord() {
-    Swal.fire({ title: 'Loading event attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     const data = await apiCall('/teacher/get_event_attendance', 'GET');
-    Swal.close();
     if (!data) return;
-    DOM.eventAttendanceBody.innerHTML = data.content.map(d => `
+    _lastEventHash = _hashContent(data.content);
+    DOM.eventAttendanceBody.innerHTML = data.content.length
+        ? data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
             <td>${d.student_name}</td>
@@ -369,16 +570,16 @@ async function renderEventAttendanceRecord() {
             <td>${formatTime(d.time)}</td>
             <td>${d.event_name}</td>
             <td>${d.status}</td>
-        </tr>
-    `).join('');
+        </tr>`).join('')
+        : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
 }
 
 async function renderEventAttendanceHistoryRecord() {
-    Swal.fire({ title: 'Loading event history...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     const data = await apiCall('/teacher/get_event_attendance_history', 'GET');
-    Swal.close();
     if (!data) return;
-    DOM.eventAttendanceHistoryBody.innerHTML = data.content.map(d => `
+    _lastEventHistoryHash = _hashContent(data.content);
+    DOM.eventAttendanceHistoryBody.innerHTML = data.content.length
+        ? data.content.map(d => `
         <tr>
             <td>${d.student_id_number}</td>
             <td>${d.student_name}</td>
@@ -388,8 +589,8 @@ async function renderEventAttendanceHistoryRecord() {
             <td>${formatTime(d.time)}</td>
             <td>${d.event_name}</td>
             <td>${d.status}</td>
-        </tr>
-    `).join('');
+        </tr>`).join('')
+        : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
 }
 
 // ============================================================
@@ -499,8 +700,7 @@ async function loadStudentsRegistered() {
     if (!data || !data.content) return;
 
     state.totalStudentRegistered = data.content.length;
-    document.getElementById('totalStudents').textContent       = state.totalStudentRegistered;
-    document.getElementById('centerTotalStudents').textContent = state.totalStudentRegistered;
+    document.getElementById('totalStudents').textContent = state.totalStudentRegistered;
     // Draw chart now that we have both totals (attendance may have already loaded)
     updateDashboardChart();
 
@@ -644,11 +844,26 @@ async function confirmAddStudent() {
     };
 
     Swal.fire({ title: 'Adding student...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    const res = await apiCall('/teacher/add_student', 'POST', studentData);
-    if (res) {
-        Swal.fire('Success', res.message, 'success');
-        closeAddStudentModal();
-        loadStudentsRegistered();
+
+    try {
+        const res = await fetch(`${BASE_URL}/teacher/add_student`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify(studentData)
+        });
+        const data = await res.json();
+        Swal.close();
+
+        if (res.ok && data.ok) {
+            await Swal.fire({ icon: 'success', title: 'Success', text: data.message, timer: 1800, showConfirmButton: false });
+            closeAddStudentModal();
+            loadStudentsRegistered();
+        } else {
+            Swal.fire({ icon: 'error', title: 'Failed', text: data.message || 'Could not add student.' });
+        }
+    } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'Network Error', text: err.message || 'Please try again.' });
     }
 }
 
@@ -715,10 +930,19 @@ document.getElementById('recordForm').addEventListener('submit', async function 
 function initMap(lat, lng) {
     if (map) { map.remove(); map = null; marker = null; circle = null; }
 
-    map = L.map('map').setView([lat, lng], 18);
+    // Fix Leaflet default icon broken image paths (common webpack/CDN issue)
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+        iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
+
+    map = L.map('map', { zoomControl: true }).setView([lat, lng], 18);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
     }).addTo(map);
 
     marker = L.marker([lat, lng], { draggable: true }).addTo(map);
@@ -733,7 +957,10 @@ function initMap(lat, lng) {
         circle.setLatLng(pos);
     });
 
-    setTimeout(() => map.invalidateSize(), 400);
+    // Fire multiple invalidateSize to handle CSS transitions and hidden containers
+    setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => map.invalidateSize(), 300);
+    setTimeout(() => map.invalidateSize(), 600);
 }
 
 function loadLocation() {
@@ -741,23 +968,17 @@ function loadLocation() {
     navigator.geolocation.getCurrentPosition(position => {
         Swal.close();
         const { latitude: lat, longitude: lng } = position.coords;
-        const mapEl = document.getElementById('map');
 
-        if (mapEl.offsetParent === null) {
-            const observer = new MutationObserver(() => {
-                if (mapEl.offsetParent !== null) {
-                    observer.disconnect();
-                    setTimeout(() => initMap(lat, lng), 100);
-                }
-            });
-            observer.observe(document.body, { attributes: true, subtree: true, childList: true });
-        } else {
+        // Always wait for the section to be visible before initializing
+        setTimeout(() => {
             initMap(lat, lng);
-        }
+            // Extra invalidateSize after a short delay to fix tile rendering
+            setTimeout(() => { if (map) map.invalidateSize(); }, 300);
+        }, 150);
     }, err => {
         Swal.close();
         Swal.fire({ icon: 'error', title: 'Location Error', text: err.message || 'Unable to retrieve location.' });
-    });
+    }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
 async function setLocation() {
@@ -1076,6 +1297,25 @@ async function getTeacherDataToServer() {
     document.querySelector('.profile-name').textContent           = teacher.teacher_name;
     document.querySelector('.profile-email').textContent          = teacher.teacher_email;
     document.getElementById('accountInformationName').textContent = teacher.teacher_name;
+
+    // Set profile picture if available
+    if (teacher.teacher_profile_picture) {
+        const url = `${BASE_URL}/uploads/profile_pictures/${teacher.teacher_profile_picture}`;
+        setTeacherAvatar(url);
+    }
+}
+
+function setTeacherAvatar(url) {
+    // Sidebar avatar
+    const sidebarAvatar = document.getElementById('sidebarAvatar');
+    if (sidebarAvatar) {
+        sidebarAvatar.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'" alt="Profile">`;
+    }
+    // Settings avatar
+    const teacherAvatar = document.getElementById('teacherAvatar');
+    if (teacherAvatar) {
+        teacherAvatar.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'" alt="Profile">`;
+    }
 }
 
 // Show a once-per-day reminder to set a subject before taking attendance

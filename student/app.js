@@ -1,4 +1,42 @@
 // ============================================================
+// ============================================================
+// OFFLINE BANNER
+// ============================================================
+function showOfflineBanner() {
+    let banner = document.getElementById('offlineBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'offlineBanner';
+        banner.innerHTML = `
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:white;flex-shrink:0">
+                <path d="M1 1l22 22-1.41 1.41-2.64-2.64A10.49 10.49 0 0112 23C6.48 23 2 18.52 2 13c0-2.76 1.12-5.26 2.93-7.07L1 2.41 2.41 1zm10 18c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-5.47-5.47l1.42 1.42A4.978 4.978 0 0111 13c0-.55.45-1 1-1s1 .45 1 1l1.42 1.42A6.943 6.943 0 0012 11c-1.48 0-2.84.46-3.95 1.24l-2.52-2.52A9.954 9.954 0 0112 8c2.22 0 4.27.73 5.93 1.95l1.42 1.42C17.55 9.77 14.93 8 12 8 9.74 8 7.67 8.82 6.04 10.23l-1.51-1.51z"/>
+            </svg>
+            <span>No internet connection</span>`;
+        banner.style.cssText = `
+            position:fixed; top:0; left:0; right:0; z-index:99999;
+            background:#c0392b; color:white; padding:10px 20px;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            font-size:13px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+            transform:translateY(-100%); transition:transform 0.3s ease;`;
+        document.body.appendChild(banner);
+    }
+    requestAnimationFrame(() => banner.style.transform = 'translateY(0)');
+}
+
+function hideOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    if (banner) banner.style.transform = 'translateY(-100%)';
+}
+
+window.addEventListener('offline', () => showOfflineBanner());
+window.addEventListener('online',  () => {
+    hideOfflineBanner();
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Back online!', showConfirmButton: false, timer: 2500, timerProgressBar: true });
+});
+
+if (!navigator.onLine) showOfflineBanner();
+
+
 // CONFIG
 // ============================================================
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';

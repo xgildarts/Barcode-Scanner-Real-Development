@@ -102,6 +102,43 @@ const DOM = {
 };
 
 // ============================================================
+// OFFLINE BANNER
+// ============================================================
+function showOfflineBanner() {
+    let banner = document.getElementById('offlineBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'offlineBanner';
+        banner.innerHTML = `
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:white;flex-shrink:0">
+                <path d="M1 1l22 22-1.41 1.41-2.64-2.64A10.49 10.49 0 0112 23C6.48 23 2 18.52 2 13c0-2.76 1.12-5.26 2.93-7.07L1 2.41 2.41 1zm10 18c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-5.47-5.47l1.42 1.42A4.978 4.978 0 0111 13c0-.55.45-1 1-1s1 .45 1 1l1.42 1.42A6.943 6.943 0 0012 11c-1.48 0-2.84.46-3.95 1.24l-2.52-2.52A9.954 9.954 0 0112 8c2.22 0 4.27.73 5.93 1.95l1.42 1.42C17.55 9.77 14.93 8 12 8 9.74 8 7.67 8.82 6.04 10.23l-1.51-1.51z"/>
+            </svg>
+            <span>No internet connection</span>`;
+        banner.style.cssText = `
+            position:fixed; top:0; left:0; right:0; z-index:99999;
+            background:#c0392b; color:white; padding:10px 20px;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            font-size:13px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+            transform:translateY(-100%); transition:transform 0.3s ease;`;
+        document.body.appendChild(banner);
+    }
+    requestAnimationFrame(() => banner.style.transform = 'translateY(0)');
+}
+
+function hideOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    if (banner) banner.style.transform = 'translateY(-100%)';
+}
+
+window.addEventListener('offline', () => showOfflineBanner());
+window.addEventListener('online',  () => {
+    hideOfflineBanner();
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Back online!', showConfirmButton: false, timer: 2500, timerProgressBar: true });
+});
+
+if (!navigator.onLine) showOfflineBanner();
+
+// ============================================================
 // UTILITIES
 // ============================================================
 
@@ -290,16 +327,83 @@ async function getAdminData() {
         const res = await apiFetch('/admin/get_admin_data');
         const data = await res.json();
         if (data.ok) {
-            const { admin_name, admin_email } = data.content[0];
+            const { admin_name, admin_email, admin_profile_picture } = data.content[0];
             DOM.sideBarName.textContent = admin_name;
             DOM.profileName.textContent = admin_name;
             DOM.adminProfileName.textContent = admin_name;
             DOM.profileEmailTop.textContent = admin_email;
+
+            if (admin_profile_picture) {
+                const url = `${URL_BASED}/uploads/profile_pictures/${admin_profile_picture}`;
+                setAdminAvatar(url);
+            }
         }
     } catch (err) {
         console.error(err);
     }
 }
+
+function setAdminAvatar(url) {
+    const imgTag = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'" alt="Profile">`;
+    const sidebarAvatar = document.getElementById('sidebarAvatar');
+    if (sidebarAvatar) sidebarAvatar.innerHTML = imgTag;
+    const adminAvatar = document.getElementById('adminAvatar');
+    if (adminAvatar) adminAvatar.innerHTML = imgTag;
+}
+
+// Profile picture upload handler
+document.addEventListener('DOMContentLoaded', () => {
+    const picInput = document.getElementById('adminProfilePicInput');
+    if (picInput) {
+        picInput.addEventListener('change', async function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            const allowed = /jpeg|jpg|png|webp/;
+            if (!allowed.test(file.name.split('.').pop().toLowerCase())) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid file type', text: 'Only JPEG, PNG, or WEBP images are allowed.' });
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                return Swal.fire({ icon: 'warning', title: 'File too large', text: 'Please choose an image under 10MB.' });
+            }
+
+            // Instant preview
+            const reader = new FileReader();
+            reader.onload = e => setAdminAvatar(e.target.result);
+            reader.readAsDataURL(file);
+
+            const token = localStorage.getItem('admin_token');
+            const formData = new FormData();
+            formData.append('admin_profile_picture', file);
+
+            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                const res = await fetch(`${URL_BASED}/admin/upload_profile_picture`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                const data = await res.json();
+                Swal.close();
+
+                if (res.ok && data.ok) {
+                    const url = `${URL_BASED}/uploads/profile_pictures/${data.filename}`;
+                    setAdminAvatar(url);
+                    Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+                }
+            } catch (err) {
+                Swal.close();
+                console.error('[AdminProfilePic] Fetch error:', err);
+                Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message || 'Network error.' });
+            }
+
+            this.value = '';
+        });
+    }
+});
 
 async function editProfileName() {
     const { value: newName } = await Swal.fire({
