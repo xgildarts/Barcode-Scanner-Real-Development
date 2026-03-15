@@ -140,6 +140,109 @@
                 });
             }
         });
+        document.querySelector('.forgot-password').addEventListener('click', async function (e) {
+            e.preventDefault();
+
+            // Step 1 — Enter email
+            const { value: email, isConfirmed: step1ok } = await Swal.fire({
+                title: 'Forgot Password',
+                html: `<p style="color:#555;margin-bottom:16px">Enter your registered email and we'll send you a 6-digit reset code.</p>
+                       <input id="swal-email" class="swal2-input" type="email" placeholder="Enter your email">`,
+                confirmButtonText: 'Send Code',
+                confirmButtonColor: '#3d6b6b',
+                showCancelButton: true,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const val = document.getElementById('swal-email').value.trim();
+                    if (!val) { Swal.showValidationMessage('Please enter your email.'); return false; }
+                    if (!/\S+@\S+\.\S+/.test(val)) { Swal.showValidationMessage('Enter a valid email address.'); return false; }
+                    return val;
+                }
+            });
+            if (!step1ok || !email) return;
+
+            Swal.fire({ title: 'Sending code...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${URL_BASED}/guard/forgot_password/request_otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+            } catch {
+                return Swal.fire({ icon: 'error', title: 'Server Error', text: 'Could not send the code. Please try again.' });
+            }
+
+            // Step 2 — Enter OTP
+            const { value: otp, isConfirmed: step2ok } = await Swal.fire({
+                title: 'Enter Reset Code',
+                html: `<p style="color:#555;margin-bottom:8px">A 6-digit code was sent to <strong>${email}</strong>.</p>
+                       <p style="color:#999;font-size:12px;margin-bottom:16px">Valid for 5 minutes.</p>
+                       <input id="swal-otp" class="swal2-input" type="text" maxlength="6" placeholder="_ _ _ _ _ _"
+                           style="letter-spacing:10px;font-size:24px;font-weight:700;text-align:center">`,
+                confirmButtonText: 'Verify Code',
+                confirmButtonColor: '#3d6b6b',
+                showCancelButton: true,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const val = document.getElementById('swal-otp').value.trim();
+                    if (!val || val.length !== 6 || !/^\d{6}$/.test(val)) {
+                        Swal.showValidationMessage('Enter the 6-digit code sent to your email.');
+                        return false;
+                    }
+                    return val;
+                }
+            });
+            if (!step2ok || !otp) return;
+
+            Swal.fire({ title: 'Verifying...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${URL_BASED}/guard/forgot_password/verify_otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp })
+                });
+                const data = await res.json();
+                if (!res.ok) return Swal.fire({ icon: 'error', title: 'Invalid Code', text: data.message });
+            } catch {
+                return Swal.fire({ icon: 'error', title: 'Server Error', text: 'Verification failed. Please try again.' });
+            }
+
+            // Step 3 — New password
+            const { value: passwords, isConfirmed: step3ok } = await Swal.fire({
+                title: 'Set New Password',
+                html: `<input id="swal-pw1" class="swal2-input" type="password" placeholder="New password">
+                       <input id="swal-pw2" class="swal2-input" type="password" placeholder="Confirm new password">`,
+                confirmButtonText: 'Reset Password',
+                confirmButtonColor: '#3d6b6b',
+                showCancelButton: true,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const pw1 = document.getElementById('swal-pw1').value;
+                    const pw2 = document.getElementById('swal-pw2').value;
+                    if (!pw1 || !pw2) { Swal.showValidationMessage('Please fill in both fields.'); return false; }
+                    if (pw1.length < 6) { Swal.showValidationMessage('Password must be at least 6 characters.'); return false; }
+                    if (pw1 !== pw2) { Swal.showValidationMessage('Passwords do not match.'); return false; }
+                    return { new_password: pw1, confirm_password: pw2 };
+                }
+            });
+            if (!step3ok || !passwords) return;
+
+            Swal.fire({ title: 'Resetting password...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${URL_BASED}/guard/forgot_password/reset_password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, ...passwords })
+                });
+                const data = await res.json();
+                if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                Swal.fire({ icon: 'success', title: 'Password Reset!', text: 'You can now log in with your new password.', confirmButtonColor: '#3d6b6b' });
+            } catch {
+                Swal.fire({ icon: 'error', title: 'Server Error', text: 'Something went wrong. Please try again.' });
+            }
+        });
     </script>
 </body>
 </html>

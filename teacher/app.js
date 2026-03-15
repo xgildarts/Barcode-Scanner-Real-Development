@@ -306,20 +306,6 @@ DOM.sidebarOverlay.addEventListener('click', () => {
     DOM.sidebarOverlay.classList.remove('active');
 });
 
-function cancel() {
-    Swal.fire({
-        title: 'Cancel Action?',
-        text: 'Are you sure you want to go back?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, go back'
-    }).then(result => {
-        if (result.isConfirmed) window.history.back();
-    });
-}
-
 // ============================================================
 // DASHBOARD
 // ============================================================
@@ -1480,9 +1466,22 @@ function printSection(tableId, title) {
     const table = document.getElementById(tableId);
     if (!table) return window.print();
 
-    const now     = new Date().toLocaleString('en-PH');
-    const rows    = table.querySelectorAll('tbody tr').length;
-    const content = table.outerHTML;
+    const now  = new Date().toLocaleString('en-PH');
+    const rows = table.querySelectorAll('tbody tr').length;
+
+    // Clone so we don't touch the live DOM
+    const clone = table.cloneNode(true);
+    // Find and remove the Action column (Edit/Delete buttons shouldn't appear on print)
+    let actionColIndex = -1;
+    clone.querySelectorAll('thead th').forEach((th, i) => {
+        if (th.textContent.trim().toLowerCase() === 'action') actionColIndex = i;
+    });
+    if (actionColIndex !== -1) {
+        clone.querySelectorAll('tr').forEach(row => {
+            if (row.children[actionColIndex]) row.children[actionColIndex].remove();
+        });
+    }
+    const content = clone.outerHTML;
 
     const printWin = window.open('', '_blank', 'width=900,height=700');
     printWin.document.write(`
@@ -1523,7 +1522,7 @@ function saveChanges() {
     Swal.fire({ position: 'center', icon: 'success', title: 'Changes saved successfully', showConfirmButton: false, timer: 1500 });
 }
 
-function printList()       { printSection('attendanceNowTable', 'Attendance Now'); }
+function printList()       { printSection('studentsTable', 'Student Records'); }
 function printAttendance() { printSection('eventAttendanceTable', 'Event Attendance'); }
 function printPage()       { printSection('attendanceHistoryTable', 'Attendance History'); }
 function applyFilters()    { /* hook in filter logic here */ }

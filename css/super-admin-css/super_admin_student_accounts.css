@@ -1,0 +1,233 @@
+/* Super Admin version of admin_student_accounts.css — navy/slate palette */
+/* ============================================================
+   STUDENT ACCOUNTS PAGE
+   BUG FIX: .student-card, .teacher-card, and .guard-card had
+   near-identical rules copy-pasted three times (~80 lines each).
+   Consolidated into shared .account-card-item, with only the
+   name/badge/info/meta/course/actions selectors shared.
+   ============================================================ */
+
+   body {
+    background: linear-gradient(180deg, #3d5a7a 0%, #4d6a8a 100%);
+    padding-bottom: 80px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+    background: linear-gradient(135deg, #6a8a7a 0%, #3d5a7a 100%);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+.search-container {
+    padding: 16px 20px;
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    opacity: 0.5;
+    pointer-events: none;       /* BUG FIX: icon was blocking clicks on input */
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 12px 12px 42px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+    outline: 2px solid #2d6db5;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+/* ============================================================
+   ACCOUNT CARDS — shared styles for student, teacher, guard
+   ============================================================ */
+.students-list,
+.teachers-list,
+.guards-list {
+    padding: 0 20px;
+}
+
+/* Shared card shell */
+.student-card,
+.teacher-card,
+.guard-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Shared header row */
+.student-header,
+.teacher-header,
+.guard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+/* Shared name */
+.student-name,
+.teacher-name,
+.guard-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a2f4a;
+    margin-bottom: 4px;
+}
+
+/* Shared badge */
+.student-badge,
+.teacher-badge,
+.guard-badge {
+    background: #e57373;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Shared info row */
+.student-info,
+.teacher-info,
+.guard-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Shared meta row */
+.student-meta,
+.teacher-meta,
+.guard-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Shared course/location label */
+.student-course,
+.teacher-course,
+.guard-domain-gate {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Shared actions row */
+.student-actions,
+.teacher-actions,
+.guard-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================================
+   ACTION BUTTON (base — colors set in admin_global.css)
+   ============================================================ */
+.action-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+/* ============================================================
+   REGISTER BUTTON
+   ============================================================ */
+.register-btn-container {
+    padding: 0 20px;
+    margin-top: 20px;
+}
+
+.register-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #2d6db5 0%, #3d7dc5 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(45, 82, 130, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.register-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(45, 82, 130, 0.5);
+}
+
+.register-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+    .student-info,
+    .teacher-info,
+    .guard-info {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .student-meta,
+    .teacher-meta,
+    .guard-meta {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
+/* ============================================================
+   SCROLLABLE CARDS LIST
+   ============================================================ */
+.students-list {
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}

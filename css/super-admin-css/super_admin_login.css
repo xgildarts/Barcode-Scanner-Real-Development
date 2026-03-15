@@ -1,0 +1,215 @@
+/* ============================================================
+   SUPER ADMIN LOGIN PAGE
+   Palette: Deep navy  #162d4a / #1e3a5f / #2d5282
+   ============================================================ */
+
+body {
+    background: linear-gradient(135deg, #162d4a 0%, #2d5282 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.login-container {
+    background: linear-gradient(135deg, rgba(200, 215, 235, 0.92) 0%, rgba(175, 195, 220, 0.88) 100%);
+    border-radius: 24px;
+    padding: 40px 30px;
+    max-width: 400px;
+    width: 100%;
+    margin: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================
+   LOGO
+   ============================================================ */
+.logo-container {
+    display: flex;
+    justify-content: center;
+}
+
+.logo {
+    width: 120px;
+    height: 120px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ============================================================
+   WELCOME TEXT
+   ============================================================ */
+.welcome-text {
+    text-align: center;
+    color: #1a2f4a;
+    margin-bottom: 30px;
+}
+
+.welcome-text h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.welcome-text p {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ============================================================
+   FORM
+   ============================================================ */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    width: 20px;
+    height: 20px;
+    opacity: 0.5;
+    pointer-events: none;
+    fill: #1e3a5f;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 14px 14px 44px;
+    border: none;
+    font-size: 14px;
+    color: #333;
+    background: white;
+}
+
+.form-input:focus {
+    outline: 2px solid #2d5282;
+}
+
+.form-input::placeholder {
+    color: #999;
+}
+
+/* ============================================================
+   FORM OPTIONS
+   ============================================================ */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 13px;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #1a2f4a;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #1e3a5f;
+}
+
+.forgot-password {
+    color: #1a2f4a;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+/* ============================================================
+   LOGIN BUTTON
+   ============================================================ */
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #162d4a 0%, #1e3a5f 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(22, 45, 74, 0.4);
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(22, 45, 74, 0.5);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+/* ============================================================
+   EYE TOGGLE (password visibility)
+   ============================================================ */
+.pw-eye {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.45;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.2s;
+}
+
+.pw-eye:hover,
+.pw-eye.visible {
+    opacity: 0.85;
+}
+
+.pw-eye svg {
+    width: 20px;
+    height: 20px;
+    fill: #1e3a5f;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 30px 24px;
+    }
+
+    .logo {
+        width: 100px;
+        height: 100px;
+    }
+}

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^5.1.0",
     "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "clicksend": "^5.0.79",

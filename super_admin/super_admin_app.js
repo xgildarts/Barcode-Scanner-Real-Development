@@ -2,7 +2,7 @@
 // CONSTANTS & CONFIG
 // ============================================================
 const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
-const TOKEN = localStorage.getItem('admin_token');
+const TOKEN = localStorage.getItem('super_admin_token');
 
 const PAGES = [
     'dashboard',
@@ -13,7 +13,10 @@ const PAGES = [
     'teacherAccountManagement',
     'guardAccountManagement',
     'academicSetup',
-    'registration'
+    'registration',
+    'adminAccountManagement',
+    'loginLogs',
+    'activityLogs'
 ];
 
 const PAGE_TITLES = {
@@ -25,7 +28,10 @@ const PAGE_TITLES = {
     teacherAccountManagement: 'Teacher Accounts',
     guardAccountManagement: 'Guard Accounts',
     academicSetup: 'Academic Setup',
-    registration: 'Registration'
+    registration: 'Registration',
+    adminAccountManagement: 'Admin Accounts',
+    loginLogs: 'Login Logs',
+    activityLogs: 'Activity Logs'
 };
 
 // ============================================================
@@ -44,6 +50,7 @@ const DOM = {
     studentAccountCounts: document.getElementById('studentAccountCounts'),
     teacherAccountCounts: document.getElementById('teacherAccountCounts'),
     guardAccountCounts: document.getElementById('guardAccountCounts'),
+    adminAccountCounts: document.getElementById('adminAccountCounts'),
 
     // Lists
     studentsList: document.getElementById('studentsList'),
@@ -187,7 +194,7 @@ async function handleHttpErrors(res, data) {
             title: 'Session Expired',
             text: 'Your session has expired. Please log in again.'
         });
-        window.location.href = 'admin_login.html';
+        window.location.href = 'super_admin_login.html';
         return true;
     }
     if (res.status === 403) {
@@ -225,6 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     navigateTo('dashboard');
     getAdminData();
+    loadSystemStats();
+    fetchAdminAccounts();
+    renderLoginLogs();
+    renderActivityLogs();
     renderPrograms();
     renderYearLevels();
     fetchStudentAccounts();
@@ -276,14 +287,14 @@ async function checkToken() {
             confirmButtonColor: '#d33',
             allowOutsideClick: false
         });
-        window.location.href = 'admin_login.html';
+        window.location.href = 'super_admin_login.html';
         return;
     }
 
     try {
-        const res = await apiFetch('/authentication/verify_token', { method: 'POST' });
+        const res = await apiFetch('/super_admin/verify_token', { method: 'POST' });
         const data = await res.json();
-        if (!res.ok) {
+        if (!res.ok || !data.ok) {
             await Swal.fire({
                 icon: 'error',
                 title: 'Session Expired',
@@ -291,7 +302,7 @@ async function checkToken() {
                 confirmButtonColor: '#d33',
                 allowOutsideClick: false
             });
-            window.location.href = 'admin_login.html';
+            window.location.href = 'super_admin_login.html';
         }
     } catch (err) {
         console.error(err);
@@ -314,7 +325,7 @@ function logout() {
             .then(() => {
                 localStorage.removeItem('admin_token');
                 localStorage.removeItem('admin_user');
-                window.location.href = 'admin_login.html';
+                window.location.href = 'super_admin_login.html';
             });
     });
 }
@@ -324,10 +335,10 @@ function logout() {
 // ============================================================
 async function getAdminData() {
     try {
-        const res = await apiFetch('/admin/get_admin_data');
+        const res = await apiFetch('/super_admin/get_profile');
         const data = await res.json();
         if (data.ok) {
-            const { admin_name, admin_email, admin_profile_picture } = data.content[0];
+            const { super_admin_name: admin_name, super_admin_email: admin_email, super_admin_profile_picture: admin_profile_picture } = data.content || {};
             DOM.sideBarName.textContent = admin_name;
             DOM.profileName.textContent = admin_name;
             DOM.adminProfileName.textContent = admin_name;
@@ -353,7 +364,7 @@ function setAdminAvatar(url) {
 
 // Profile picture upload handler
 document.addEventListener('DOMContentLoaded', () => {
-    const picInput = document.getElementById('adminProfilePicInput');
+    const picInput = document.getElementById('superAdminProfilePicInput');
     if (picInput) {
         picInput.addEventListener('change', async function () {
             const file = this.files[0];
@@ -372,14 +383,14 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = e => setAdminAvatar(e.target.result);
             reader.readAsDataURL(file);
 
-            const token = localStorage.getItem('admin_token');
+            const token = localStorage.getItem('super_admin_token');
             const formData = new FormData();
-            formData.append('admin_profile_picture', file);
+            formData.append('super_admin_profile_picture', file);
 
             Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                const res = await fetch(`${URL_BASED}/admin/upload_profile_picture`, {
+                const res = await fetch(`${URL_BASED}/super_admin/upload_profile_picture`, {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token },
                     body: formData
@@ -420,8 +431,8 @@ async function editProfileName() {
 
     if (!newName) return;
 
-    const res = await apiFetch('/admin/admin_change_name', {
-        method: 'POST',
+    const res = await apiFetch('/super_admin/update_name', {
+        method: 'PUT',
         body: JSON.stringify({ newName })
     });
 
@@ -446,7 +457,7 @@ async function updatePassword() {
         return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'New password must be at least 6 characters long.' });
     }
 
-    const res = await apiFetch('/admin/admin_change_password', {
+    const res = await apiFetch('/super_admin/change_password', {
         method: 'PUT',
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword })
     });
@@ -476,7 +487,7 @@ function showAdminLiveIndicator(dotId) {
 
 async function renderEventAttendanceRecord() {
     try {
-        const res = await apiFetch('/admin/get_events');
+        const res = await apiFetch('/super_admin/get_all_events');
         const data = await res.json();
 
         if (!res.ok) {
@@ -497,6 +508,7 @@ async function renderEventAttendanceRecord() {
                 <td>${formatTime(d.time)}</td>
                 <td>${d.status}</td>
                 <td>${d.event_name}</td>
+                <td>${d.admin_name || '-'}</td>
             </tr>
         `).join('');
 
@@ -510,7 +522,7 @@ async function renderEventAttendanceRecord() {
 
 async function renderEventHistoryAttendanceRecord() {
     try {
-        const res = await apiFetch('/admin/get_events_history');
+        const res = await apiFetch('/super_admin/get_all_events_history');
         const data = await res.json();
         if (!res.ok) { console.error(data); return; }
 
@@ -524,6 +536,7 @@ async function renderEventHistoryAttendanceRecord() {
                 <td>${formatTime(d.time)}</td>
                 <td>${d.status}</td>
                 <td>${d.event_name}</td>
+                <td>${d.admin_name || '-'}</td>
             </tr>
         `).join('');
 
@@ -536,7 +549,7 @@ async function renderEventHistoryAttendanceRecord() {
 async function pollAdminSilently() {
     try {
         // Poll event attendance
-        const r1 = await apiFetch('/admin/get_events');
+        const r1 = await apiFetch('/super_admin/get_all_events');
         if (r1.ok) {
             const d1 = await r1.json();
             if (_lastEventCount !== -1 && d1.content.length !== _lastEventCount) {
@@ -562,7 +575,7 @@ async function pollAdminSilently() {
         }
 
         // Poll event history
-        const r2 = await apiFetch('/admin/get_events_history');
+        const r2 = await apiFetch('/super_admin/get_all_events_history');
         if (r2.ok) {
             const d2 = await r2.json();
             if (_lastEventHistCount !== -1 && d2.content.length !== _lastEventHistCount) {
@@ -603,7 +616,7 @@ async function checkEventReminder() {
     // Fetch current event records to find the active event name
     let activeEvent = null;
     try {
-        const res  = await apiFetch('/admin/get_events');
+        const res  = await apiFetch('/super_admin/get_all_events');
         const data = await res.json();
         if (res.ok && data.content && data.content.length > 0) {
             // Prefer a record from today, fall back to the most recent
@@ -636,7 +649,7 @@ async function handleSetEvent() {
 
     if (!TOKEN) {
         return Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'You must be logged in.' })
-            .then(() => { window.location.href = 'admin_login.html'; });
+            .then(() => { window.location.href = 'super_admin_login.html'; });
     }
     if (!eventName) {
         return Swal.fire({ icon: 'warning', title: 'Empty Input', text: 'Please enter an event name.' });
@@ -651,7 +664,7 @@ async function handleSetEvent() {
 
         if (response.status === 401 || response.status === 403) {
             return Swal.fire({ icon: 'error', title: 'Session Expired', text: 'Please login again.' })
-                .then(() => { window.location.href = 'admin_login.html'; });
+                .then(() => { window.location.href = 'super_admin_login.html'; });
         }
         if (!response.ok) {
             return Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to set event.' });
@@ -1327,70 +1340,17 @@ document.getElementById('studentForm').addEventListener('submit', async function
 // ============================================================
 function exportTableToExcel(tableId, fileName) {
     const table = document.getElementById(tableId);
-    if (!table) return Swal.fire({ icon: 'info', title: 'Export Failed', text: 'No table data found to export.' });
-
+    if (!table) {
+        return Swal.fire({ icon: 'info', title: 'Export Failed', text: 'No table data found to export.' });
+    }
     try {
-        const wb = XLSX.utils.book_new();
-
-        // --- Extract headers ---
-        const headers = [];
-        table.querySelectorAll('thead th').forEach(th => headers.push(th.innerText.trim()));
-
-        // --- Extract rows ---
-        const rows = [];
-        table.querySelectorAll('tbody tr').forEach(tr => {
-            const row = [];
-            tr.querySelectorAll('td').forEach(td => row.push(td.innerText.trim()));
-            if (row.some(cell => cell !== '')) rows.push(row);
-        });
-
-        if (rows.length === 0)
-            return Swal.fire({ icon: 'info', title: 'No Data', text: 'The table has no records to export.' });
-
-        const now      = new Date();
-        const dateStr  = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
-        const timeStr  = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
-        const colCount = headers.length;
-
-        const sheetData = [
-            ['PanPacific University'],
-            [fileName + ' Report'],
-            [`Generated: ${dateStr} ${timeStr}`],
-            [],
-            headers,
-            ...rows,
-            [],
-            [`Total Records: ${rows.length}`]
-        ];
-
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-
-        // --- Column widths (auto-fit by max content length) ---
-        const colWidths = headers.map((h, i) => {
-            const maxData = rows.reduce((max, row) => {
-                const len = (row[i] || '').toString().length;
-                return len > max ? len : max;
-            }, h.length);
-            return { wch: Math.min(Math.max(maxData + 4, 12), 40) };
-        });
-        ws['!cols'] = colWidths;
-
-        // --- Merge title rows across all columns ---
-        const mergeEnd = colCount - 1;
-        ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: mergeEnd } }, // School name
-            { s: { r: 1, c: 0 }, e: { r: 1, c: mergeEnd } }, // Report title
-            { s: { r: 2, c: 0 }, e: { r: 2, c: mergeEnd } }, // Date
-            { s: { r: rows.length + 6, c: 0 }, e: { r: rows.length + 6, c: mergeEnd } } // Total
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, fileName.substring(0, 31));
-        XLSX.writeFile(wb, `${fileName}_${now.toISOString().split('T')[0]}.xlsx`);
-
-        Swal.fire({ icon: 'success', title: 'Exported!', text: `${rows.length} records exported to Excel.`, timer: 1800, showConfirmButton: false });
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Error', 'Failed to generate Excel file: ' + e.message, 'error');
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.table_to_sheet(table);
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+        XLSX.writeFile(workbook, `${fileName}.xlsx`);
+        Swal.fire({ icon: 'success', title: 'Exported!', text: 'Your Excel file has been downloaded.', timer: 1500, showConfirmButton: false });
+    } catch {
+        Swal.fire('Error', 'Failed to generate Excel file', 'error');
     }
 }
 
@@ -1506,4 +1466,307 @@ function initEventListeners() {
     document.getElementById('addYearLevelModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeAddYearLevelModal();
     });
+
+    document.getElementById('searchLoginLogs')?.addEventListener('input', function() {
+        const t = this.value.toLowerCase();
+        renderLoginLogsTable(_loginLogs.filter(l => (l.user_name||'').toLowerCase().includes(t)||(l.user_email||'').toLowerCase().includes(t)||(l.role||'').toLowerCase().includes(t)||(l.status||'').toLowerCase().includes(t)));
+    });
+
+    document.getElementById('searchActivityLogs')?.addEventListener('input', function() {
+        const t = this.value.toLowerCase();
+        renderActivityLogsTable(_activityLogs.filter(l => (l.actor_name||'').toLowerCase().includes(t)||(l.actor_role||'').toLowerCase().includes(t)||(l.action||'').toLowerCase().includes(t)||(l.target_name||'').toLowerCase().includes(t)||(l.details||'').toLowerCase().includes(t)));
+    });
+}
+// ============================================================
+// SUPER ADMIN — ADMIN ACCOUNT MANAGEMENT
+// ============================================================
+let _allAdmins = [];
+
+async function fetchAdminAccounts() {
+    try {
+        const res  = await apiFetch('/super_admin/get_all_admins');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        _allAdmins = data.content || [];
+        DOM.adminAccountCounts && (DOM.adminAccountCounts.textContent = `${_allAdmins.length} Accounts`);
+        renderAdminList(_allAdmins);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderAdminList(admins) {
+    const list = document.getElementById('adminList');
+    if (!list) return;
+    if (!admins.length) {
+        list.innerHTML = '<p style="text-align:center;padding:20px;color:#666;">No admin accounts found.</p>';
+        return;
+    }
+    list.innerHTML = admins.map(a => `
+        <div class="student-card">
+            <div class="student-header">
+                <div>
+                    <div class="student-name">${a.admin_name}</div>
+                </div>
+                <div class="student-badge" style="background:#1a4545">ADMIN</div>
+            </div>
+            <div class="student-info">
+                <div>${a.admin_email}</div>
+            </div>
+            <div class="student-meta">
+                <div class="student-course">Created: ${a.date_account_created ? a.date_account_created.split('T')[0] : '-'}</div>
+                <div class="student-actions">
+                    <button class="action-btn edit-btn-account-management"
+                        onclick="openAdminEditModal(${a.admin_id},'${escStr(a.admin_name)}','${escStr(a.admin_email)}')">Edit</button>
+                    <button class="action-btn" style="background:#f0ad4e;color:white;"
+                        onclick="resetAdminPassword(${a.admin_id},'${escStr(a.admin_name)}')">Reset PW</button>
+                    <button class="action-btn delete-btn-account-management"
+                        onclick="deleteAdminAccount(${a.admin_id},'${escStr(a.admin_name)}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function escStr(str) { return (str || '').replace(/'/g, "\\'"); }
+
+function filterAdminAccounts(term) {
+    const t = term.toLowerCase();
+    renderAdminList(_allAdmins.filter(a =>
+        a.admin_name.toLowerCase().includes(t) || a.admin_email.toLowerCase().includes(t)
+    ));
+}
+
+function openAdminEditModal(id, name, email) {
+    document.getElementById('adminIdTracking').value = id;
+    document.getElementById('adminNameInput').value  = name;
+    document.getElementById('adminEmailInput').value = email;
+    document.getElementById('adminEditModal').style.display = 'flex';
+}
+function closeAdminEditModal() {
+    document.getElementById('adminEditModal').style.display = 'none';
+}
+
+document.getElementById('adminEditForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id    = document.getElementById('adminIdTracking').value;
+    const name  = document.getElementById('adminNameInput').value.trim();
+    const email = document.getElementById('adminEmailInput').value.trim();
+    showLoading('Saving...');
+    try {
+        const res  = await apiFetch(`/super_admin/edit_admin/${id}`, { method: 'PUT', body: JSON.stringify({ admin_name: name, admin_email: email }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ icon: 'success', title: 'Updated!', timer: 1500, showConfirmButton: false });
+        closeAdminEditModal();
+        fetchAdminAccounts();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.message });
+    }
+});
+
+function openCreateAdminModal() {
+    document.getElementById('adminCreateModal').style.display = 'flex';
+    document.getElementById('adminCreateForm').reset();
+}
+function closeCreateAdminModal() {
+    document.getElementById('adminCreateModal').style.display = 'none';
+}
+
+document.getElementById('adminCreateForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const name     = document.getElementById('newAdminName').value.trim();
+    const email    = document.getElementById('newAdminEmail').value.trim();
+    const password = document.getElementById('newAdminPassword').value;
+    if (password.length < 6) return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    showLoading('Creating...');
+    try {
+        const res  = await apiFetch('/super_admin/create_admin', { method: 'POST', body: JSON.stringify({ admin_name: name, admin_email: email, admin_password: password }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ icon: 'success', title: 'Admin Created!', text: `${name} can now log in.`, timer: 2000, showConfirmButton: false });
+        closeCreateAdminModal();
+        fetchAdminAccounts();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.message });
+    }
+});
+
+async function resetAdminPassword(id, name) {
+    const { value: newPassword, isConfirmed } = await Swal.fire({
+        title: 'Reset Password',
+        html: `<p style="margin-bottom:12px;color:#666">Set a new password for <strong>${name}</strong>.</p>
+               <input id="swal-newpw" type="password" class="swal2-input" placeholder="New password (min 6 chars)">`,
+        showCancelButton: true,
+        confirmButtonText: 'Reset',
+        confirmButtonColor: '#3d6b6b',
+        preConfirm: () => {
+            const v = document.getElementById('swal-newpw').value;
+            if (v.length < 6) { Swal.showValidationMessage('Password must be at least 6 characters.'); return false; }
+            return v;
+        }
+    });
+    if (!isConfirmed || !newPassword) return;
+    showLoading('Resetting...');
+    try {
+        const res  = await apiFetch(`/super_admin/reset_admin_password/${id}`, { method: 'PUT', body: JSON.stringify({ new_password: newPassword }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ icon: 'success', title: 'Password Reset!', text: `${name}'s password has been updated.`, timer: 2000, showConfirmButton: false });
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.message });
+    }
+}
+
+async function deleteAdminAccount(id, name) {
+    const result = await Swal.fire({
+        title: 'Delete Admin?',
+        text: `Are you sure you want to delete "${name}"? This cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete'
+    });
+    if (!result.isConfirmed) return;
+    showLoading('Deleting...');
+    try {
+        const res  = await apiFetch(`/super_admin/delete_admin/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ icon: 'success', title: 'Deleted!', timer: 1500, showConfirmButton: false });
+        fetchAdminAccounts();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.message });
+    }
+}
+
+// ============================================================
+// SYSTEM STATS
+// ============================================================
+async function loadSystemStats() {
+    try {
+        const res = await apiFetch('/super_admin/system_stats');
+        const data = await res.json();
+        if (!res.ok || !data.ok) return;
+        const s = data.content;
+        if (DOM.sideBarStatsValue)    DOM.sideBarStatsValue.textContent    = s.total_admins;
+        if (DOM.statsValue)           DOM.statsValue.textContent           = s.total_event_attendees ?? 0;
+        if (DOM.adminAccountCounts)   DOM.adminAccountCounts.textContent   = s.total_admins   + ' Accounts';
+        if (DOM.teacherAccountCounts) DOM.teacherAccountCounts.textContent = s.total_teachers + ' Accounts';
+        if (DOM.guardAccountCounts)   DOM.guardAccountCounts.textContent   = s.total_guards   + ' Accounts';
+        if (DOM.studentAccountCounts) DOM.studentAccountCounts.textContent = s.total_students + ' Accounts';
+    } catch (err) { console.error('[loadSystemStats]', err); }
+}
+
+// ============================================================
+// LOGIN LOGS
+// ============================================================
+const ROLE_COLORS = {
+    admin:       { bg:'#e3f2fd', color:'#1565c0' },
+    teacher:     { bg:'#e8f5e9', color:'#2e7d32' },
+    guard:       { bg:'#fff3e0', color:'#e65100' },
+    student:     { bg:'#f3e5f5', color:'#6a1b9a' },
+    super_admin: { bg:'#fce4ec', color:'#880e4f' },
+};
+
+let _loginLogs = [];
+
+async function renderLoginLogs() {
+    try {
+        const res  = await apiFetch('/super_admin/login_logs?limit=500');
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message);
+        _loginLogs = data.content || [];
+        renderLoginLogsTable(_loginLogs);
+    } catch (err) {
+        const tbody = document.getElementById('loginLogsBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px">Failed to load login logs.</td></tr>';
+    }
+}
+
+function renderLoginLogsTable(logs) {
+    const tbody = document.getElementById('loginLogsBody');
+    if (!tbody) return;
+    if (!logs.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px">No login records yet.</td></tr>'; return; }
+    tbody.innerHTML = logs.map((l, i) => {
+        const rc = ROLE_COLORS[l.role] || { bg:'#f5f5f5', color:'#555' };
+        return `<tr>
+            <td>${i + 1}</td>
+            <td>${l.user_name || '<em style="color:#999">Unknown</em>'}</td>
+            <td>${l.user_email || '-'}</td>
+            <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${rc.bg};color:${rc.color}">${(l.role||'-').replace('_',' ').toUpperCase()}</span></td>
+            <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${l.status==='SUCCESS'?'#e8f5e9':'#ffebee'};color:${l.status==='SUCCESS'?'#2e7d32':'#c62828'}">${l.status}</span></td>
+            <td>${l.login_at}</td>
+        </tr>`;
+    }).join('');
+}
+
+function refreshLoginLogs() {
+    renderLoginLogs();
+    Swal.fire({ toast:true, position:'top-end', icon:'success', title:'Login logs refreshed', showConfirmButton:false, timer:1500 });
+}
+
+// ============================================================
+// ACTIVITY LOGS — all users
+// ============================================================
+const ACTION_LABELS = {
+    // Student
+    CLASS_ATTENDANCE_IN:  { label:'Class Attendance',  color:'#2e7d32', bg:'#e8f5e9' },
+    // Teacher
+    MANUAL_ATTENDANCE:    { label:'Manual Attendance', color:'#1565c0', bg:'#e3f2fd' },
+    ADD_STUDENT_TO_CLASS: { label:'Add to Class',      color:'#6a1b9a', bg:'#f3e5f5' },
+    // Guard
+    EVENT_TIME_IN:        { label:'Event TIME IN',     color:'#00695c', bg:'#e0f2f1' },
+    EVENT_TIME_OUT:       { label:'Event TIME OUT',    color:'#e65100', bg:'#fff3e0' },
+    // Admin
+    CREATE_TEACHER:       { label:'Create Teacher',    color:'#1565c0', bg:'#e3f2fd' },
+    DELETE_TEACHER:       { label:'Delete Teacher',    color:'#c62828', bg:'#ffebee' },
+    CREATE_GUARD:         { label:'Create Guard',      color:'#1565c0', bg:'#e3f2fd' },
+    DELETE_GUARD:         { label:'Delete Guard',      color:'#c62828', bg:'#ffebee' },
+    DELETE_STUDENT:       { label:'Delete Student',    color:'#c62828', bg:'#ffebee' },
+    // Super Admin
+    CREATE_ADMIN:         { label:'Create Admin',      color:'#1565c0', bg:'#e3f2fd' },
+    EDIT_ADMIN:           { label:'Edit Admin',        color:'#6a1b9a', bg:'#f3e5f5' },
+    DELETE_ADMIN:         { label:'Delete Admin',      color:'#c62828', bg:'#ffebee' },
+    RESET_ADMIN_PASSWORD: { label:'Reset Password',    color:'#e65100', bg:'#fff3e0' },
+};
+
+let _activityLogs = [];
+
+async function renderActivityLogs() {
+    try {
+        const res  = await apiFetch('/super_admin/activity_logs?limit=500');
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message);
+        _activityLogs = data.content || [];
+        renderActivityLogsTable(_activityLogs);
+    } catch (err) {
+        const tbody = document.getElementById('activityLogsBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px">Failed to load activity logs.</td></tr>';
+    }
+}
+
+function renderActivityLogsTable(logs) {
+    const tbody = document.getElementById('activityLogsBody');
+    if (!tbody) return;
+    if (!logs.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px">No activity logs yet.</td></tr>'; return; }
+    tbody.innerHTML = logs.map((l, i) => {
+        const meta = ACTION_LABELS[l.action] || { label:l.action, color:'#555', bg:'#f5f5f5' };
+        const rc   = ROLE_COLORS[l.actor_role] || { bg:'#f5f5f5', color:'#555' };
+        return `<tr>
+            <td>${i + 1}</td>
+            <td>${l.actor_name || '<em style="color:#999">System</em>'}</td>
+            <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${rc.bg};color:${rc.color}">${(l.actor_role||'-').replace('_',' ').toUpperCase()}</span></td>
+            <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${meta.bg};color:${meta.color}">${meta.label}</span></td>
+            <td>${l.target_type || '-'}</td>
+            <td>${l.target_name || l.target_id || '-'}</td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(l.details||'').replace(/"/g,'&quot;')}">${l.details || '-'}</td>
+            <td>${l.performed_at}</td>
+        </tr>`;
+    }).join('');
+}
+
+function refreshActivityLogs() {
+    renderActivityLogs();
+    Swal.fire({ toast:true, position:'top-end', icon:'success', title:'Activity logs refreshed', showConfirmButton:false, timer:1500 });
 }

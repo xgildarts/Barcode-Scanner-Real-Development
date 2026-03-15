@@ -1,0 +1,311 @@
+/* Super Admin version of admin_academic_setup.css — navy/slate palette */
+/* ============================================================
+   ACADEMIC SETUP PAGE
+   BUG FIX: * reset block was duplicated here and in admin_global.css.
+   Removed local reset — global already handles it.
+   BUG FIX: body font-family was duplicated; removed.
+   ============================================================ */
+
+   body {
+    background: linear-gradient(180deg, #d0daea 0%, #c0cedf 100%);
+    padding-bottom: 100px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+    background: linear-gradient(135deg, #2d5282 0%, #3b6cb7 100%);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.back-btn:hover {
+    transform: translateX(-4px);
+}
+
+.header-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    flex: 1;
+}
+
+/* ============================================================
+   CONTENT
+   ============================================================ */
+.content-modal {
+    padding: 24px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    max-height: calc(100vh - 80px);
+}
+
+/* ============================================================
+   SECTION LABEL (Programs / Year Levels heading)
+   ============================================================ */
+.setup-section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a2f4a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 8px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(90,138,122,0.3);
+}
+
+/* ============================================================
+   ADD PROGRAM BUTTON
+   ============================================================ */
+.add-program-btn {
+    background: linear-gradient(135deg, #2d5282 0%, #3b6cb7 100%);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(45, 82, 130, 0.3);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.add-program-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(45, 82, 130, 0.4);
+}
+
+.add-program-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+
+/* ============================================================
+   PROGRAMS LIST
+   ============================================================ */
+.programs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    max-height: 35vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+.program-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.program-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.program-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a2f4a;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.delete-btn:hover {
+    transform: scale(1.1);
+}
+
+.delete-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: #666;
+    transition: fill 0.2s;
+}
+
+.delete-btn:hover svg {
+    fill: #d32f2f;
+}
+
+/* ============================================================
+   DONE BUTTON
+   ============================================================ */
+.btn-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.done-btn {
+    width: 100%;
+    max-width: 460px;   /* BUG FIX: was a fixed 460px which overflowed on mobile */
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5282 100%);
+    color: white;
+    border: none;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.done-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30, 58, 95, 0.5);
+}
+
+/* ============================================================
+   ADD PROGRAM MODAL
+   ============================================================ */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a2f4a;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2d5282;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cancel-btn {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.cancel-btn:hover {
+    background: #d0d0d0;
+}
+
+.confirm-btn {
+    background: #2d5282;
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: #1e3a5f;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+    .content-modal {
+        padding: 20px 16px;
+    }
+
+    .program-name {
+        font-size: 14px;
+    }
+}

@@ -315,6 +315,7 @@ async function manualInsertAttendance(
     await sendSMS(student_guardian_number,
         `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`)
 
+    writeActivityLog(null, null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry — Program: ${student_program}, Year: ${student_year_level}`)
     return 'Attendance recorded successfully!'
 }
 
@@ -456,6 +457,26 @@ function studentRegistration(
 }
 
 // Student Login
+
+// ============================================================
+// LOGGING HELPERS — write to system_login_logs and admin_activity_logs
+// ============================================================
+function writeLoginLog(userId, userName, userEmail, role, status) {
+    db.execute(
+        'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status) VALUES (?, ?, ?, ?, ?)',
+        [userId || null, userName || null, userEmail || null, role, status],
+        (err) => { if (err) console.error('[LoginLog ERROR]', err) }
+    )
+}
+
+function writeActivityLog(adminId, adminName, action, targetType, targetId, targetName, details) {
+    db.execute(
+        'INSERT INTO admin_activity_logs (admin_id, admin_name, action, target_type, target_id, target_name, details) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [adminId || null, adminName || null, action, targetType || null, String(targetId || ''), targetName || null, details || null],
+        (err) => { if (err) console.error('[ActivityLog ERROR]', err) }
+    )
+}
+
 async function studentLogin(email, password, device_id) {
 
     const query = `
@@ -482,6 +503,7 @@ async function studentLogin(email, password, device_id) {
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
+                writeLoginLog(null, null, email, 'student', 'FAILED');
                 return reject('Invalid email or password');
             }
 
@@ -498,9 +520,11 @@ async function studentLogin(email, password, device_id) {
 
             if (isMatch) {
                 const token = generateToken(row)
+                writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'SUCCESS');
                 return resolve({ ok: true, message: 'Successfully Login!', token, student_firstname: row.student_firstname });
             }
 
+            writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'FAILED');
             return reject('Invalid email or password' );
         });
     });
@@ -790,6 +814,7 @@ async function teacherRegistration(fullName, email, password, department, admin_
                 if (err) { return reject(err); }
                 try {
                     initialTeacherSubjectAndYearLevelSetter('', '', teacherBarcodeScannerSerialNumber);
+                    writeActivityLog(admin_id, null, 'admin', 'CREATE_TEACHER', 'Teacher', result.insertId, fullName, `Registered teacher: ${email}, Dept: ${department}`)
                     resolve('Successfully created new account for teacher');
                 } catch (initErr) {
                     console.error('Initialization error:', initErr);
@@ -834,6 +859,7 @@ async function teacherLogin(email, password) {
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
+                writeLoginLog(null, null, email, 'teacher', 'FAILED');
                 return reject('Invalid email or password');
             }
 
@@ -846,9 +872,11 @@ async function teacherLogin(email, password) {
 
             if (isMatch) {
                 const token = generateToken(row)
+                writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'SUCCESS');
                 return resolve({ ok: true, message: 'Successfully Login!', token, teacher_name: row.teacher_name });
             }
 
+            writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'FAILED');
             return reject('Invalid email or password' );
         });
     });
@@ -960,6 +988,7 @@ async function teacherAddStudent(
             ],
             (err, result) => {
                 if (err) return reject(err);
+                writeActivityLog(null, null, 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', studentIDNumber, `${studentFirstName} ${studentLastName}`, `Added to class — Program: ${studentProgram}, Year: ${studentYearLevel}`)
                 resolve({ message: 'Successfully added new student!' });
             }
         );
@@ -1157,6 +1186,7 @@ async function insertStudentAttendance(
         teacher_barcode_scanner_serial_number
     )
 
+    writeActivityLog(student_id, `${student_firstname} ${student_middlename}. ${student_lastname}`, 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Attended class — Program: ${student_program}, Year: ${student_year_level}`)
     return 'Successfully inserted student attendance!'
 }
 
@@ -1453,6 +1483,7 @@ async function guardRegistration(
                 [guard_name, guard_email, hashedPassword, guard_designated_location, admin_id],
                 (err, result) => {
                     if (err) return reject(err);
+                    writeActivityLog(admin_id, null, 'admin', 'CREATE_GUARD', 'Guard', result.insertId, guard_name, `Registered guard: ${guard_email}, Location: ${guard_designated_location}`)
                     resolve('Successfully registered!');
                 }
             );
@@ -1542,6 +1573,7 @@ async function adminLogin(email, password) {
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
+                writeLoginLog(null, null, email, 'admin', 'FAILED');
                 return reject('Invalid email or password');
             }
 
@@ -1553,7 +1585,7 @@ async function adminLogin(email, password) {
 
             if (isMatch) {
                 const token = generateToken(row);
-
+                writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'SUCCESS');
                 return resolve({ 
                     ok: true, 
                     message: 'Login successful', 
@@ -1566,6 +1598,7 @@ async function adminLogin(email, password) {
                 });
             }
 
+            writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'FAILED');
             return reject('Invalid email or password');
         });
     });
@@ -1698,6 +1731,7 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                 try {
                     await guardInsertAttendanceHistoryRecord(values);
                     
+                    writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`)
                     resolve({
                         ok: true,
                         message: `${status} Recorded Successfully`,
@@ -1748,12 +1782,14 @@ async function guardLogin(email, password) {
                 return reject({ message: "Database error", code: 500 });
             }
             if (result.length === 0) {
+                writeLoginLog(null, null, email, 'guard', 'FAILED');
                 return reject({ message: "Account not found", code: 404 });
             }
             const guard = result[0];
             try {
                 const isMatch = await comparePassword(password, guard.guard_password);
                 if (!isMatch) {
+                    writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'FAILED');
                     return reject({ message: "Invalid password", code: 401 });
                 }
                 const payload = {
@@ -1763,6 +1799,7 @@ async function guardLogin(email, password) {
                     role: 'guard'
                 };         
                 const token = generateToken(payload);
+                writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'SUCCESS');
                 resolve({
                     message: "Login Successful",
                     token: token,
@@ -1835,10 +1872,50 @@ function updateAdminPassword(adminID, currentPassword, newPassword) {
 // Admin delete students account
 function adminDeleteStudents(student_id) {
     return new Promise((resolve, reject) => {
-        db.execute('DELETE FROM student_accounts WHERE student_id = ?', [ student_id ], (err, result) => {
-            if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
-            if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
-            resolve({ ok: true, message: 'Successfully delete student data!', status_code: 200})
+
+        db.getConnection((err, connection) => {
+            if (err) return reject({ ok: false, message: "Connection error: " + err, status_code: 500 })
+
+            connection.execute('SELECT student_id_number FROM student_accounts WHERE student_id = ?', [student_id], (err, rows) => {
+                if (err) {
+                    connection.release()
+                    return reject({ ok: false, message: "Database error: " + err, status_code: 500 })
+                }
+                if (rows.length === 0) {
+                    connection.release()
+                    return reject({ ok: false, message: "Student not found!", status_code: 401 })
+                }
+
+                const student_id_number = rows[0].student_id_number
+
+                connection.beginTransaction((err) => {
+                    if (err) {
+                        connection.release()
+                        return reject({ ok: false, message: "Transaction error: " + err, status_code: 500 })
+                    }
+
+                    connection.execute('DELETE FROM student_records_regular_class WHERE student_id_number = ?', [student_id_number], (err) => {
+                        if (err) return connection.rollback(() => {
+                            connection.release()
+                            reject({ ok: false, message: "Database error: " + err, status_code: 500 })
+                        })
+
+                        connection.execute('DELETE FROM student_accounts WHERE student_id = ?', [student_id], (err) => {
+                            if (err) return connection.rollback(() => {
+                                connection.release()
+                                reject({ ok: false, message: "Database error: " + err, status_code: 500 })
+                            })
+
+                            connection.commit((err) => {
+                                connection.release()
+                                if (err) return reject({ ok: false, message: "Commit error: " + err, status_code: 500 })
+                                writeActivityLog(null, null, 'admin', 'DELETE_STUDENT', 'Student', student_id, null, `Deleted student ID: ${student_id}`)
+                                resolve({ ok: true, message: 'Successfully deleted student account and class records!', status_code: 200 })
+                            })
+                        })
+                    })
+                })
+            })
         })
     })
 }
@@ -1849,6 +1926,7 @@ function adminDeleteTeacher(teacher_id, admin_id) {
         db.execute('DELETE FROM teacher WHERE teacher_id = ? AND admin_id = ?', [ teacher_id, admin_id ], (err, result) => {
             if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
             if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+            writeActivityLog(admin_id, null, 'admin', 'DELETE_TEACHER', 'Teacher', teacher_id, null, `Deleted teacher ID: ${teacher_id}`)
             resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200})
         })
     })
@@ -1860,6 +1938,7 @@ function adminDeleteGuard(teacher_id, admin_id) {
         db.execute('DELETE FROM guards WHERE guard_id = ? AND admin_id = ?', [ teacher_id, admin_id ], (err, result) => {
             if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
             if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+            writeActivityLog(admin_id, null, 'admin', 'DELETE_GUARD', 'Guard', teacher_id, null, `Deleted guard ID: ${teacher_id}`)
             resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200})
         })
     })
@@ -1903,59 +1982,78 @@ function adminEditStudentAccounts(
     program, 
     year_level
 ) {
-return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 
-    // Check if id_number is already used by another student
-    db.execute(
-        `SELECT student_id FROM student_accounts WHERE student_id_number = ? AND student_id != ?`,
-        [id_number, id],
-        (err, rows) => {
-            if (err) return reject(err);
-            if (rows.length > 0) {
-                return resolve({ ok: false, duplicate: true, message: `ID number "${id_number}" is already assigned to another student.` });
+        // Check if id_number is already used by another student
+        db.execute(
+            `SELECT student_id FROM student_accounts WHERE student_id_number = ? AND student_id != ?`,
+            [id_number, id],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (rows.length > 0) {
+                    return resolve({ ok: false, duplicate: true, message: `ID number "${id_number}" is already assigned to another student.` })
+                }
+
+                // Get the OLD student_id_number so we can match in regular class
+                db.execute('SELECT student_id_number FROM student_accounts WHERE student_id = ?', [id], (err, rows) => {
+                    if (err) return reject(err)
+                    if (rows.length === 0) return reject(new Error('Student not found.'))
+
+                    const old_id_number = rows[0].student_id_number
+
+                    db.getConnection((err, connection) => {
+                        if (err) return reject(err)
+
+                        connection.beginTransaction((err) => {
+                            if (err) {
+                                connection.release()
+                                return reject(err)
+                            }
+
+                            // Update student_accounts
+                            const updateAccountQuery = `
+                                UPDATE student_accounts 
+                                SET 
+                                    student_id_number = ?, 
+                                    student_firstname = ?, 
+                                    student_middlename = ?, 
+                                    student_lastname = ?, 
+                                    student_program = ?, 
+                                    student_year_level = ?
+                                WHERE student_id = ?
+                            `
+                            connection.execute(updateAccountQuery, [id_number, firstname, middlename, lastname, program, year_level, id], (err, result) => {
+                                if (err) return connection.rollback(() => { connection.release(); reject(err) })
+                                if (result.affectedRows === 0) return connection.rollback(() => { connection.release(); reject(new Error('Update failed: Student not found.')) })
+
+                                // Update student_records_regular_class
+                                const updateClassQuery = `
+                                    UPDATE student_records_regular_class 
+                                    SET 
+                                        student_id_number = ?, 
+                                        student_firstname = ?, 
+                                        student_middlename = ?, 
+                                        student_lastname = ?, 
+                                        student_program = ?, 
+                                        student_year_level = ?
+                                    WHERE student_id_number = ?
+                                `
+                                connection.execute(updateClassQuery, [id_number, firstname, middlename, lastname, program, year_level, old_id_number], (err) => {
+                                    if (err) return connection.rollback(() => { connection.release(); reject(err) })
+
+                                    connection.commit((err) => {
+                                        connection.release()
+                                        if (err) return reject(err)
+                                        resolve({ ok: true, message: 'Student account updated successfully!' })
+                                    })
+                                })
+                            })
+                        })
+                    })
+                })
             }
-
-    const updateQuery = `
-        UPDATE student_accounts 
-        SET 
-            student_id_number = ?, 
-            student_firstname = ?, 
-            student_middlename = ?, 
-            student_lastname = ?, 
-            student_program = ?, 
-            student_year_level = ?
-        WHERE student_id = ?
-    `;
-
-    const values = [
-        id_number,
-        firstname,
-        middlename,
-        lastname,
-        program,
-        year_level,
-        id
-    ];
-
-    db.execute(updateQuery, values, (err, result) => {
-        if (err) {
-            console.error("Database error updating student account:", err);
-            return reject(err);
-        }
-
-        if (result.affectedRows === 0) {
-            return reject(new Error("Update failed: Student not found or no changes were made."));
-        }
-
-        resolve({
-            ok: true,
-            message: "Student account updated successfully!",
-            affectedRows: result.affectedRows
-        });
-    });
-        }
-    );
-});
+        )
+    })
 }
 
 // Admin edit student accounts
@@ -2121,6 +2219,390 @@ function updateAdminProfilePicture(adminID, filename) {
     })
 }
 
+
+// ============================================================
+// SUPER ADMIN — Login
+// ============================================================
+async function superAdminLogin(email, password) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT super_admin_id, super_admin_name, super_admin_email, super_admin_password, super_admin_profile_picture FROM super_admin_accounts WHERE super_admin_email = ? LIMIT 1',
+            [email],
+            async (err, rows) => {
+                if (err) return reject(new Error('Database error.'))
+                if (rows.length === 0) {
+                    writeLoginLog(null, null, email, 'super_admin', 'FAILED');
+                    return reject(new Error('Invalid email or password.'))
+                }
+                const row = rows[0]
+                const isMatch = await bcrypt.compare(password, row.super_admin_password)
+                if (!isMatch) {
+                    writeLoginLog(row.super_admin_id, row.super_admin_name, email, 'super_admin', 'FAILED');
+                    return reject(new Error('Invalid email or password.'))
+                }
+                delete row.super_admin_password
+                const token = jwt.sign(
+                    { super_admin_id: row.super_admin_id, super_admin_name: row.super_admin_name, super_admin_email: row.super_admin_email, role: 'super_admin' },
+                    JWT_SECRET,
+                    { expiresIn: '24h' }
+                )
+                writeLoginLog(row.super_admin_id, row.super_admin_name, row.super_admin_email, 'super_admin', 'SUCCESS');
+                resolve({ ok: true, message: 'Login successful.', token, super_admin_name: row.super_admin_name })
+            }
+        )
+    })
+}
+
+// ============================================================
+// SUPER ADMIN — Profile
+// ============================================================
+async function getSuperAdminData(superAdminId) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT super_admin_id, super_admin_name, super_admin_email, super_admin_profile_picture, date_account_created FROM super_admin_accounts WHERE super_admin_id = ?',
+            [superAdminId],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) }
+        )
+    })
+}
+
+async function updateSuperAdminName(superAdminId, newName) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE super_admin_accounts SET super_admin_name = ? WHERE super_admin_id = ?',
+            [newName, superAdminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Super Admin not found.'))
+                resolve('Name updated successfully.')
+            }
+        )
+    })
+}
+
+async function updateSuperAdminPassword(superAdminId, currentPassword, newPassword) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT super_admin_password FROM super_admin_accounts WHERE super_admin_id = ?',
+            [superAdminId],
+            async (err, rows) => {
+                if (err) return reject(err)
+                if (rows.length === 0) return reject(new Error('Super Admin not found.'))
+                const isMatch = await bcrypt.compare(currentPassword, rows[0].super_admin_password)
+                if (!isMatch) return reject(new Error('Current password is incorrect.'))
+                const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+                db.execute(
+                    'UPDATE super_admin_accounts SET super_admin_password = ? WHERE super_admin_id = ?',
+                    [hashed, superAdminId],
+                    (err2) => { if (err2) return reject(err2); resolve('Password updated successfully.') }
+                )
+            }
+        )
+    })
+}
+
+async function updateSuperAdminProfilePicture(superAdminId, filename) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE super_admin_accounts SET super_admin_profile_picture = ? WHERE super_admin_id = ?',
+            [filename, superAdminId],
+            (err) => { if (err) return reject(err); resolve(filename) }
+        )
+    })
+}
+
+// ============================================================
+// SUPER ADMIN — Forgot Password OTP
+// ============================================================
+async function sendSuperAdminPasswordResetOTP(email) {
+    const superAdmin = await new Promise((resolve, reject) => {
+        db.execute('SELECT super_admin_id, super_admin_name FROM super_admin_accounts WHERE super_admin_email = ?', [email],
+            (err, rows) => { if (err) return reject(err); resolve(rows[0] ?? null) })
+    })
+    if (!superAdmin) throw new Error('No account found with that email address.')
+    const otp = generateOTP()
+    otpStore[`super_admin:${email}`] = { otp, expiresAt: Date.now() + OTP_EXPIRY_MS }
+    await transporter.sendMail({
+        from: `"PanPacific University" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Super Admin Password Reset Code',
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:12px">
+            <h2 style="color:#1a4545">Super Admin Password Reset</h2>
+            <p>Hello <strong>${superAdmin.super_admin_name}</strong>, use the code below. Expires in <strong>5 minutes</strong>.</p>
+            <div style="font-size:36px;font-weight:700;letter-spacing:10px;color:#1a4545;text-align:center;padding:24px 0">${otp}</div>
+            <p style="color:#999;font-size:12px">If you did not request this, ignore this email.</p></div>`
+    })
+    return 'OTP sent successfully.'
+}
+
+function verifySuperAdminPasswordResetOTP(email, otp) {
+    const record = otpStore[`super_admin:${email}`]
+    if (!record) throw new Error('No OTP requested for this email.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`super_admin:${email}`]; throw new Error('OTP has expired. Please request a new one.') }
+    if (record.otp !== otp) throw new Error('Incorrect OTP. Please try again.')
+    otpStore[`super_admin:${email}`].verified = true
+    return true
+}
+
+async function resetSuperAdminPasswordWithOTP(email, newPassword) {
+    const record = otpStore[`super_admin:${email}`]
+    if (!record || !record.verified) throw new Error('OTP not verified.')
+    if (Date.now() > record.expiresAt) { delete otpStore[`super_admin:${email}`]; throw new Error('OTP has expired. Please start over.') }
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    await new Promise((resolve, reject) => {
+        db.execute('UPDATE super_admin_accounts SET super_admin_password = ? WHERE super_admin_email = ?', [hashed, email],
+            (err, result) => { if (err) return reject(err); if (result.affectedRows === 0) return reject(new Error('Super Admin not found.')); resolve() })
+    })
+    delete otpStore[`super_admin:${email}`]
+    return 'Password reset successfully.'
+}
+
+// ============================================================
+// SUPER ADMIN — Admin Account Management
+// ============================================================
+async function superAdminGetAllAdmins() {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT admin_id, admin_name, admin_email, admin_profile_picture, date_account_created FROM admin_accounts ORDER BY admin_id ASC',
+            [],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
+}
+
+async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
+    const exists = await new Promise((resolve, reject) => {
+        db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? LIMIT 1', [adminEmail],
+            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
+    })
+    if (exists) throw new Error('An admin with this email already exists.')
+    const hashed = await bcrypt.hash(adminPassword, SALT_ROUNDS)
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'INSERT INTO admin_accounts (admin_name, admin_email, admin_password) VALUES (?, ?, ?)',
+            [adminName, adminEmail, hashed],
+            (err) => { if (err) return reject(err); resolve('Admin account created successfully.') }
+        )
+    })
+}
+
+async function superAdminEditAdmin(adminId, adminName, adminEmail) {
+    const duplicate = await new Promise((resolve, reject) => {
+        db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? AND admin_id != ? LIMIT 1',
+            [adminEmail, adminId],
+            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
+    })
+    if (duplicate) throw new Error('Email is already used by another admin.')
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE admin_accounts SET admin_name = ?, admin_email = ? WHERE admin_id = ?',
+            [adminName, adminEmail, adminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
+                resolve('Admin account updated successfully.')
+            }
+        )
+    })
+}
+
+async function superAdminDeleteAdmin(adminId) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'DELETE FROM admin_accounts WHERE admin_id = ?',
+            [adminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
+                resolve('Admin account deleted successfully.')
+            }
+        )
+    })
+}
+
+async function superAdminResetAdminPassword(adminId, newPassword) {
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?',
+            [hashed, adminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
+                resolve('Admin password reset successfully.')
+            }
+        )
+    })
+}
+
+// ============================================================
+// SUPER ADMIN — System-wide Stats
+// ============================================================
+async function superAdminGetSystemStats() {
+    const query = (sql) => new Promise((resolve, reject) => {
+        db.execute(sql, [], (err, rows) => { if (err) return reject(err); resolve(rows[0]) })
+    })
+    const [admins, teachers, guards, students, eventAttendees] = await Promise.all([
+        query('SELECT COUNT(*) AS total FROM admin_accounts'),
+        query('SELECT COUNT(*) AS total FROM teacher'),
+        query('SELECT COUNT(*) AS total FROM guards'),
+        query('SELECT COUNT(*) AS total FROM student_accounts'),
+        query("SELECT COUNT(*) AS total FROM event_attendance_record WHERE status = 'TIME IN'"),
+    ])
+    return {
+        total_admins:          admins.total,
+        total_teachers:        teachers.total,
+        total_guards:          guards.total,
+        total_students:        students.total,
+        total_event_attendees: eventAttendees.total,
+    }
+}
+
+
+// ============================================================
+// SUPER ADMIN — Login Logs (all roles)
+// ============================================================
+async function superAdminGetLoginLogs(limit) {
+    const n = parseInt(limit) || 500
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT log_id, user_id, user_name, user_email, role, status,
+                    DATE_FORMAT(login_at, '%Y-%m-%d %H:%i:%s') AS login_at
+             FROM system_login_logs
+             ORDER BY login_at DESC
+             LIMIT ?`,
+            [n],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
+}
+
+// ============================================================
+// SUPER ADMIN — Activity Logs
+// ============================================================
+async function superAdminGetActivityLogs(limit) {
+    const n = parseInt(limit) || 500
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT log_id, admin_id, admin_name, action, target_type, target_id, target_name, details,
+                    DATE_FORMAT(performed_at, '%Y-%m-%d %H:%i:%s') AS performed_at
+             FROM admin_activity_logs
+             ORDER BY performed_at DESC
+             LIMIT ?`,
+            [n],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
+}
+
+// ============================================================
+// SUPER ADMIN — System-wide Event Attendance (all admins)
+// ============================================================
+async function superAdminGetAllEvents() {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT e.student_id_number, e.student_name, e.student_program, e.student_year_level,
+                    DATE_FORMAT(e.date, '%Y-%m-%d') AS date, e.time, e.status, e.event_name,
+                    a.admin_name
+             FROM event_attendance_record e
+             LEFT JOIN admin_accounts a ON e.admin_id = a.admin_id
+             ORDER BY e.date DESC, e.time DESC`,
+            [],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
+}
+
+async function superAdminGetAllEventsHistory() {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT e.student_id_number, e.student_name, e.student_program, e.student_year_level,
+                    DATE_FORMAT(e.date, '%Y-%m-%d') AS date, e.time, e.status, e.event_name,
+                    a.admin_name
+             FROM event_attendance_history_record e
+             LEFT JOIN admin_accounts a ON e.admin_id = a.admin_id
+             ORDER BY e.date DESC, e.time DESC`,
+            [],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
+}
+
+// ============================================================
+// SUPER ADMIN — Admin action logging
+// ============================================================
+async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
+    const exists = await new Promise((resolve, reject) => {
+        db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? LIMIT 1', [adminEmail],
+            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
+    })
+    if (exists) throw new Error('An admin with this email already exists.')
+    const hashed = await bcrypt.hash(adminPassword, SALT_ROUNDS)
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'INSERT INTO admin_accounts (admin_name, admin_email, admin_password) VALUES (?, ?, ?)',
+            [adminName, adminEmail, hashed],
+            (err, result) => {
+                if (err) return reject(err)
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'CREATE_ADMIN', 'Admin', result.insertId, adminName, `Created admin account: ${adminEmail}`)
+                resolve('Admin account created successfully.')
+            }
+        )
+    })
+}
+
+async function superAdminEditAdmin(adminId, adminName, adminEmail) {
+    const duplicate = await new Promise((resolve, reject) => {
+        db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? AND admin_id != ? LIMIT 1',
+            [adminEmail, adminId],
+            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
+    })
+    if (duplicate) throw new Error('Email is already used by another admin.')
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE admin_accounts SET admin_name = ?, admin_email = ? WHERE admin_id = ?',
+            [adminName, adminEmail, adminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'EDIT_ADMIN', 'Admin', adminId, adminName, `Updated to email: ${adminEmail}`)
+                resolve('Admin account updated successfully.')
+            }
+        )
+    })
+}
+
+async function superAdminDeleteAdmin(adminId) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'DELETE FROM admin_accounts WHERE admin_id = ?',
+            [adminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'DELETE_ADMIN', 'Admin', adminId, null, `Deleted admin ID: ${adminId}`)
+                resolve('Admin account deleted successfully.')
+            }
+        )
+    })
+}
+
+async function superAdminResetAdminPassword(adminId, newPassword) {
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?',
+            [hashed, adminId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'RESET_ADMIN_PASSWORD', 'Admin', adminId, null, `Reset password for admin ID: ${adminId}`)
+                resolve('Admin password reset successfully.')
+            }
+        )
+    })
+}
+
 module.exports= {
     sendSMS,
     adminEditGuardAccounts,
@@ -2208,5 +2690,25 @@ module.exports= {
     addYearLevel,
     deleteYearLevel,
     getYearLevels,
-    updateAdminProfilePicture
+    updateAdminProfilePicture,
+    superAdminLogin,
+    getSuperAdminData,
+    updateSuperAdminName,
+    updateSuperAdminPassword,
+    updateSuperAdminProfilePicture,
+    sendSuperAdminPasswordResetOTP,
+    verifySuperAdminPasswordResetOTP,
+    resetSuperAdminPasswordWithOTP,
+    superAdminGetAllAdmins,
+    superAdminCreateAdmin,
+    superAdminEditAdmin,
+    superAdminDeleteAdmin,
+    superAdminResetAdminPassword,
+    superAdminGetSystemStats,
+    superAdminGetAllEvents,
+    superAdminGetAllEventsHistory,
+    superAdminGetLoginLogs,
+    superAdminGetActivityLogs,
+    writeActivityLog,
+    writeLoginLog
 }

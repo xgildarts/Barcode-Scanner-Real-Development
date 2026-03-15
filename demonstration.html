@@ -1,67 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Send SMS Example</title>
+    <meta charset="UTF-8">
+    <title>FingerprintJS Demo</title>
 </head>
 <body>
-  <h2>Send SMS</h2>
+    <h1>FingerprintJS v4 Module Demo</h1>
+    <button id="getFingerprintBtn">Get Fingerprint</button>
+    <pre id="output"></pre>
 
-  <!-- Phone number input -->
-  <label for="phone">Phone Number:</label>
-  <input type="text" id="phone" placeholder="+639XXXXXXXXX" />
+    <script type="module">
+        // Import the module
+        import FingerprintJS from 'https://openfpcdn.io/fingerprintjs/v4';
 
-  <br><br>
+        document.getElementById('getFingerprintBtn').addEventListener('click', async () => {
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
 
-  <!-- Message input -->
-  <label for="message">Message:</label>
-  <input type="text" id="message" placeholder="Type your message here" />
+            const output = document.getElementById('output');
+            output.textContent = `
+Visitor ID: ${result.visitorId}
 
-  <br><br>
-
-  <!-- Send button -->
-  <button id="sendBtn">Send</button>
-
-  <script>
-    document.getElementById('sendBtn').addEventListener('click', async () => {
-      const phone = document.getElementById('phone').value;
-      const message = document.getElementById('message').value;
-
-      if (!phone || !message) {
-        alert('Please enter both phone number and message.');
-        return;
-      }
-
-      try {
-        const username = 'steven.agustin.ecoast@panpacificu.edu.ph';
-        const apiKey = 'FA142E33-E8CD-0664-FB80-64EBBE1BAFAC';
-
-        const resp = await fetch('https://rest.clicksend.com/v3/sms/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + btoa(username + ':' + apiKey)
-          },
-          body: JSON.stringify({
-            messages: [
-              {
-                source: 'javascript',
-                body: message,
-                to: phone
-              }
-            ]
-          })
+Components:
+${JSON.stringify(result.components, null, 2)}
+            `;
         });
-
-        const data = await resp.json();
-        console.log(data);
-        alert('SMS sent! Check console for response.');
-      } catch (err) {
-        console.error(err);
-        alert('Error sending SMS. See console.');
-      }
-    });
-  </script>
+    </script>
 </body>
 </html>

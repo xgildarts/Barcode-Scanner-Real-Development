@@ -265,7 +265,7 @@ function renderCode(value) {
         qrDiv.style.display = 'none';
         JsBarcode('#barcodeImage', value, {
             format: 'CODE128',
-            width: 15,
+            width: 17,
             height: 1000,
             displayValue: true,
             fontSize: 200,

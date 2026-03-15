@@ -1,0 +1,399 @@
+/* Super Admin version of admin_dashboard.css — navy/slate palette */
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+   body {
+    display: flex;
+}
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.top-bar {
+    background: #e8edf5;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Hidden by default; shown via media query in admin_global.css */
+.menu-btn span {
+    width: 24px;
+    height: 3px;
+    background: #1a2f4a;
+    border-radius: 2px;
+    display: none;
+}
+
+.top-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.settings-btn {
+    width: 36px;
+    height: 36px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.settings-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #1a2f4a;
+}
+
+.profile-btn {
+    width: 36px;
+    height: 36px;
+    background: #4d6a8a;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+/* ============================================================
+   DASHBOARD CONTENT
+   ============================================================ */
+.welcome-text {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2f4a;
+    margin-bottom: 20px;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.stats-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a2f4a;
+}
+
+.stats-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a2f4a;
+}
+
+/* ============================================================
+   CHART
+   ============================================================ */
+.chart-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a2f4a;
+    margin-bottom: 16px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #666;
+}
+
+.legend-box {
+    width: 12px;
+    height: 12px;
+    background: #2d5282;
+    border-radius: 2px;
+}
+
+.chart-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 200px;
+    gap: 20px;
+    padding: 0 10px;
+}
+
+.chart-bar {
+    flex: 1;
+    background: linear-gradient(180deg, #2d5282 0%, #1e3a5f 100%);
+    border-radius: 6px 6px 0 0;
+    position: relative;
+    transition: opacity 0.3s;
+}
+
+.chart-bar:hover {
+    opacity: 0.8;
+}
+
+.y-axis {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #999;
+}
+
+/* ============================================================
+   MANAGE SECTION — ACCOUNT CARDS
+   ============================================================ */
+.manage-section {
+    margin-top: 24px;
+}
+
+.account-card {
+    background: linear-gradient(135deg, #2d5282 0%, #3b6cb7 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.account-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.account-card.teacher {
+    background: linear-gradient(135deg, #1a6b6b 0%, #2a7b7b 100%);
+}
+
+.account-card.guard {
+    background: linear-gradient(135deg, #3d5a7a 0%, #4d6a8a 100%);
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.account-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-icon svg {
+    width: 28px;
+    height: 28px;
+    fill: white;
+}
+
+.account-details {
+    color: white;
+}
+
+.account-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.account-count {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.arrow-icon {
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+/* ============================================================
+   ACCOUNT MANAGEMENT MODALS
+   BUG FIX: Student, teacher, and guard modals had completely
+   duplicated rule blocks (~120 lines each, 3×). Consolidated
+   into shared .account-modal-* classes. Each modal still has
+   its own ID for JS targeting; only CSS classes are shared.
+   ============================================================ */
+
+.student-account-management-modal,
+.teacher-account-management-modal,
+.guard-account-management-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+/* JS sets display: flex to open; this ensures flex layout when shown */
+.student-account-management-modal[style*="flex"],
+.teacher-account-management-modal[style*="flex"],
+.guard-account-management-modal[style*="flex"] {
+    display: flex;
+}
+
+.record-modal-content {
+    background-color: white;
+    width: 600px;
+    max-width: 95vw;                /* BUG FIX: was overflowing on smaller screens */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header-account-management {
+    background-color: #1e3a5f;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-btn-record {
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+    line-height: 1;
+    background: none;
+    border: none;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body .form-group {
+    margin-bottom: 16px;
+}
+
+.modal-body .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #555;
+    font-weight: bold;
+}
+
+.modal-body .form-group input,
+.modal-body .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 13px;
+}
+
+.modal-body .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+    padding: 15px 20px;             /* BUG FIX: padding-top only left footer flush to edge */
+}
+
+.modal-footer .save-btn {
+    padding: 8px 16px;
+    background: #2d5282;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.modal-footer .save-btn:hover {
+    background: #1e3a5f;
+}
+
+.modal-footer .cancel-btn {
+    padding: 8px 16px;
+    background: #e0e0e0;
+    color: #666;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.modal-footer .cancel-btn:hover {
+    background: #d0d0d0;
+}

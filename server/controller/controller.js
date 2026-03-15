@@ -7,6 +7,7 @@ const programs = require('../model/program');
 const teacher = require('../model/teacher');
 const admin = require('../model/admin');
 const guard = require('../model/guard');
+const superAdmin = require('../model/super_admin');
 require('dotenv').config();
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/v1/teacher', teacher)
 app.use('/api/v1/programs', programs)
 app.use('/api/v1/admin', admin)
 app.use('/api/v1/guard', guard)
+app.use('/api/v1/super_admin', superAdmin)
 
 
 app.listen(PORT, () => {

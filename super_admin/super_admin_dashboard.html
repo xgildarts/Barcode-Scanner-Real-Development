@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_academic_setup.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_settings.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_dashboard.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_event_attendance.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_event_attendance_history.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_student_accounts.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_manage_registration.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_global.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+</head>
+<body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-profile" id="sidebarAvatar">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            </div>
+            <div class="sidebar-name" id="sideBarName">Super Admin</div>
+            <div class="sidebar-role">SUPER ADMIN</div>
+        </div>
+
+        <div class="sidebar-stats">
+            <div class="sidebar-stats-label">Total Admins</div>
+            <div class="sidebar-stats-value" id="sideBarStatsValue">0</div>
+        </div>
+
+        <div class="sidebar-menu">
+            <button class="menu-item" onclick="navigateTo('dashboard')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Dashboard</span>
+                </div>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('eventAttendance')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Event Attendance</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('eventAttendanceHistory')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Event Attendance History</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('academicSetup')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Academic Setup</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('studentAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Student Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('teacherAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Teacher Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('guardAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Guard Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('adminAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Admin Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('adminAccountManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+                    <span class="menu-item-text">Admin Accounts</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('loginLogs')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon"><svg viewBox="0 0 24 24"><path d="M11 7H13V9H11zM11 11H13V17H11zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></div>
+                    <span class="menu-item-text">Login Logs</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('activityLogs')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></div>
+                    <span class="menu-item-text">Activity Logs</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
+            <button class="menu-item" onclick="navigateTo('adminSettings')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                    </div>
+                    <span class="menu-item-text">Settings</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+        </div>
+    </div>
+
+
+    <main>
+
+        <!--header-->
+        <div class="top-bar">
+            <button class="menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <span class="title-header" id="titleHeader">Sample header</span>
+            <div class="top-actions">
+                <button class="settings-btn" onclick="navigateTo('adminSettings')">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                </button>
+                <button class="profile-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!--Dashboard-->
+        <section id="dashboard" class="sections">
+            <div class="content">
+                <h1 class="welcome-text" id="welcomeText">Welcome, Super Admin!</h1>
+        
+                <div class="stats-card">
+                    <div class="stats-header">
+                        <span class="stats-label">Live Event Attendees (System-wide)</span>
+                    </div>
+                    <div class="stats-value" id="statsValue">0</div>
+                </div>
+        
+                <div class="chart-section">
+                    <h2 class="section-title">Attendance Event Overview</h2>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-legend">
+                                <div class="legend-box"></div>
+                                <span>Attendees</span>
+                            </div>
+                        </div>
+                        <div style="position: relative;">
+                            <div class="chart-container">
+                                <!-- <div class="chart-bar" style="height: 45%;"></div>
+                                <div class="chart-bar" style="height: 65%;"></div>
+                                <div class="chart-bar" style="height: 90%;"></div>
+                                <div class="chart-bar" style="height: 50%;"></div> -->
+                                <canvas id="myChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="manage-section">
+                    <h2 class="section-title">Manage Accounts</h2>
+                    
+                    <div class="account-card" onclick="navigateTo('studentAccountManagement')">
+                        <div class="account-info">
+                            <div class="account-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                                </svg>
+                            </div>
+                            <div class="account-details">
+                                <div class="account-title">Students Accounts</div>
+                                <div class="account-count" id="studentAccountCounts">0 Accounts</div>
+                            </div>
+                        </div>
+                        <div class="arrow-icon">›</div>
+                    </div>
+        
+                    <div class="account-card teacher" onclick="navigateTo('teacherAccountManagement')">
+                        <div class="account-info">
+                            <div class="account-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+                                </svg>
+                            </div>
+                            <div class="account-details">
+                                <div class="account-title">Teacher Accounts</div>
+                                <div class="account-count" id="teacherAccountCounts">0 Accounts</div>
+                            </div>
+                        </div>
+                        <div class="arrow-icon">›</div>
+                    </div>
+        
+                    <div class="account-card guard" onclick="navigateTo('guardAccountManagement')">
+                        <div class="account-info">
+                            <div class="account-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                                </svg>
+                            </div>
+                            <div class="account-details">
+                                <div class="account-title">Guard Accounts</div>
+                                <div class="account-count" id="guardAccountCounts">0 Accounts</div>
+                            </div>
+                        </div>
+                        <div class="arrow-icon">›</div>
+                    </div>
+
+                    <div class="account-card" style="background:linear-gradient(135deg,#1a3a5f 0%,#2d5282 100%)" onclick="navigateTo('adminAccountManagement')">
+                        <div class="account-info">
+                            <div class="account-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                            </div>
+                            <div class="account-details">
+                                <div class="account-title">Admin Accounts</div>
+                                <div class="account-count" id="adminAccountCounts">0 Accounts</div>
+                            </div>
+                        </div>
+                        <div class="arrow-icon">›</div>
+                    </div>
+
+                    <div class="account-card" style="background:linear-gradient(135deg,#1a3a5f 0%,#2d5282 100%)" onclick="navigateTo('adminAccountManagement')">
+                        <div class="account-info">
+                            <div class="account-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+                            <div class="account-details">
+                                <div class="account-title">Admin Accounts</div>
+                                <div class="account-count" id="adminAccountCounts">0 Accounts</div>
+                            </div>
+                        </div>
+                        <div class="arrow-icon">›</div>
+                    </div>
+                </div>
+            </div>    
+        </section>
+
+        <!--Event Attendance-->
+        <section id="eventAttendance" class="sections">
+            <div class="content">
+                <div class="controls-section">
+                    <div class="search-row">
+                        <div class="search-wrapper">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                            </svg>
+                            <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendance">
+                        </div>
+                        <div class="live-badge">
+                            <span class="live-dot" id="adminLiveDotEvent"></span>
+                            LIVE
+                        </div>
+                        <button class="export-btn" onclick="exportTableToExcel('eventAttendanceTable', 'Event Attendance')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                            </svg>
+                            Export Excel
+                        </button>
+                    </div>
+            
+                    <div class="filters-row">
+                        <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name">
+                        <button onclick="handleSetEvent()" class="set-event-button">Set Event</button>
+                    </div>
+                </div>
+            
+                <div class="table-container">
+                    <table class="attendance-table" id="eventAttendanceTable">
+                        <thead>
+                            <tr>
+                                <th>ID Number</th>
+                                <th>Student Name</th>
+                                <th>Program</th>
+                                <th>Year Level</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Event Name</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceBody">
+                           <!--Auto load data-->           
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!--Event Attendance History-->
+        <section class="sections" id="eventAttendanceHistory">
+            <div class='content'>
+                <div class="controls-section">
+                    <div class="search-row">
+                        <div class="search-wrapper">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                            </svg>
+                            <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendanceHistory">
+                        </div>
+                        <div class="live-badge">
+                            <span class="live-dot" id="adminLiveDotEventHist"></span>
+                            LIVE
+                        </div>
+                        <button class="export-btn calendar-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                            </svg>
+                            Date
+                        </button>
+                        <button class="export-btn" id="clearDateFilter" onclick="clearDateFilter()" style="display:none;">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                            Clear
+                        </button>
+                        <button class="export-btn" onclick="exportTableToExcel('eventAttendanceHistoryTable', 'Event Attendance History')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                            </svg>
+                            Export Excel
+                        </button>
+                        <input type="text" id="datePicker" class="hidden-date-picker">
+                    </div>
+            
+                    <div class="filters-row">
+                        <select class="filter-select" id="eventHistoryYearFilter">
+                            <option value="">Year Level All</option>
+                            <!-- Populated dynamically from year_level table -->
+                        </select>
+                    </div>
+                </div>
+            
+                <div class="table-container">
+                    <table class="attendance-table" id="eventAttendanceHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>ID Number</th>
+                                <th>Student Name</th>
+                                <th>Program</th>
+                                <th>Year Level</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Event Name</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceHistory">
+                            <!--Auto load data-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!--Admin Settings-->
+        <section class="sections" id="adminSettings">
+            <div class="profile-section">
+                <div class="avatar-container">
+                    <div class="avatar" id="adminAvatar">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <div class="camera-badge" onclick="document.getElementById('superAdminProfilePicInput').click()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
+                        </svg>
+                    </div>
+                    <input type="file" id="superAdminProfilePicInput" accept="image/*" style="display:none">
+                </div>
+                <div class="profile-name">Mr. Henry</div>
+                <div class="profile-email" id="profileEmailTop"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae2efe4f8f3caede7ebe3e6a4e9e5e7">[email&#160;protected]</a></div>
+                <button class="edit-profile-btn" onclick="editProfileName()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Edit
+                </button>
+            </div>
+        
+            <div class="content-section">
+                <h2 class="section-title">Account Information</h2>
+                
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">Name</span>
+                        <span class="info-value" id="adminProfileName">Mr. Henry</span>
+                        <button class="edit-btn" onclick="editProfileName()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Edit
+                        </button>
+                    </div>
+        
+                    <!-- <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value" id="profileEmail">henry@gmail.com</span>
+                        <button class="edit-btn" onclick="editField('email')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Edit
+                        </button>
+                    </div> -->
+                </div>
+        
+                <div class="password-section">
+                    <h2 class="section-title">Change Password</h2>
+                    
+                    <div class="info-card">
+                        <div class="form-group">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" class="password-input" id="currentPassword" placeholder="••••••••">
+                        </div>
+        
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="password-input" id="newPassword" placeholder="••••••••">
+                        </div>
+        
+                        <div class="form-group">
+                            <label class="form-label">Confirm New Password</label>
+                            <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••">
+                        </div>
+        
+                        <button class="update-password-btn" onclick="updatePassword()">Update Password</button>
+                    </div>
+                </div>
+        
+                <button class="logout-btn" onclick="logout()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                    Log Out
+                </button>
+            </div>        
+        </section>
+
+        <!--Student Account Management-->
+        <section class="sections" id="studentAccountManagement">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input onkeyup="searchFilterStudentsAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterStudentsAccounts">
+                </div>
+            </div>
+        
+            <div class="students-list" id="studentsList">
+                <!-- Students will be dynamically added here -->
+            </div>
+        
+            <div class="register-btn-container">
+                <button class="register-btn" onclick="navigateTo('registration')">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    Register Person
+                </button>
+            </div>
+        </section>
+
+        <!--Teacher Account Management-->
+        <section class="sections" id="teacherAccountManagement">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input onkeyup="searchFilterTeachersAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterTeachersAccounts">
+                </div>
+            </div>
+        
+            <div class="students-list" id="teacherList">
+                <!-- Students will be dynamically added here -->
+            </div>
+        
+            <div class="register-btn-container">
+                <button class="register-btn" onclick="register()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    Register Person
+                </button>
+            </div>
+        </section>
+
+        <!--Guard Account Management-->
+        <section class="sections" id="guardAccountManagement">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input onkeyup="searchFilterGuardAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterGuardAccounts">
+                </div>
+            </div>
+        
+            <div class="students-list" id="guardList">
+                <!-- Students will be dynamically added here -->
+            </div>
+        
+            <div class="register-btn-container">
+                <button class="register-btn" onclick="register()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    Register Person
+                </button>
+            </div>
+        </section>
+
+        <!--Academic Setup-->
+        <section class="sections" id="academicSetup">
+            <div class="content-modal">
+                <p class="setup-section-label">Programs</p>
+                <button class="add-program-btn" onclick="openAddModal()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Program
+                </button>
+        
+                <div class="programs-list" id="programsList">
+                    <!-- Programs will be dynamically added here -->
+                </div>
+
+                <p class="setup-section-label">Year Levels</p>
+                <button class="add-program-btn" onclick="openAddYearLevelModal()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Year Level
+                </button>
+
+                <div class="programs-list" id="yearLevelsList">
+                    <!-- Year levels will be dynamically added here -->
+                </div>
+            </div>
+        
+            <!-- Add Program Modal -->
+            <div class="modal" id="addModal">
+                <div class="modal-content">
+                    <h2 class="modal-header">Add New Program</h2>
+                    <div class="form-group">
+                        <label class="form-label">Program Name</label>
+                        <input type="text" class="form-input" id="programNameInput" placeholder="Enter program name">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel-btn" onclick="closeAddModal()">Cancel</button>
+                        <button class="modal-btn confirm-btn" onclick="addProgram()">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Year Level Modal -->
+            <div class="modal" id="addYearLevelModal">
+                <div class="modal-content">
+                    <h2 class="modal-header">Add New Year Level</h2>
+                    <div class="form-group">
+                        <label class="form-label">Year Level Name</label>
+                        <input type="text" class="form-input" id="yearLevelNameInput" placeholder="e.g. 1st Year">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel-btn" onclick="closeAddYearLevelModal()">Cancel</button>
+                        <button class="modal-btn confirm-btn" onclick="addYearLevel()">Add</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!--Registration-->
+        <section class="sections" id="registration">
+            <div class="registration-container-holder">
+                <div class="registration-container">            
+                    <div class="role-selector">
+                        <label class="role-label">Select Role:</label>
+                        <div class="role-tabs">
+                            <button class="role-tab active" onclick="switchRole('guard')">Guard</button>
+                            <button class="role-tab" onclick="switchRole('teacher')">Teacher</button>
+                            <button class="role-tab" onclick="switchRole('student')">Student</button>
+                        </div>
+                    </div>
+            
+                    <!-- Guard Registration Form -->
+                    <form class="form-section active" id="guardForm">
+                        <div class="form-group">
+                            <label class="form-label">Full Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="guard_fullname" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Email <span class="required">*</span></label>
+                            <input type="email" class="form-input" id="guard_email" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Password <span class="required">*</span></label>
+                            <input type="password" class="form-input" id="guard_password" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Confirm password <span class="required">*</span></label>
+                            <input type="password" class="form-input" id="guard_confirm_password" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Location Assigned <span class="required">*</span></label>
+                            <select class="form-select" id="guard_location" required>
+                                <option value="">Select Location</option>
+                                <option value="Main Gate">Main Gate</option>
+                                <option value="Building A">Building A</option>
+                                <option value="Building B">Building B</option>
+                                <option value="Parking Area">Parking Area</option>
+                            </select>
+                        </div>
+                    
+                        <button type="submit" class="register-btn">Register</button>
+                    </form>
+                    
+            
+                    <!-- Teacher Registration Form -->
+                    <form class="form-section" id="teacherForm">
+                        <div class="form-group">
+                            <label class="form-label" for="teacher_fullname">Full Name <span class="required">*</span></label>
+                            <input type="text" id="teacher_fullname" name="fullName" class="form-input" placeholder="Full Name" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label" for="teacher_email">Email <span class="required">*</span></label>
+                            <input type="email" id="teacher_email" name="email" class="form-input" placeholder="Email" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label" for="teacher_password">Password <span class="required">*</span></label>
+                            <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label" for="confirm_password">Confirm Password <span class="required">*</span></label>
+                            <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label" for="teacher_department">Department <span class="required">*</span></label>
+                            <select class="form-select" id="teacher_department" name="department" required>
+                                <option value="">Select Department</option>
+                                <!-- Populated dynamically from program table -->
+                            </select>
+                        </div>
+                    
+                        <button type="submit" class="register-btn">Register</button>
+                    </form>
+            
+                    <!-- Student Registration Form -->
+                    <form class="form-section" id="studentForm">
+                        <div class="form-group">
+                            <label class="form-label">First Name <span class="required">*</span></label>
+                            <input type="text" id="std_firstname" class="form-input" placeholder="First Name" required>
+                        </div>
+                    
+                        <div class="name-row">
+                            <div class="form-group">
+                                <label class="form-label">Middle Name</label>
+                                <input type="text" id="std_middlename" class="form-input" placeholder="Middle Name">
+                            </div>
+                    
+                            <div class="form-group">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" id="std_lastname" class="form-input" placeholder="Last Name" required>
+                            </div>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Email <span class="required">*</span></label>
+                            <input type="email" id="std_email" class="form-input" placeholder="Email" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">ID Number <span class="required">*</span></label>
+                            <input type="text" id="std_id_number" class="form-input" placeholder="ID Number" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Program <span class="required">*</span></label>
+                            <select id="std_program" class="form-select" required>
+                                <option value="">Select Program</option>
+                                <!-- Populated dynamically from program table -->
+                            </select>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Year Level <span class="required">*</span></label>
+                            <select id="std_year_level" class="form-select" required>
+                                <option value="">Select Year</option>
+                                <!-- Populated dynamically from year_level table -->
+                            </select>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Parent/Guardian Contact Number <span class="required">*</span></label>
+                            <input type="tel" id="std_contact" class="form-input" placeholder="Contact Number" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Password <span class="required">*</span></label>
+                            <input type="password" id="std_password" class="form-input" placeholder="Password" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password <span class="required">*</span></label>
+                            <input type="password" id="std_confirm_password" class="form-input" placeholder="Confirm Password" required>
+                        </div>
+                    
+                        <button type="submit" class="register-btn">Register</button>
+                    </form>
+                </div>
+            </div>  
+        </section>
+
+        <!--Student Account Management Modal -->
+        <div id="studentAccountManagementModal" class="student-account-management-modal" style="display: none;">
+            <div class="record-modal-content">
+                
+                <div class="modal-header-account-management">
+                    <h2>Student Record Details</h2>
+                    <span class="close-btn-record" onclick="closeRecordModal()">×</span>
+                </div>
+        
+                <div class="modal-body">
+                    <form id="studentAccountManagementForm">
+    
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input type="text" id="studentIDTracking" name="id" disabled="">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>ID Number</label>
+                            <input type="text" id="studentIdNumber" name="id_number" placeholder="e.g. 1231377">
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label>Firstname</label>
+                                <input id="studentFirstName" type="text" name="firstname">
+                            </div>
+                            <div class="form-group" style="flex: 0.5;">
+                                <label>M.I</label>
+                                <input id="studentMiddleName" type="text" name="mi" maxlength="2">
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label>Lastname</label>
+                                <input id="studentLastName" type="text" name="lastname">
+                            </div>
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Program</label>
+                                <select name="program" id="studentProgram">
+                                    <!--Auto generate data-->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Year Level</label>
+                                <select name="year_level" id="studentYearLevel">
+                                    <option value="">Select Year</option>
+                                    <!-- Populated dynamically from year_level table -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeRecordModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Save Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!--Teacher Account Management Modal-->
+        <div id="teacherAccountManagementModal" class="teacher-account-management-modal" style="display: none;">
+            <div class="record-modal-content">
+                
+                <div class="modal-header-account-management">
+                    <h2>Teacher Record Details</h2>
+                    <span class="close-btn-record" onclick="closeRecordModal()">×</span>
+                </div>
+        
+                <div class="modal-body">
+                    <form id="teacherAccountManagementForm">
+    
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input type="text" id="teacherIDTracking" name="id" disabled="">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="text" id="teacherEmail" name="teacher_email">
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label>Fullname</label>
+                                <input id="teacherFullName" type="text" name="fullname">
+                            </div>
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Program</label>
+                                <select name="program" id="teacherProgram">
+                                    <!--Auto generate data-->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Teacher Barcode Serial Number</label>
+                                <input name="tsn" id="teacherBarcodeSerialNumber" disabled>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeRecordModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Save Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!--Guard Account Management Modal-->
+        <div id="guardAccountManagementModal" class="guard-account-management-modal" style="display: none;">
+            <div class="record-modal-content">
+                
+                <div class="modal-header-account-management">
+                    <h2>Guard Record Details</h2>
+                    <span class="close-btn-record" onclick="closeRecordModal()">×</span>
+                </div>
+        
+                <div class="modal-body">
+                    <form id="guardAccountManagementForm">
+    
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input type="text" id="guardIDTracking" name="id" disabled="">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="text" id="guardEmail" name="teacher_email">
+                        </div>
+        
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label>Fullname</label>
+                                <input id="guardFullName" type="text" name="fullname">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Location Assigned <span class="required">*</span></label>
+                            <select class="form-select" id="guardLocation" required>
+                                <option value="">Select Location</option>
+                                <option value="Main Gate">Main Gate</option>
+                                <option value="Building A">Building A</option>
+                                <option value="Building B">Building B</option>
+                                <option value="Parking Area">Parking Area</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeRecordModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Save Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <!--Admin Account Management-->
+        <section class="sections" id="adminAccountManagement">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input oninput="filterAdminAccounts(this.value)" type="text" class="search-input" placeholder="Search admins..." id="searchFilterAdminAccounts">
+                </div>
+            </div>
+
+            <div class="students-list" id="adminList">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="register-btn-container">
+                <button class="register-btn" onclick="openCreateAdminModal()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    Create Admin Account
+                </button>
+            </div>
+        </section>
+
+        <!-- Edit Admin Modal -->
+        <div id="adminEditModal" class="teacher-account-management-modal" style="display:none;">
+            <div class="record-modal-content">
+                <div class="modal-header-account-management">
+                    <h2>Edit Admin Account</h2>
+                    <span class="close-btn-record" onclick="closeAdminEditModal()">×</span>
+                </div>
+                <div class="modal-body">
+                    <form id="adminEditForm">
+                        <div class="form-group">
+                            <label>ID</label>
+                            <input type="text" id="adminIdTracking" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="adminNameInput">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="adminEmailInput">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeAdminEditModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Admin Modal -->
+        <div id="adminCreateModal" class="teacher-account-management-modal" style="display:none;">
+            <div class="record-modal-content">
+                <div class="modal-header-account-management">
+                    <h2>Create Admin Account</h2>
+                    <span class="close-btn-record" onclick="closeCreateAdminModal()">×</span>
+                </div>
+                <div class="modal-body">
+                    <form id="adminCreateForm">
+                        <div class="form-group">
+                            <label>Full Name <span style="color:#d33">*</span></label>
+                            <input type="text" id="newAdminName" placeholder="Enter full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email <span style="color:#d33">*</span></label>
+                            <input type="email" id="newAdminEmail" placeholder="Enter email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password <span style="color:#d33">*</span></label>
+                            <input type="password" id="newAdminPassword" placeholder="Min 6 characters" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeCreateAdminModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Create</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <!--Admin Account Management-->
+        <section class="sections" id="adminAccountManagement">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input oninput="filterAdminAccounts(this.value)" type="text" class="search-input" placeholder="Search admins..." id="searchFilterAdminAccounts">
+                </div>
+            </div>
+            <div class="students-list" id="adminList"></div>
+            <div class="register-btn-container">
+                <button class="register-btn" onclick="openCreateAdminModal()">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    Create Admin Account
+                </button>
+            </div>
+        </section>
+
+        <div id="adminEditModal" class="teacher-account-management-modal" style="display:none;">
+            <div class="record-modal-content">
+                <div class="modal-header-account-management"><h2>Edit Admin Account</h2><span class="close-btn-record" onclick="closeAdminEditModal()">×</span></div>
+                <div class="modal-body">
+                    <form id="adminEditForm">
+                        <div class="form-group"><label>ID</label><input type="text" id="adminIdTracking" disabled></div>
+                        <div class="form-group"><label>Full Name</label><input type="text" id="adminNameInput"></div>
+                        <div class="form-group"><label>Email</label><input type="email" id="adminEmailInput"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeAdminEditModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="adminCreateModal" class="teacher-account-management-modal" style="display:none;">
+            <div class="record-modal-content">
+                <div class="modal-header-account-management"><h2>Create Admin Account</h2><span class="close-btn-record" onclick="closeCreateAdminModal()">×</span></div>
+                <div class="modal-body">
+                    <form id="adminCreateForm">
+                        <div class="form-group"><label>Full Name <span style="color:#d33">*</span></label><input type="text" id="newAdminName" placeholder="Enter full name" required></div>
+                        <div class="form-group"><label>Email <span style="color:#d33">*</span></label><input type="email" id="newAdminEmail" placeholder="Enter email" required></div>
+                        <div class="form-group"><label>Password <span style="color:#d33">*</span></label><input type="password" id="newAdminPassword" placeholder="Min 6 characters" required></div>
+                        <div class="modal-footer">
+                            <button type="button" class="cancel-btn" onclick="closeCreateAdminModal()">Cancel</button>
+                            <button type="submit" class="save-btn">Create</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Logs -->
+        <section class="sections" id="loginLogs">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" class="search-input" placeholder="Search name, email, role, status..." id="searchLoginLogs">
+                    </div>
+                    <button class="export-btn" onclick="exportTableToExcel('loginLogsTable','Login_Logs')">
+                        <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                        Export Excel
+                    </button>
+                    <button class="export-btn" onclick="refreshLoginLogs()" style="background:#2d5282">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="attendance-table" id="loginLogsTable">
+                    <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Login At</th></tr></thead>
+                    <tbody id="loginLogsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Activity Logs -->
+        <section class="sections" id="activityLogs">
+            <div class="controls-section">
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" class="search-input" placeholder="Search name, role, action, target..." id="searchActivityLogs">
+                    </div>
+                    <button class="export-btn" onclick="exportTableToExcel('activityLogsTable','Activity_Logs')">
+                        <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                        Export Excel
+                    </button>
+                    <button class="export-btn" onclick="refreshActivityLogs()" style="background:#2d5282">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="attendance-table" id="activityLogsTable">
+                    <thead><tr><th>#</th><th>Name</th><th>Role</th><th>Action</th><th>Target Type</th><th>Target</th><th>Details</th><th>Performed At</th></tr></thead>
+                    <tbody id="activityLogsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="super_admin_app.js"></script>
+</body>
+</html>
