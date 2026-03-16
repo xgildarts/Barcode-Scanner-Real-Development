@@ -31,6 +31,8 @@ student.put('/student_update_profile', async (req, res) => {
             return res.status(409).json({ ok: false, duplicate: true, message: `ID number "${req.body.idNumber}" is already assigned to another student.` });
         }
 
+        const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
+        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'UPDATE_PROFILE', 'Student', null, fullName, `Updated profile — ID No: ${req.body.idNumber || decodedToken.student_id_number}`)
         res.json({ ok: true, message: 'Profile updated successfully' });
 
     } catch (error) {
@@ -46,6 +48,8 @@ student.put('/student_change_password', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.updateStudentPassword(currentPassword, newPassword, decodedToken.student_id)
+        const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
+        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'CHANGE_PASSWORD', 'Student', null, fullName, 'Student changed their password')
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(401).json({ ok: false, message: err })
@@ -71,6 +75,8 @@ student.put('/update_student_barcode', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.updateStudentBarcode(decodedToken.student_id, barcode)
+        const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
+        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'REGENERATE_BARCODE', 'Student', null, fullName, `Regenerated barcode — ID No: ${decodedToken.student_id_number}`)
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
@@ -91,9 +97,11 @@ student.get('/get_attendance_history_record', async (req, res) => {
 })
 
 
-// Verify student location against their teacher's set location
+// Verify student location against their SPECIFIC teacher's set location
+// teacher_serial must be passed from the frontend so we check the right teacher,
+// preventing a student from bypassing location check via a different enrolled teacher.
 student.post('/verify_location', async (req, res) => {
-    const { latitude, longitude } = req.body
+    const { latitude, longitude, teacher_serial } = req.body
 
     if (latitude === undefined || longitude === undefined) {
         return res.status(400).json({ ok: false, message: 'latitude and longitude are required.' })
@@ -106,7 +114,8 @@ student.post('/verify_location', async (req, res) => {
         const result = await services.verifyStudentLocation(
             decodedToken.student_id_number,
             parseFloat(latitude),
-            parseFloat(longitude)
+            parseFloat(longitude),
+            teacher_serial || null  // pass specific teacher serial to prevent bypass
         )
 
         if (!result.withinRange) {
@@ -188,6 +197,18 @@ student.get('/programs', async (req, res) => {
         res.json({ ok: true, message: 'Successfully retrieved programs!', content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Get all teachers this student is enrolled under (for class picker)
+student.get('/enrolled_teachers', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getStudentEnrolledTeachers(decodedToken.student_id_number)
+        res.json({ ok: true, content: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
     }
 })
 

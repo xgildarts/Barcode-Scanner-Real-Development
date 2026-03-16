@@ -1,9 +1,0 @@
-1. Student
-    Student Login/
-    Student Registration/ => Fix tomorrow should check the device id if exists or not
-    Student Barcode Generation
-    Student Attendance History
-    Student Profile
-2. Teacher
-3. Guard
-4. Admin

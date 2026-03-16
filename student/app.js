@@ -217,13 +217,25 @@ async function verifyLocation() {
     }
 
     const { res, data } = await apiCall('/students/verify_location', 'POST', {
-        latitude:  coords.latitude,
-        longitude: coords.longitude
+        latitude:       coords.latitude,
+        longitude:      coords.longitude,
+        teacher_serial: _selectedTeacherSerial  // prevents bypass via a different enrolled teacher
     });
 
     Swal.close();
 
-    if (!res.ok || !data.withinRange) {
+    // If teacher hasn't set a location yet, allow barcode generation anyway
+    if (!res.ok) {
+        const msg = data?.message || '';
+        if (msg.toLowerCase().includes('location') || msg.toLowerCase().includes('not set')) {
+            Swal.close();
+            return true; // no location set — skip check, let student generate
+        }
+        Swal.fire({ icon: 'error', title: 'Error', text: msg || 'Something went wrong.', confirmButtonColor: '#d33' });
+        return false;
+    }
+
+    if (!data.withinRange) {
         Swal.fire({
             icon: 'error',
             title: 'Out of Range',
@@ -241,6 +253,8 @@ async function verifyLocation() {
 // ============================================================
 let _codeType = 'barcode'; // 'barcode' | 'qr'
 let _qrInstance = null;
+let _selectedTeacherSerial = null; // set when student picks a class
+
 
 function setCodeType(type) {
     _codeType = type;
@@ -329,6 +343,48 @@ async function initialCheckBarcodeExpiration() {
         Swal.close();
         Swal.fire({ icon: 'error', title: 'Error', text: err.message });
     }
+}
+
+async function pickTeacherThenGenerate() {
+    // Try to fetch enrolled teachers
+    // If endpoint not available or student not enrolled, skip picker and go straight
+    try {
+        const { res, data } = await apiCall('/students/enrolled_teachers');
+
+        if (res.ok && data.content && data.content.length > 0) {
+            const teachers = data.content;
+
+            if (teachers.length === 1) {
+                // Only one teacher — skip picker
+                _selectedTeacherSerial = teachers[0].teacher_barcode_scanner_serial_number;
+            } else {
+                // Multiple teachers — show picker
+                const options = {};
+                teachers.forEach((t, i) => {
+                    const label = t.subject ? `${t.teacher_name} — ${t.subject}` : t.teacher_name;
+                    options[i] = label;
+                });
+                const { value } = await Swal.fire({
+                    title: 'Select your class',
+                    input: 'select',
+                    inputOptions: options,
+                    inputPlaceholder: 'Choose a teacher/subject',
+                    showCancelButton: true,
+                    confirmButtonText: 'Continue',
+                    confirmButtonColor: '#1e3a5f',
+                    inputValidator: (v) => v === '' ? 'Please select a class' : null
+                });
+                if (value === undefined) return; // user cancelled
+                _selectedTeacherSerial = teachers[parseInt(value)].teacher_barcode_scanner_serial_number;
+            }
+        }
+        // If endpoint fails or no teachers found, _selectedTeacherSerial stays null
+        // verifyLocation will still run — backend falls back to first enrolled teacher
+    } catch (_) {
+        // Endpoint not available — proceed without teacher selection
+    }
+
+    await checkBarcodeExpiration();
 }
 
 async function checkBarcodeExpiration() {

@@ -1668,7 +1668,6 @@ const ROLE_COLORS = {
     student:     { bg:'#f3e5f5', color:'#6a1b9a' },
     super_admin: { bg:'#fce4ec', color:'#880e4f' },
 };
-
 let _loginLogs = [];
 
 async function renderLoginLogs() {
@@ -1707,28 +1706,46 @@ function refreshLoginLogs() {
 }
 
 // ============================================================
-// ACTIVITY LOGS — all users
+// ACTIVITY LOGS — comprehensive action labels
 // ============================================================
 const ACTION_LABELS = {
-    // Student
-    CLASS_ATTENDANCE_IN:  { label:'Class Attendance',  color:'#2e7d32', bg:'#e8f5e9' },
-    // Teacher
-    MANUAL_ATTENDANCE:    { label:'Manual Attendance', color:'#1565c0', bg:'#e3f2fd' },
-    ADD_STUDENT_TO_CLASS: { label:'Add to Class',      color:'#6a1b9a', bg:'#f3e5f5' },
-    // Guard
-    EVENT_TIME_IN:        { label:'Event TIME IN',     color:'#00695c', bg:'#e0f2f1' },
-    EVENT_TIME_OUT:       { label:'Event TIME OUT',    color:'#e65100', bg:'#fff3e0' },
-    // Admin
-    CREATE_TEACHER:       { label:'Create Teacher',    color:'#1565c0', bg:'#e3f2fd' },
-    DELETE_TEACHER:       { label:'Delete Teacher',    color:'#c62828', bg:'#ffebee' },
-    CREATE_GUARD:         { label:'Create Guard',      color:'#1565c0', bg:'#e3f2fd' },
-    DELETE_GUARD:         { label:'Delete Guard',      color:'#c62828', bg:'#ffebee' },
-    DELETE_STUDENT:       { label:'Delete Student',    color:'#c62828', bg:'#ffebee' },
-    // Super Admin
-    CREATE_ADMIN:         { label:'Create Admin',      color:'#1565c0', bg:'#e3f2fd' },
-    EDIT_ADMIN:           { label:'Edit Admin',        color:'#6a1b9a', bg:'#f3e5f5' },
-    DELETE_ADMIN:         { label:'Delete Admin',      color:'#c62828', bg:'#ffebee' },
-    RESET_ADMIN_PASSWORD: { label:'Reset Password',    color:'#e65100', bg:'#fff3e0' },
+    // ── Student actions ──────────────────────────────────────
+    CLASS_ATTENDANCE_IN:    { label:'Class Scan In',        color:'#2e7d32', bg:'#e8f5e9' },
+    UPDATE_PROFILE:         { label:'Update Profile',       color:'#6a1b9a', bg:'#f3e5f5' },
+    CHANGE_PASSWORD:        { label:'Change Password',      color:'#37474f', bg:'#eceff1' },
+    REGENERATE_BARCODE:     { label:'Regen Barcode',        color:'#4a148c', bg:'#ede7f6' },
+    // ── Teacher actions ──────────────────────────────────────
+    MANUAL_ATTENDANCE:      { label:'Manual Attendance',    color:'#1565c0', bg:'#e3f2fd' },
+    ADD_STUDENT_TO_CLASS:   { label:'Add to Class',         color:'#1b5e20', bg:'#f1f8e9' },
+    EDIT_STUDENT_RECORD:    { label:'Edit Student Record',  color:'#e65100', bg:'#fff3e0' },
+    DELETE_STUDENT_RECORD:  { label:'Remove from Class',    color:'#c62828', bg:'#ffebee' },
+    SET_LOCATION:           { label:'Set Location',         color:'#00695c', bg:'#e0f2f1' },
+    SET_SUBJECT_YEAR_LEVEL: { label:'Set Subject/Year',     color:'#1565c0', bg:'#e3f2fd' },
+    CHANGE_NAME:            { label:'Change Name',          color:'#37474f', bg:'#eceff1' },
+    ADD_SUBJECT:            { label:'Add Subject',          color:'#1b5e20', bg:'#f1f8e9' },
+    DELETE_SUBJECT:         { label:'Delete Subject',       color:'#c62828', bg:'#ffebee' },
+    // ── Guard actions ────────────────────────────────────────
+    EVENT_TIME_IN:          { label:'Event TIME IN',        color:'#00695c', bg:'#e0f2f1' },
+    EVENT_TIME_OUT:         { label:'Event TIME OUT',       color:'#e65100', bg:'#fff3e0' },
+    // ── Admin actions ────────────────────────────────────────
+    SET_EVENT:              { label:'Set Event',            color:'#4527a0', bg:'#ede7f6' },
+    ADD_PROGRAM:            { label:'Add Program',          color:'#1b5e20', bg:'#f1f8e9' },
+    DELETE_PROGRAM:         { label:'Delete Program',       color:'#c62828', bg:'#ffebee' },
+    ADD_YEAR_LEVEL:         { label:'Add Year Level',       color:'#1b5e20', bg:'#f1f8e9' },
+    DELETE_YEAR_LEVEL:      { label:'Delete Year Level',    color:'#c62828', bg:'#ffebee' },
+    EDIT_STUDENT:           { label:'Edit Student',         color:'#e65100', bg:'#fff3e0' },
+    DELETE_STUDENT:         { label:'Delete Student',       color:'#c62828', bg:'#ffebee' },
+    CREATE_TEACHER:         { label:'Create Teacher',       color:'#1565c0', bg:'#e3f2fd' },
+    EDIT_TEACHER:           { label:'Edit Teacher',         color:'#e65100', bg:'#fff3e0' },
+    DELETE_TEACHER:         { label:'Delete Teacher',       color:'#c62828', bg:'#ffebee' },
+    CREATE_GUARD:           { label:'Create Guard',         color:'#1565c0', bg:'#e3f2fd' },
+    EDIT_GUARD:             { label:'Edit Guard',           color:'#e65100', bg:'#fff3e0' },
+    DELETE_GUARD:           { label:'Delete Guard',         color:'#c62828', bg:'#ffebee' },
+    // ── Super Admin actions ───────────────────────────────────
+    CREATE_ADMIN:           { label:'Create Admin',         color:'#1565c0', bg:'#e3f2fd' },
+    EDIT_ADMIN:             { label:'Edit Admin',           color:'#e65100', bg:'#fff3e0' },
+    DELETE_ADMIN:           { label:'Delete Admin',         color:'#c62828', bg:'#ffebee' },
+    RESET_ADMIN_PASSWORD:   { label:'Reset Admin Password', color:'#b71c1c', bg:'#ffcdd2' },
 };
 
 let _activityLogs = [];
@@ -1751,7 +1768,7 @@ function renderActivityLogsTable(logs) {
     if (!tbody) return;
     if (!logs.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px">No activity logs yet.</td></tr>'; return; }
     tbody.innerHTML = logs.map((l, i) => {
-        const meta = ACTION_LABELS[l.action] || { label:l.action, color:'#555', bg:'#f5f5f5' };
+        const meta = ACTION_LABELS[l.action] || { label: l.action.replace(/_/g,' '), color:'#555', bg:'#f5f5f5' };
         const rc   = ROLE_COLORS[l.actor_role] || { bg:'#f5f5f5', color:'#555' };
         return `<tr>
             <td>${i + 1}</td>

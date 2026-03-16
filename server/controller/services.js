@@ -255,10 +255,18 @@ async function getTeacherSerialByStudentIDNumber(studentIDNumber) {
     })
 }
 
-async function verifyStudentLocation(studentIDNumber, studentLat, studentLng) {
-    const studentTeacher = await getTeacherSerialByStudentIDNumber(studentIDNumber)
-    if (!studentTeacher) throw new Error('Student not registered to any class.')
-    const teacherData = await getTeacherLocationBySerial(studentTeacher.teacher_barcode_scanner_serial_number)
+// teacherSerialNumber is optional — if provided, checks THAT specific teacher's location.
+// If omitted, falls back to the first teacher the student is registered under (old behaviour).
+// Always pass it from the student app so a student can't bypass by being in a different teacher's range.
+async function verifyStudentLocation(studentIDNumber, studentLat, studentLng, teacherSerialNumber) {
+    let serial = teacherSerialNumber
+    if (!serial) {
+        // Fallback: look up the first registered teacher for this student
+        const studentTeacher = await getTeacherSerialByStudentIDNumber(studentIDNumber)
+        if (!studentTeacher) throw new Error('Student not registered to any class.')
+        serial = studentTeacher.teacher_barcode_scanner_serial_number
+    }
+    const teacherData = await getTeacherLocationBySerial(serial)
     if (!teacherData || !teacherData.teacher_location) throw new Error('Teacher has not set a location yet.')
     const { latitude, longitude } = JSON.parse(teacherData.teacher_location)
     const radius   = teacherData.teacher_location_radius || 50
@@ -286,7 +294,8 @@ async function setTeacherLocation(teacherID, latitude, longitude, radius) {
 async function manualInsertAttendance(
     student_id, student_id_number, student_firstname, student_middlename,
     student_lastname, student_email, student_year_level, student_guardian_number,
-    student_program, teacher_barcode_scanner_serial_number
+    student_program, teacher_barcode_scanner_serial_number,
+    teacherId, teacherName
 ) {
     const inClass = await checkStudentToRegularClass(student_id_number)
     if (!inClass) throw new Error('Student is not registered to this subject.')
@@ -315,7 +324,7 @@ async function manualInsertAttendance(
     await sendSMS(student_guardian_number,
         `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`)
 
-    writeActivityLog(null, null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry — Program: ${student_program}, Year: ${student_year_level}`)
+    writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`)
     return 'Attendance recorded successfully!'
 }
 
@@ -459,21 +468,22 @@ function studentRegistration(
 // Student Login
 
 // ============================================================
-// LOGGING HELPERS — write to system_login_logs and admin_activity_logs
+// LOGGING HELPERS
 // ============================================================
 function writeLoginLog(userId, userName, userEmail, role, status) {
     db.execute(
         'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status) VALUES (?, ?, ?, ?, ?)',
         [userId || null, userName || null, userEmail || null, role, status],
-        (err) => { if (err) console.error('[LoginLog ERROR]', err) }
+        (err) => { if (err) console.error('[LoginLog]', err) }
     )
 }
 
-function writeActivityLog(adminId, adminName, action, targetType, targetId, targetName, details) {
+// actorRole: 'student' | 'teacher' | 'guard' | 'admin' | 'super_admin'
+function writeActivityLog(actorId, actorName, actorRole, action, targetType, targetId, targetName, details) {
     db.execute(
-        'INSERT INTO admin_activity_logs (admin_id, admin_name, action, target_type, target_id, target_name, details) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [adminId || null, adminName || null, action, targetType || null, String(targetId || ''), targetName || null, details || null],
-        (err) => { if (err) console.error('[ActivityLog ERROR]', err) }
+        'INSERT INTO system_activity_logs (actor_id, actor_name, actor_role, action, target_type, target_id, target_name, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [actorId || null, actorName || null, actorRole || null, action, targetType || null, String(targetId || ''), targetName || null, details || null],
+        (err) => { if (err) console.error('[ActivityLog]', err) }
     )
 }
 
@@ -944,13 +954,17 @@ async function teacherAddStudent(
     studentProgram, 
     studentYearLevel, 
     studentGuardianNumber, 
-    teacherBarcodeScannerSerialNumber
+    teacherBarcodeScannerSerialNumber,
+    teacherId,
+    teacherName
 ) {
     const existing = await new Promise((resolve, reject) => {
-        db.execute('SELECT student_id FROM student_records_regular_class WHERE student_id_number = ?',
-            [studentIDNumber], (err, rows) => { if (err) return reject(err); resolve(rows) })
+        db.execute(
+            'SELECT student_id FROM student_records_regular_class WHERE student_id_number = ? AND teacher_barcode_scanner_serial_number = ?',
+            [studentIDNumber, teacherBarcodeScannerSerialNumber],
+            (err, rows) => { if (err) return reject(err); resolve(rows) })
     })
-    if (existing.length > 0) throw new Error(`Student ID number "${studentIDNumber}" is already registered.`)
+    if (existing.length > 0) throw new Error(`Student is already registered in your class.`)
 
     // Look up guardian number from student_accounts (from their original registration)
     const studentAccount = await new Promise((resolve, reject) => {
@@ -988,7 +1002,7 @@ async function teacherAddStudent(
             ],
             (err, result) => {
                 if (err) return reject(err);
-                writeActivityLog(null, null, 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', studentIDNumber, `${studentFirstName} ${studentLastName}`, `Added to class — Program: ${studentProgram}, Year: ${studentYearLevel}`)
+                writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', studentIDNumber, `${studentFirstName} ${studentLastName}`, `Added by ${teacherName || 'Unknown Teacher'} — Program: ${studentProgram}, Year: ${studentYearLevel}`)
                 resolve({ message: 'Successfully added new student!' });
             }
         );
@@ -1123,7 +1137,9 @@ async function insertStudentAttendance(
     student_lastname,
     student_year_level,
     student_program,
-    teacher_barcode_scanner_serial_number
+    teacher_barcode_scanner_serial_number,
+    teacherId,
+    teacherName
 ) {
     // Check if student already exists in attendance
     const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
@@ -1186,7 +1202,7 @@ async function insertStudentAttendance(
         teacher_barcode_scanner_serial_number
     )
 
-    writeActivityLog(student_id, `${student_firstname} ${student_middlename}. ${student_lastname}`, 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Attended class — Program: ${student_program}, Year: ${student_year_level}`)
+    writeActivityLog(student_id, `${student_firstname} ${student_middlename}. ${student_lastname}`, 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Teacher: ${teacherName || 'Unknown'} | Program: ${student_program}, Year: ${student_year_level}`)
     return 'Successfully inserted student attendance!'
 }
 
@@ -2370,71 +2386,6 @@ async function superAdminGetAllAdmins() {
     })
 }
 
-async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
-    const exists = await new Promise((resolve, reject) => {
-        db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? LIMIT 1', [adminEmail],
-            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
-    })
-    if (exists) throw new Error('An admin with this email already exists.')
-    const hashed = await bcrypt.hash(adminPassword, SALT_ROUNDS)
-    return new Promise((resolve, reject) => {
-        db.execute(
-            'INSERT INTO admin_accounts (admin_name, admin_email, admin_password) VALUES (?, ?, ?)',
-            [adminName, adminEmail, hashed],
-            (err) => { if (err) return reject(err); resolve('Admin account created successfully.') }
-        )
-    })
-}
-
-async function superAdminEditAdmin(adminId, adminName, adminEmail) {
-    const duplicate = await new Promise((resolve, reject) => {
-        db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? AND admin_id != ? LIMIT 1',
-            [adminEmail, adminId],
-            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
-    })
-    if (duplicate) throw new Error('Email is already used by another admin.')
-    return new Promise((resolve, reject) => {
-        db.execute(
-            'UPDATE admin_accounts SET admin_name = ?, admin_email = ? WHERE admin_id = ?',
-            [adminName, adminEmail, adminId],
-            (err, result) => {
-                if (err) return reject(err)
-                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
-                resolve('Admin account updated successfully.')
-            }
-        )
-    })
-}
-
-async function superAdminDeleteAdmin(adminId) {
-    return new Promise((resolve, reject) => {
-        db.execute(
-            'DELETE FROM admin_accounts WHERE admin_id = ?',
-            [adminId],
-            (err, result) => {
-                if (err) return reject(err)
-                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
-                resolve('Admin account deleted successfully.')
-            }
-        )
-    })
-}
-
-async function superAdminResetAdminPassword(adminId, newPassword) {
-    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
-    return new Promise((resolve, reject) => {
-        db.execute(
-            'UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?',
-            [hashed, adminId],
-            (err, result) => {
-                if (err) return reject(err)
-                if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
-                resolve('Admin password reset successfully.')
-            }
-        )
-    })
-}
-
 // ============================================================
 // SUPER ADMIN — System-wide Stats
 // ============================================================
@@ -2471,44 +2422,41 @@ async function superAdminGetLoginLogs(limit) {
              FROM system_login_logs
              ORDER BY login_at DESC
              LIMIT ?`,
-            [n],
-            (err, rows) => { if (err) return reject(err); resolve(rows) }
+            [n], (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
     })
 }
 
 // ============================================================
-// SUPER ADMIN — Activity Logs
+// SUPER ADMIN — Activity Logs (all users, all roles)
 // ============================================================
 async function superAdminGetActivityLogs(limit) {
     const n = parseInt(limit) || 500
     return new Promise((resolve, reject) => {
         db.execute(
-            `SELECT log_id, admin_id, admin_name, action, target_type, target_id, target_name, details,
+            `SELECT log_id, actor_id, actor_name, actor_role, action,
+                    target_type, target_id, target_name, details,
                     DATE_FORMAT(performed_at, '%Y-%m-%d %H:%i:%s') AS performed_at
-             FROM admin_activity_logs
+             FROM system_activity_logs
              ORDER BY performed_at DESC
              LIMIT ?`,
-            [n],
-            (err, rows) => { if (err) return reject(err); resolve(rows) }
+            [n], (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
     })
 }
 
 // ============================================================
-// SUPER ADMIN — System-wide Event Attendance (all admins)
+// SUPER ADMIN — System-wide Event Attendance
 // ============================================================
 async function superAdminGetAllEvents() {
     return new Promise((resolve, reject) => {
         db.execute(
             `SELECT e.student_id_number, e.student_name, e.student_program, e.student_year_level,
-                    DATE_FORMAT(e.date, '%Y-%m-%d') AS date, e.time, e.status, e.event_name,
-                    a.admin_name
+                    DATE_FORMAT(e.date,'%Y-%m-%d') AS date, e.time, e.status, e.event_name, a.admin_name
              FROM event_attendance_record e
              LEFT JOIN admin_accounts a ON e.admin_id = a.admin_id
              ORDER BY e.date DESC, e.time DESC`,
-            [],
-            (err, rows) => { if (err) return reject(err); resolve(rows) }
+            [], (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
     })
 }
@@ -2517,19 +2465,17 @@ async function superAdminGetAllEventsHistory() {
     return new Promise((resolve, reject) => {
         db.execute(
             `SELECT e.student_id_number, e.student_name, e.student_program, e.student_year_level,
-                    DATE_FORMAT(e.date, '%Y-%m-%d') AS date, e.time, e.status, e.event_name,
-                    a.admin_name
+                    DATE_FORMAT(e.date,'%Y-%m-%d') AS date, e.time, e.status, e.event_name, a.admin_name
              FROM event_attendance_history_record e
              LEFT JOIN admin_accounts a ON e.admin_id = a.admin_id
              ORDER BY e.date DESC, e.time DESC`,
-            [],
-            (err, rows) => { if (err) return reject(err); resolve(rows) }
+            [], (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
     })
 }
 
 // ============================================================
-// SUPER ADMIN — Admin action logging
+// SUPER ADMIN — Admin Account Management (with activity logging)
 // ============================================================
 async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
     const exists = await new Promise((resolve, reject) => {
@@ -2544,7 +2490,7 @@ async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
             [adminName, adminEmail, hashed],
             (err, result) => {
                 if (err) return reject(err)
-                writeActivityLog(null, 'Super Admin', 'super_admin', 'CREATE_ADMIN', 'Admin', result.insertId, adminName, `Created admin account: ${adminEmail}`)
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'CREATE_ADMIN', 'Admin', result.insertId, adminName, `Created admin: ${adminEmail}`)
                 resolve('Admin account created successfully.')
             }
         )
@@ -2552,12 +2498,11 @@ async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
 }
 
 async function superAdminEditAdmin(adminId, adminName, adminEmail) {
-    const duplicate = await new Promise((resolve, reject) => {
+    const dup = await new Promise((resolve, reject) => {
         db.execute('SELECT admin_id FROM admin_accounts WHERE admin_email = ? AND admin_id != ? LIMIT 1',
-            [adminEmail, adminId],
-            (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
+            [adminEmail, adminId], (err, rows) => { if (err) return reject(err); resolve(rows.length > 0) })
     })
-    if (duplicate) throw new Error('Email is already used by another admin.')
+    if (dup) throw new Error('Email is already used by another admin.')
     return new Promise((resolve, reject) => {
         db.execute(
             'UPDATE admin_accounts SET admin_name = ?, admin_email = ? WHERE admin_id = ?',
@@ -2574,9 +2519,7 @@ async function superAdminEditAdmin(adminId, adminName, adminEmail) {
 
 async function superAdminDeleteAdmin(adminId) {
     return new Promise((resolve, reject) => {
-        db.execute(
-            'DELETE FROM admin_accounts WHERE admin_id = ?',
-            [adminId],
+        db.execute('DELETE FROM admin_accounts WHERE admin_id = ?', [adminId],
             (err, result) => {
                 if (err) return reject(err)
                 if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
@@ -2590,15 +2533,30 @@ async function superAdminDeleteAdmin(adminId) {
 async function superAdminResetAdminPassword(adminId, newPassword) {
     const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS)
     return new Promise((resolve, reject) => {
-        db.execute(
-            'UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?',
-            [hashed, adminId],
+        db.execute('UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?', [hashed, adminId],
             (err, result) => {
                 if (err) return reject(err)
                 if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
                 writeActivityLog(null, 'Super Admin', 'super_admin', 'RESET_ADMIN_PASSWORD', 'Admin', adminId, null, `Reset password for admin ID: ${adminId}`)
                 resolve('Admin password reset successfully.')
             }
+        )
+    })
+}
+
+// Get all teachers a student is enrolled under (for class picker on barcode screen)
+function getStudentEnrolledTeachers(studentIdNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT DISTINCT t.teacher_id, t.teacher_name, t.teacher_program,
+                    t.teacher_barcode_scanner_serial_number,
+                    s.subject_name_set AS subject
+             FROM student_records_regular_class r
+             JOIN teacher t ON t.teacher_barcode_scanner_serial_number = r.teacher_barcode_scanner_serial_number
+             LEFT JOIN subject_and_year_level_setter s ON s.teacher_barcode_scanner_serial_number = t.teacher_barcode_scanner_serial_number
+             WHERE r.student_id_number = ?`,
+            [studentIdNumber],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
     })
 }
@@ -2709,6 +2667,7 @@ module.exports= {
     superAdminGetAllEventsHistory,
     superAdminGetLoginLogs,
     superAdminGetActivityLogs,
+    getStudentEnrolledTeachers,
     writeActivityLog,
     writeLoginLog
 }

@@ -122,18 +122,6 @@
 
             <button class="menu-item" onclick="navigateTo('adminAccountManagement')">
                 <div class="menu-item-content">
-                    <div class="menu-item-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                        </svg>
-                    </div>
-                    <span class="menu-item-text">Admin Accounts</span>
-                </div>
-                <span class="menu-item-arrow">›</span>
-            </button>
-
-            <button class="menu-item" onclick="navigateTo('adminAccountManagement')">
-                <div class="menu-item-content">
                     <div class="menu-item-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
                     <span class="menu-item-text">Admin Accounts</span>
                 </div>
@@ -271,21 +259,6 @@
                             <div class="account-details">
                                 <div class="account-title">Guard Accounts</div>
                                 <div class="account-count" id="guardAccountCounts">0 Accounts</div>
-                            </div>
-                        </div>
-                        <div class="arrow-icon">›</div>
-                    </div>
-
-                    <div class="account-card" style="background:linear-gradient(135deg,#1a3a5f 0%,#2d5282 100%)" onclick="navigateTo('adminAccountManagement')">
-                        <div class="account-info">
-                            <div class="account-icon">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                                </svg>
-                            </div>
-                            <div class="account-details">
-                                <div class="account-title">Admin Accounts</div>
-                                <div class="account-count" id="adminAccountCounts">0 Accounts</div>
                             </div>
                         </div>
                         <div class="arrow-icon">›</div>
@@ -1039,57 +1012,6 @@
             </div>
         </div>
 
-
-        <!--Admin Account Management-->
-        <section class="sections" id="adminAccountManagement">
-            <div class="search-container">
-                <div class="search-wrapper">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input oninput="filterAdminAccounts(this.value)" type="text" class="search-input" placeholder="Search admins..." id="searchFilterAdminAccounts">
-                </div>
-            </div>
-            <div class="students-list" id="adminList"></div>
-            <div class="register-btn-container">
-                <button class="register-btn" onclick="openCreateAdminModal()">
-                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    Create Admin Account
-                </button>
-            </div>
-        </section>
-
-        <div id="adminEditModal" class="teacher-account-management-modal" style="display:none;">
-            <div class="record-modal-content">
-                <div class="modal-header-account-management"><h2>Edit Admin Account</h2><span class="close-btn-record" onclick="closeAdminEditModal()">×</span></div>
-                <div class="modal-body">
-                    <form id="adminEditForm">
-                        <div class="form-group"><label>ID</label><input type="text" id="adminIdTracking" disabled></div>
-                        <div class="form-group"><label>Full Name</label><input type="text" id="adminNameInput"></div>
-                        <div class="form-group"><label>Email</label><input type="email" id="adminEmailInput"></div>
-                        <div class="modal-footer">
-                            <button type="button" class="cancel-btn" onclick="closeAdminEditModal()">Cancel</button>
-                            <button type="submit" class="save-btn">Save</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div id="adminCreateModal" class="teacher-account-management-modal" style="display:none;">
-            <div class="record-modal-content">
-                <div class="modal-header-account-management"><h2>Create Admin Account</h2><span class="close-btn-record" onclick="closeCreateAdminModal()">×</span></div>
-                <div class="modal-body">
-                    <form id="adminCreateForm">
-                        <div class="form-group"><label>Full Name <span style="color:#d33">*</span></label><input type="text" id="newAdminName" placeholder="Enter full name" required></div>
-                        <div class="form-group"><label>Email <span style="color:#d33">*</span></label><input type="email" id="newAdminEmail" placeholder="Enter email" required></div>
-                        <div class="form-group"><label>Password <span style="color:#d33">*</span></label><input type="password" id="newAdminPassword" placeholder="Min 6 characters" required></div>
-                        <div class="modal-footer">
-                            <button type="button" class="cancel-btn" onclick="closeCreateAdminModal()">Cancel</button>
-                            <button type="submit" class="save-btn">Create</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
         <!-- Login Logs -->
         <section class="sections" id="loginLogs">
