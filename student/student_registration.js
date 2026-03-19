@@ -1,6 +1,46 @@
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const GOOGLE_CLIENT_ID = '778771236440-59j9p3hl8tikvffo6s3983s9sfu79ljg.apps.googleusercontent.com';
 
+// Hardware-bound device fingerprint using Canvas + WebGL signals.
+// These are tied to the physical GPU — stable across browser updates,
+// localStorage clears, and incognito mode.
+async function getFingerprint() {
+    // --- Canvas signal ---
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#1a4545';
+    ctx.fillRect(0, 0, 100, 30);
+    ctx.fillStyle = '#fff';
+    ctx.fillText('fp-canvas', 2, 2);
+    const canvasData = canvas.toDataURL();
+
+    // --- WebGL signal ---
+    let webglRenderer = '';
+    let webglVendor = '';
+    try {
+        const gl = document.createElement('canvas').getContext('webgl')
+            || document.createElement('canvas').getContext('experimental-webgl');
+        if (gl) {
+            const ext = gl.getExtension('WEBGL_debug_renderer_info');
+            if (ext) {
+                webglRenderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '';
+                webglVendor   = gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)   || '';
+            }
+        }
+    } catch (_) {}
+
+    // --- Hash Canvas + WebGL into a single device ID ---
+    const raw = canvasData + '|' + webglRenderer + '|' + webglVendor;
+    const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    const hash = Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+    return hash;
+}
+
 let _yearLevels = [];
 let _googleUser  = null; // stores { firstName, middleName, lastName, email, picture } from Google
 
@@ -141,6 +181,8 @@ async function handleGoogleStep2Submit() {
 
     Swal.fire({ title: 'Creating account...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), customClass: { container: 'swal-on-top' } });
 
+    const device_id = await getFingerprint();
+
     try {
         const res  = await fetch(`${BASE_URL}/authentication/student_registration`, {
             method: 'POST',
@@ -154,13 +196,13 @@ async function handleGoogleStep2Submit() {
                 program,
                 yearLevel,
                 guardianContact,
-                password
+                password,
+                device_id
             })
         });
         const data = await res.json();
 
         if (res.ok && data.ok) {
-            localStorage.setItem('device_id', data.device_id);
             const registeredName = _googleUser.firstName; // save before close nulls _googleUser
             closeGoogleStep2();
             await Swal.fire({
@@ -263,16 +305,17 @@ async function handleSubmit(e) {
 
     Swal.fire({ title: 'Creating account...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+    const device_id = await getFingerprint();
+
     try {
         const res  = await fetch(`${BASE_URL}/authentication/student_registration`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ firstName, middleName, lastName, email, idNumber, program, yearLevel, guardianContact, password })
+            body: JSON.stringify({ firstName, middleName, lastName, email, idNumber, program, yearLevel, guardianContact, password, device_id })
         });
         const data = await res.json();
 
         if (res.ok && data.ok) {
-            localStorage.setItem('device_id', data.device_id);
             Swal.fire({ icon: 'success', title: data.message, text: `Welcome, ${firstName}!`, confirmButtonColor: '#3085d6' });
             document.getElementById('registrationForm').reset();
             document.getElementById('yearLevel').innerHTML = '<option value="">Select Year</option>';

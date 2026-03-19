@@ -174,17 +174,9 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
 teacher.post('/teacher_attendance_insertion', async (req, res) => {
     const { barcode, teacher_barcode_scanner_serial_number } = req.body
 
-    console.log("Barcode:", barcode)
-    console.log("Serial Number:", teacher_barcode_scanner_serial_number)
+    console.log("Barcode:", barcode);
 
     try {
-        let teacherId = null, teacherName = null
-        try {
-            const tok = services.removeBearer(req.headers['authorization'])
-            const dec = services.verifyToken(tok)
-            teacherId   = dec.teacher_id   || null
-            teacherName = dec.teacher_name || null
-        } catch (_) {}
         // Check registration
         const result = await services.checkStudentIfExistsInRegistration(barcode)
 
@@ -201,17 +193,37 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
             student_email,
             student_year_level,
             student_guardian_number,
-            student_program
+            student_program,
+            barcode_teacher_serial
         } = result[0]
 
-        // Check regular class
-        const exists = await services.checkStudentToRegularClass(student_id_number)
+        // Use the serial embedded in the barcode (student's choice) as the source of truth.
+        // Fall back to the scanner's own serial if the barcode has none.
+        const resolvedSerial = barcode_teacher_serial || teacher_barcode_scanner_serial_number
 
-        if (!exists) {
-            return res.json({ ok: false, message: 'Student not register to this subject!' })
+        if (!resolvedSerial) {
+            return res.json({ ok: false, message: 'No teacher serial number found. Please regenerate your barcode.' })
         }
 
-        // Insert attendance
+        console.log("Resolved Serial (from barcode):", resolvedSerial)
+
+        // Look up the teacher that owns this serial number
+        const teacherResult = await services.getTeacherBySerial(resolvedSerial)
+        if (teacherResult.length === 0) {
+            return res.json({ ok: false, message: 'Teacher not found for this barcode. Please regenerate your barcode.' })
+        }
+
+        const teacherId   = teacherResult[0].teacher_id
+        const teacherName = teacherResult[0].teacher_name
+
+        // Check student is enrolled in the resolved teacher's class
+        const exists = await services.checkStudentToRegularClass(student_id_number, resolvedSerial)
+
+        if (!exists) {
+            return res.json({ ok: false, message: 'Student not registered in this teacher\'s class!' })
+        }
+
+        // Insert attendance under the resolved teacher
         const response = await services.insertStudentAttendance(
             student_id,
             student_id_number,
@@ -220,7 +232,7 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
             student_lastname,
             student_year_level,
             student_program,
-            teacher_barcode_scanner_serial_number,
+            resolvedSerial,
             teacherId,
             teacherName
         )

@@ -960,6 +960,7 @@ async function fetchStudentAccounts() {
                         '${d.student_program}',
                         '${d.student_year_level}')">Edit</button>
                     <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.student_id})">Delete</button>
+                    <button class="action-btn" style="background:#e67e22;color:#fff;" onclick="resetStudentDevice(${d.student_id}, '${d.student_firstname} ${d.student_lastname}')">Reset Device</button>
                 </div>
             </div>
         </div>
@@ -1194,6 +1195,30 @@ function deleteStudent(id) {
         successText: 'The student account has been successfully deleted.',
         onSuccess: fetchStudentAccounts
     });
+}
+
+async function resetStudentDevice(id, studentName) {
+    const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'Reset Device Binding?',
+        html: `This will remove the registered device for <strong>${studentName}</strong>.<br>They will be able to log in from a new device on their next login.`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Reset',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#e67e22',
+    });
+    if (!confirm.isConfirmed) return;
+
+    try {
+        const res = await apiFetch(`/admin/reset_student_device/${id}`, { method: 'PUT' });
+        if (res && res.ok) {
+            Swal.fire({ icon: 'success', title: 'Device Reset', text: `${studentName} can now log in from a new device.` });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Reset Failed', text: res?.message || 'Something went wrong.' });
+        }
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Please try again.' });
+    }
 }
 
 function deleteTeacher(id) {

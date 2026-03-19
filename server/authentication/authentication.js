@@ -21,7 +21,8 @@ router.post('/student_registration', async (req, res) => {
             password,
             yearLevel,
             guardianContact,
-            program
+            program,
+            device_id
         } = req.body;
 
         // Check duplicates
@@ -30,13 +31,12 @@ router.post('/student_registration', async (req, res) => {
             return res.json({ ok: false, message: 'Email or ID number already registered' });
         }
 
-        // Hash password, generate IDs etc.
+        // Hash password and generate barcode
         const hashedPassword = await services.hashPassword(password);
-        const deviceID = services.generateDeviceID();
         const barcode = services.generateBarcode();
         const locationGenerated = '';
 
-        // Call registration service
+        // Call registration service — device_id comes from client fingerprint
         await services.studentRegistration(
             idNumber,
             firstName,
@@ -49,13 +49,12 @@ router.post('/student_registration', async (req, res) => {
             program,
             locationGenerated,
             barcode,
-            deviceID
+            device_id
         );
 
         res.json({
             ok: true,
-            message: 'Successfully registered!',
-            device_id: deviceID
+            message: 'Successfully registered!'
         });
     } catch (error) {
         console.error('Registration error:', error);

@@ -504,4 +504,28 @@ admin.post('/upload_profile_picture', uploadAdminPic.single('admin_profile_pictu
 })
 
 // Export route
+// Admin reset student device binding
+admin.put('/reset_student_device/:id', async (req, res) => {
+    const studentId = req.params.id
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (decodedToken === null) return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' })
+
+        // Lookup student name for the activity log
+        let studentName = `Student ID: ${studentId}`
+        try {
+            const allStudents = await services.getWholeCampusAccounts('student_accounts')
+            const found = allStudents.find(s => String(s.student_id) === String(studentId))
+            if (found) studentName = `${found.student_firstname} ${found.student_lastname}`
+        } catch (_) {}
+
+        await services.adminResetStudentDevice(studentId)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'RESET_STUDENT_DEVICE', 'Student', studentId, studentName, `Device binding reset for: ${studentName}`)
+        res.json({ ok: true, message: `Device binding reset for ${studentName}. They can now log in from a new device.` })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || 'Failed to reset device binding.' })
+    }
+})
+
 module.exports = admin

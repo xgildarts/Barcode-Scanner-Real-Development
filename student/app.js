@@ -322,7 +322,7 @@ async function fetchBarcodeData() {
 }
 
 async function updateStudentBarcode(barcode) {
-    const { res, data } = await apiCall('/students/update_student_barcode', 'PUT', { barcode });
+    const { res, data } = await apiCall('/students/update_student_barcode', 'PUT', { barcode, teacher_serial: _selectedTeacherSerial });
     if (!res.ok) Swal.fire({ icon: 'error', title: 'Error', text: data.message });
 }
 
@@ -404,6 +404,7 @@ async function checkBarcodeExpiration() {
             Swal.fire({ icon: 'success', title: 'New Code Generated', text: 'Your code is valid for today only.' });
         } else {
             renderCode(content.barcode);
+            await updateStudentBarcode(content.barcode);
             Swal.fire({ icon: 'success', title: 'Code Valid', text: 'Your code is still valid for today.' });
         }
     } catch (err) {

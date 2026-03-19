@@ -237,7 +237,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
     const toRad = d => d * Math.PI / 180
     const dLat = toRad(lat2 - lat1)
     const dLng = toRad(lng2 - lng1)
-    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
@@ -269,7 +269,7 @@ async function verifyStudentLocation(studentIDNumber, studentLat, studentLng, te
     const teacherData = await getTeacherLocationBySerial(serial)
     if (!teacherData || !teacherData.teacher_location) throw new Error('Teacher has not set a location yet.')
     const { latitude, longitude } = JSON.parse(teacherData.teacher_location)
-    const radius   = teacherData.teacher_location_radius || 50
+    const radius = teacherData.teacher_location_radius || 50
     const distance = Math.round(haversineDistance(latitude, longitude, studentLat, studentLng))
     return { withinRange: distance <= radius, distance, radius }
 }
@@ -311,7 +311,7 @@ async function manualInsertAttendance(
             `INSERT INTO attendance_record (student_id, student_id_number, student_firstname, student_middlename, student_lastname, year_level, subject, student_program, teacher_barcode_scanner_serial_number)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [student_id, student_id_number, student_firstname, student_middlename, student_lastname,
-             student_year_level, subjectData[0].subject_name_set, student_program, teacher_barcode_scanner_serial_number],
+                student_year_level, subjectData[0].subject_name_set, student_program, teacher_barcode_scanner_serial_number],
             (err) => { if (err) return reject(err); resolve() }
         )
     })
@@ -334,49 +334,49 @@ const clickSendAPI = 'FA142E33-E8CD-0664-FB80-64EBBE1BAFAC';    // from dashboar
 // // Create SMS message object
 async function sendSMS(phone, message) {
     try {
-      const resp = await fetch('https://rest.clicksend.com/v3/sms/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + Buffer.from(clickSendUsername + ':' + clickSendAPI).toString('base64')
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              source: 'nodejs',
-              body: message,
-              to: phone
-            }
-          ]
-        })
-      });
-  
-      const data = await resp.json();
-      console.log('SMS Response:', data);
+        const resp = await fetch('https://rest.clicksend.com/v3/sms/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + Buffer.from(clickSendUsername + ':' + clickSendAPI).toString('base64')
+            },
+            body: JSON.stringify({
+                messages: [
+                    {
+                        source: 'nodejs',
+                        body: message,
+                        to: phone
+                    }
+                ]
+            })
+        });
+
+        const data = await resp.json();
+        console.log('SMS Response:', data);
     } catch (err) {
-      console.error('Error sending SMS:', err);
+        console.error('Error sending SMS:', err);
     }
-  }
-  
+}
+
 
 
 // Generate Barcode
 const generateBarcode = () => {
-    const timestamp = Date.now().toString(); 
+    const timestamp = Date.now().toString();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     return 'BC' + timestamp + randomSuffix;
 }
 
 // Generate Teacher Serial Number
 const generateTeacherSerialNumber = () => {
-    const timestamp = Date.now().toString(); 
+    const timestamp = Date.now().toString();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     return 'TSN' + timestamp + randomSuffix;
 }
 
 // Generate Device ID
 const generateDeviceID = () => {
-    const timestamp = Date.now().toString(); 
+    const timestamp = Date.now().toString();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     return 'DEV' + timestamp + randomSuffix;
 }
@@ -509,7 +509,7 @@ async function studentLogin(email, password, device_id) {
 
     return new Promise(async (resolve, reject) => {
         db.execute(query, [email], async (err, result) => {
-            
+
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
@@ -519,8 +519,8 @@ async function studentLogin(email, password, device_id) {
 
             const row = result[0];
 
-            // Check device ID if same
-            if(!await deviceIDChecker(device_id, email)) return reject('Device is not registered to this account!')
+            // Strict device binding — fingerprint must match what was registered
+            if (!await deviceIDChecker(device_id, email)) return reject('This device is not registered to your account. Please contact your administrator to reset your device.')
 
             // ✅ Compare password
             const isMatch = await comparePassword(password, row.password);
@@ -535,7 +535,7 @@ async function studentLogin(email, password, device_id) {
             }
 
             writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'FAILED');
-            return reject('Invalid email or password' );
+            return reject('Invalid email or password');
         });
     });
 }
@@ -566,37 +566,18 @@ async function studentGoogleLogin(email, device_id) {
 
             const row = result[0];
 
-            // --- Device Binding ---
-            if (!device_id || device_id === '') {
-                // First time on this device — generate and save new device_id
-                const newDeviceID = generateDeviceID();
-                const updateQuery = `UPDATE student_accounts SET device_id = ? WHERE student_email = ?`;
-                db.execute(updateQuery, [newDeviceID, email], (updateErr) => {
-                    if (updateErr) return reject('Failed to register device. Please try again.');
-                    row.device_id = newDeviceID;
-                    const token = generateToken(row);
-                    return resolve({
-                        ok: true,
-                        message: 'Successfully Login!',
-                        token,
-                        student_firstname: row.student_firstname,
-                        device_id: newDeviceID
-                    });
-                });
-            } else if (row.device_id !== device_id) {
-                // device_id exists but doesn't match — wrong device
-                return reject('Device is not registered to this account!');
-            } else {
-                // device_id matches — normal login
-                const token = generateToken(row);
-                return resolve({
-                    ok: true,
-                    message: 'Successfully Login!',
-                    token,
-                    student_firstname: row.student_firstname,
-                    device_id: row.device_id
-                });
+            // Strict device binding — fingerprint must match what was registered
+            if (!await deviceIDChecker(device_id, email)) {
+                return reject('This device is not registered to your account. Please contact your administrator to reset your device.');
             }
+
+            const token = generateToken(row);
+            return resolve({
+                ok: true,
+                message: 'Successfully Login!',
+                token,
+                student_firstname: row.student_firstname
+            });
         });
     });
 }
@@ -604,8 +585,8 @@ async function studentGoogleLogin(email, device_id) {
 // Get Student Attendance
 function getAttendanceHistoryForStudentOnly(studentID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_history_record WHERE student_id = ?', [ studentID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT * FROM attendance_history_record WHERE student_id = ?', [studentID], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -648,22 +629,35 @@ function removeBearer(authorization) {
 // Device ID Checker
 function deviceIDChecker(deviceID, student_email) {
     return new Promise((resolve, reject) => {
-        const query = `
-            SELECT 1 FROM student_accounts
-            WHERE device_id = ? AND student_email = ?
-            LIMIT 1
-        `;
-        db.execute(query, [deviceID, student_email], (err, results) => {
-            if (err) return reject(err);
+        // Fetch the student's current device_id
+        db.execute(
+            'SELECT device_id FROM student_accounts WHERE student_email = ? LIMIT 1',
+            [student_email],
+            (err, results) => {
+                if (err) return reject(err)
+                if (results.length === 0) return resolve(false)
 
-            if (results.length === 0) {
-                // No user found with that email
-                return resolve(false);
+                const stored = results[0].device_id
+
+                // device_id is NULL — admin has reset the binding.
+                // Auto-bind this fingerprint as the new registered device.
+                if (stored === null || stored === '') {
+                    db.execute(
+                        'UPDATE student_accounts SET device_id = ? WHERE student_email = ?',
+                        [deviceID, student_email],
+                        (updateErr) => {
+                            if (updateErr) return reject(updateErr)
+                            resolve(true)
+                        }
+                    )
+                    return
+                }
+
+                // Normal check — fingerprint must match what's stored
+                resolve(stored === deviceID)
             }
-
-            return resolve(true)
-        });
-    });
+        )
+    })
 }
 
 // Student update profile
@@ -765,27 +759,29 @@ function updateStudentPassword(currentPassword, newPassword, studentId) {
 // Get Student Barcode and Expiration date
 function getStudentBarcode(studentID) {
     return new Promise((resolve, reject) => {
-      db.execute(
-        'SELECT barcode_date_generated, barcode FROM student_accounts WHERE student_id = ?',
-        [studentID],
-        (err, result) => {
-          if (err) return reject(err);
-          if (result.length === 0) return reject('No student barcode found!');
-          resolve(result[0]); 
-        }
-      );
+        db.execute(
+            'SELECT barcode_date_generated, barcode FROM student_accounts WHERE student_id = ?',
+            [studentID],
+            (err, result) => {
+                if (err) return reject(err);
+                if (result.length === 0) return reject('No student barcode found!');
+                resolve(result[0]);
+            }
+        );
     });
 }
 
 // Update Student Barcode
-function updateStudentBarcode(studentID, newBarcode) {
+function updateStudentBarcode(studentID, newBarcode, teacherSerial) {
     return new Promise((resolve, reject) => {
-        db.execute('UPDATE student_accounts SET barcode = ?, barcode_date_generated = NOW() WHERE student_id = ?',
-             [ newBarcode, studentID ],
-             (err, result) => {
-                if(err) { return reject(err) }
+        db.execute(
+            'UPDATE student_accounts SET barcode = ?, barcode_date_generated = NOW(), barcode_teacher_serial = ? WHERE student_id = ?',
+            [newBarcode, teacherSerial || null, studentID],
+            (err, result) => {
+                if (err) return reject(err)
                 resolve('Student barcode successfully updated!')
-        })
+            }
+        )
     })
 }
 
@@ -793,7 +789,7 @@ function updateStudentBarcode(studentID, newBarcode) {
 function getAllPrograms() {
     return new Promise((resolve, reject) => {
         db.execute('SELECT program_id, program_name, program_date_created FROM program', [], (err, result) => {
-            if(err) { return reject(err) }
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -805,7 +801,7 @@ async function teacherRegistration(fullName, email, password, department, admin_
 
     const teacherBarcodeScannerSerialNumber = generateTeacherSerialNumber();
 
-    return new Promise( async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const sql = `
             INSERT INTO teacher 
             (teacher_name, teacher_email, teacher_password, teacher_program, teacher_barcode_scanner_serial_number, admin_id) 
@@ -841,10 +837,10 @@ async function teacherRegistration(fullName, email, password, department, admin_
 async function initialTeacherSubjectAndYearLevelSetter(subjectSet = '', yearLevelSet = '', teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
         db.execute('INSERT INTO subject_and_year_level_setter (subject_name_set, year_level_set, teacher_barcode_scanner_serial_number) VALUES(?, ?, ?)',
-             [ subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber ],
+            [subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber],
             (err, result) => {
-            if(err) { return reject(err) }
-        })
+                if (err) { return reject(err) }
+            })
     })
 }
 
@@ -865,7 +861,7 @@ async function teacherLogin(email, password) {
 
     return new Promise(async (resolve, reject) => {
         db.execute(query, [email], async (err, result) => {
-            
+
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
@@ -887,7 +883,7 @@ async function teacherLogin(email, password) {
             }
 
             writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'FAILED');
-            return reject('Invalid email or password' );
+            return reject('Invalid email or password');
         });
     });
 }
@@ -895,8 +891,8 @@ async function teacherLogin(email, password) {
 // Get All Student Data
 async function teacherGetAllStudentDataTotalCount(teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT COUNT(student_id) AS total FROM student_records_regular_class WHERE teacher_barcode_scanner_serial_number = ?', [ teacherBarcodeScannerSerialNumber ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT COUNT(student_id) AS total FROM student_records_regular_class WHERE teacher_barcode_scanner_serial_number = ?', [teacherBarcodeScannerSerialNumber], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -905,8 +901,8 @@ async function teacherGetAllStudentDataTotalCount(teacherBarcodeScannerSerialNum
 // Get Total Student Attendees Right Now
 async function teacherGetTotalAttendanceRecord(teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT COUNT(attendance_id) as total_attendees FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [ teacherBarcodeScannerSerialNumber ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT COUNT(attendance_id) as total_attendees FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [teacherBarcodeScannerSerialNumber], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -946,14 +942,14 @@ function searchStudentAccounts(query) {
 }
 
 async function teacherAddStudent(
-    studentIDNumber, 
-    studentFirstName, 
-    studentMiddleName, 
-    studentLastName, 
-    studentEmail, 
-    studentProgram, 
-    studentYearLevel, 
-    studentGuardianNumber, 
+    studentIDNumber,
+    studentFirstName,
+    studentMiddleName,
+    studentLastName,
+    studentEmail,
+    studentProgram,
+    studentYearLevel,
+    studentGuardianNumber,
     teacherBarcodeScannerSerialNumber,
     teacherId,
     teacherName
@@ -990,12 +986,12 @@ async function teacherAddStudent(
                 teacher_barcode_scanner_serial_number
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                studentIDNumber, 
-                studentFirstName, 
-                studentMiddleName, 
-                studentLastName, 
-                studentEmail, 
-                studentProgram, 
+                studentIDNumber,
+                studentFirstName,
+                studentMiddleName,
+                studentLastName,
+                studentEmail,
+                studentProgram,
                 studentYearLevel,
                 resolvedGuardianNumber,
                 teacherBarcodeScannerSerialNumber
@@ -1026,7 +1022,7 @@ async function teacherGetStudentRegistered(teacherBarcodeScannerSerialNumber) {
                 date_created
             FROM student_records_regular_class 
             WHERE teacher_barcode_scanner_serial_number = ?`,
-            [ teacherBarcodeScannerSerialNumber ],
+            [teacherBarcodeScannerSerialNumber],
             (err, result) => {
                 if (err) return reject(err);
                 resolve(result);
@@ -1041,12 +1037,12 @@ async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, teache
         db.execute(`UPDATE subject_and_year_level_setter 
                     SET subject_name_set = ?, 
                     year_level_set = ? 
-                    WHERE teacher_barcode_scanner_serial_number = ?`, 
-                    [subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber],
-                    (err, result) => {
-                        if(err) { return reject(err) }
-                        resolve('Successfully set!')
-                    })
+                    WHERE teacher_barcode_scanner_serial_number = ?`,
+            [subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber],
+            (err, result) => {
+                if (err) { return reject(err) }
+                resolve('Successfully set!')
+            })
     })
 }
 
@@ -1073,23 +1069,27 @@ async function checkStudentIfExistsInRegistration(barcode) {
                         student_email,
                         student_year_level,
                         student_guardian_number,
-                        student_program
+                        student_program,
+                        barcode_teacher_serial
                     FROM student_accounts
-                    WHERE barcode = ?`, [ barcode ], 
-                    (err, result) => {
-                        if(err) { return reject(err) }
-                        resolve(result)
-                    })
+                    WHERE barcode = ?`, [barcode],
+            (err, result) => {
+                if (err) { return reject(err) }
+                resolve(result)
+            })
     })
 }
 
 // Check Student If Exists on Regular class from specific teacher
-async function checkStudentToRegularClass(studentIDNumber) {
+async function checkStudentToRegularClass(studentIDNumber, teacherSerial) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT student_id_number FROM student_records_regular_class WHERE student_id_number = ? LIMIT 1', 
-            [ studentIDNumber ], 
-            (err, result) => {
-            if(err) { return reject(err) }
+        // If teacherSerial provided, check that the student is in THIS teacher's class specifically
+        const sql = teacherSerial
+            ? 'SELECT student_id_number FROM student_records_regular_class WHERE student_id_number = ? AND teacher_barcode_scanner_serial_number = ? LIMIT 1'
+            : 'SELECT student_id_number FROM student_records_regular_class WHERE student_id_number = ? LIMIT 1'
+        const params = teacherSerial ? [studentIDNumber, teacherSerial] : [studentIDNumber]
+        db.execute(sql, params, (err, result) => {
+            if (err) return reject(err)
             resolve(result.length > 0)
         })
     })
@@ -1255,8 +1255,8 @@ function insertStudentAttendanceHistory(
 // Get Student Attendance Now
 async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [ teacher_barcode_scanner_serial_number ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [teacher_barcode_scanner_serial_number], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1265,8 +1265,8 @@ async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number) {
 // Get Student Attendance History
 async function getStudentAttendanceHistory(teacher_barcode_scanner_serial_number) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_history_record WHERE teacher_barcode_scanner_serial_number = ?', [ teacher_barcode_scanner_serial_number ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT * FROM attendance_history_record WHERE teacher_barcode_scanner_serial_number = ?', [teacher_barcode_scanner_serial_number], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1275,8 +1275,8 @@ async function getStudentAttendanceHistory(teacher_barcode_scanner_serial_number
 // Get Subjects
 async function getStudentSubjects(teacherID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM subject WHERE teacher_id = ?', [ teacherID ], (err, result) => {
-            if(err) { reject(err) }
+        db.execute('SELECT * FROM subject WHERE teacher_id = ?', [teacherID], (err, result) => {
+            if (err) { reject(err) }
             resolve(result)
         })
     })
@@ -1285,8 +1285,8 @@ async function getStudentSubjects(teacherID) {
 // Delete Subject
 async function deleteSubject(subjectID) {
     return new Promise((resolve, reject) => {
-        db.execute('DELETE FROM subject WHERE subject_id = ?', [ subjectID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('DELETE FROM subject WHERE subject_id = ?', [subjectID], (err, result) => {
+            if (err) { return reject(err) }
             resolve('Successfully deleted!')
         })
     })
@@ -1295,8 +1295,8 @@ async function deleteSubject(subjectID) {
 // Delete Subject
 async function addSubject(subjectName, teacherID) {
     return new Promise((resolve, reject) => {
-        db.execute('INSERT INTO subject (subject_name, teacher_id) VALUES(?, ?)', [ subjectName, teacherID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('INSERT INTO subject (subject_name, teacher_id) VALUES(?, ?)', [subjectName, teacherID], (err, result) => {
+            if (err) { return reject(err) }
             resolve('Successfully inserted!')
         })
     })
@@ -1306,7 +1306,7 @@ async function addSubject(subjectName, teacherID) {
 async function teacherGetYearLevel() {
     return new Promise((resolve, reject) => {
         db.execute('SELECT * FROM year_level', [], (err, result) => {
-            if(err) { reject(err) }
+            if (err) { reject(err) }
             resolve(result)
         })
     })
@@ -1365,8 +1365,8 @@ function updateStudentRegisteredRecord(
 // Delete Student Registered Record
 function deleteStudentRegisteredRecord(studentID) {
     return new Promise((resolve, reject) => {
-        db.execute('DELETE FROM student_records_regular_class WHERE student_id = ?', [ studentID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('DELETE FROM student_records_regular_class WHERE student_id = ?', [studentID], (err, result) => {
+            if (err) { return reject(err) }
             resolve('Student successfully deleted!')
         })
     })
@@ -1387,8 +1387,8 @@ function getTeacherData(teacherID) {
                        FROM teacher 
                        WHERE teacher_id = ?`
 
-        db.execute(query, [ teacherID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute(query, [teacherID], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1413,14 +1413,14 @@ function updateTeacherPassword(teacherID, currentPassword, newPassword) {
     return new Promise((resolve, reject) => {
         const query = `SELECT teacher_password FROM teacher WHERE teacher_id = ?`
         db.execute(query, [teacherID], async (err, result) => {
-            if(err) { return reject(err) }
+            if (err) { return reject(err) }
             if (result.length === 0) { reject('Unauthorized') }
             const isMatch = await comparePassword(currentPassword, result[0].teacher_password)
             const hashNewPassword = await hashPassword(newPassword, SALT_ROUNDS)
-            if(isMatch) {
+            if (isMatch) {
                 db.execute('UPDATE teacher SET teacher_password = ? WHERE teacher_id = ?', [hashNewPassword, teacherID], (err, result) => {
-                    if(err) { return reject(err) }
-                    if(result.length === 0) { return reject('Update password failed!') }
+                    if (err) { return reject(err) }
+                    if (result.length === 0) { return reject('Update password failed!') }
                     resolve('Successfully update new password!')
                 })
             } else {
@@ -1433,9 +1433,9 @@ function updateTeacherPassword(teacherID, currentPassword, newPassword) {
 // Update Teacher Name
 function updateTeacherName(teacherID, teacherNewName) {
     return new Promise((resolve, reject) => {
-        db.execute('UPDATE teacher SET teacher_name = ? WHERE teacher_id = ?', [ teacherNewName, teacherID ], (err, result) => {
-            if(err) { return reject(err) }
-            if(result.affectedRows === 0) { reject('Update failed!') }
+        db.execute('UPDATE teacher SET teacher_name = ? WHERE teacher_id = ?', [teacherNewName, teacherID], (err, result) => {
+            if (err) { return reject(err) }
+            if (result.affectedRows === 0) { reject('Update failed!') }
             resolve('Successfully update teacher name!')
         })
     })
@@ -1445,7 +1445,7 @@ function updateTeacherName(teacherID, teacherNewName) {
 function getWholeCampusAccounts(tableName) {
     return new Promise((resolve, reject) => {
         db.execute(`SELECT * FROM ${tableName}`, [], (err, result) => {
-            if(err) { return reject(err) }
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1457,10 +1457,10 @@ function getWholeCampusAccounts(tableName) {
 function emailFinder(columnToFind, email, tableName) {
     return new Promise((resolve, reject) => {
         db.query(`SELECT * FROM ${tableName} WHERE ${columnToFind} = ?`, [email], (err, result) => {
-            if (err) { 
-                return reject(err); 
+            if (err) {
+                return reject(err);
             }
-            
+
             if (result.length > 0) {
                 resolve(true);
             } else {
@@ -1472,9 +1472,9 @@ function emailFinder(columnToFind, email, tableName) {
 
 // Guard registration
 async function guardRegistration(
-    guard_name, 
-    guard_email, 
-    guard_password, 
+    guard_name,
+    guard_email,
+    guard_password,
     guard_designated_location,
     admin_id
 ) {
@@ -1514,7 +1514,7 @@ async function guardRegistration(
 function checkProgramDuplicate(programName) {
     return new Promise((resolve, reject) => {
         const sql = "SELECT * FROM program WHERE program_name = ?";
-        
+
         db.execute(sql, [programName], (err, result) => {
             if (err) {
                 console.error("Database Error:", err);
@@ -1559,7 +1559,7 @@ async function addProgram(programName) {
 function deleteProgram(id) {
     return new Promise((resolve, reject) => {
         const sql = "DELETE FROM program WHERE program_id = ?";
-        
+
         db.execute(sql, [id], (err, result) => {
             if (err) {
                 return reject(err);
@@ -1585,7 +1585,7 @@ async function adminLogin(email, password) {
 
     return new Promise(async (resolve, reject) => {
         db.execute(query, [email], async (err, result) => {
-            
+
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
@@ -1602,10 +1602,10 @@ async function adminLogin(email, password) {
             if (isMatch) {
                 const token = generateToken(row);
                 writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'SUCCESS');
-                return resolve({ 
-                    ok: true, 
-                    message: 'Login successful', 
-                    token, 
+                return resolve({
+                    ok: true,
+                    message: 'Login successful',
+                    token,
                     user: {
                         id: row.admin_id,
                         name: row.admin_name,
@@ -1624,7 +1624,7 @@ async function adminLogin(email, password) {
 function getAdminData(adminID) {
     return new Promise((resolve, reject) => {
         db.execute('SELECT admin_id, admin_name, admin_email, admin_profile_picture FROM admin_accounts;', [], (err, result) => {
-            if(err) { return reject(err) }
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1664,8 +1664,8 @@ async function studentBarcodeFinder(studentBarcode) {
             device_id
         FROM student_accounts
         WHERE barcode = ?;`
-        db.execute(query, [ studentBarcode ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute(query, [studentBarcode], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result[0])
         })
     })
@@ -1683,9 +1683,9 @@ async function studentCheckEventIfExists(studentIDNumber, status) {
             LIMIT 1
         `;
 
-        db.execute(sql, [ studentIDNumber, status ], (err, result) => {
-            if(err) { return reject(err); }
-            
+        db.execute(sql, [studentIDNumber, status], (err, result) => {
+            if (err) { return reject(err); }
+
             // Returns TRUE if record exists, FALSE if not
             resolve(result.length > 0);
         });
@@ -1697,9 +1697,9 @@ async function getEventSet() {
     return new Promise((resolve, reject) => {
         // We order by ID DESC to get the latest event set by Admin
         const query = "SELECT event_name_set FROM event_setter;";
-        
+
         db.execute(query, [], (err, result) => {
-            if(err) { return reject(err) }
+            if (err) { return reject(err) }
             // If no event is set, resolve null
             resolve(result.length > 0 ? result[0] : null)
         })
@@ -1711,8 +1711,8 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
     return new Promise(async (resolve, reject) => {
         try {
             const student = await studentBarcodeFinder(studentBarcode);
-            if (!student) { 
-                return reject('Student does not exist in records!'); 
+            if (!student) {
+                return reject('Student does not exist in records!');
             }
             const alreadyScanned = await studentCheckEventIfExists(student.student_id_number, status);
             if (alreadyScanned) {
@@ -1730,15 +1730,15 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
             `;
             const fullName = `${student.student_firstname} ${student.student_middlename}. ${student.student_lastname}`;
             const values = [
-                student.student_id,       
-                fullName,                 
+                student.student_id,
+                fullName,
                 student.student_id_number,
-                student.student_program,  
+                student.student_program,
                 student.student_year_level,
-                activeEventName,          
-                guardName || 'Guard',     
-                guardLocation,            
-                status,                   
+                activeEventName,
+                guardName || 'Guard',
+                guardLocation,
+                status,
                 guardID
             ];
             db.execute(insertQuery, values, async (err, result) => {
@@ -1746,7 +1746,7 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
 
                 try {
                     await guardInsertAttendanceHistoryRecord(values);
-                    
+
                     writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`)
                     resolve({
                         ok: true,
@@ -1792,7 +1792,7 @@ async function guardInsertAttendanceHistoryRecord(values) {
 // Guard Login
 async function guardLogin(email, password) {
     return new Promise((resolve, reject) => {
-        const query = "SELECT * FROM guards WHERE guard_email = ? LIMIT 1"; 
+        const query = "SELECT * FROM guards WHERE guard_email = ? LIMIT 1";
         db.execute(query, [email], async (err, result) => {
             if (err) {
                 return reject({ message: "Database error", code: 500 });
@@ -1813,7 +1813,7 @@ async function guardLogin(email, password) {
                     guard_name: guard.guard_name,
                     guard_location: guard.guard_designated_location,
                     role: 'guard'
-                };         
+                };
                 const token = generateToken(payload);
                 writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'SUCCESS');
                 resolve({
@@ -1832,8 +1832,8 @@ async function guardLogin(email, password) {
 // Get Events
 function getAttendanceEventRecords(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM event_attendance_record WHERE admin_id = ?', [ adminID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT * FROM event_attendance_record WHERE admin_id = ?', [adminID], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1842,8 +1842,8 @@ function getAttendanceEventRecords(adminID) {
 // Get Events History
 function getAttendanceEventHistoryRecords(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM event_attendance_history_record WHERE admin_id = ?', [ adminID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('SELECT * FROM event_attendance_history_record WHERE admin_id = ?', [adminID], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1853,8 +1853,8 @@ function getAttendanceEventHistoryRecords(adminID) {
 function getAttendanceEventsForTeacher(teacherID, tableName) {
     return new Promise(async (resolve, reject) => {
         const teacherData = await getTeacherData(teacherID)
-        db.execute(`SELECT * FROM ${tableName} WHERE student_program = ?`, [ teacherData[0].teacher_program ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute(`SELECT * FROM ${tableName} WHERE student_program = ?`, [teacherData[0].teacher_program], (err, result) => {
+            if (err) { return reject(err) }
             resolve(result)
         })
     })
@@ -1863,8 +1863,8 @@ function getAttendanceEventsForTeacher(teacherID, tableName) {
 // Change Admin Name
 function changeAdminName(newName, adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('UPDATE admin_accounts SET admin_name = ? WHERE admin_id = ?', [ newName, adminID ], (err, result) => {
-            if(err) { return reject(err) }
+        db.execute('UPDATE admin_accounts SET admin_name = ? WHERE admin_id = ?', [newName, adminID], (err, result) => {
+            if (err) { return reject(err) }
             resolve({ message: 'Successfully updated!' })
         })
     })
@@ -1872,13 +1872,13 @@ function changeAdminName(newName, adminID) {
 
 function updateAdminPassword(adminID, currentPassword, newPassword) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT admin_password FROM admin_accounts WHERE admin_id = ?', [ adminID ], async (err, result) => {
-            if(err) { return reject({ ok: false, message: err, status_code: 500 }) }
+        db.execute('SELECT admin_password FROM admin_accounts WHERE admin_id = ?', [adminID], async (err, result) => {
+            if (err) { return reject({ ok: false, message: err, status_code: 500 }) }
             const match = comparePassword(newPassword, currentPassword);
-            if(!match) { return reject({ ok: false, message: 'Invalid password', status_code: 401 }) }
+            if (!match) { return reject({ ok: false, message: 'Invalid password', status_code: 401 }) }
             const hashedPassword = await hashPassword(newPassword)
-            db.execute('UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?', [ hashedPassword, adminID ], (err, result) => {
-                if(err) { return reject({ ok: false, message: err, status_code: 500 }) }
+            db.execute('UPDATE admin_accounts SET admin_password = ? WHERE admin_id = ?', [hashedPassword, adminID], (err, result) => {
+                if (err) { return reject({ ok: false, message: err, status_code: 500 }) }
                 resolve({ ok: true, message: 'Password updated', status_code: 200 })
             })
         })
@@ -1939,11 +1939,11 @@ function adminDeleteStudents(student_id) {
 // Admin delete teachers account
 function adminDeleteTeacher(teacher_id, admin_id) {
     return new Promise((resolve, reject) => {
-        db.execute('DELETE FROM teacher WHERE teacher_id = ? AND admin_id = ?', [ teacher_id, admin_id ], (err, result) => {
-            if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
-            if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+        db.execute('DELETE FROM teacher WHERE teacher_id = ? AND admin_id = ?', [teacher_id, admin_id], (err, result) => {
+            if (err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
+            if (result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
             writeActivityLog(admin_id, null, 'admin', 'DELETE_TEACHER', 'Teacher', teacher_id, null, `Deleted teacher ID: ${teacher_id}`)
-            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200})
+            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200 })
         })
     })
 }
@@ -1951,11 +1951,11 @@ function adminDeleteTeacher(teacher_id, admin_id) {
 // Admin delete guard account
 function adminDeleteGuard(teacher_id, admin_id) {
     return new Promise((resolve, reject) => {
-        db.execute('DELETE FROM guards WHERE guard_id = ? AND admin_id = ?', [ teacher_id, admin_id ], (err, result) => {
-            if(err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
-            if(result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
+        db.execute('DELETE FROM guards WHERE guard_id = ? AND admin_id = ?', [teacher_id, admin_id], (err, result) => {
+            if (err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
+            if (result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
             writeActivityLog(admin_id, null, 'admin', 'DELETE_GUARD', 'Guard', teacher_id, null, `Deleted guard ID: ${teacher_id}`)
-            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200})
+            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200 })
         })
     })
 }
@@ -1964,24 +1964,24 @@ function adminDeleteGuard(teacher_id, admin_id) {
 function getPresentPrograms() {
     return new Promise((resolve, reject) => {
         db.execute(
-        `   SELECT student_program, COUNT(*) AS total_attended
+            `   SELECT student_program, COUNT(*) AS total_attended
             FROM event_attendance_record
             WHERE status = 'TIME IN'
             GROUP BY student_program;  `,
             [],
             (err, result) => {
                 if (err) {
-                    return reject({ 
-                        ok: false, 
-                        message: err, 
-                        status_code: 500 
+                    return reject({
+                        ok: false,
+                        message: err,
+                        status_code: 500
                     });
                 }
 
-                resolve({ 
-                    ok: true, 
-                    message: 'Successfully retrieved data!', 
-                    content: result 
+                resolve({
+                    ok: true,
+                    message: 'Successfully retrieved data!',
+                    content: result
                 });
             }
         );
@@ -1990,12 +1990,12 @@ function getPresentPrograms() {
 
 // Admin edit student accounts
 function adminEditStudentAccounts(
-    id, 
-    id_number, 
-    firstname, 
-    middlename, 
-    lastname, 
-    program, 
+    id,
+    id_number,
+    firstname,
+    middlename,
+    lastname,
+    program,
     year_level
 ) {
     return new Promise((resolve, reject) => {
@@ -2074,15 +2074,15 @@ function adminEditStudentAccounts(
 
 // Admin edit student accounts
 function adminEditTeacherAccounts(
-    id, 
+    id,
     teacher_name,
-    teacher_email, 
+    teacher_email,
     teacher_program,
     admin_id
 ) {
-return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 
-    const updateQuery = `
+        const updateQuery = `
         UPDATE teacher 
         SET 
             teacher_name = ?, 
@@ -2091,43 +2091,43 @@ return new Promise((resolve, reject) => {
         WHERE teacher_id = ? AND admin_id = ?
     `;
 
-    const values = [
-        teacher_name,
-        teacher_email,
-        teacher_program,
-        id,
-        admin_id
-    ];
+        const values = [
+            teacher_name,
+            teacher_email,
+            teacher_program,
+            id,
+            admin_id
+        ];
 
-    db.execute(updateQuery, values, (err, result) => {
-        if (err) {
-            console.error("Database error updating teacher account:", err);
-            return reject(err);
-        }
+        db.execute(updateQuery, values, (err, result) => {
+            if (err) {
+                console.error("Database error updating teacher account:", err);
+                return reject(err);
+            }
 
-        if (result.affectedRows === 0) {
-            return reject(new Error("Update failed: Teacher not found or no changes were made."));
-        }
+            if (result.affectedRows === 0) {
+                return reject(new Error("Update failed: Teacher not found or no changes were made."));
+            }
 
-        resolve({
-            ok: true,
-            message: "Teacher account updated successfully!",
-            affectedRows: result.affectedRows
+            resolve({
+                ok: true,
+                message: "Teacher account updated successfully!",
+                affectedRows: result.affectedRows
+            });
         });
     });
-});
 }
 
 function adminEditGuardAccounts(
-    id, 
+    id,
     guard_name,
-    guard_email, 
+    guard_email,
     guard_designated_location,
     admin_id
 ) {
-return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 
-    const updateQuery = `
+        const updateQuery = `
         UPDATE guards 
         SET 
             guard_name = ?, 
@@ -2136,31 +2136,31 @@ return new Promise((resolve, reject) => {
         WHERE guard_id = ? AND admin_id = ?
     `;
 
-    const values = [
-        guard_name,
-        guard_email,
-        guard_designated_location,
-        id,
-        admin_id
-    ];
+        const values = [
+            guard_name,
+            guard_email,
+            guard_designated_location,
+            id,
+            admin_id
+        ];
 
-    db.execute(updateQuery, values, (err, result) => {
-        if (err) {
-            console.error("Database error updating guard account:", err);
-            return reject(err);
-        }
+        db.execute(updateQuery, values, (err, result) => {
+            if (err) {
+                console.error("Database error updating guard account:", err);
+                return reject(err);
+            }
 
-        if (result.affectedRows === 0) {
-            return reject(new Error("Update failed: Guard not found or no changes were made."));
-        }
+            if (result.affectedRows === 0) {
+                return reject(new Error("Update failed: Guard not found or no changes were made."));
+            }
 
-        resolve({
-            ok: true,
-            message: "Guard account updated successfully!",
-            affectedRows: result.affectedRows
+            resolve({
+                ok: true,
+                message: "Guard account updated successfully!",
+                affectedRows: result.affectedRows
+            });
         });
     });
-});
 }
 
 // Debugger
@@ -2401,10 +2401,10 @@ async function superAdminGetSystemStats() {
         query("SELECT COUNT(*) AS total FROM event_attendance_record WHERE status = 'TIME IN'"),
     ])
     return {
-        total_admins:          admins.total,
-        total_teachers:        teachers.total,
-        total_guards:          guards.total,
-        total_students:        students.total,
+        total_admins: admins.total,
+        total_teachers: teachers.total,
+        total_guards: guards.total,
+        total_students: students.total,
         total_event_attendees: eventAttendees.total,
     }
 }
@@ -2561,7 +2561,36 @@ function getStudentEnrolledTeachers(studentIdNumber) {
     })
 }
 
-module.exports= {
+// Reset student device binding — clears device_id so student can re-register from a new device
+function adminResetStudentDevice(studentId) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE student_accounts SET device_id = NULL WHERE student_id = ?',
+            [studentId],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Student not found.'))
+                resolve('Device binding reset successfully. Student can now log in from a new device.')
+            }
+        )
+    })
+}
+
+// Get Teacher by Serial Number
+function getTeacherBySerial(teacherSerial) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT teacher_id, teacher_name FROM teacher WHERE teacher_barcode_scanner_serial_number = ? LIMIT 1`,
+            [teacherSerial],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve(result)
+            }
+        )
+    })
+}
+
+module.exports = {
     sendSMS,
     adminEditGuardAccounts,
     adminEditTeacherAccounts,
@@ -2621,6 +2650,8 @@ module.exports= {
     updateStudentRegisteredRecord,
     deleteStudentRegisteredRecord,
     getTeacherData,
+    getTeacherBySerial,
+    adminResetStudentDevice,
     updateTeacherProfilePicture,
     updateTeacherPassword,
     updateTeacherName,

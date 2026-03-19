@@ -71,10 +71,10 @@ student.get('/student_barcode', async (req, res) => {
 // Update student barcode
 student.put('/update_student_barcode', async (req, res) => {
     try {
-        const { barcode } = req.body
+        const { barcode, teacher_serial } = req.body  // teacher_serial binds barcode to specific class
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
-        const result = await services.updateStudentBarcode(decodedToken.student_id, barcode)
+        const result = await services.updateStudentBarcode(decodedToken.student_id, barcode, teacher_serial || null)
         const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
         services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'REGENERATE_BARCODE', 'Student', null, fullName, `Regenerated barcode — ID No: ${decodedToken.student_id_number}`)
         res.json({ ok: true, message: result })
