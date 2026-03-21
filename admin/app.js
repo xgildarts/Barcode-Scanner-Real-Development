@@ -1,6 +1,78 @@
 // ============================================================
 // CONSTANTS & CONFIG
 // ============================================================
+
+// ============================================================
+// DEVICE INFO — collected once, reused on every request
+// ============================================================
+let _cachedDeviceInfo = null;
+async function getDeviceInfo() {
+    try {
+        if (navigator.userAgentData) {
+            const data = await navigator.userAgentData.getHighEntropyValues([
+                'model', 'platform', 'platformVersion', 'mobile'
+            ]).catch(() => ({}));
+            const model    = (data.model || '').trim();
+            const platform = (data.platform || navigator.userAgentData.platform || '').trim();
+            const ver      = (data.platformVersion || '').split('.')[0];
+            const brands   = navigator.userAgentData.brands || [];
+            // Include Chromium as fallback brand
+            const browser  = brands.find(b => /chrome|edge|opera/i.test(b.brand) && !/chromium/i.test(b.brand))
+                          || brands.find(b => /chromium/i.test(b.brand));
+            const browserStr = browser
+                ? browser.brand.replace('Google Chrome','Chrome').replace('Microsoft Edge','Edge') + ' ' + browser.version.split('.')[0]
+                : '';
+            const osStr = platform + (ver && ver !== '0' ? ' ' + ver : '');
+            // Only trust modern path if platform is a real OS name (not empty, not generic Linux)
+            if (platform && platform !== 'Linux') {
+                const parts = [browserStr, osStr, model].filter(Boolean);
+                if (parts.length > 0) return parts.join(' \u00b7 ');
+            }
+        }
+    } catch (_) {}
+    return parseUAString(navigator.userAgent);
+}
+
+function parseUAString(ua) {
+    if (!ua) return 'Unknown Device';
+    // Chrome's frozen/reduced UA on desktop contains "Android 6.0; Nexus 5" as a fake placeholder.
+    // Detect this by checking if the UA also contains "Windows NT" or "Macintosh" — meaning
+    // the Android token is fake. Strip it and re-parse.
+    if (/Android/i.test(ua) && (/Windows NT/i.test(ua) || /Macintosh/i.test(ua))) {
+        ua = ua.replace(/\(Linux;[^)]*Android[^)]*\)\s*/i, '');
+    }
+    let browser = 'Browser', os = '';
+    if (ua.indexOf('Edg/') !== -1)               browser = 'Edge';
+    else if (ua.indexOf('OPR/') !== -1)          browser = 'Opera';
+    else if (ua.indexOf('SamsungBrowser') !== -1) browser = 'Samsung Browser';
+    else if (ua.indexOf('Chrome/') !== -1)       browser = 'Chrome';
+    else if (ua.indexOf('Firefox/') !== -1)      browser = 'Firefox';
+    else if (ua.indexOf('Safari/') !== -1)       browser = 'Safari';
+    if (ua.indexOf('Windows NT 10') !== -1)        os = 'Windows 10/11';
+    else if (ua.indexOf('Windows NT 6.3') !== -1) os = 'Windows 8.1';
+    else if (ua.indexOf('Windows NT 6') !== -1)    os = 'Windows 7/8';
+    else if (ua.indexOf('Android') !== -1) {
+        const vMatch = ua.match(/Android ([0-9.]+)/);
+        const mMatch = ua.match(/Android[^;]+;\s*([^)]+)\)/);
+        const raw = mMatch ? mMatch[1].replace(/\s*Build\/.*$/, '').trim() : '';
+        os = 'Android' + (vMatch ? ' ' + vMatch[1] : '');
+        if (raw && raw !== 'K') return browser + ' \u00b7 ' + os + ' \u00b7 ' + raw;
+    }
+    else if (ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1) {
+        const vMatch = ua.match(/OS ([0-9_]+)/);
+        os = 'iOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Mac OS X') !== -1) {
+        const vMatch = ua.match(/Mac OS X ([0-9_]+)/);
+        os = 'macOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Linux') !== -1) os = 'Linux';
+    // Get browser version from UA for the fallback path
+    const verMatch = ua.match(/(?:Chrome|Firefox|Safari|OPR|Edg)\/([0-9]+)/);
+    const browserVer = verMatch ? ' ' + verMatch[1] : '';
+    return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
+}
+
 const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const TOKEN = localStorage.getItem('admin_token');
 
@@ -56,6 +128,13 @@ const DOM = {
     searchFilterEventAttendance: document.getElementById('searchFilterEventAttendance'),
     searchFilterEventAttendanceHistory: document.getElementById('searchFilterEventAttendanceHistory'),
     eventHistoryYearFilter: document.getElementById('eventHistoryYearFilter'),
+    eventHistoryProgramFilter: document.getElementById('eventHistoryProgramFilter'),
+    eventHistoryStatusFilter: document.getElementById('eventHistoryStatusFilter'),
+    eventHistoryNameFilter: document.getElementById('eventHistoryNameFilter'),
+    eventStatusFilter: document.getElementById('eventStatusFilter'),
+    eventNameFilter: document.getElementById('eventNameFilter'),
+    eventYearFilter: document.getElementById('eventYearFilter'),
+    eventProgramFilter: document.getElementById('eventProgramFilter'),
 
     // Profile / Settings
     sideBarName: document.querySelector('.sidebar-name'),
@@ -76,6 +155,7 @@ const DOM = {
     studentLastName: document.getElementById('studentLastName'),
     studentProgram: document.getElementById('studentProgram'),
     studentYearLevel: document.getElementById('studentYearLevel'),
+    studentEmail: document.getElementById('studentEmail'),
 
     // Teacher modal fields
     teacherAccountManagementModal: document.getElementById('teacherAccountManagementModal'),
@@ -164,6 +244,16 @@ function showLoading(title = 'Processing...') {
 
 /** Reusable API fetch wrapper with Authorization header */
 async function apiFetch(endpoint, options = {}) {
+    const deviceInfo = localStorage.getItem('admin_device_info') || '';
+    // Auto-inject device_info into POST/PUT bodies
+    if ((options.method === 'POST' || options.method === 'PUT') && options.body) {
+        try {
+            const parsed = JSON.parse(options.body);
+            if (!parsed.device_info) options.body = JSON.stringify({ ...parsed, device_info: deviceInfo });
+        } catch (_) {}
+    } else if (options.method === 'POST' || options.method === 'PUT') {
+        options.body = JSON.stringify({ device_info: deviceInfo });
+    }
     const defaults = {
         headers: {
             'Content-Type': 'application/json',
@@ -201,6 +291,28 @@ async function handleHttpErrors(res, data) {
     return false;
 }
 
+/** Populate a filter <select> with unique values from a data array, restoring any saved selection */
+function populateFilterOptions(data, selectId, valueFn, allLabel, storageKey) {
+    const el = document.getElementById(selectId);
+    if (!el) return;
+    const saved = storageKey ? (localStorage.getItem(storageKey) || '') : el.value;
+    const unique = [...new Set(data.map(valueFn).filter(Boolean))].sort();
+    el.innerHTML = `<option value="">${allLabel}</option>` +
+        unique.map(v => `<option value="${v}">${v}</option>`).join('');
+    if (unique.includes(saved)) el.value = saved;
+}
+
+/** Filter a tbody by multiple column-value pairs simultaneously */
+function multiFilterTableRows(tbodyId, filters) {
+    document.querySelectorAll(`#${tbodyId} tr`).forEach(row => {
+        const visible = filters.every(({ colIndex, value }) => {
+            if (!value) return true;
+            return row.cells[colIndex]?.textContent.trim().toLowerCase() === value.toLowerCase();
+        });
+        row.style.display = visible ? '' : 'none';
+    });
+}
+
 /** Generic table row filter — shows/hides <tr> based on text match */
 function filterTableRows(tbodyEl, searchText) {
     const rows = tbodyEl.getElementsByTagName('tr');
@@ -225,13 +337,26 @@ document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     navigateTo('dashboard');
     getAdminData();
-    renderPrograms();
-    renderYearLevels();
+
+    // Load badge immediately — independent of attendance data
+    loadActiveEvent();
+
+    // Render attendance first, then populate master dropdowns last so pre-values stick
+    renderEventAttendanceRecord()
+        .then(() => renderEventHistoryAttendanceRecord())
+        .then(() => {
+            renderPrograms();
+            renderYearLevels();
+            loadActiveEvent();
+        })
+        .catch(() => {
+            renderPrograms();
+            renderYearLevels();
+        });
+
     fetchStudentAccounts();
     fetchTeacherAccounts();
     fetchGuardAccounts();
-    renderEventAttendanceRecord();
-    renderEventHistoryAttendanceRecord();
     generateProgramSelectionOnTeacher();
     generateYearLevelSelections();
     initChart();
@@ -247,9 +372,22 @@ function navigateTo(page) {
         document.getElementById(p)?.classList.toggle('active', p === page);
     });
 
+    // Mark the active sidebar nav item
+    document.querySelectorAll('.menu-item').forEach(btn => {
+        const onclick = btn.getAttribute('onclick') || '';
+        btn.classList.toggle('active-page', onclick.includes(`'${page}'`));
+    });
+
     // Remind admin about the active event when opening Event Attendance
     if (page === 'eventAttendance') {
         checkEventReminder();
+    }
+
+    // Load settings stats when opening settings
+    if (page === 'adminSettings') {
+        loadSettingsStats();
+        const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+        applyTheme(saved.mode || 'light', saved.font || 'system', saved.size || 'medium', false);
     }
 
     closeSidebar();
@@ -310,6 +448,7 @@ function logout() {
         confirmButtonText: 'Yes, log out!'
     }).then(result => {
         if (!result.isConfirmed) return;
+        apiFetch('/admin/logout', { method: 'POST', body: JSON.stringify({ device_info: localStorage.getItem('admin_device_info') || '' }) }).catch(() => {});
         Swal.fire({ icon: 'success', title: 'Logged out', text: 'Redirecting to login...', timer: 1500, showConfirmButton: false })
             .then(() => {
                 localStorage.removeItem('admin_token');
@@ -500,6 +639,18 @@ async function renderEventAttendanceRecord() {
             </tr>
         `).join('');
 
+        // Populate dynamic filter options from actual data
+        populateFilterOptions(data.content, 'eventNameFilter',    d => d.event_name,        'All Events',      'ef_name');
+        populateFilterOptions(data.content, 'eventYearFilter',    d => d.student_year_level, 'All Year Levels', 'ef_year');
+        populateFilterOptions(data.content, 'eventProgramFilter', d => d.student_program,   'All Programs',    'ef_program');
+
+        // Reset all filters so full list shows by default
+        ['ef_status','ef_name','ef_year','ef_program'].forEach(k => localStorage.removeItem(k));
+        if (DOM.eventStatusFilter)  DOM.eventStatusFilter.value  = '';
+        if (DOM.eventNameFilter)    DOM.eventNameFilter.value    = '';
+        if (DOM.eventYearFilter)    DOM.eventYearFilter.value    = '';
+        if (DOM.eventProgramFilter) DOM.eventProgramFilter.value = '';
+
         _lastEventCount = data.content.length;
         startAdminPolling();
     } catch (err) {
@@ -526,6 +677,18 @@ async function renderEventHistoryAttendanceRecord() {
                 <td>${d.event_name}</td>
             </tr>
         `).join('');
+
+        // Populate dynamic filter options from actual data
+        populateFilterOptions(data.content, 'eventHistoryNameFilter',    d => d.event_name,        'All Events',      'ehf_name');
+        populateFilterOptions(data.content, 'eventHistoryYearFilter',    d => d.student_year_level, 'All Year Levels', 'ehf_year');
+        populateFilterOptions(data.content, 'eventHistoryProgramFilter', d => d.student_program,   'All Programs',    'ehf_program');
+
+        // Reset all filters so full list shows by default
+        ['ehf_status','ehf_name','ehf_year','ehf_program'].forEach(k => localStorage.removeItem(k));
+        if (DOM.eventHistoryStatusFilter)  DOM.eventHistoryStatusFilter.value  = '';
+        if (DOM.eventHistoryNameFilter)    DOM.eventHistoryNameFilter.value    = '';
+        if (DOM.eventHistoryYearFilter)    DOM.eventHistoryYearFilter.value    = '';
+        if (DOM.eventHistoryProgramFilter) DOM.eventHistoryProgramFilter.value = '';
 
         _lastEventHistCount = data.content.length;
     } catch (err) {
@@ -590,6 +753,38 @@ async function pollAdminSilently() {
 function startAdminPolling() {
     if (_adminPollInterval) return;
     _adminPollInterval = setInterval(pollAdminSilently, 5000);
+}
+
+// Load and display the currently active event on page load
+async function loadActiveEvent() {
+    if (!TOKEN || TOKEN === 'null') return renderActiveEvent('');
+    try {
+        const res  = await apiFetch('/admin/get_active_event');
+        const data = await res.json();
+        if (res.ok && data.content) {
+            renderActiveEvent(data.content.event_name_set || '');
+        }
+    } catch (_) {
+        renderActiveEvent('');
+    }
+}
+
+function renderActiveEvent(eventName) {
+    const el = document.getElementById('activeEventDisplay');
+    if (!el) return;
+    if (eventName && eventName.trim() !== '') {
+        el.textContent = `✓ ${eventName}`;
+        el.style.background = '#c8ece5';
+        el.style.color = '#1a5c4f';
+
+        // Pre-fill the event name input so the admin sees what's currently set
+        const eventInput = document.getElementById('event_name_input');
+        if (eventInput && !eventInput.value) eventInput.value = eventName;
+    } else {
+        el.textContent = '⚠ No event set';
+        el.style.background = '#fdecea';
+        el.style.color = '#b94a3a';
+    }
 }
 
 // Show a once-per-day reminder about the active event when opening Event Attendance
@@ -657,6 +852,7 @@ async function handleSetEvent() {
             return Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to set event.' });
         }
 
+        renderActiveEvent(eventName);
         await Swal.fire({ icon: 'success', title: 'Event Set!', text: `Event set to: "${eventName}"`, timer: 2000, showConfirmButton: false });
         eventInput.value = '';
     } catch (error) {
@@ -697,29 +893,43 @@ async function renderPrograms() {
         const data = await res.json();
 
         if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+        if (!data.content) return;
 
+        // Only render list cards if on the academic setup page
         const programsList = document.getElementById('programsList');
-        programsList.innerHTML = '';
-
-        data.content.forEach(({ program_id, program_name }) => {
-            const card = document.createElement('div');
-            card.className = 'program-card';
-            card.innerHTML = `
-                <div class="program-name">${program_name}</div>
-                <button class="delete-btn" onclick="deleteProgram(${program_id}, '${program_name}')">
-                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                </button>`;
-            programsList.appendChild(card);
-        });
+        if (programsList) {
+            programsList.innerHTML = '';
+            data.content.forEach(({ program_id, program_name }) => {
+                const card = document.createElement('div');
+                card.className = 'program-card';
+                card.innerHTML = `
+                    <div class="program-name">${program_name}</div>
+                    <button class="delete-btn" onclick="deleteProgram(${program_id}, '${program_name}')">
+                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>`;
+                programsList.appendChild(card);
+            });
+        }
 
         const optionsHtml = "<option value=''>Select Program</option>" +
             data.content.map(d => `<option value='${d.program_name}'>${d.program_name}</option>`).join('');
+        const filterOptionsHtml = "<option value=''>All Programs</option>" +
+            data.content.map(d => `<option value='${d.program_name}'>${d.program_name}</option>`).join('');
 
-        DOM.studentProgram.innerHTML = optionsHtml;
-        DOM.teacherProgram.innerHTML = optionsHtml;
+        if (DOM.studentProgram) DOM.studentProgram.innerHTML = optionsHtml;
+        if (DOM.teacherProgram) DOM.teacherProgram.innerHTML = optionsHtml;
+
+        // Populate and restore pre-values for all program event filters
+        ['eventProgramFilter', 'eventHistoryProgramFilter'].forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = filterOptionsHtml;
+            const key = i === 0 ? 'ef_program' : 'ehf_program';
+            const saved = localStorage.getItem(key) || '';
+            if (saved && [...el.options].some(o => o.value === saved)) el.value = saved;
+        });
     } catch (err) {
-        console.error(err);
-        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+        console.error('[renderPrograms]', err);
     }
 }
 
@@ -837,15 +1047,23 @@ async function renderYearLevels() {
         // Always repopulate year level dropdowns regardless of current page
         const yearOptions = '<option value="">Select Year</option>' +
             data.content.map(d => `<option value="${d.year_level_name}">${d.year_level_name}</option>`).join('');
-        const historyOptions = '<option value="">Year Level All</option>' +
+        const filterOptions = '<option value="">All Year Levels</option>' +
             data.content.map(d => `<option value="${d.year_level_name}">${d.year_level_name}</option>`).join('');
 
         ['std_year_level', 'studentYearLevel'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = yearOptions;
         });
-        const historyFilter = document.getElementById('eventHistoryYearFilter');
-        if (historyFilter) historyFilter.innerHTML = historyOptions;
+
+        // Populate and restore pre-values for all year level event filters
+        ['eventYearFilter', 'eventHistoryYearFilter'].forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = filterOptions;
+            const key = i === 0 ? 'ef_year' : 'ehf_year';
+            const saved = localStorage.getItem(key) || '';
+            if (saved && [...el.options].some(o => o.value === saved)) el.value = saved;
+        });
 
     } catch (err) {
         console.error(err);
@@ -958,9 +1176,11 @@ async function fetchStudentAccounts() {
                         '${d.student_middlename}',
                         '${d.student_lastname}',
                         '${d.student_program}',
-                        '${d.student_year_level}')">Edit</button>
+                        '${d.student_year_level}',
+                        '${d.student_email || ''}')">Edit</button>
                     <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.student_id})">Delete</button>
                     <button class="action-btn" style="background:#e67e22;color:#fff;" onclick="resetStudentDevice(${d.student_id}, '${d.student_firstname} ${d.student_lastname}')">Reset Device</button>
+                    <button class="action-btn" style="background:#8e44ad;color:#fff;" onclick="resetUserPassword('student', ${d.student_id}, '${d.student_firstname} ${d.student_lastname}')">Reset Password</button>
                 </div>
             </div>
         </div>
@@ -989,6 +1209,7 @@ async function fetchTeacherAccounts() {
                         '${d.teacher_program}',
                         '${d.teacher_barcode_scanner_serial_number}')">Edit</button>
                     <button class="action-btn delete-btn-account-management" onclick="deleteTeacher(${d.teacher_id})">Delete</button>
+                    <button class="action-btn" style="background:#8e44ad;color:#fff;" onclick="resetUserPassword('teacher', ${d.teacher_id}, '${d.teacher_name}')">Reset Password</button>
                 </div>
             </div>
         </div>
@@ -1014,6 +1235,7 @@ async function fetchGuardAccounts() {
                         '${d.guard_email}',
                         '${d.guard_designated_location}')">Edit</button>
                     <button class="action-btn delete-btn-account-management" onclick="deleteGuard(${d.guard_id})">Delete</button>
+                    <button class="action-btn" style="background:#8e44ad;color:#fff;" onclick="resetUserPassword('guard', ${d.guard_id}, '${d.guard_name}')">Reset Password</button>
                 </div>
             </div>
         </div>
@@ -1023,7 +1245,7 @@ async function fetchGuardAccounts() {
 // ============================================================
 // ACCOUNTS — EDIT (open modals)
 // ============================================================
-function editStudent(id, student_id_number, student_firstname, student_middlename, student_lastname, student_program, student_year_level) {
+function editStudent(id, student_id_number, student_firstname, student_middlename, student_lastname, student_program, student_year_level, student_email) {
     DOM.studentAccountManagementModal.style.display = 'flex';
     DOM.studentIDTracking.value = id;
     DOM.studentIdNumber.value = student_id_number;
@@ -1032,6 +1254,7 @@ function editStudent(id, student_id_number, student_firstname, student_middlenam
     DOM.studentLastName.value = student_lastname;
     DOM.studentProgram.value = student_program;
     DOM.studentYearLevel.value = student_year_level;
+    if (DOM.studentEmail) DOM.studentEmail.value = student_email || '';
 }
 
 function editTeacher(id, teacher_name, teacher_email, teacher_program, teacher_barcode_scanner_serial_number) {
@@ -1074,7 +1297,8 @@ DOM.studentAccountManagementForm.addEventListener('submit', async function(e) {
         middlename: DOM.studentMiddleName.value.trim(),
         lastname: DOM.studentLastName.value.trim(),
         program: DOM.studentProgram.value,
-        year_level: DOM.studentYearLevel.value
+        year_level: DOM.studentYearLevel.value,
+        email: DOM.studentEmail?.value.trim() || ''
     };
 
     showLoading();
@@ -1090,6 +1314,13 @@ DOM.studentAccountManagementForm.addEventListener('submit', async function(e) {
                 icon: 'warning',
                 title: 'ID Number Already Exists',
                 text: `The ID number "${payload.id_number}" is already assigned to another student.`
+            });
+        }
+        if (data.duplicate_email) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Email Already Exists',
+                text: `The email "${payload.email}" is already used by another student.`
             });
         }
         if (!data.ok) return Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
@@ -1187,6 +1418,42 @@ async function deleteAccount({ confirmText, endpoint, successTitle, successText,
     }
 }
 
+async function resetUserPassword(role, id, name) {
+    const { value: newPassword, isConfirmed } = await Swal.fire({
+        title: 'Reset Password',
+        html: `<p style="margin-bottom:12px;color:#666">Set a new password for <strong>${name}</strong>.</p>
+               <input id="swal-newpw" type="password" class="swal2-input" placeholder="New password (min 6 chars)">
+               <input id="swal-confirmpw" type="password" class="swal2-input" placeholder="Confirm new password" style="margin-top:8px;">`,
+        showCancelButton: true,
+        confirmButtonText: 'Reset',
+        confirmButtonColor: '#8e44ad',
+        preConfirm: () => {
+            const pw  = document.getElementById('swal-newpw').value;
+            const cpw = document.getElementById('swal-confirmpw').value;
+            if (pw.length < 6) { Swal.showValidationMessage('Password must be at least 6 characters.'); return false; }
+            if (pw !== cpw)    { Swal.showValidationMessage('Passwords do not match.'); return false; }
+            return pw;
+        }
+    });
+    if (!isConfirmed || !newPassword) return;
+
+    const endpointMap = {
+        student: `/admin/reset_student_password/${id}`,
+        teacher: `/admin/reset_teacher_password/${id}`,
+        guard:   `/admin/reset_guard_password/${id}`,
+    };
+
+    Swal.fire({ title: 'Resetting password...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        const res  = await apiFetch(endpointMap[role], { method: 'PUT', body: JSON.stringify({ new_password: newPassword }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ icon: 'success', title: 'Password Reset!', text: `${name}'s password has been updated.`, timer: 2000, showConfirmButton: false });
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.message });
+    }
+}
+
 function deleteStudent(id) {
     deleteAccount({
         confirmText: 'This action will permanently delete the student account.',
@@ -1245,8 +1512,10 @@ function deleteGuard(id) {
 // REGISTRATION
 // ============================================================
 function switchRole(role) {
-    document.querySelectorAll('.role-tab').forEach(tab => tab.classList.remove('active'));
-    event.target.classList.add('active');
+    // Update role cards
+    document.querySelectorAll('.reg-role-card').forEach(card => card.classList.remove('active'));
+    document.getElementById(`roleCard-${role}`)?.classList.add('active');
+    // Update forms
     document.querySelectorAll('.form-section').forEach(form => form.classList.remove('active'));
     document.getElementById(`${role}Form`)?.classList.add('active');
 }
@@ -1350,6 +1619,61 @@ document.getElementById('studentForm').addEventListener('submit', async function
 // ============================================================
 // EXPORT
 // ============================================================
+
+function printSection(tableId, title) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const now  = new Date().toLocaleString('en-PH');
+
+    // Clone and strip Action columns
+    const clone = table.cloneNode(true);
+    let actionColIndex = -1;
+    clone.querySelectorAll('thead th').forEach((th, i) => {
+        if (/action|actions/i.test(th.textContent.trim())) actionColIndex = i;
+    });
+    if (actionColIndex !== -1) {
+        clone.querySelectorAll('tr').forEach(row => {
+            if (row.children[actionColIndex]) row.children[actionColIndex].remove();
+        });
+    }
+    // Skip filtered-out rows
+    clone.querySelectorAll('tbody tr').forEach(tr => {
+        if (tr.style.display === 'none') tr.remove();
+    });
+
+    const rows    = clone.querySelectorAll('tbody tr').length;
+    const content = clone.outerHTML;
+
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    printWin.document.write(`
+        <!DOCTYPE html><html><head><title>${title}</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+            .header { text-align: center; margin-bottom: 18px; }
+            .header h2 { margin: 0; font-size: 1.1rem; text-transform: uppercase; color: #1a4545; }
+            .header h3 { margin: 4px 0 2px; font-size: 1.3rem; }
+            .header p  { margin: 0; font-size: 0.85rem; color: #555; }
+            table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 12px; }
+            th { background: #1a4545; color: #fff; padding: 8px 10px; text-align: left; }
+            td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+            tr:nth-child(even) td { background: #f5f9f9; }
+            .footer { margin-top: 16px; font-size: 0.78rem; color: #777; text-align: right; }
+            @media print { body { margin: 0; } }
+        </style></head><body>
+            <div class="header">
+                <h2>PanPacific University</h2>
+                <h3>${title}</h3>
+                <p>Generated: ${now} &nbsp;|&nbsp; Total Records: ${rows}</p>
+            </div>
+            ${content}
+            <div class="footer">PanPacific University Attendance System</div>
+            <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+        </body></html>
+    `);
+    printWin.document.close();
+}
+
 function exportTableToExcel(tableId, fileName) {
     const table = document.getElementById(tableId);
     if (!table) return Swal.fire({ icon: 'info', title: 'Export Failed', text: 'No table data found to export.' });
@@ -1364,6 +1688,7 @@ function exportTableToExcel(tableId, fileName) {
         // --- Extract rows ---
         const rows = [];
         table.querySelectorAll('tbody tr').forEach(tr => {
+            if (tr.style.display === 'none') return; // skip filtered-out rows
             const row = [];
             tr.querySelectorAll('td').forEach(td => row.push(td.innerText.trim()));
             if (row.some(cell => cell !== '')) rows.push(row);
@@ -1508,10 +1833,43 @@ function initEventListeners() {
         filterTableRows(DOM.attendanceHistory, this.value);
     });
 
-    // Year filter
-    DOM.eventHistoryYearFilter.addEventListener('change', function() {
-        filterTableRows(DOM.attendanceHistory, this.value);
-    });
+    // Event attendance current — multi filters
+    function applyEventNowFilters() {
+        // Persist selections
+        localStorage.setItem('ef_status',  DOM.eventStatusFilter.value);
+        localStorage.setItem('ef_name',    DOM.eventNameFilter.value);
+        localStorage.setItem('ef_year',    DOM.eventYearFilter.value);
+        localStorage.setItem('ef_program', DOM.eventProgramFilter.value);
+        multiFilterTableRows('attendanceBody', [
+            { colIndex: 6, value: DOM.eventStatusFilter.value },
+            { colIndex: 7, value: DOM.eventNameFilter.value },
+            { colIndex: 3, value: DOM.eventYearFilter.value },
+            { colIndex: 2, value: DOM.eventProgramFilter.value },
+        ]);
+    }
+    DOM.eventStatusFilter?.addEventListener('change', applyEventNowFilters);
+    DOM.eventNameFilter?.addEventListener('change', applyEventNowFilters);
+    DOM.eventYearFilter?.addEventListener('change', applyEventNowFilters);
+    DOM.eventProgramFilter?.addEventListener('change', applyEventNowFilters);
+
+    // Event attendance history — multi filters
+    function applyEventHistoryFilters() {
+        // Persist selections
+        localStorage.setItem('ehf_status',  DOM.eventHistoryStatusFilter.value);
+        localStorage.setItem('ehf_name',    DOM.eventHistoryNameFilter.value);
+        localStorage.setItem('ehf_year',    DOM.eventHistoryYearFilter.value);
+        localStorage.setItem('ehf_program', DOM.eventHistoryProgramFilter.value);
+        multiFilterTableRows('attendanceHistory', [
+            { colIndex: 6, value: DOM.eventHistoryStatusFilter.value },
+            { colIndex: 7, value: DOM.eventHistoryNameFilter.value },
+            { colIndex: 3, value: DOM.eventHistoryYearFilter.value },
+            { colIndex: 2, value: DOM.eventHistoryProgramFilter.value },
+        ]);
+    }
+    DOM.eventHistoryStatusFilter?.addEventListener('change', applyEventHistoryFilters);
+    DOM.eventHistoryNameFilter?.addEventListener('change', applyEventHistoryFilters);
+    DOM.eventHistoryYearFilter?.addEventListener('change', applyEventHistoryFilters);
+    DOM.eventHistoryProgramFilter?.addEventListener('change', applyEventHistoryFilters);
 
     // Account search filters
     DOM.searchFilterTeachersAccounts?.addEventListener('input', function() {
@@ -1531,4 +1889,162 @@ function initEventListeners() {
     document.getElementById('addYearLevelModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeAddYearLevelModal();
     });
+}
+
+// ============================================================
+// MAINTENANCE MODE POLLING
+// ============================================================
+let _maintenancePollInterval = null;
+let _maintenanceActive = false;
+
+async function checkMaintenanceMode() {
+    try {
+        const res  = await fetch(`${URL_BASED}/system/maintenance`);
+        const data = await res.json();
+        if (data.maintenance && !_maintenanceActive) {
+            _maintenanceActive = true;
+            showMaintenanceBanner();
+        } else if (!data.maintenance && _maintenanceActive) {
+            _maintenanceActive = false;
+            hideMaintenanceBanner();
+        }
+    } catch (_) {}
+}
+
+function showMaintenanceBanner() {
+    // Remove existing
+    document.getElementById('maintenanceBanner')?.remove();
+    const banner = document.createElement('div');
+    banner.id = 'maintenanceBanner';
+    banner.innerHTML = `
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#fff;flex-shrink:0;">
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+        </svg>
+        <div>
+            <div style="font-weight:800;font-size:0.9rem;">🔧 System Maintenance</div>
+            <div style="font-size:0.78rem;opacity:0.9;margin-top:2px;">The system is currently under maintenance. All actions are temporarily disabled. Please wait...</div>
+        </div>`;
+    banner.style.cssText = `
+        position:fixed; top:0; left:0; right:0; z-index:99999;
+        background:linear-gradient(135deg,#c0392b,#e74c3c); color:#fff;
+        padding:14px 20px; display:flex; align-items:center; gap:14px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.35); font-family:inherit;`;
+    document.body.prepend(banner);
+    // Overlay to block all clicks
+    const overlay = document.createElement('div');
+    overlay.id = 'maintenanceOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.35);cursor:not-allowed;';
+    overlay.addEventListener('click', e => e.stopPropagation());
+    document.body.appendChild(overlay);
+    Swal.fire({
+        icon: 'warning',
+        title: '🔧 System Maintenance',
+        html: 'The system is currently under maintenance.<br>All actions are temporarily disabled.<br><br><strong>Please wait for maintenance to complete.</strong>',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        background: '#fff',
+    });
+}
+
+function hideMaintenanceBanner() {
+    document.getElementById('maintenanceBanner')?.remove();
+    document.getElementById('maintenanceOverlay')?.remove();
+    Swal.close();
+    Swal.fire({ icon:'success', title:'System Online', text:'Maintenance is complete. You can continue working.', timer:3000, showConfirmButton:false });
+}
+
+// Poll every 15 seconds
+checkMaintenanceMode();
+_maintenancePollInterval = setInterval(checkMaintenanceMode, 15000);
+
+// ============================================================
+// THEME
+// ============================================================
+const THEME_STORAGE_KEY = 'admin_theme';
+
+function loadTheme() {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(saved.mode || 'light', saved.font || 'system', saved.size || 'medium', false);
+}
+
+function applyTheme(mode, font, size, save = true) {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', mode === 'dark' ? 'dark' : '');
+    html.setAttribute('data-font',  font === 'system' ? '' : font);
+    html.setAttribute('data-size',  size);
+
+    // Font family — apply directly to body so it overrides hardcoded body font-family
+    const fontMap = {
+        system:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        inter:   "'Inter', sans-serif",
+        poppins: "'Poppins', sans-serif",
+        roboto:  "'Roboto', sans-serif",
+        mono:    "'JetBrains Mono', 'Fira Code', monospace"
+    };
+    document.body.style.fontFamily = fontMap[font] || fontMap.system;
+
+    // Font size — zoom sections only, sidebar layout stays untouched
+    const zoomMap = { small: '0.88', medium: '1', large: '1.12' };
+    const zoomVal = zoomMap[size] || '1';
+    document.body.style.zoom = '';
+    document.body.style.fontSize = '';
+    document.querySelectorAll('.sections, .top-bar').forEach(el => {
+        el.style.zoom = zoomVal;
+    });
+
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.style.background = mode === 'dark'
+            ? 'linear-gradient(180deg, #0d1a2a 0%, #091422 100%)'
+            : 'linear-gradient(180deg, #1a4545 0%, #0f2e2e 100%)';
+    }
+
+    document.querySelectorAll('.theme-mode-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(mode === 'dark' ? 'modeDark' : 'modeLight')?.classList.add('active');
+    document.querySelectorAll('.font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === font));
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size));
+
+    if (save) localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ mode, font, size }));
+}
+
+function setThemeMode(mode) {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(mode, saved.font || 'system', saved.size || 'medium');
+}
+function setThemeFont(font) {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(saved.mode || 'light', font, saved.size || 'medium');
+}
+function setThemeSize(size) {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(saved.mode || 'light', saved.font || 'system', size);
+}
+function resetTheme() {
+    localStorage.removeItem(THEME_STORAGE_KEY);
+    applyTheme('light', 'system', 'medium', false);
+    Swal.fire({ icon: 'success', title: 'Theme Reset', text: 'Appearance restored to defaults.', timer: 1500, showConfirmButton: false });
+}
+
+// Load theme immediately on page load
+loadTheme();
+
+// ============================================================
+// SETTINGS PAGE
+// ============================================================
+const _sessionStart = new Date().toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+async function loadSettingsStats() {
+    try {
+        const [students, teachers, guards] = await Promise.all([
+            fetchAccountCount('student_accounts'),
+            fetchAccountCount('teacher'),
+            fetchAccountCount('guards'),
+        ]);
+        const el = id => document.getElementById(id);
+        if (el('settingsStatStudents')) el('settingsStatStudents').textContent = students ? students.length : '—';
+        if (el('settingsStatTeachers')) el('settingsStatTeachers').textContent = teachers ? teachers.length : '—';
+        if (el('settingsStatGuards'))   el('settingsStatGuards').textContent   = guards   ? guards.length   : '—';
+        if (el('settingsSessionStart')) el('settingsSessionStart').textContent = _sessionStart;
+        if (el('settingsProfileName'))  el('settingsProfileName').textContent  = DOM.titleHeader?.dataset?.adminName || document.getElementById('adminProfileName')?.textContent || 'Admin';
+    } catch (err) { console.error('[loadSettingsStats]', err); }
 }

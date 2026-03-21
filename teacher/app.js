@@ -1,6 +1,78 @@
 // ============================================================
 // CONFIG
 // ============================================================
+
+// ============================================================
+// DEVICE INFO — collected once, reused on every request
+// ============================================================
+let _cachedDeviceInfo = null;
+async function getDeviceInfo() {
+    try {
+        if (navigator.userAgentData) {
+            const data = await navigator.userAgentData.getHighEntropyValues([
+                'model', 'platform', 'platformVersion', 'mobile'
+            ]).catch(() => ({}));
+            const model    = (data.model || '').trim();
+            const platform = (data.platform || navigator.userAgentData.platform || '').trim();
+            const ver      = (data.platformVersion || '').split('.')[0];
+            const brands   = navigator.userAgentData.brands || [];
+            // Include Chromium as fallback brand
+            const browser  = brands.find(b => /chrome|edge|opera/i.test(b.brand) && !/chromium/i.test(b.brand))
+                          || brands.find(b => /chromium/i.test(b.brand));
+            const browserStr = browser
+                ? browser.brand.replace('Google Chrome','Chrome').replace('Microsoft Edge','Edge') + ' ' + browser.version.split('.')[0]
+                : '';
+            const osStr = platform + (ver && ver !== '0' ? ' ' + ver : '');
+            // Only trust modern path if platform is a real OS name (not empty, not generic Linux)
+            if (platform && platform !== 'Linux') {
+                const parts = [browserStr, osStr, model].filter(Boolean);
+                if (parts.length > 0) return parts.join(' \u00b7 ');
+            }
+        }
+    } catch (_) {}
+    return parseUAString(navigator.userAgent);
+}
+
+function parseUAString(ua) {
+    if (!ua) return 'Unknown Device';
+    // Chrome's frozen/reduced UA on desktop contains "Android 6.0; Nexus 5" as a fake placeholder.
+    // Detect this by checking if the UA also contains "Windows NT" or "Macintosh" — meaning
+    // the Android token is fake. Strip it and re-parse.
+    if (/Android/i.test(ua) && (/Windows NT/i.test(ua) || /Macintosh/i.test(ua))) {
+        ua = ua.replace(/\(Linux;[^)]*Android[^)]*\)\s*/i, '');
+    }
+    let browser = 'Browser', os = '';
+    if (ua.indexOf('Edg/') !== -1)               browser = 'Edge';
+    else if (ua.indexOf('OPR/') !== -1)          browser = 'Opera';
+    else if (ua.indexOf('SamsungBrowser') !== -1) browser = 'Samsung Browser';
+    else if (ua.indexOf('Chrome/') !== -1)       browser = 'Chrome';
+    else if (ua.indexOf('Firefox/') !== -1)      browser = 'Firefox';
+    else if (ua.indexOf('Safari/') !== -1)       browser = 'Safari';
+    if (ua.indexOf('Windows NT 10') !== -1)        os = 'Windows 10/11';
+    else if (ua.indexOf('Windows NT 6.3') !== -1) os = 'Windows 8.1';
+    else if (ua.indexOf('Windows NT 6') !== -1)    os = 'Windows 7/8';
+    else if (ua.indexOf('Android') !== -1) {
+        const vMatch = ua.match(/Android ([0-9.]+)/);
+        const mMatch = ua.match(/Android[^;]+;\s*([^)]+)\)/);
+        const raw = mMatch ? mMatch[1].replace(/\s*Build\/.*$/, '').trim() : '';
+        os = 'Android' + (vMatch ? ' ' + vMatch[1] : '');
+        if (raw && raw !== 'K') return browser + ' \u00b7 ' + os + ' \u00b7 ' + raw;
+    }
+    else if (ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1) {
+        const vMatch = ua.match(/OS ([0-9_]+)/);
+        os = 'iOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Mac OS X') !== -1) {
+        const vMatch = ua.match(/Mac OS X ([0-9_]+)/);
+        os = 'macOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Linux') !== -1) os = 'Linux';
+    // Get browser version from UA for the fallback path
+    const verMatch = ua.match(/(?:Chrome|Firefox|Safari|OPR|Edg)\/([0-9]+)/);
+    const browserVer = verMatch ? ' ' + verMatch[1] : '';
+    return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
+}
+
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const TOKEN = localStorage.getItem('teacher_token');
 
@@ -12,14 +84,20 @@ const DOM = {
     sidebarOverlay:                         document.getElementById('sidebarOverlay'),
     menuBtn:                                document.getElementById('menuBtn'),
     headerTitle:                            document.getElementById('headerTitle'),
-    eventAttendanceBody:                    document.getElementById('eventAttendanceBody'),
-    eventAttendanceHistoryBody:             document.getElementById('attendanceHistoryBody'),
-    searchFilterEventHistory:               document.getElementById('searchFilterEventHistory'),
-    searchFilterEvent:                      document.getElementById('searchFilterEvent'),
-    eventAttendanceYearLevelFilter:         document.getElementById('eventAttendanceYearLevelFilter'),
-    eventAttendanceHistoryYearLevelFilter:  document.getElementById('eventAttendanceHistoryYearLevelFilter'),
-    radiusSlider:                           document.getElementById('radiusSlider'),
-    radiusValueDisplay:                     document.getElementById('radiusValue'),
+    eventAttendanceBody:                            document.getElementById('eventAttendanceBody'),
+    eventAttendanceHistoryBody:                     document.getElementById('attendanceHistoryBody'),
+    searchFilterEventHistory:                       document.getElementById('searchFilterEventHistory'),
+    searchFilterEvent:                              document.getElementById('searchFilterEvent'),
+    eventAttendanceYearLevelFilter:                 document.getElementById('eventAttendanceYearLevelFilter'),
+    eventAttendanceHistoryYearLevelFilter:          document.getElementById('eventAttendanceHistoryYearLevelFilter'),
+    eventAttendanceProgramFilter:                   document.getElementById('eventAttendanceProgramFilter'),
+    eventAttendanceHistoryProgramFilter:            document.getElementById('eventAttendanceHistoryProgramFilter'),
+    eventAttendanceEventNameFilter:                 document.getElementById('eventAttendanceEventNameFilter'),
+    eventAttendanceHistoryEventNameFilter:          document.getElementById('eventAttendanceHistoryEventNameFilter'),
+    eventAttendanceStatusFilter:                    document.getElementById('eventAttendanceStatusFilter'),
+    eventAttendanceHistoryStatusFilter:             document.getElementById('eventAttendanceHistoryStatusFilter'),
+    radiusSlider:                                   document.getElementById('radiusSlider'),
+    radiusValueDisplay:                             document.getElementById('radiusValue'),
 };
 
 // ============================================================
@@ -85,9 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
     getStudentAttendanceHistoryRecords();
     getTeacherDataToServer();
     loadManualEntryStudents();
-    renderSubjects();
-    renderYearLevel();
-    renderPrograms();
+    Promise.all([renderSubjects(), renderYearLevel(), renderPrograms()])
+        .then(() => loadActiveSubject());
     Swal.fire({ title: 'Loading event data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     Promise.all([renderEventAttendanceRecord(), renderEventAttendanceHistoryRecord()])
         .then(() => { Swal.close(); startEventPolling(); })
@@ -101,7 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Filters
     setupHistoryDropdownFilter('subjectFilterAttendanceHistory', 4);
-    setupHistoryDropdownFilter('yearFilterAttendanceHistory', 5);
+    setupHistoryDropdownFilter('yearFilterAttendanceHistory',    5);
+    setupNowDropdownFilter('attendanceNowSubjectFilter', 4);
+    setupNowDropdownFilter('attendanceNowYearFilter',    5);
     setupManualEntryFilter();
     studentRegisteredDropdownFilter('recordYearFilter', 5);
 
@@ -206,6 +285,7 @@ function logout() {
         confirmButtonText: 'Yes, log out'
     }).then(result => {
         if (!result.isConfirmed) return;
+        apiCall('/teacher/logout', 'POST', { device_info: localStorage.getItem('teacher_device_info') || '' }).catch(() => {});
         localStorage.removeItem('teacher_token');
         Swal.fire({ icon: 'success', title: 'Logged out', showConfirmButton: false, timer: 1500 })
             .then(() => window.location.href = 'teacher_login.html');
@@ -217,6 +297,7 @@ function logout() {
 // ============================================================
 async function apiCall(endpoint, method = 'GET', body = null) {
     try {
+        const deviceInfo = localStorage.getItem('teacher_device_info') || '';
         const options = {
             method,
             headers: {
@@ -224,7 +305,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
                 'Authorization': 'Bearer ' + TOKEN
             }
         };
-        if (body) options.body = JSON.stringify(body);
+        if (method === 'POST' || method === 'PUT') {
+            options.body = JSON.stringify({ ...(body || {}), device_info: deviceInfo });
+        } else if (body) {
+            options.body = JSON.stringify(body);
+        }
 
         const res = await fetch(`${BASE_URL}${endpoint}`, options);
         const data = await res.json();
@@ -289,6 +374,19 @@ function navigateTo(navName) {
     // Remind teacher to set a subject when opening Attendance Now
     if (navName === 'attendanceNow') {
         checkSubjectReminder();
+    }
+
+    // Mark active sidebar nav item
+    document.querySelectorAll('.menu-item').forEach(btn => {
+        const onclick = btn.getAttribute('onclick') || '';
+        btn.classList.toggle('active-page', onclick.includes(`'${navName}'`));
+    });
+
+    // Load settings when opening settings tab
+    if (navName === 'settings') {
+        loadSettingsPage();
+        const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+        applyTheme(saved.mode || 'light', saved.font || 'system', saved.size || 'medium', false);
     }
 
     DOM.sidebar.classList.remove('active');
@@ -394,6 +492,7 @@ async function getStudentAttendanceRecords() {
     document.getElementById('attendanceBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
+    populateAttendanceNowFilters(data.content);
 }
 
 // ============================================================
@@ -500,6 +599,8 @@ async function pollAttendanceSilently() {
         document.getElementById('attendanceBody').innerHTML = data.content
             .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
             .join('');
+        populateAttendanceNowFilters(data.content);
+        applyAllNowFilters();
 
         // Flash live indicator if it exists
         const dot = document.getElementById('teacherLiveDot');
@@ -526,6 +627,7 @@ async function getStudentAttendanceHistoryRecords() {
     document.getElementById('attendanceHistoryTableBody').innerHTML = data.content
         .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
         .join('');
+    populateAttendanceHistoryFilters(data.content);
 }
 
 async function refreshAttendance() {
@@ -541,6 +643,17 @@ async function refreshAttendanceHistory() {
 // ============================================================
 // EVENT ATTENDANCE
 // ============================================================
+// Populate a filter dropdown with unique values extracted from data
+function populateEventFilterOptions(data, filterId, extractor, allLabel) {
+    const el = document.getElementById(filterId);
+    if (!el) return;
+    const current = el.value;
+    const unique = [...new Set(data.map(extractor).filter(Boolean))].sort();
+    el.innerHTML = `<option value="">${allLabel}</option>` +
+        unique.map(v => `<option value="${v}">${v}</option>`).join('');
+    if (unique.includes(current)) el.value = current;
+}
+
 async function renderEventAttendanceRecord() {
     const data = await apiCall('/teacher/get_event_attendance', 'GET');
     if (!data) return;
@@ -558,6 +671,11 @@ async function renderEventAttendanceRecord() {
             <td>${d.status}</td>
         </tr>`).join('')
         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
+
+    // Populate filter dropdowns with unique values from data
+    populateEventFilterOptions(data.content, 'eventAttendanceProgramFilter',   d => d.student_program, 'All Programs');
+    populateEventFilterOptions(data.content, 'eventAttendanceEventNameFilter', d => d.event_name,      'All Events');
+    populateEventFilterOptions(data.content, 'eventAttendanceYearLevelFilter', d => d.student_year_level, 'All Year Levels');
 }
 
 async function renderEventAttendanceHistoryRecord() {
@@ -577,6 +695,11 @@ async function renderEventAttendanceHistoryRecord() {
             <td>${d.status}</td>
         </tr>`).join('')
         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
+
+    // Populate filter dropdowns with unique values from data
+    populateEventFilterOptions(data.content, 'eventAttendanceHistoryProgramFilter',   d => d.student_program,    'All Programs');
+    populateEventFilterOptions(data.content, 'eventAttendanceHistoryEventNameFilter', d => d.event_name,         'All Events');
+    populateEventFilterOptions(data.content, 'eventAttendanceHistoryYearLevelFilter', d => d.student_year_level, 'All Year Levels');
 }
 
 // ============================================================
@@ -598,14 +721,55 @@ function setupHistoryDropdownFilter(filterId, columnIndex) {
         const term = this.value.toLowerCase();
         let hasMatch = false;
         document.querySelectorAll('#attendanceHistoryTableBody tr').forEach(row => {
-            const isMatch = !term || row.cells[columnIndex].textContent.trim().toLowerCase() === term;
+            if (row.style.display === 'none' && this.value === '') return; // don't unhide rows hidden by other filters
+            const isMatch = !term || row.cells[columnIndex]?.textContent.trim().toLowerCase() === term;
             row.style.display = isMatch ? '' : 'none';
             if (isMatch) hasMatch = true;
         });
-        if (!hasMatch && term) {
-            Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'No records found for this filter', showConfirmButton: false, timer: 2000 });
-        }
+        applyAllHistoryFilters();
     });
+}
+
+function applyAllHistoryFilters() {
+    const subject = document.getElementById('subjectFilterAttendanceHistory')?.value.toLowerCase() || '';
+    const year    = document.getElementById('yearFilterAttendanceHistory')?.value.toLowerCase() || '';
+    document.querySelectorAll('#attendanceHistoryTableBody tr').forEach(row => {
+        const matchSubject = !subject || row.cells[4]?.textContent.trim().toLowerCase() === subject;
+        const matchYear    = !year    || row.cells[5]?.textContent.trim().toLowerCase() === year;
+        row.style.display = (matchSubject && matchYear) ? '' : 'none';
+    });
+}
+
+function applyAllNowFilters() {
+    const subject = document.getElementById('attendanceNowSubjectFilter')?.value.toLowerCase() || '';
+    const year    = document.getElementById('attendanceNowYearFilter')?.value.toLowerCase() || '';
+    document.querySelectorAll('#attendanceBody tr').forEach(row => {
+        const matchSubject = !subject || row.cells[4]?.textContent.trim().toLowerCase() === subject;
+        const matchYear    = !year    || row.cells[5]?.textContent.trim().toLowerCase() === year;
+        row.style.display = (matchSubject && matchYear) ? '' : 'none';
+    });
+}
+
+function setupNowDropdownFilter(filterId, columnIndex) {
+    document.getElementById(filterId)?.addEventListener('change', () => applyAllNowFilters());
+}
+
+function populateAttendanceNowFilters(data) {
+    const subjects = [...new Set(data.map(d => d.subject).filter(Boolean))].sort();
+    const years    = [...new Set(data.map(d => d.year_level).filter(Boolean))].sort();
+    const subSel   = document.getElementById('attendanceNowSubjectFilter');
+    const yearSel  = document.getElementById('attendanceNowYearFilter');
+    if (subSel)  { const c = subSel.value;  subSel.innerHTML  = '<option value="">All Subjects</option>'    + subjects.map(s => `<option value="${s}">${s}</option>`).join(''); subSel.value  = c; }
+    if (yearSel) { const c = yearSel.value; yearSel.innerHTML = '<option value="">All Year Levels</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');    yearSel.value = c; }
+}
+
+function populateAttendanceHistoryFilters(data) {
+    const subjects = [...new Set(data.map(d => d.subject).filter(Boolean))].sort();
+    const years    = [...new Set(data.map(d => d.year_level).filter(Boolean))].sort();
+    const subSel   = document.getElementById('subjectFilterAttendanceHistory');
+    const yearSel  = document.getElementById('yearFilterAttendanceHistory');
+    if (subSel)  { const c = subSel.value;  subSel.innerHTML  = '<option value="">All Subjects</option>'    + subjects.map(s => `<option value="${s}">${s}</option>`).join(''); subSel.value  = c; }
+    if (yearSel) { const c = yearSel.value; yearSel.innerHTML = '<option value="">All Year Levels</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');    yearSel.value = c; }
 }
 
 function studentRegisteredDropdownFilter(filterId, columnIndex) {
@@ -660,6 +824,36 @@ function filterTableRows(tbody, term) {
     });
 }
 
+// Multi-filter for event attendance tables
+function applyEventFilters(tbody, filters) {
+    Array.from(tbody.getElementsByTagName('tr')).forEach(row => {
+        const match = filters.every(({ value, colIndex }) => {
+            if (!value) return true;
+            const cell = row.cells[colIndex];
+            return cell && cell.textContent.trim().toLowerCase() === value.toLowerCase();
+        });
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function getEventFilters() {
+    return [
+        { value: DOM.eventAttendanceYearLevelFilter.value,   colIndex: 3 },
+        { value: DOM.eventAttendanceProgramFilter.value,     colIndex: 2 },
+        { value: DOM.eventAttendanceEventNameFilter.value,   colIndex: 6 },
+        { value: DOM.eventAttendanceStatusFilter.value,      colIndex: 7 },
+    ];
+}
+
+function getEventHistoryFilters() {
+    return [
+        { value: DOM.eventAttendanceHistoryYearLevelFilter.value,   colIndex: 3 },
+        { value: DOM.eventAttendanceHistoryProgramFilter.value,     colIndex: 2 },
+        { value: DOM.eventAttendanceHistoryEventNameFilter.value,   colIndex: 6 },
+        { value: DOM.eventAttendanceHistoryStatusFilter.value,      colIndex: 7 },
+    ];
+}
+
 DOM.searchFilterEvent.addEventListener('input', function () {
     filterTableRows(DOM.eventAttendanceBody, this.value);
 });
@@ -668,13 +862,15 @@ DOM.searchFilterEventHistory.addEventListener('input', function () {
     filterTableRows(DOM.eventAttendanceHistoryBody, this.value);
 });
 
-DOM.eventAttendanceYearLevelFilter.addEventListener('change', function () {
-    filterTableRows(DOM.eventAttendanceBody, this.value);
-});
+DOM.eventAttendanceYearLevelFilter.addEventListener('change',        () => applyEventFilters(DOM.eventAttendanceBody,        getEventFilters()));
+DOM.eventAttendanceProgramFilter.addEventListener('change',          () => applyEventFilters(DOM.eventAttendanceBody,        getEventFilters()));
+DOM.eventAttendanceEventNameFilter.addEventListener('change',        () => applyEventFilters(DOM.eventAttendanceBody,        getEventFilters()));
+DOM.eventAttendanceStatusFilter.addEventListener('change',           () => applyEventFilters(DOM.eventAttendanceBody,        getEventFilters()));
 
-DOM.eventAttendanceHistoryYearLevelFilter.addEventListener('change', function () {
-    filterTableRows(DOM.eventAttendanceHistoryBody, this.value);
-});
+DOM.eventAttendanceHistoryYearLevelFilter.addEventListener('change', () => applyEventFilters(DOM.eventAttendanceHistoryBody, getEventHistoryFilters()));
+DOM.eventAttendanceHistoryProgramFilter.addEventListener('change',   () => applyEventFilters(DOM.eventAttendanceHistoryBody, getEventHistoryFilters()));
+DOM.eventAttendanceHistoryEventNameFilter.addEventListener('change', () => applyEventFilters(DOM.eventAttendanceHistoryBody, getEventHistoryFilters()));
+DOM.eventAttendanceHistoryStatusFilter.addEventListener('change',    () => applyEventFilters(DOM.eventAttendanceHistoryBody, getEventHistoryFilters()));
 
 // ============================================================
 // STUDENTS
@@ -1093,6 +1289,10 @@ async function subjectAndYearLevelSetter() {
     const subject   = document.getElementById('courseFilter').value;
     const yearLevel = document.getElementById('yearFilter').value;
 
+    if (!subject || !yearLevel) {
+        return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select both a subject and a year level before setting.' });
+    }
+
     const result = await Swal.fire({
         title: 'Update Settings?',
         text: 'This will update the active subject and year level.',
@@ -1104,7 +1304,43 @@ async function subjectAndYearLevelSetter() {
     if (result.isConfirmed) {
         Swal.fire({ title: 'Updating settings...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const res = await apiCall('/teacher/teacher_subject_and_year_level_setter', 'PUT', { subject, yearLevel });
-        if (res) Swal.fire('Updated!', res.message, 'success');
+        if (res) {
+            renderActiveSubject(subject, yearLevel);
+            Swal.fire('Updated!', res.message, 'success');
+        }
+    }
+}
+
+// Load and display the currently active subject + year level on page load
+async function loadActiveSubject() {
+    const data = await apiCall('/teacher/get_active_subject', 'GET');
+    if (!data || !data.content) return;
+    const { subject_name_set, year_level_set } = data.content;
+
+    // Pre-select dropdowns to match the currently active values
+    const courseFilter = document.getElementById('courseFilter');
+    const yearFilter   = document.getElementById('yearFilter');
+    if (courseFilter && subject_name_set) courseFilter.value = subject_name_set;
+    if (yearFilter   && year_level_set)   yearFilter.value   = year_level_set;
+
+    renderActiveSubject(subject_name_set, year_level_set);
+}
+
+function renderActiveSubject(subject, yearLevel) {
+    const el = document.getElementById('activeSubjectDisplay');
+    if (!el) return;
+    if (subject && yearLevel) {
+        el.textContent = `✓ ${subject} — ${yearLevel}`;
+        el.style.background = '#c8ece5';
+        el.style.color = '#1a5c4f';
+    } else if (subject) {
+        el.textContent = `✓ ${subject}`;
+        el.style.background = '#c8ece5';
+        el.style.color = '#1a5c4f';
+    } else {
+        el.textContent = '⚠ Not set';
+        el.style.background = '#fdecea';
+        el.style.color = '#b94a3a';
     }
 }
 
@@ -1397,6 +1633,7 @@ function exportTableToExcel(tableId, fileName) {
         // --- Extract rows ---
         const rows = [];
         table.querySelectorAll('tbody tr').forEach(tr => {
+            if (tr.style.display === 'none') return; // skip filtered-out rows
             const row = [];
             tr.querySelectorAll('td').forEach(td => row.push(td.innerText.trim()));
             if (row.some(cell => cell !== '')) rows.push(row);
@@ -1467,20 +1704,23 @@ function printSection(tableId, title) {
     if (!table) return window.print();
 
     const now  = new Date().toLocaleString('en-PH');
-    const rows = table.querySelectorAll('tbody tr').length;
-
     // Clone so we don't touch the live DOM
     const clone = table.cloneNode(true);
-    // Find and remove the Action column (Edit/Delete buttons shouldn't appear on print)
+    // Find and remove Action columns
     let actionColIndex = -1;
     clone.querySelectorAll('thead th').forEach((th, i) => {
-        if (th.textContent.trim().toLowerCase() === 'action') actionColIndex = i;
+        if (/action|actions/i.test(th.textContent.trim())) actionColIndex = i;
     });
     if (actionColIndex !== -1) {
         clone.querySelectorAll('tr').forEach(row => {
             if (row.children[actionColIndex]) row.children[actionColIndex].remove();
         });
     }
+    // Skip filtered-out rows
+    clone.querySelectorAll('tbody tr').forEach(tr => {
+        if (tr.style.display === 'none') tr.remove();
+    });
+    const rows    = clone.querySelectorAll('tbody tr').length;
     const content = clone.outerHTML;
 
     const printWin = window.open('', '_blank', 'width=900,height=700');
@@ -1526,3 +1766,149 @@ function printList()       { printSection('studentsTable', 'Student Records'); }
 function printAttendance() { printSection('eventAttendanceTable', 'Event Attendance'); }
 function printPage()       { printSection('attendanceHistoryTable', 'Attendance History'); }
 function applyFilters()    { /* hook in filter logic here */ }
+
+// ============================================================
+// MAINTENANCE MODE POLLING
+// ============================================================
+let _maintenancePollInterval = null;
+let _maintenanceActive = false;
+
+async function checkMaintenanceMode() {
+    try {
+        const res  = await fetch(`${BASE_URL}/system/maintenance`);
+        const data = await res.json();
+        if (data.maintenance && !_maintenanceActive) {
+            _maintenanceActive = true;
+            showMaintenanceBanner();
+        } else if (!data.maintenance && _maintenanceActive) {
+            _maintenanceActive = false;
+            hideMaintenanceBanner();
+        }
+    } catch (_) {}
+}
+
+function showMaintenanceBanner() {
+    // Remove existing
+    document.getElementById('maintenanceBanner')?.remove();
+    const banner = document.createElement('div');
+    banner.id = 'maintenanceBanner';
+    banner.innerHTML = `
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#fff;flex-shrink:0;">
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+        </svg>
+        <div>
+            <div style="font-weight:800;font-size:0.9rem;">🔧 System Maintenance</div>
+            <div style="font-size:0.78rem;opacity:0.9;margin-top:2px;">The system is currently under maintenance. All actions are temporarily disabled. Please wait...</div>
+        </div>`;
+    banner.style.cssText = `
+        position:fixed; top:0; left:0; right:0; z-index:99999;
+        background:linear-gradient(135deg,#c0392b,#e74c3c); color:#fff;
+        padding:14px 20px; display:flex; align-items:center; gap:14px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.35); font-family:inherit;`;
+    document.body.prepend(banner);
+    // Overlay to block all clicks
+    const overlay = document.createElement('div');
+    overlay.id = 'maintenanceOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.35);cursor:not-allowed;';
+    overlay.addEventListener('click', e => e.stopPropagation());
+    document.body.appendChild(overlay);
+    Swal.fire({
+        icon: 'warning',
+        title: '🔧 System Maintenance',
+        html: 'The system is currently under maintenance.<br>All actions are temporarily disabled.<br><br><strong>Please wait for maintenance to complete.</strong>',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        background: '#fff',
+    });
+}
+
+function hideMaintenanceBanner() {
+    document.getElementById('maintenanceBanner')?.remove();
+    document.getElementById('maintenanceOverlay')?.remove();
+    Swal.close();
+    Swal.fire({ icon:'success', title:'System Online', text:'Maintenance is complete. You can continue working.', timer:3000, showConfirmButton:false });
+}
+
+// Poll every 15 seconds
+checkMaintenanceMode();
+_maintenancePollInterval = setInterval(checkMaintenanceMode, 15000);
+
+// ============================================================
+// THEME
+// ============================================================
+const THEME_STORAGE_KEY = 'teacher_theme';
+
+function loadTheme() {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(saved.mode || 'light', saved.font || 'system', saved.size || 'medium', false);
+}
+
+function applyTheme(mode, font, size, save = true) {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', mode === 'dark' ? 'dark' : '');
+
+    // Font family
+    const fontMap = {
+        system:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        inter:   "'Inter', sans-serif",
+        poppins: "'Poppins', sans-serif",
+        roboto:  "'Roboto', sans-serif",
+        mono:    "'JetBrains Mono', 'Fira Code', monospace"
+    };
+    document.body.style.fontFamily = fontMap[font] || fontMap.system;
+
+    // Font size via zoom on sections only
+    const zoomMap = { small: '0.88', medium: '1', large: '1.12' };
+    const zoomVal = zoomMap[size] || '1';
+    document.querySelectorAll('.sections').forEach(el => { el.style.zoom = zoomVal; });
+
+    // Sidebar background
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.style.background = mode === 'dark'
+            ? 'linear-gradient(180deg, #0d1a2a 0%, #091422 100%)'
+            : 'linear-gradient(180deg, #4a7a7a 0%, #3d6b6b 100%)';
+    }
+
+    // Update button active states
+    document.querySelectorAll('.t-theme-mode-btn').forEach(b => b.classList.remove('t-active'));
+    document.getElementById(mode === 'dark' ? 'modeDark' : 'modeLight')?.classList.add('t-active');
+    document.querySelectorAll('.t-font-btn').forEach(b => b.classList.toggle('t-active', b.dataset.font === font));
+    document.querySelectorAll('.t-size-btn').forEach(b => b.classList.toggle('t-active', b.dataset.size === size));
+
+    if (save) localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ mode, font, size }));
+}
+
+function setThemeMode(mode) {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(mode, saved.font || 'system', saved.size || 'medium');
+}
+function setThemeFont(font) {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(saved.mode || 'light', font, saved.size || 'medium');
+}
+function setThemeSize(size) {
+    const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+    applyTheme(saved.mode || 'light', saved.font || 'system', size);
+}
+function resetTheme() {
+    localStorage.removeItem(THEME_STORAGE_KEY);
+    applyTheme('light', 'system', 'medium', false);
+    Swal.fire({ icon: 'success', title: 'Theme Reset', text: 'Appearance restored to defaults.', timer: 1500, showConfirmButton: false });
+}
+
+// Load theme on page load
+loadTheme();
+
+// ============================================================
+// SETTINGS PAGE
+// ============================================================
+const _teacherSessionStart = new Date().toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+function loadSettingsPage() {
+    const el = id => document.getElementById(id);
+    if (el('teacherSessionStart')) el('teacherSessionStart').textContent = _teacherSessionStart;
+    // Sync profile name/email if already loaded
+    const name = el('accountInformationName')?.textContent;
+    if (name && name !== 'Unknown' && el('settingsProfileName')) el('settingsProfileName').textContent = name;
+}

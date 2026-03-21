@@ -13,7 +13,7 @@ guard.get('/', (req, res) => {
 guard.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const result = await services.guardLogin(email, password);
+        const result = await services.guardLogin(email, password, req.ip, req.body.device_info || req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
         console.log(result)
         res.json({ 
             ok: true, 
@@ -85,4 +85,21 @@ guard.post('/forgot_password/reset_password', async (req, res) => {
 })
 
 // Export route
+
+// Logout
+guard.post('/logout', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decoded = services.verifyToken(token);
+        if (decoded) {
+            const db = require('../configuration/db');
+            db.execute('SELECT guard_email FROM guards WHERE guard_id = ? LIMIT 1', [decoded.guard_id], (err, rows) => {
+                const email = (!err && rows.length) ? rows[0].guard_email : null;
+                services.writeLogoutLog(decoded.guard_id, decoded.guard_name, email, 'guard', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+            });
+        }
+        res.json({ ok: true });
+    } catch (_) { res.json({ ok: true }); }
+})
+
 module.exports = guard

@@ -1,3 +1,70 @@
+async function getDeviceInfo() {
+    try {
+        if (navigator.userAgentData) {
+            const data = await navigator.userAgentData.getHighEntropyValues([
+                'model', 'platform', 'platformVersion', 'mobile'
+            ]).catch(() => ({}));
+            const model    = (data.model || '').trim();
+            const platform = (data.platform || navigator.userAgentData.platform || '').trim();
+            const ver      = (data.platformVersion || '').split('.')[0];
+            const brands   = navigator.userAgentData.brands || [];
+            // Include Chromium as fallback brand
+            const browser  = brands.find(b => /chrome|edge|opera/i.test(b.brand) && !/chromium/i.test(b.brand))
+                          || brands.find(b => /chromium/i.test(b.brand));
+            const browserStr = browser
+                ? browser.brand.replace('Google Chrome','Chrome').replace('Microsoft Edge','Edge') + ' ' + browser.version.split('.')[0]
+                : '';
+            const osStr = platform + (ver && ver !== '0' ? ' ' + ver : '');
+            // Only trust modern path if platform is a real OS name (not empty, not generic Linux)
+            if (platform && platform !== 'Linux') {
+                const parts = [browserStr, osStr, model].filter(Boolean);
+                if (parts.length > 0) return parts.join(' \u00b7 ');
+            }
+        }
+    } catch (_) {}
+    return parseUAString(navigator.userAgent);
+}
+
+function parseUAString(ua) {
+    if (!ua) return 'Unknown Device';
+    // Chrome's frozen/reduced UA on desktop contains "Android 6.0; Nexus 5" as a fake placeholder.
+    // Detect this by checking if the UA also contains "Windows NT" or "Macintosh" — meaning
+    // the Android token is fake. Strip it and re-parse.
+    if (/Android/i.test(ua) && (/Windows NT/i.test(ua) || /Macintosh/i.test(ua))) {
+        ua = ua.replace(/\(Linux;[^)]*Android[^)]*\)\s*/i, '');
+    }
+    let browser = 'Browser', os = '';
+    if (ua.indexOf('Edg/') !== -1)               browser = 'Edge';
+    else if (ua.indexOf('OPR/') !== -1)          browser = 'Opera';
+    else if (ua.indexOf('SamsungBrowser') !== -1) browser = 'Samsung Browser';
+    else if (ua.indexOf('Chrome/') !== -1)       browser = 'Chrome';
+    else if (ua.indexOf('Firefox/') !== -1)      browser = 'Firefox';
+    else if (ua.indexOf('Safari/') !== -1)       browser = 'Safari';
+    if (ua.indexOf('Windows NT 10') !== -1)        os = 'Windows 10/11';
+    else if (ua.indexOf('Windows NT 6.3') !== -1) os = 'Windows 8.1';
+    else if (ua.indexOf('Windows NT 6') !== -1)    os = 'Windows 7/8';
+    else if (ua.indexOf('Android') !== -1) {
+        const vMatch = ua.match(/Android ([0-9.]+)/);
+        const mMatch = ua.match(/Android[^;]+;\s*([^)]+)\)/);
+        const raw = mMatch ? mMatch[1].replace(/\s*Build\/.*$/, '').trim() : '';
+        os = 'Android' + (vMatch ? ' ' + vMatch[1] : '');
+        if (raw && raw !== 'K') return browser + ' \u00b7 ' + os + ' \u00b7 ' + raw;
+    }
+    else if (ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1) {
+        const vMatch = ua.match(/OS ([0-9_]+)/);
+        os = 'iOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Mac OS X') !== -1) {
+        const vMatch = ua.match(/Mac OS X ([0-9_]+)/);
+        os = 'macOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Linux') !== -1) os = 'Linux';
+    // Get browser version from UA for the fallback path
+    const verMatch = ua.match(/(?:Chrome|Firefox|Safari|OPR|Edg)\/([0-9]+)/);
+    const browserVer = verMatch ? ' ' + verMatch[1] : '';
+    return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
+}
+
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const GOOGLE_CLIENT_ID = '778771236440-59j9p3hl8tikvffo6s3983s9sfu79ljg.apps.googleusercontent.com';
 
@@ -160,11 +227,13 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         const res  = await fetch(`${BASE_URL}/authentication/student_login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, device_id })
+            body: JSON.stringify({ email, password, device_id, device_info: await getDeviceInfo() })
         });
         const data = await res.json();
 
         if (res.ok && data.ok) {
+            const di = await getDeviceInfo();
+            localStorage.setItem('student_device_info', di);
             localStorage.setItem('student_token', data.token);
             localStorage[rememberMe ? 'setItem' : 'removeItem']('rememberedEmail', email);
 
@@ -232,6 +301,8 @@ async function handleGoogleLogin(response) {
         const data = await res.json();
 
         if (res.ok && data.ok) {
+            const di = await getDeviceInfo();
+            localStorage.setItem('student_device_info', di);
             localStorage.setItem('student_token', data.token);
             await Swal.fire({
                 icon: 'success',

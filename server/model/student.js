@@ -32,7 +32,7 @@ student.put('/student_update_profile', async (req, res) => {
         }
 
         const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
-        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'UPDATE_PROFILE', 'Student', null, fullName, `Updated profile — ID No: ${req.body.idNumber || decodedToken.student_id_number}`)
+        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'UPDATE_PROFILE', 'Student', null, fullName, `Updated profile — ID No: ${req.body.idNumber || decodedToken.student_id_number}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Profile updated successfully' });
 
     } catch (error) {
@@ -49,7 +49,7 @@ student.put('/student_change_password', async (req, res) => {
         const decodedToken = services.verifyToken(token)
         const result = await services.updateStudentPassword(currentPassword, newPassword, decodedToken.student_id)
         const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
-        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'CHANGE_PASSWORD', 'Student', null, fullName, 'Student changed their password')
+        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'CHANGE_PASSWORD', 'Student', null, fullName, 'Student changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(401).json({ ok: false, message: err })
@@ -76,7 +76,7 @@ student.put('/update_student_barcode', async (req, res) => {
         const decodedToken = services.verifyToken(token)
         const result = await services.updateStudentBarcode(decodedToken.student_id, barcode, teacher_serial || null)
         const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
-        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'REGENERATE_BARCODE', 'Student', null, fullName, `Regenerated barcode — ID No: ${decodedToken.student_id_number}`)
+        services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'REGENERATE_BARCODE', 'Student', null, fullName, `Regenerated barcode — ID No: ${decodedToken.student_id_number}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
@@ -210,6 +210,17 @@ student.get('/enrolled_teachers', async (req, res) => {
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || err })
     }
+})
+
+
+// Logout
+student.post('/logout', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decoded = services.verifyToken(token);
+        if (decoded) services.writeLogoutLog(decoded.student_id, `${decoded.student_firstname} ${decoded.student_lastname}`, decoded.student_email, 'student', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+        res.json({ ok: true });
+    } catch (_) { res.json({ ok: true }); }
 })
 
 module.exports = student

@@ -224,3 +224,136 @@
         font-size: 12px;
     }
 }
+/* ============================================================
+   DARK MODE — Controls section
+   ============================================================ */
+
+/* Search input */
+[data-theme="dark"] .search-input {
+    background: #1e2f3f !important;
+    color: #e0eaf0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: #5a7a8a !important;
+}
+
+[data-theme="dark"] .search-input:focus {
+    outline-color: #5a9e9e !important;
+}
+
+[data-theme="dark"] .search-icon {
+    color: #8aaabb !important;
+}
+
+/* Live badge */
+[data-theme="dark"] .live-badge {
+    background: rgba(46, 125, 70, 0.12) !important;
+    border-color: rgba(109, 191, 130, 0.35) !important;
+    color: #6dbf82 !important;
+}
+
+[data-theme="dark"] .live-dot {
+    background: #6dbf82 !important;
+}
+
+/* Export / Print buttons */
+[data-theme="dark"] .export-btn {
+    background: #1e3a3a !important;
+    color: #7ecece !important;
+}
+
+[data-theme="dark"] .export-btn:hover {
+    background: #2a4a4a !important;
+}
+
+[data-theme="dark"] .export-btn svg {
+    fill: #7ecece !important;
+}
+
+/* Override the inline style="background:#1a4545" on the Print button */
+[data-theme="dark"] .export-btn[style*="background:#1a4545"],
+[data-theme="dark"] .export-btn[style*="background: #1a4545"] {
+    background: #1a2f2f !important;
+    color: #7ecece !important;
+}
+
+/* Refresh / action buttons */
+[data-theme="dark"] .refresh-btn {
+    background: #1e3a3a !important;
+}
+
+[data-theme="dark"] .refresh-btn:hover {
+    background: #2a4a4a !important;
+}
+
+/* Active Class Setup banner (inline-styled div) */
+[data-theme="dark"] .controls-section div[style*="background:#eef6f4"],
+[data-theme="dark"] .controls-section div[style*="background: #eef6f4"] {
+    background: #0e2020 !important;
+    border-color: #2a4a44 !important;
+}
+
+[data-theme="dark"] .controls-section div[style*="background:#eef6f4"] span[style*="color:#3d6b6b"],
+[data-theme="dark"] .controls-section div[style*="background:#eef6f4"] span[style*="color: #3d6b6b"] {
+    color: #7ecece !important;
+}
+
+[data-theme="dark"] .controls-section div[style*="background:#eef6f4"] svg {
+    fill: #7ecece !important;
+}
+
+/* Active subject display pill */
+[data-theme="dark"] #activeSubjectDisplay {
+    background: #0e2a24 !important;
+    color: #7ecece !important;
+}
+
+/* Filter selects */
+[data-theme="dark"] .filter-select {
+    background: #1e2f3f !important;
+    color: #e0eaf0 !important;
+    border-color: #2a3a4a !important;
+}
+
+[data-theme="dark"] .filter-select:focus {
+    outline-color: #5a9e9e !important;
+}
+
+/* Inline border-color override on course/year selects */
+[data-theme="dark"] #courseFilter,
+[data-theme="dark"] #yearFilter {
+    border-color: #2a4a44 !important;
+}
+
+/* Set button */
+[data-theme="dark"] .set-btn {
+    background: #1e3a3a !important;
+    color: #7ecece !important;
+}
+
+[data-theme="dark"] .set-btn:hover {
+    background: #2a4a4a !important;
+}
+
+/* Table */
+[data-theme="dark"] .table-container {
+    background: #1a2535 !important;
+}
+
+[data-theme="dark"] .attendance-table thead {
+    background: #1e3a3a !important;
+}
+
+[data-theme="dark"] .attendance-table tbody tr {
+    border-bottom-color: #2a3a4a !important;
+}
+
+[data-theme="dark"] .attendance-table tbody tr:hover {
+    background: #1e2f3f !important;
+}
+
+[data-theme="dark"] .attendance-table td {
+    color: #c0d0d8 !important;
+}

@@ -12,8 +12,13 @@
     <link rel="stylesheet" href="/css/super-admin-css/super_admin_student_accounts.css">
     <link rel="stylesheet" href="/css/super-admin-css/super_admin_manage_registration.css">
     <link rel="stylesheet" href="/css/super-admin-css/super_admin_global.css">
+    <link rel="stylesheet" href="/css/super-admin-css/super_admin_theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Roboto:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
     <!-- Sidebar Overlay -->
@@ -32,7 +37,7 @@
         </div>
 
         <div class="sidebar-stats">
-            <div class="sidebar-stats-label">Total Admins</div>
+            <div class="sidebar-stats-label">Total Attendees</div>
             <div class="sidebar-stats-value" id="sideBarStatsValue">0</div>
         </div>
 
@@ -144,6 +149,14 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
+            <button class="menu-item" onclick="navigateTo('classManagement')">
+                <div class="menu-item-content">
+                    <div class="menu-item-icon"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 14H8v-2h8v2zm0-4H8v-2h8v2zm0-4H8V6h8v2z"/></svg></div>
+                    <span class="menu-item-text">Class Management</span>
+                </div>
+                <span class="menu-item-arrow">›</span>
+            </button>
+
             <button class="menu-item" onclick="navigateTo('adminSettings')">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
@@ -199,17 +212,36 @@
                     <h2 class="section-title">Attendance Event Overview</h2>
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div class="chart-legend">
-                                <div class="legend-box"></div>
-                                <span>Attendees</span>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <span style="font-size:0.78rem; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.5px;">Breakdown</span>
+                                <span style="font-size:1rem; font-weight:700; color:#1a4545;">Attendees by Program</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="chart-legend">
+                                    <div class="legend-box"></div>
+                                    <span>Attendees</span>
+                                </div>
+                                <button onclick="updateChart()" style="background:#eef6f4; border:1.5px solid #b2d8d0; color:#3d6b6b; border-radius:8px; padding:5px 10px; font-size:0.78rem; font-weight:700; cursor:pointer;">&#8635; Refresh</button>
                             </div>
                         </div>
+
+                        <div style="display:flex; gap:10px; margin:12px 0 4px; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:80px; background:#eef6f4; border-radius:10px; padding:10px 14px;">
+                                <div style="font-size:0.72rem; color:#888; font-weight:600; text-transform:uppercase;">Total Attendees</div>
+                                <div id="chartStatTotal" style="font-size:1.4rem; font-weight:800; color:#1a4545;">—</div>
+                            </div>
+                            <div style="flex:1; min-width:80px; background:#eef6f4; border-radius:10px; padding:10px 14px;">
+                                <div style="font-size:0.72rem; color:#888; font-weight:600; text-transform:uppercase;">Programs</div>
+                                <div id="chartStatPrograms" style="font-size:1.4rem; font-weight:800; color:#1a4545;">—</div>
+                            </div>
+                            <div style="flex:1; min-width:80px; background:#eef6f4; border-radius:10px; padding:10px 14px;">
+                                <div style="font-size:0.72rem; color:#888; font-weight:600; text-transform:uppercase;">Top Program</div>
+                                <div id="chartStatTop" style="font-size:0.85rem; font-weight:800; color:#1a4545; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+                            </div>
+                        </div>
+
                         <div style="position: relative;">
                             <div class="chart-container">
-                                <!-- <div class="chart-bar" style="height: 45%;"></div>
-                                <div class="chart-bar" style="height: 65%;"></div>
-                                <div class="chart-bar" style="height: 90%;"></div>
-                                <div class="chart-bar" style="height: 50%;"></div> -->
                                 <canvas id="myChart"></canvas>
                             </div>
                         </div>
@@ -299,11 +331,32 @@
                             </svg>
                             Export Excel
                         </button>
+                        <button class="export-btn" onclick="printSection('eventAttendanceTable','Event Attendance')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                     </div>
             
-                    <div class="filters-row">
-                        <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name">
+                    <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; margin-bottom:12px; flex-wrap:wrap;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#3d6b6b" style="flex-shrink:0"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                        <span style="font-size:0.82rem; font-weight:700; color:#3d6b6b; white-space:nowrap;">Active Event Setup</span>
+                        <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name" style="border-color:#3d6b6b;">
                         <button onclick="handleSetEvent()" class="set-event-button">Set Event</button>
+                        <span id="activeEventDisplay" style="font-size:0.82rem; color:#1a5c4f; font-weight:700; background:#c8ece5; padding:4px 10px; border-radius:20px; white-space:nowrap;"></span>
+                    </div>
+
+                    <div class="filters-row" style="margin-bottom:10px;">
+                        <select class="filter-select" id="eventStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="TIME IN">TIME IN</option>
+                            <option value="TIME OUT">TIME OUT</option>
+                        </select>
+                        <select class="filter-select" id="eventNameFilter">
+                            <option value="">All Events</option>
+                        </select>
+                        <select class="filter-select" id="eventYearFilter">
+                            <option value="">All Year Levels</option>
+                        </select>
+                        <select class="filter-select" id="eventProgramFilter">
+                            <option value="">All Programs</option>
+                        </select>
                     </div>
                 </div>
             
@@ -363,13 +416,24 @@
                             </svg>
                             Export Excel
                         </button>
+                        <button class="export-btn" onclick="printSection('eventAttendanceHistoryTable','Event Attendance History')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                         <input type="text" id="datePicker" class="hidden-date-picker">
                     </div>
             
                     <div class="filters-row">
                         <select class="filter-select" id="eventHistoryYearFilter">
-                            <option value="">Year Level All</option>
-                            <!-- Populated dynamically from year_level table -->
+                            <option value="">All Year Levels</option>
+                        </select>
+                        <select class="filter-select" id="eventHistoryProgramFilter">
+                            <option value="">All Programs</option>
+                        </select>
+                        <select class="filter-select" id="eventHistoryStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="TIME IN">TIME IN</option>
+                            <option value="TIME OUT">TIME OUT</option>
+                        </select>
+                        <select class="filter-select" id="eventHistoryNameFilter">
+                            <option value="">All Events</option>
                         </select>
                     </div>
                 </div>
@@ -470,16 +534,176 @@
                             <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••">
                         </div>
         
-                        <button class="update-password-btn" onclick="updatePassword()">Update Password</button>
+                        <button class="update-password-btn" onclick="updatePassword()">
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;flex-shrink:0;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                            Update Password
+                        </button>
                     </div>
                 </div>
         
-                <button class="logout-btn" onclick="logout()">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-                    </svg>
-                    Log Out
-                </button>
+                <!-- Appearance -->
+                <div class="password-section">
+                    <h2 class="section-title">Appearance</h2>
+                    <div class="info-card" style="display:flex;flex-direction:column;gap:20px;">
+
+                        <!-- Dark / Light mode -->
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Mode</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <button class="theme-mode-btn" id="modeLight" onclick="setThemeMode('light')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+                                    <span style="font-size:0.8rem;font-weight:700;">Light</span>
+                                </button>
+                                <button class="theme-mode-btn" id="modeDark" onclick="setThemeMode('dark')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+                                    <span style="font-size:0.8rem;font-weight:700;">Dark</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Font family -->
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Font</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <button onclick="setThemeFont('system')"  class="font-btn" data-font="system"  style="font-family:system-ui;">System Default</button>
+                                <button onclick="setThemeFont('inter')"   class="font-btn" data-font="inter"   style="font-family:'Inter',sans-serif;">Inter</button>
+                                <button onclick="setThemeFont('poppins')" class="font-btn" data-font="poppins" style="font-family:'Poppins',sans-serif;">Poppins</button>
+                                <button onclick="setThemeFont('roboto')"  class="font-btn" data-font="roboto"  style="font-family:'Roboto',sans-serif;">Roboto</button>
+                                <button onclick="setThemeFont('mono')"    class="font-btn" data-font="mono"    style="font-family:'JetBrains Mono',monospace;">Monospace</button>
+                            </div>
+                        </div>
+
+                        <!-- Font size -->
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Text Size</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                                <button onclick="setThemeSize('small')"  class="size-btn" data-size="small"  style="font-size:0.78rem;">Small</button>
+                                <button onclick="setThemeSize('medium')" class="size-btn" data-size="medium" style="font-size:0.88rem;">Medium</button>
+                                <button onclick="setThemeSize('large')"  class="size-btn" data-size="large"  style="font-size:1rem;">Large</button>
+                            </div>
+                        </div>
+
+                        <button onclick="resetTheme()" style="width:100%;padding:10px;background:var(--surface-alt);border:1.5px solid var(--surface-border);border-radius:10px;color:var(--text-secondary);font-size:0.82rem;font-weight:700;cursor:pointer;">↺ Reset to Defaults</button>
+                    </div>
+                </div>
+
+                <!-- System Overview -->
+                <div class="password-section">
+                    <h2 class="section-title">System Overview</h2>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div style="background:#eef6f4; border-radius:12px; padding:14px 16px;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#3d6b6b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Admins</div>
+                            <div id="settingsStatAdmins" style="font-size:1.6rem; font-weight:800; color:#1a4545;">—</div>
+                        </div>
+                        <div style="background:#e8f5e9; border-radius:12px; padding:14px 16px;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#2e7d32; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Teachers</div>
+                            <div id="settingsStatTeachers" style="font-size:1.6rem; font-weight:800; color:#1b5e20;">—</div>
+                        </div>
+                        <div style="background:#fff3e0; border-radius:12px; padding:14px 16px;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#e65100; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Guards</div>
+                            <div id="settingsStatGuards" style="font-size:1.6rem; font-weight:800; color:#bf360c;">—</div>
+                        </div>
+                        <div style="background:#e3f2fd; border-radius:12px; padding:14px 16px;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#1565c0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Students</div>
+                            <div id="settingsStatStudents" style="font-size:1.6rem; font-weight:800; color:#0d47a1;">—</div>
+                        </div>
+                    </div>
+                    <button onclick="loadSettingsStats()" style="width:100%; margin-top:10px; padding:10px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; color:#3d6b6b; font-size:0.82rem; font-weight:700; cursor:pointer;">↻ Refresh Stats</button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="password-section">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button class="quick-action-btn" onclick="navigateTo('activityLogs')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">View Activity Logs</div>
+                                <div class="quick-action-sub">See all actions performed across the system</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="navigateTo('loginLogs')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7H13V9H11zM11 11H13V17H11zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">View Login Logs</div>
+                                <div class="quick-action-sub">Monitor who logged in and when</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="navigateTo('academicSetup')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">Academic Setup</div>
+                                <div class="quick-action-sub">Manage programs and year levels</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="navigateTo('classManagement')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 14H8v-2h8v2zm0-4H8v-2h8v2zm0-4H8V6h8v2z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">Class Management</div>
+                                <div class="quick-action-sub">View and manage teacher class settings</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="password-section">
+                    <h2 class="section-title">System Information</h2>
+                    <div class="info-card">
+                        <div class="info-row">
+                            <span class="info-label">System</span>
+                            <span class="info-value">PanPacific University</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">App</span>
+                            <span class="info-value">Barcode Attendance System</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Role</span>
+                            <span class="info-value" style="color:#880e4f;font-weight:700;">SUPER ADMIN</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Session</span>
+                            <span class="info-value" id="settingsSessionStart">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="password-section">
+                    <h2 class="section-title" style="color:#c0392b;">Danger Zone</h2>
+                    <div style="border:1.5px solid #f5c6cb; border-radius:12px; padding:16px; background:#fff9f9;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #f5c6cb;">
+                            <div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#c0392b;">Maintenance Mode</div>
+                                <div style="font-size:0.75rem;color:#888;margin-top:2px;">Blocks all user activity system-wide. Super admin access is unaffected.</div>
+                            </div>
+                            <button id="maintenanceToggleBtn" onclick="toggleMaintenanceMode()" style="padding:8px 20px;border:none;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;">
+                                Loading...
+                            </button>
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                            <div>
+                                <div style="font-size:0.88rem;font-weight:700;color:#c0392b;">Log Out</div>
+                                <div style="font-size:0.75rem;color:#888;margin-top:2px;">End your current session and return to login</div>
+                            </div>
+                            <button onclick="logout()" style="padding:8px 16px;background:#c0392b;border:none;border-radius:8px;color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>        
         </section>
 
@@ -499,7 +723,7 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="navigateTo('registration')">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('student');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -524,7 +748,7 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="register()">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('teacher');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -549,7 +773,7 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="register()">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('guard');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -619,151 +843,236 @@
 
         <!--Registration-->
         <section class="sections" id="registration">
-            <div class="registration-container-holder">
-                <div class="registration-container">            
-                    <div class="role-selector">
-                        <label class="role-label">Select Role:</label>
-                        <div class="role-tabs">
-                            <button class="role-tab active" onclick="switchRole('guard')">Guard</button>
-                            <button class="role-tab" onclick="switchRole('teacher')">Teacher</button>
-                            <button class="role-tab" onclick="switchRole('student')">Student</button>
+            <div style="padding:20px; max-width:560px; margin:0 auto;">
+
+                <!-- Role picker cards -->
+                <p style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.6px; margin:0 0 10px;">Select Account Type</p>
+                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:24px;">
+                    <button class="reg-role-card active" id="roleCard-guard" onclick="switchRole('guard')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                        <span>Guard</span>
+                    </button>
+                    <button class="reg-role-card" id="roleCard-teacher" onclick="switchRole('teacher')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+                        <span>Teacher</span>
+                    </button>
+                    <button class="reg-role-card" id="roleCard-student" onclick="switchRole('student')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                        <span>Student</span>
+                    </button>
+                    <button class="reg-role-card" id="roleCard-admin" onclick="switchRole('admin')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        <span>Admin</span>
+                    </button>
+                </div>
+
+                <!-- Guard Registration Form -->
+                <form class="form-section active reg-form-card" id="guardForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#e0f2f1;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#3d6b6b;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                        </div>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Guard</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new guard account</div>
                         </div>
                     </div>
-            
-                    <!-- Guard Registration Form -->
-                    <form class="form-section active" id="guardForm">
-                        <div class="form-group">
-                            <label class="form-label">Full Name <span class="required">*</span></label>
-                            <input type="text" class="form-input" id="guard_fullname" required>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <input type="text" class="form-input" id="guard_fullname" placeholder="Full Name" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" class="form-input" id="guard_email" placeholder="Email Address" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <select class="form-input" id="guard_location" required>
+                            <option value="">Select Location Assigned</option>
+                            <option value="Main Gate">Main Gate</option>
+                            <option value="Building A">Building A</option>
+                            <option value="Building B">Building B</option>
+                            <option value="Parking Area">Parking Area</option>
+                        </select>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" class="form-input" id="guard_password" placeholder="Password" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" class="form-input" id="guard_confirm_password" placeholder="Confirm Password" required>
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register Guard
+                    </button>
+                </form>
+
+                <!-- Teacher Registration Form -->
+                <form class="form-section reg-form-card" id="teacherForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#e8f5e9;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#2e7d32;"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" class="form-input" id="guard_email" required>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Teacher</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new teacher account</div>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Password <span class="required">*</span></label>
-                            <input type="password" class="form-input" id="guard_password" required>
+                    </div>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <input type="text" id="teacher_fullname" name="fullName" class="form-input" placeholder="Full Name" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" id="teacher_email" name="email" class="form-input" placeholder="Email Address" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                        <select class="form-input" id="teacher_department" name="department" required>
+                            <option value="">Select Department</option>
+                        </select>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#2e7d32,#43a047);">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register Teacher
+                    </button>
+                </form>
+
+                <!-- Student Registration Form -->
+                <form class="form-section reg-form-card" id="studentForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#e3f2fd;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#1565c0;"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Confirm password <span class="required">*</span></label>
-                            <input type="password" class="form-input" id="guard_confirm_password" required>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Student</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new student account</div>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Location Assigned <span class="required">*</span></label>
-                            <select class="form-select" id="guard_location" required>
-                                <option value="">Select Location</option>
-                                <option value="Main Gate">Main Gate</option>
-                                <option value="Building A">Building A</option>
-                                <option value="Building B">Building B</option>
-                                <option value="Parking Area">Parking Area</option>
-                            </select>
-                        </div>
-                    
-                        <button type="submit" class="register-btn">Register</button>
-                    </form>
-                    
-            
-                    <!-- Teacher Registration Form -->
-                    <form class="form-section" id="teacherForm">
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_fullname">Full Name <span class="required">*</span></label>
-                            <input type="text" id="teacher_fullname" name="fullName" class="form-input" placeholder="Full Name" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_email">Email <span class="required">*</span></label>
-                            <input type="email" id="teacher_email" name="email" class="form-input" placeholder="Email" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_password">Password <span class="required">*</span></label>
-                            <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="confirm_password">Confirm Password <span class="required">*</span></label>
-                            <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_department">Department <span class="required">*</span></label>
-                            <select class="form-select" id="teacher_department" name="department" required>
-                                <option value="">Select Department</option>
-                                <!-- Populated dynamically from program table -->
-                            </select>
-                        </div>
-                    
-                        <button type="submit" class="register-btn">Register</button>
-                    </form>
-            
-                    <!-- Student Registration Form -->
-                    <form class="form-section" id="studentForm">
-                        <div class="form-group">
-                            <label class="form-label">First Name <span class="required">*</span></label>
+                    </div>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <div class="reg-field" style="grid-column:1/3;">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                             <input type="text" id="std_firstname" class="form-input" placeholder="First Name" required>
                         </div>
-                    
-                        <div class="name-row">
-                            <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" id="std_middlename" class="form-input" placeholder="Middle Name">
-                            </div>
-                    
-                            <div class="form-group">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" id="std_lastname" class="form-input" placeholder="Last Name" required>
-                            </div>
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <input type="text" id="std_middlename" class="form-input" placeholder="M.I.">
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" id="std_email" class="form-input" placeholder="Email" required>
+                        <div class="reg-field" style="grid-column:1/-1;">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <input type="text" id="std_lastname" class="form-input" placeholder="Last Name" required>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">ID Number <span class="required">*</span></label>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" id="std_email" class="form-input" placeholder="Email Address" required>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M17.41 11.58l-5-5c-.39-.39-1.02-.39-1.41 0l-5 5c-.39.39-.39 1.02 0 1.41l5 5c.39.39 1.02.39 1.41 0l5-5c.39-.38.39-1.01 0-1.41zM12 15L9 12l3-3 3 3-3 3z"/></svg>
                             <input type="text" id="std_id_number" class="form-input" placeholder="ID Number" required>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Program <span class="required">*</span></label>
-                            <select id="std_program" class="form-select" required>
-                                <option value="">Select Program</option>
-                                <!-- Populated dynamically from program table -->
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                            <input type="tel" id="std_contact" class="form-input" placeholder="Guardian Contact" required>
+                        </div>
+                    </div>
+
+                    <div class="reg-section-label">Academic</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                            <select id="std_program" class="form-input" required>
+                                <option value="">Program</option>
                             </select>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Year Level <span class="required">*</span></label>
-                            <select id="std_year_level" class="form-select" required>
-                                <option value="">Select Year</option>
-                                <!-- Populated dynamically from year_level table -->
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+                            <select id="std_year_level" class="form-input" required>
+                                <option value="">Year Level</option>
                             </select>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Parent/Guardian Contact Number <span class="required">*</span></label>
-                            <input type="tel" id="std_contact" class="form-input" placeholder="Contact Number" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Password <span class="required">*</span></label>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                             <input type="password" id="std_password" class="form-input" placeholder="Password" required>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Confirm Password <span class="required">*</span></label>
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                             <input type="password" id="std_confirm_password" class="form-input" placeholder="Confirm Password" required>
                         </div>
-                    
-                        <button type="submit" class="register-btn">Register</button>
-                    </form>
-                </div>
-            </div>  
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#1565c0,#1976d2);">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register Student
+                    </button>
+                </form>
+
+                <!-- Admin Registration Form -->
+                <form class="form-section reg-form-card" id="adminForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#fce4ec;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#880e4f;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        </div>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Admin</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new admin account</div>
+                        </div>
+                    </div>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <input type="text" id="reg_admin_name" class="form-input" placeholder="Full Name" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" id="reg_admin_email" class="form-input" placeholder="Email Address" required>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="reg_admin_password" class="form-input" placeholder="Password (min 6 characters)" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="reg_admin_confirm_password" class="form-input" placeholder="Confirm Password" required>
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#880e4f,#ad1457);">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Create Admin Account
+                    </button>
+                </form>
+
+            </div>
         </section>
 
         <!--Student Account Management Modal -->
@@ -786,6 +1095,11 @@
                         <div class="form-group">
                             <label>ID Number</label>
                             <input type="text" id="studentIdNumber" name="id_number" placeholder="e.g. 1231377">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="studentEmail" name="email" placeholder="student@email.com">
                         </div>
         
                         <div class="form-row">
@@ -943,11 +1257,11 @@
             </div>
 
             <div class="register-btn-container">
-                <button class="register-btn" onclick="openCreateAdminModal()">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('admin');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
-                    Create Admin Account
+                    Register Person
                 </button>
             </div>
         </section>
@@ -1025,6 +1339,7 @@
                         <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
                         Export Excel
                     </button>
+                    <button class="export-btn" onclick="printSection('loginLogsTable','Login Logs')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                     <button class="export-btn" onclick="refreshLoginLogs()" style="background:#2d5282">
                         <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                         Refresh
@@ -1033,7 +1348,7 @@
             </div>
             <div class="table-container">
                 <table class="attendance-table" id="loginLogsTable">
-                    <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Login At</th></tr></thead>
+                    <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>IP Address</th><th>Device / Browser</th><th>Login At</th></tr></thead>
                     <tbody id="loginLogsBody"></tbody>
                 </table>
             </div>
@@ -1051,6 +1366,7 @@
                         <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
                         Export Excel
                     </button>
+                    <button class="export-btn" onclick="printSection('activityLogsTable','Activity Logs')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                     <button class="export-btn" onclick="refreshActivityLogs()" style="background:#2d5282">
                         <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                         Refresh
@@ -1059,19 +1375,277 @@
             </div>
             <div class="table-container">
                 <table class="attendance-table" id="activityLogsTable">
-                    <thead><tr><th>#</th><th>Name</th><th>Role</th><th>Action</th><th>Target Type</th><th>Target</th><th>Details</th><th>Performed At</th></tr></thead>
+                    <thead><tr><th>#</th><th>Name</th><th>Role</th><th>Action</th><th>Target Type</th><th>Target</th><th>Details</th><th>IP Address</th><th>Device</th><th>Performed At</th></tr></thead>
                     <tbody id="activityLogsBody"></tbody>
                 </table>
             </div>
         </section>
 
+        <!-- Class Management -->
+        <section class="sections" id="classManagement">
+            <div class="content">
+
+                <!-- Teacher Picker -->
+                <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; margin-bottom:16px; flex-wrap:wrap;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#3d6b6b" style="flex-shrink:0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span style="font-size:0.82rem; font-weight:700; color:#3d6b6b; white-space:nowrap;">Select Teacher</span>
+                    <select id="classTeacherPicker" class="filter-select" style="border-color:#3d6b6b; min-width:220px;" onchange="onClassTeacherChange()">
+                        <option value="">— Pick a teacher —</option>
+                    </select>
+                    <span id="classTeacherBadge" style="font-size:0.82rem; font-weight:700; color:#1a5c4f; background:#c8ece5; padding:4px 10px; border-radius:20px; display:none;"></span>
+                </div>
+
+                <!-- Tabs -->
+                <div id="classManagementTabs" style="display:none;">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+                        <button class="class-tab active" onclick="switchClassTab('attendanceNow')">Attendance Now</button>
+                        <button class="class-tab" onclick="switchClassTab('attendanceHistory')">History</button>
+                        <button class="class-tab" onclick="switchClassTab('classRoster')">Class Roster</button>
+                        <button class="class-tab" onclick="switchClassTab('manualEntry')">Manual Entry</button>
+                        <button class="class-tab" onclick="switchClassTab('subjectSetup')">Subject Setup</button>
+                        <button class="class-tab" onclick="switchClassTab('locationSetup')">Location</button>
+                    </div>
+
+                    <!-- Attendance Now -->
+                    <div class="class-tab-panel active" id="tab-attendanceNow">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:0.85rem; color:var(--color-text-secondary);">Real-time attendance for selected teacher's class</span>
+                            <div style="display:flex;gap:6px;">
+                                <button class="export-btn" onclick="exportTableToExcel('classAttendanceNowTable','Class Attendance')">Export</button>
+                                <button class="export-btn" onclick="printSection('classAttendanceNowTable','Class Attendance Now')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
+                                <button class="export-btn" onclick="loadClassAttendanceNow()">↻ Refresh</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="attendance-table" id="classAttendanceNowTable">
+                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Subject</th><th>Year Level</th><th>Program</th><th>Time</th></tr></thead>
+                                <tbody id="classAttendanceNowBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Attendance History -->
+                    <div class="class-tab-panel" id="tab-attendanceHistory">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:0.85rem; color:var(--color-text-secondary);">Full attendance history for selected teacher's class</span>
+                            <div style="display:flex;gap:6px;">
+                                <button class="export-btn" onclick="exportTableToExcel('classAttendanceHistoryTable','Class Attendance History')">Export</button>
+                                <button class="export-btn" onclick="printSection('classAttendanceHistoryTable','Class Attendance History')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
+                                <button class="export-btn" onclick="loadClassAttendanceHistory()">↻ Refresh</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="attendance-table" id="classAttendanceHistoryTable">
+                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Subject</th><th>Year Level</th><th>Program</th><th>Time</th><th>Date</th></tr></thead>
+                                <tbody id="classAttendanceHistoryBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Class Roster -->
+                    <div class="class-tab-panel" id="tab-classRoster">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                            <span style="font-size:0.85rem; color:var(--color-text-secondary);">Students enrolled in selected teacher's class</span>
+                            <div style="display:flex; gap:6px;">
+                                <button class="set-btn" onclick="openClassAddStudentModal()">+ Add Student</button>
+                                <button class="export-btn" onclick="exportTableToExcel('classRosterTable','Class Roster')">Export</button>
+                                <button class="export-btn" onclick="printSection('classRosterTable','Class Roster')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
+                                <button class="export-btn" onclick="loadClassRoster()">↻ Refresh</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="attendance-table" id="classRosterTable">
+                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Year Level</th><th>Program</th><th>Actions</th></tr></thead>
+                                <tbody id="classRosterBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Add Student to Roster Modal -->
+                    <div id="classAddStudentModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+                        <div style="background:#fff; border-radius:14px; padding:24px; width:90%; max-width:480px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                <h3 style="font-size:1rem; font-weight:700; color:#1a4545; margin:0;">Add Student to Class</h3>
+                                <span onclick="closeClassAddStudentModal()" style="cursor:pointer; font-size:1.4rem; color:#999; line-height:1;">×</span>
+                            </div>
+                            <div style="position:relative; margin-bottom:12px;">
+                                <input type="text" id="classRosterSearchInput" class="search-input" placeholder="Search student by name or ID..." oninput="searchClassRosterStudents()" autocomplete="off" style="width:100%; box-sizing:border-box;">
+                                <div id="classRosterSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ddd; border-radius:8px; z-index:10000; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1); margin-top:4px;"></div>
+                            </div>
+                            <div id="classRosterSelectedPreview" style="display:none; padding:12px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; margin-bottom:12px;">
+                                <div id="classRosterSelectedName" style="font-weight:700; color:#1a5c4f;"></div>
+                                <div id="classRosterSelectedInfo" style="font-size:0.8rem; color:#666; margin-top:2px;"></div>
+                            </div>
+                            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                                <button class="btn btn-secondary" onclick="closeClassAddStudentModal()">Cancel</button>
+                                <button class="btn btn-primary" id="classRosterConfirmBtn" onclick="confirmAddStudentToRoster()" disabled style="opacity:0.5; cursor:not-allowed;">Add to Class</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Student in Roster Modal -->
+                    <div id="classEditStudentModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+                        <div style="background:#fff; border-radius:14px; padding:24px; width:90%; max-width:480px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div style="width:32px; height:32px; background:#eef6f4; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#3d6b6b"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </div>
+                                    <h3 style="font-size:1rem; font-weight:700; color:#1a4545; margin:0;">Edit Student Record</h3>
+                                </div>
+                                <span onclick="closeClassEditStudentModal()" style="cursor:pointer; font-size:1.4rem; color:#999; line-height:1;">×</span>
+                            </div>
+                            <input type="hidden" id="classEditStudentId">
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <div style="position:relative;">
+                                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M17.41 11.58l-5-5c-.39-.39-1.02-.39-1.41 0l-5 5c-.39.39-.39 1.02 0 1.41l5 5c.39.39 1.02.39 1.41 0l5-5c.39-.38.39-1.01 0-1.41zM12 15L9 12l3-3 3 3-3 3z"/></svg>
+                                    <input type="text" id="classEditIdNumber" class="search-input" placeholder="ID Number" style="padding-left:32px; width:100%; box-sizing:border-box;">
+                                </div>
+                                <div style="position:relative;">
+                                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                    <input type="text" id="classEditFirstname" class="search-input" placeholder="Firstname" style="padding-left:32px; width:100%; box-sizing:border-box;">
+                                </div>
+                                <div style="position:relative;">
+                                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                    <input type="text" id="classEditMiddlename" class="search-input" placeholder="Middle Name" style="padding-left:32px; width:100%; box-sizing:border-box;">
+                                </div>
+                                <div style="position:relative;">
+                                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                    <input type="text" id="classEditLastname" class="search-input" placeholder="Lastname" style="padding-left:32px; width:100%; box-sizing:border-box;">
+                                </div>
+                                <div style="position:relative;">
+                                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                                    <select id="classEditProgram" class="filter-select" style="width:100%; padding-left:32px;"></select>
+                                </div>
+                                <div style="position:relative;">
+                                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+                                    <select id="classEditYearLevel" class="filter-select" style="width:100%; padding-left:32px;"></select>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+                                <button class="btn btn-secondary" onclick="closeClassEditStudentModal()">Cancel</button>
+                                <button class="btn btn-primary" onclick="saveClassEditStudent()">Save</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Entry -->
+                    <div class="class-tab-panel" id="tab-manualEntry">
+                        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+                            <input type="text" id="classManualSearch" class="search-input" placeholder="Filter by name or ID..." oninput="filterClassManualList()" style="flex:1; min-width:180px;">
+                            <select id="classManualYearFilter" class="filter-select" onchange="filterClassManualList()">
+                                <option value="">All Year Levels</option>
+                            </select>
+                            <button class="export-btn" onclick="loadClassManualEntryList()">↻ Refresh</button>
+                        </div>
+                        <div id="classManualStudentList" style="display:flex; flex-direction:column; gap:6px; max-height:460px; overflow-y:auto;"></div>
+                    </div>
+
+                    <!-- Subject Setup -->
+                    <div class="class-tab-panel" id="tab-subjectSetup">
+                        <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; margin-bottom:12px; flex-wrap:wrap;">
+                            <span style="font-size:0.82rem; font-weight:700; color:#3d6b6b;">Active Class Setup</span>
+                            <select id="classSubjectFilter" class="filter-select" style="border-color:#3d6b6b;"><option value="">Select Subject</option></select>
+                            <select id="classYearFilter" class="filter-select" style="border-color:#3d6b6b;"><option value="">Select Year Level</option></select>
+                            <button class="set-btn" onclick="setClassSubject()">Set</button>
+                            <span id="classActiveSubjectDisplay" style="font-size:0.82rem; font-weight:700; background:#c8ece5; color:#1a5c4f; padding:4px 10px; border-radius:20px;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Location Setup -->
+                    <div class="class-tab-panel" id="tab-locationSetup">
+                        <div class="map-container" style="position:relative;">
+                            <div style="position:relative; margin-bottom:8px;">
+                                <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                <input type="text" id="classLocationSearchInput" class="search-input" placeholder="Search for a place..." autocomplete="off" style="padding-left:36px; width:100%; box-sizing:border-box;">
+                                <ul id="classLocationSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ddd; border-radius:8px; list-style:none; margin:4px 0 0; padding:0; z-index:9999; max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></ul>
+                            </div>
+                            <div id="classMap" style="width:100%; height:380px; border-radius:10px; border:1px solid #ddd;"></div>
+                            <div style="margin-top:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-size:0.85rem; color:var(--color-text-secondary);">Allowed Radius:</span>
+                                    <span style="font-weight:700; color:#3d6b6b;"><span id="classRadiusValue">50</span> meters</span>
+                                </div>
+                                <input type="range" id="classRadiusSlider" min="10" max="500" value="50" step="5" style="width:100%; accent-color:#3d6b6b;">
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:12px;">
+                            <button class="btn btn-secondary" onclick="loadClassCurrentLocation()" style="flex:1;">📍 Use My Location</button>
+                            <button class="btn btn-primary" onclick="setClassLocation()" style="flex:1;">Set Location</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
     </main>
+
+    <style>
+    .class-tab { padding:6px 14px; border:1.5px solid #b2d8d0; border-radius:20px; background:#fff; color:#3d6b6b; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all .2s; }
+    .class-tab.active { background:#3d6b6b; color:#fff !important; border-color:#3d6b6b; }
+    .class-tab-panel { display:none; }
+    .class-tab-panel.active { display:block; }
+
+    /* Registration */
+    .reg-role-card { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 8px; border:2px solid #dde8e6; border-radius:12px; background:#fff; color:#666; font-size:0.8rem; font-weight:700; cursor:pointer; transition:all .2s; gap:2px; }
+    .reg-role-card:hover { border-color:#3d6b6b; color:#3d6b6b; background:#f0f7f5; }
+    .reg-role-card.active { border-color:#3d6b6b; background:#3d6b6b; color:#fff; box-shadow:0 4px 12px rgba(61,107,107,.3); }
+    .reg-form-card { background:#fff; border-radius:16px; padding:24px; box-shadow:0 2px 16px rgba(0,0,0,.08); border:1px solid #e8f0ee; margin-bottom:8px; }
+    .reg-form-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #f0f0f0; }
+    .reg-form-header-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .reg-section-label { font-size:0.7rem; font-weight:800; color:#3d6b6b; text-transform:uppercase; letter-spacing:0.8px; margin:16px 0 8px; }
+    .reg-field { display:flex; align-items:center; gap:10px; background:#f8faf9; border:1.5px solid #e0ebe8; border-radius:10px; padding:0 12px; margin-bottom:8px; transition:border-color .2s; }
+    .reg-field:focus-within { border-color:#3d6b6b; background:#f0f7f5; }
+    .reg-field svg { width:16px; height:16px; fill:#3d6b6b; flex-shrink:0; opacity:0.7; }
+    .reg-field .form-input { border:none !important; background:transparent !important; padding:12px 0 !important; font-size:0.88rem; outline:none; width:100%; box-shadow:none !important; }
+    .reg-field select.form-input { cursor:pointer; }
+    .reg-submit-btn { width:100%; margin-top:20px; padding:14px; background:linear-gradient(135deg,#3d6b6b,#2c5a5a); color:#fff; border:none; border-radius:12px; font-size:0.92rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s; box-shadow:0 4px 14px rgba(61,107,107,.35); }
+    .reg-submit-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(61,107,107,.45); }
+
+    .set-btn { padding:10px 24px; background:#3d6b6b; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:background .2s; }
+    .set-btn:hover { background:#2c5a5a; }
+
+    .btn { padding:10px 20px; border:none; border-radius:10px; font-size:0.88rem; font-weight:700; cursor:pointer; transition:all .2s; }
+    .btn-primary { background:#3d6b6b; color:#fff; box-shadow:0 4px 12px rgba(61,107,107,.3); }
+    .btn-primary:hover:not(:disabled) { background:#2c5a5a; transform:translateY(-2px); }
+    .btn-secondary { background:#f0f7f5; color:#3d6b6b; border:1.5px solid #b2d8d0; }
+    .btn-secondary:hover { background:#c8ece5; }
+
+    #classMap { width:100%; height:380px; border-radius:10px; border:1px solid #ddd; background:#e8e8e8; }
+
+    #classRadiusSlider { width:100%; height:6px; border-radius:3px; outline:none; -webkit-appearance:none; appearance:none; cursor:pointer; accent-color:#3d6b6b; }
+    #classRadiusSlider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:20px; height:20px; border-radius:50%; background:#3d6b6b; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,.2); }
+    #classRadiusSlider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#3d6b6b; cursor:pointer; border:none; box-shadow:0 2px 4px rgba(0,0,0,.2); }
+
+    #tab-locationSetup .btn { flex:1; }
+    #classLocationSearchResults li:hover { background:#f0f7f5; }
+
+    /* Appearance controls */
+    .color-swatch { width:32px;height:32px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:all .2s;flex-shrink:0; }
+    .color-swatch.active, .color-swatch:hover { border-color:#fff;box-shadow:0 0 0 3px var(--accent); transform:scale(1.15); }
+    .font-btn, .size-btn { padding:10px 8px;border:2px solid var(--surface-border);border-radius:10px;background:var(--surface);color:var(--text-secondary);font-weight:700;cursor:pointer;transition:all .2s;font-size:0.82rem; }
+    .font-btn.active, .size-btn.active, .font-btn:hover, .size-btn:hover { border-color:var(--accent);color:var(--accent);background:var(--accent-light); }
+    .theme-mode-btn { color:var(--text-secondary); }
+    .theme-mode-btn.active { border-color:var(--accent) !important;color:var(--accent);background:var(--accent-light) !important; }
+
+    /* Quick action buttons */
+    .quick-action-btn { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--surface-alt); border:1.5px solid var(--surface-border); border-radius:10px; cursor:pointer; text-align:left; width:100%; transition:background .2s, border-color .2s; }
+    .quick-action-btn:hover { background:var(--accent-light); border-color:var(--accent-border); }
+    .quick-action-icon { width:36px; height:36px; background:var(--accent-light); border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--accent); }
+    .quick-action-icon svg { fill:var(--accent); }
+    .quick-action-text { flex:1; }
+    .quick-action-title { font-size:0.88rem; font-weight:700; color:var(--text-primary); }
+    .quick-action-sub { font-size:0.75rem; color:var(--text-secondary); margin-top:2px; }
+    .quick-action-arrow { margin-left:auto; color:var(--text-muted); font-size:1.1rem; }
+    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="super_admin_app.js"></script>
 </body>
 </html>

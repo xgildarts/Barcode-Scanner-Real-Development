@@ -1,4 +1,3 @@
-
 body {
     min-height: 100vh;
     padding-bottom: 100px;
@@ -251,4 +250,98 @@ body {
     .program-name {
         font-size: 14px;
     }
+}
+/* ============================================================
+   DARK MODE — Academic setup
+   ============================================================ */
+
+/* Add Subject button */
+[data-theme="dark"] .add-program-btn {
+    background: linear-gradient(135deg, #1e4a3a 0%, #2a5a4a 100%) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .add-program-btn:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Subject cards */
+[data-theme="dark"] .program-card {
+    background: #1a2535 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .program-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .program-name {
+    color: #c0d0d8 !important;
+}
+
+/* Delete icon — neutral state */
+[data-theme="dark"] .delete-btn svg {
+    fill: #4a6a7a !important;
+}
+
+/* Delete icon — hover goes red as expected */
+[data-theme="dark"] .delete-btn:hover svg {
+    fill: #e57373 !important;
+}
+
+/* Done button */
+[data-theme="dark"] .done-btn {
+    background: linear-gradient(135deg, #1e3a3a 0%, #2a4a4a 100%) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .done-btn:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Add Subject modal */
+[data-theme="dark"] .modal-content {
+    background: #1a2535 !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .modal-header {
+    color: #e0eaf0 !important;
+}
+
+[data-theme="dark"] .form-label {
+    color: #8aaabb !important;
+}
+
+[data-theme="dark"] .form-input {
+    background: #1e2f3f !important;
+    border-color: #2a3a4a !important;
+    color: #e0eaf0 !important;
+}
+
+[data-theme="dark"] .form-input:focus {
+    border-color: #5a9e9e !important;
+}
+
+[data-theme="dark"] .form-input::placeholder {
+    color: #5a7a8a !important;
+}
+
+/* Modal action buttons */
+[data-theme="dark"] .modal-btn.cancel-btn {
+    background: #1e2f3f !important;
+    color: #8aaabb !important;
+}
+
+[data-theme="dark"] .modal-btn.cancel-btn:hover {
+    background: #2a3a4a !important;
+}
+
+[data-theme="dark"] .modal-btn.confirm-btn {
+    background: #2a5a4a !important;
+    color: #7ecece !important;
+}
+
+[data-theme="dark"] .modal-btn.confirm-btn:hover {
+    background: #1e4a3a !important;
 }

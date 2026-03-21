@@ -197,3 +197,106 @@
         width: 100%;
     }
 }
+/* ============================================================
+   DARK MODE — Manual entry
+   ============================================================ */
+
+/* Search bar */
+[data-theme="dark"] .search-input {
+    background: #1e2f3f !important;
+    color: #e0eaf0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: #5a7a8a !important;
+}
+
+[data-theme="dark"] .search-input:focus {
+    outline-color: #5a9e9e !important;
+}
+
+[data-theme="dark"] .search-icon {
+    color: #8aaabb !important;
+}
+
+/* Year level filter */
+[data-theme="dark"] .filter-select {
+    background: #1e2f3f !important;
+    color: #e0eaf0 !important;
+    border-color: #2a3a4a !important;
+}
+
+[data-theme="dark"] .filter-select:focus {
+    outline-color: #5a9e9e !important;
+}
+
+/* Content card */
+[data-theme="dark"] .content-card {
+    background: #1a2535 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Table header bar */
+[data-theme="dark"] .table-header {
+    background: #1e3a3a !important;
+}
+
+/* Student rows */
+[data-theme="dark"] .student-row {
+    border-bottom-color: #2a3a4a !important;
+}
+
+[data-theme="dark"] .student-row:nth-child(even) {
+    background: #14202e !important;
+}
+
+[data-theme="dark"] .student-row:hover {
+    background: #1e2f3f !important;
+}
+
+/* Student name & year level text */
+[data-theme="dark"] .student-name {
+    color: #c0d0d8 !important;
+}
+
+[data-theme="dark"] .year-level {
+    color: #8aaabb !important;
+}
+
+/* "Add to attendance" button — default (not yet added) */
+[data-theme="dark"] .present-btn {
+    background: #2a5a4a !important;
+    color: #7ecece !important;
+}
+
+[data-theme="dark"] .present-btn:hover:not(.active) {
+    background: #1e4a3a !important;
+}
+
+/* Already-added state */
+[data-theme="dark"] .present-btn.active {
+    background: #1a3a2a !important;
+    color: #4a8a7a !important;
+    opacity: 0.7 !important;
+}
+
+/* Absent button (if used) */
+[data-theme="dark"] .absent-btn {
+    background: #5a2a2a !important;
+    color: #e09090 !important;
+}
+
+[data-theme="dark"] .absent-btn:hover:not(.active) {
+    background: #4a2020 !important;
+}
+
+/* Scrollbar inside student list */
+[data-theme="dark"] .student-list::-webkit-scrollbar-track {
+    background: #1a2535;
+}
+
+[data-theme="dark"] .student-list::-webkit-scrollbar-thumb {
+    background: #2a3a4a;
+    border-radius: 4px;
+}

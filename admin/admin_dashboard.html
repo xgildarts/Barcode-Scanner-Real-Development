@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="/css/admin-css/admin_event_attendance_history.css">
     <link rel="stylesheet" href="/css/admin-css/admin_student_accounts.css">
     <link rel="stylesheet" href="/css/admin-css/admin_manage_registration.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Roboto:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
     <link rel="stylesheet" href="/css/admin-css/admin_global.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_green.css">
@@ -264,11 +267,32 @@
                             </svg>
                             Export Excel
                         </button>
+                        <button class="export-btn" onclick="printSection('eventAttendanceTable','Event Attendance')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                     </div>
             
-                    <div class="filters-row">
+                    <div class="active-event-bar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="active-event-bar__icon"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                        <span class="active-event-bar__label">Active Event Setup</span>
                         <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name">
                         <button onclick="handleSetEvent()" class="set-event-button">Set Event</button>
+                        <span id="activeEventDisplay" class="active-event-bar__badge"></span>
+                    </div>
+
+                    <div class="filters-row" style="margin-bottom:10px;">
+                        <select class="filter-select" id="eventStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="TIME IN">TIME IN</option>
+                            <option value="TIME OUT">TIME OUT</option>
+                        </select>
+                        <select class="filter-select" id="eventNameFilter">
+                            <option value="">All Events</option>
+                        </select>
+                        <select class="filter-select" id="eventYearFilter">
+                            <option value="">All Year Levels</option>
+                        </select>
+                        <select class="filter-select" id="eventProgramFilter">
+                            <option value="">All Programs</option>
+                        </select>
                     </div>
                 </div>
             
@@ -327,13 +351,25 @@
                             </svg>
                             Export Excel
                         </button>
+                        <button class="export-btn" onclick="printSection('eventAttendanceHistoryTable','Event Attendance History')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                         <input type="text" id="datePicker" class="hidden-date-picker">
                     </div>
             
                     <div class="filters-row">
                         <select class="filter-select" id="eventHistoryYearFilter">
-                            <option value="">Year Level All</option>
+                            <option value="">All Year Levels</option>
                             <!-- Populated dynamically from year_level table -->
+                        </select>
+                        <select class="filter-select" id="eventHistoryProgramFilter">
+                            <option value="">All Programs</option>
+                        </select>
+                        <select class="filter-select" id="eventHistoryStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="TIME IN">TIME IN</option>
+                            <option value="TIME OUT">TIME OUT</option>
+                        </select>
+                        <select class="filter-select" id="eventHistoryNameFilter">
+                            <option value="">All Events</option>
                         </select>
                     </div>
                 </div>
@@ -377,8 +413,8 @@
                     </div>
                     <input type="file" id="adminProfilePicInput" accept="image/*" style="display:none">
                 </div>
-                <div class="profile-name">Mr. Henry</div>
-                <div class="profile-email" id="profileEmailTop"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae2efe4f8f3caede7ebe3e6a4e9e5e7">[email&#160;protected]</a></div>
+                <div class="profile-name" id="settingsProfileName">Admin</div>
+                <div class="profile-email" id="profileEmailTop"></div>
                 <button class="edit-profile-btn" onclick="editProfileName()">
                     <svg viewBox="0 0 24 24">
                         <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
@@ -386,66 +422,195 @@
                     Edit
                 </button>
             </div>
-        
+
             <div class="content-section">
                 <h2 class="section-title">Account Information</h2>
-                
                 <div class="info-card">
                     <div class="info-row">
                         <span class="info-label">Name</span>
-                        <span class="info-value" id="adminProfileName">Mr. Henry</span>
+                        <span class="info-value" id="adminProfileName">—</span>
                         <button class="edit-btn" onclick="editProfileName()">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                            </svg>
+                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                             Edit
                         </button>
                     </div>
-        
-                    <!-- <div class="info-row">
-                        <span class="info-label">Email</span>
-                        <span class="info-value" id="profileEmail">henry@gmail.com</span>
-                        <button class="edit-btn" onclick="editField('email')">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                            </svg>
-                            Edit
-                        </button>
-                    </div> -->
                 </div>
-        
+
+                <!-- Change Password -->
                 <div class="password-section">
                     <h2 class="section-title">Change Password</h2>
-                    
                     <div class="info-card">
                         <div class="form-group">
                             <label class="form-label">Current Password</label>
                             <input type="password" class="password-input" id="currentPassword" placeholder="••••••••">
                         </div>
-        
                         <div class="form-group">
                             <label class="form-label">New Password</label>
                             <input type="password" class="password-input" id="newPassword" placeholder="••••••••">
                         </div>
-        
                         <div class="form-group">
                             <label class="form-label">Confirm New Password</label>
                             <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••">
                         </div>
-        
-                        <button class="update-password-btn" onclick="updatePassword()">Update Password</button>
+                        <button class="update-password-btn" onclick="updatePassword()">
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;flex-shrink:0;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                            Update Password
+                        </button>
                     </div>
                 </div>
-        
-                <button class="logout-btn" onclick="logout()">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-                    </svg>
-                    Log Out
-                </button>
-            </div>        
-        </section>
 
+                <!-- Appearance -->
+                <div class="password-section">
+                    <h2 class="section-title">Appearance</h2>
+                    <div class="info-card" style="display:flex;flex-direction:column;gap:20px;">
+
+                        <!-- Mode -->
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Mode</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <button class="theme-mode-btn" id="modeLight" onclick="setThemeMode('light')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+                                    <span style="font-size:0.8rem;font-weight:700;">Light</span>
+                                </button>
+                                <button class="theme-mode-btn" id="modeDark" onclick="setThemeMode('dark')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+                                    <span style="font-size:0.8rem;font-weight:700;">Dark</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Font -->
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Font</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <button onclick="setThemeFont('system')"  class="font-btn" data-font="system"  style="font-family:system-ui;">System Default</button>
+                                <button onclick="setThemeFont('inter')"   class="font-btn" data-font="inter"   style="font-family:'Inter',sans-serif;">Inter</button>
+                                <button onclick="setThemeFont('poppins')" class="font-btn" data-font="poppins" style="font-family:'Poppins',sans-serif;">Poppins</button>
+                                <button onclick="setThemeFont('roboto')"  class="font-btn" data-font="roboto"  style="font-family:'Roboto',sans-serif;">Roboto</button>
+                                <button onclick="setThemeFont('mono')"    class="font-btn" data-font="mono"    style="font-family:'JetBrains Mono',monospace;">Monospace</button>
+                            </div>
+                        </div>
+
+                        <!-- Text Size -->
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Text Size</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                                <button onclick="setThemeSize('small')"  class="size-btn" data-size="small"  style="font-size:0.78rem;">Small</button>
+                                <button onclick="setThemeSize('medium')" class="size-btn" data-size="medium" style="font-size:0.88rem;">Medium</button>
+                                <button onclick="setThemeSize('large')"  class="size-btn" data-size="large"  style="font-size:1rem;">Large</button>
+                            </div>
+                        </div>
+
+                        <button onclick="resetTheme()" style="width:100%;padding:10px;background:var(--surface-alt);border:1.5px solid var(--surface-border);border-radius:10px;color:var(--text-secondary);font-size:0.82rem;font-weight:700;cursor:pointer;">↺ Reset to Defaults</button>
+                    </div>
+                </div>
+
+                <!-- System Overview -->
+                <div class="password-section">
+                    <h2 class="section-title">System Overview</h2>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="stat-tile stat-tile--teacher">
+                            <div class="stat-tile__label">Teachers</div>
+                            <div class="stat-tile__value" id="settingsStatTeachers">—</div>
+                        </div>
+                        <div class="stat-tile stat-tile--guard">
+                            <div class="stat-tile__label">Guards</div>
+                            <div class="stat-tile__value" id="settingsStatGuards">—</div>
+                        </div>
+                        <div class="stat-tile stat-tile--student" style="grid-column:1/-1;">
+                            <div class="stat-tile__label">Students</div>
+                            <div class="stat-tile__value" id="settingsStatStudents">—</div>
+                        </div>
+                    </div>
+                    <button class="stat-refresh-btn" onclick="loadSettingsStats()">↻ Refresh Stats</button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="password-section">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button class="quick-action-btn" onclick="navigateTo('studentAccountManagement')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">Student Accounts</div>
+                                <div class="quick-action-sub">Manage registered students</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="navigateTo('teacherAccountManagement')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">Teacher Accounts</div>
+                                <div class="quick-action-sub">Manage registered teachers</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="navigateTo('guardAccountManagement')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">Guard Accounts</div>
+                                <div class="quick-action-sub">Manage registered guards</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="navigateTo('academicSetup')">
+                            <div class="quick-action-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                            </div>
+                            <div class="quick-action-text">
+                                <div class="quick-action-title">Academic Setup</div>
+                                <div class="quick-action-sub">Manage programs and year levels</div>
+                            </div>
+                            <span class="quick-action-arrow">›</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="password-section">
+                    <h2 class="section-title">System Information</h2>
+                    <div class="info-card">
+                        <div class="info-row">
+                            <span class="info-label">System</span>
+                            <span class="info-value">PanPacific University</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">App</span>
+                            <span class="info-value">Barcode Attendance System</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Role</span>
+                            <span class="info-value" style="color:#1a4545;font-weight:700;">ADMIN</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Session</span>
+                            <span class="info-value" id="settingsSessionStart">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="password-section">
+                    <h2 class="section-title" style="color:#c0392b;">Danger Zone</h2>
+                    <div class="danger-zone-box">
+                        <div class="danger-zone-row">
+                            <div>
+                                <div class="danger-zone-title">Log Out</div>
+                                <div class="danger-zone-sub">End your current session and return to login</div>
+                            </div>
+                            <button onclick="logout()" class="danger-logout-btn">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
         <!--Student Account Management-->
         <section class="sections" id="studentAccountManagement">
             <div class="search-container">
@@ -462,11 +627,11 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="navigateTo('registration')">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('student');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
-                    Register Person
+                    Register Student
                 </button>
             </div>
         </section>
@@ -487,11 +652,11 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="register()">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('teacher');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
-                    Register Person
+                    Register Teacher
                 </button>
             </div>
         </section>
@@ -512,11 +677,11 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="register()">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('guard');">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
-                    Register Person
+                    Register Guard
                 </button>
             </div>
         </section>
@@ -582,154 +747,197 @@
 
         <!--Registration-->
         <section class="sections" id="registration">
-            <div class="registration-container-holder">
-                <div class="registration-container">            
-                    <div class="role-selector">
-                        <label class="role-label">Select Role:</label>
-                        <div class="role-tabs">
-                            <button class="role-tab active" onclick="switchRole('guard')">Guard</button>
-                            <button class="role-tab" onclick="switchRole('teacher')">Teacher</button>
-                            <button class="role-tab" onclick="switchRole('student')">Student</button>
+            <div style="padding:20px; max-width:560px; margin:0 auto;">
+
+                <!-- Role picker cards -->
+                <p style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.6px; margin:0 0 10px;">Select Account Type</p>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px;">
+                    <button class="reg-role-card active" id="roleCard-guard" onclick="switchRole('guard')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                        <span>Guard</span>
+                    </button>
+                    <button class="reg-role-card" id="roleCard-teacher" onclick="switchRole('teacher')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+                        <span>Teacher</span>
+                    </button>
+                    <button class="reg-role-card" id="roleCard-student" onclick="switchRole('student')">
+                        <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                        <span>Student</span>
+                    </button>
+                </div>
+
+                <!-- Guard Registration Form -->
+                <form class="form-section active reg-form-card" id="guardForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#e0f2f1;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#3d6b6b;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                        </div>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Guard</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new guard account</div>
                         </div>
                     </div>
-            
-                    <!-- Guard Registration Form -->
-                    <form class="form-section active" id="guardForm">
-                        <div class="form-group">
-                            <label class="form-label">Full Name <span class="required">*</span></label>
-                            <input type="text" class="form-input" id="guard_fullname" required>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <input type="text" class="form-input" id="guard_fullname" placeholder="Full Name" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" class="form-input" id="guard_email" placeholder="Email Address" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <select class="form-input" id="guard_location" required>
+                            <option value="">Select Location Assigned</option>
+                            <option value="Main Gate">Main Gate</option>
+                            <option value="Building A">Building A</option>
+                            <option value="Building B">Building B</option>
+                            <option value="Parking Area">Parking Area</option>
+                        </select>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" class="form-input" id="guard_password" placeholder="Password" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" class="form-input" id="guard_confirm_password" placeholder="Confirm Password" required>
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register Guard
+                    </button>
+                </form>
+
+                <!-- Teacher Registration Form -->
+                <form class="form-section reg-form-card" id="teacherForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#e8f5e9;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#2e7d32;"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" class="form-input" id="guard_email" required>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Teacher</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new teacher account</div>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Password <span class="required">*</span></label>
-                            <input type="password" class="form-input" id="guard_password" required>
+                    </div>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <input type="text" id="teacher_fullname" name="fullName" class="form-input" placeholder="Full Name" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" id="teacher_email" name="email" class="form-input" placeholder="Email Address" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                        <select class="form-input" id="teacher_department" name="department" required>
+                            <option value="">Select Department</option>
+                        </select>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#2e7d32,#43a047);">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register Teacher
+                    </button>
+                </form>
+
+                <!-- Student Registration Form -->
+                <form class="form-section reg-form-card" id="studentForm">
+                    <div class="reg-form-header">
+                        <div class="reg-form-header-icon" style="background:#e3f2fd;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#1565c0;"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Confirm password <span class="required">*</span></label>
-                            <input type="password" class="form-input" id="guard_confirm_password" required>
+                        <div>
+                            <div style="font-size:1rem;font-weight:800;color:#1a4545;">Register Student</div>
+                            <div style="font-size:0.75rem;color:#888;">Create a new student account</div>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Location Assigned <span class="required">*</span></label>
-                            <select class="form-select" id="guard_location" required>
-                                <option value="">Select Location</option>
-                                <option value="Main Gate">Main Gate</option>
-                                <option value="Building A">Building A</option>
-                                <option value="Building B">Building B</option>
-                                <option value="Parking Area">Parking Area</option>
-                            </select>
-                        </div>
-                    
-                        <button type="submit" class="register-btn">Register</button>
-                    </form>
-                    
-            
-                    <!-- Teacher Registration Form -->
-                    <form class="form-section" id="teacherForm">
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_fullname">Full Name <span class="required">*</span></label>
-                            <input type="text" id="teacher_fullname" name="fullName" class="form-input" placeholder="Full Name" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_email">Email <span class="required">*</span></label>
-                            <input type="email" id="teacher_email" name="email" class="form-input" placeholder="Email" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_password">Password <span class="required">*</span></label>
-                            <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="confirm_password">Confirm Password <span class="required">*</span></label>
-                            <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label" for="teacher_department">Department <span class="required">*</span></label>
-                            <select class="form-select" id="teacher_department" name="department" required>
-                                <option value="">Select Department</option>
-                                <!-- Populated dynamically from program table -->
-                            </select>
-                        </div>
-                    
-                        <button type="submit" class="register-btn">Register</button>
-                    </form>
-            
-                    <!-- Student Registration Form -->
-                    <form class="form-section" id="studentForm">
-                        <div class="form-group">
-                            <label class="form-label">First Name <span class="required">*</span></label>
+                    </div>
+
+                    <div class="reg-section-label">Personal Information</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <div class="reg-field" style="grid-column:1/3;">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                             <input type="text" id="std_firstname" class="form-input" placeholder="First Name" required>
                         </div>
-                    
-                        <div class="name-row">
-                            <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" id="std_middlename" class="form-input" placeholder="Middle Name">
-                            </div>
-                    
-                            <div class="form-group">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" id="std_lastname" class="form-input" placeholder="Last Name" required>
-                            </div>
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <input type="text" id="std_middlename" class="form-input" placeholder="M.I.">
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" id="std_email" class="form-input" placeholder="Email" required>
+                        <div class="reg-field" style="grid-column:1/-1;">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <input type="text" id="std_lastname" class="form-input" placeholder="Last Name" required>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">ID Number <span class="required">*</span></label>
+                    </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        <input type="email" id="std_email" class="form-input" placeholder="Email Address" required>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M17.41 11.58l-5-5c-.39-.39-1.02-.39-1.41 0l-5 5c-.39.39-.39 1.02 0 1.41l5 5c.39.39 1.02.39 1.41 0l5-5c.39-.38.39-1.01 0-1.41zM12 15L9 12l3-3 3 3-3 3z"/></svg>
                             <input type="text" id="std_id_number" class="form-input" placeholder="ID Number" required>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Program <span class="required">*</span></label>
-                            <select id="std_program" class="form-select" required>
-                                <option value="">Select Program</option>
-                                <!-- Populated dynamically from program table -->
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                            <input type="tel" id="std_contact" class="form-input" placeholder="Guardian Contact" required>
+                        </div>
+                    </div>
+
+                    <div class="reg-section-label">Academic</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                            <select id="std_program" class="form-input" required>
+                                <option value="">Program</option>
                             </select>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Year Level <span class="required">*</span></label>
-                            <select id="std_year_level" class="form-select" required>
-                                <option value="">Select Year</option>
-                                <!-- Populated dynamically from year_level table -->
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+                            <select id="std_year_level" class="form-input" required>
+                                <option value="">Year Level</option>
                             </select>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Parent/Guardian Contact Number <span class="required">*</span></label>
-                            <input type="tel" id="std_contact" class="form-input" placeholder="Contact Number" required>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Password <span class="required">*</span></label>
+                    </div>
+
+                    <div class="reg-section-label">Security</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                             <input type="password" id="std_password" class="form-input" placeholder="Password" required>
                         </div>
-                    
-                        <div class="form-group">
-                            <label class="form-label">Confirm Password <span class="required">*</span></label>
+                        <div class="reg-field">
+                            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                             <input type="password" id="std_confirm_password" class="form-input" placeholder="Confirm Password" required>
                         </div>
-                    
-                        <button type="submit" class="register-btn">Register</button>
-                    </form>
-                </div>
-            </div>  
+                    </div>
+
+                    <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#1565c0,#1976d2);">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register Student
+                    </button>
+                </form>
+
+            </div>
         </section>
 
-        <!--Student Account Management Modal -->
+                <!--Student Account Management Modal -->
         <div id="studentAccountManagementModal" class="student-account-management-modal" style="display: none;">
             <div class="record-modal-content">
                 
@@ -749,6 +957,11 @@
                         <div class="form-group">
                             <label>ID Number</label>
                             <input type="text" id="studentIdNumber" name="id_number" placeholder="e.g. 1231377">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="studentEmail" name="email" placeholder="student@email.com">
                         </div>
         
                         <div class="form-row">

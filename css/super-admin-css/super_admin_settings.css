@@ -225,19 +225,25 @@
 .update-password-btn {
     width: 100%;
     padding: 14px;
-    background: #2d5282;
+    background: linear-gradient(135deg, #3d6b6b, #2c5a5a);
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 800;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.2s;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(61, 107, 107, 0.35);
 }
 
 .update-password-btn:hover {
-    background: #1e3a5f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(61, 107, 107, 0.45);
 }
 
 /* ============================================================

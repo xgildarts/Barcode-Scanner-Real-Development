@@ -300,8 +300,8 @@ async function manualInsertAttendance(
     const inClass = await checkStudentToRegularClass(student_id_number)
     if (!inClass) throw new Error('Student is not registered to this subject.')
 
-    const alreadyIn = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
-    if (alreadyIn) throw new Error('Student is already recorded in attendance.')
+    const alreadyIn = await checkStudentIfAlreadyExistsInAttendance(student_id_number, teacher_barcode_scanner_serial_number)
+    if (alreadyIn) throw new Error('Student is already recorded in attendance for this class.')
 
     const subjectData = await checkYearLevelAndSerialNumber(teacher_barcode_scanner_serial_number, student_year_level)
     if (subjectData.length === 0) throw new Error('No subject set for this year level. Please set a subject first.')
@@ -324,7 +324,7 @@ async function manualInsertAttendance(
     await sendSMS(student_guardian_number,
         `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`)
 
-    writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`)
+    writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`, null, null)
     return 'Attendance recorded successfully!'
 }
 
@@ -470,24 +470,54 @@ function studentRegistration(
 // ============================================================
 // LOGGING HELPERS
 // ============================================================
-function writeLoginLog(userId, userName, userEmail, role, status) {
-    db.execute(
-        'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status) VALUES (?, ?, ?, ?, ?)',
-        [userId || null, userName || null, userEmail || null, role, status],
-        (err) => { if (err) console.error('[LoginLog]', err) }
-    )
+function writeLoginLog(userId, userName, userEmail, role, status, ip, userAgent) {
+    const cleanIp = (ip || '').replace(/^::ffff:/, '') || null;
+    const params  = [userId || null, userName || null, userEmail || null, role, status, cleanIp, userAgent || null];
+
+    function tryInsert(attempt) {
+        db.execute(
+            'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status, ip_address, device_info) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            params,
+            (err) => {
+                if (!err) return; // success
+                console.error('[LoginLog] INSERT failed (attempt ' + attempt + '):', err.message, '| role:', role, '| status:', status);
+                if (attempt < 3) {
+                    // Retry up to 3 times with a small delay
+                    setTimeout(() => tryInsert(attempt + 1), 300 * attempt);
+                } else {
+                    // Final fallback: insert without ip/device columns in case they don't exist
+                    db.execute(
+                        'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status) VALUES (?, ?, ?, ?, ?)',
+                        [userId || null, userName || null, userEmail || null, role, status],
+                        (err2) => { if (err2) console.error('[LoginLog] Fallback INSERT failed:', err2.message); }
+                    );
+                }
+            }
+        );
+    }
+    tryInsert(1);
 }
 
 // actorRole: 'student' | 'teacher' | 'guard' | 'admin' | 'super_admin'
-function writeActivityLog(actorId, actorName, actorRole, action, targetType, targetId, targetName, details) {
+function writeActivityLog(actorId, actorName, actorRole, action, targetType, targetId, targetName, details, ip, userAgent) {
+    const cleanIp = (ip || '').replace(/^::ffff:/, '') || null;
     db.execute(
-        'INSERT INTO system_activity_logs (actor_id, actor_name, actor_role, action, target_type, target_id, target_name, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [actorId || null, actorName || null, actorRole || null, action, targetType || null, String(targetId || ''), targetName || null, details || null],
-        (err) => { if (err) console.error('[ActivityLog]', err) }
+        'INSERT INTO system_activity_logs (actor_id, actor_name, actor_role, action, target_type, target_id, target_name, details, ip_address, device_info) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [actorId || null, actorName || null, actorRole || null, action, targetType || null, String(targetId || ''), targetName || null, details || null, cleanIp, userAgent || null],
+        (err) => {
+            if (err) {
+                // Fallback if columns not yet added
+                db.execute(
+                    'INSERT INTO system_activity_logs (actor_id, actor_name, actor_role, action, target_type, target_id, target_name, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [actorId || null, actorName || null, actorRole || null, action, targetType || null, String(targetId || ''), targetName || null, details || null],
+                    (err2) => { if (err2) console.error('[ActivityLog]', err2) }
+                )
+            }
+        }
     )
 }
 
-async function studentLogin(email, password, device_id) {
+async function studentLogin(email, password, device_id, ip, userAgent) {
 
     const query = `
         SELECT  
@@ -513,14 +543,17 @@ async function studentLogin(email, password, device_id) {
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
-                writeLoginLog(null, null, email, 'student', 'FAILED');
+                writeLoginLog(null, null, email, 'student', 'FAILED', ip, userAgent);
                 return reject('Invalid email or password');
             }
 
             const row = result[0];
 
             // Strict device binding — fingerprint must match what was registered
-            if (!await deviceIDChecker(device_id, email)) return reject('This device is not registered to your account. Please contact your administrator to reset your device.')
+            if (!await deviceIDChecker(device_id, email)) {
+                writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'FAILED', ip, userAgent);
+                return reject('This device is not registered to your account. Please contact your administrator to reset your device.')
+            }
 
             // ✅ Compare password
             const isMatch = await comparePassword(password, row.password);
@@ -530,18 +563,18 @@ async function studentLogin(email, password, device_id) {
 
             if (isMatch) {
                 const token = generateToken(row)
-                writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'SUCCESS');
+                writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'SUCCESS', ip, userAgent);
                 return resolve({ ok: true, message: 'Successfully Login!', token, student_firstname: row.student_firstname });
             }
 
-            writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'FAILED');
+            writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'FAILED', ip, userAgent);
             return reject('Invalid email or password');
         });
     });
 }
 
 // Google Login — finds student by email, skips password check
-async function studentGoogleLogin(email, device_id) {
+async function studentGoogleLogin(email, device_id, ip, userAgent) {
     const query = `
         SELECT  
             student_id,
@@ -622,6 +655,7 @@ function verifyToken(token) {
 
 // Remove the prepend Bearer
 function removeBearer(authorization) {
+    if (!authorization) throw new Error('No authorization header provided.')
     const token = authorization.split(' ')[1]
     return token
 }
@@ -820,7 +854,7 @@ async function teacherRegistration(fullName, email, password, department, admin_
                 if (err) { return reject(err); }
                 try {
                     initialTeacherSubjectAndYearLevelSetter('', '', teacherBarcodeScannerSerialNumber);
-                    writeActivityLog(admin_id, null, 'admin', 'CREATE_TEACHER', 'Teacher', result.insertId, fullName, `Registered teacher: ${email}, Dept: ${department}`)
+                    writeActivityLog(admin_id, null, 'admin', 'CREATE_TEACHER', 'Teacher', result.insertId, fullName, `Registered teacher: ${email}, Dept: ${department}`, null, null)
                     resolve('Successfully created new account for teacher');
                 } catch (initErr) {
                     console.error('Initialization error:', initErr);
@@ -845,7 +879,7 @@ async function initialTeacherSubjectAndYearLevelSetter(subjectSet = '', yearLeve
 }
 
 // Teacher Login
-async function teacherLogin(email, password) {
+async function teacherLogin(email, password, ip, userAgent) {
 
     const query = `
         SELECT  
@@ -865,7 +899,7 @@ async function teacherLogin(email, password) {
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
-                writeLoginLog(null, null, email, 'teacher', 'FAILED');
+                writeLoginLog(null, null, email, 'teacher', 'FAILED', ip, userAgent);
                 return reject('Invalid email or password');
             }
 
@@ -878,11 +912,11 @@ async function teacherLogin(email, password) {
 
             if (isMatch) {
                 const token = generateToken(row)
-                writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'SUCCESS');
+                writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'SUCCESS', ip, userAgent);
                 return resolve({ ok: true, message: 'Successfully Login!', token, teacher_name: row.teacher_name });
             }
 
-            writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'FAILED');
+            writeLoginLog(row.teacher_id, row.teacher_name, email, 'teacher', 'FAILED', ip, userAgent);
             return reject('Invalid email or password');
         });
     });
@@ -998,7 +1032,7 @@ async function teacherAddStudent(
             ],
             (err, result) => {
                 if (err) return reject(err);
-                writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', studentIDNumber, `${studentFirstName} ${studentLastName}`, `Added by ${teacherName || 'Unknown Teacher'} — Program: ${studentProgram}, Year: ${studentYearLevel}`)
+                writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', studentIDNumber, `${studentFirstName} ${studentLastName}`, `Added by ${teacherName || 'Unknown Teacher'} — Program: ${studentProgram}, Year: ${studentYearLevel}`, null, null)
                 resolve({ message: 'Successfully added new student!' });
             }
         );
@@ -1029,6 +1063,23 @@ async function teacherGetStudentRegistered(teacherBarcodeScannerSerialNumber) {
             }
         );
     });
+}
+
+// Get current active subject and year level for a teacher
+function getActiveSubjectAndYearLevel(teacherBarcodeScannerSerialNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT subject_name_set, year_level_set 
+             FROM subject_and_year_level_setter 
+             WHERE teacher_barcode_scanner_serial_number = ? 
+             LIMIT 1`,
+            [teacherBarcodeScannerSerialNumber],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve(result[0] || { subject_name_set: '', year_level_set: '' })
+            }
+        )
+    })
 }
 
 // Teacher Subject And Year Level Setter
@@ -1096,11 +1147,19 @@ async function checkStudentToRegularClass(studentIDNumber, teacherSerial) {
 }
 
 // Check student if already on attendance
-async function checkStudentIfAlreadyExistsInAttendance(student_id_number) {
+async function checkStudentIfAlreadyExistsInAttendance(student_id_number, teacher_barcode_scanner_serial_number) {
     return new Promise((resolve, reject) => {
         db.execute(
-            'SELECT 1 FROM attendance_record WHERE student_id_number = ? LIMIT 1',
-            [student_id_number],
+            `SELECT 1 FROM attendance_record 
+             WHERE student_id_number = ? 
+             AND teacher_barcode_scanner_serial_number = ?
+             AND subject = (
+                 SELECT subject_name_set FROM subject_and_year_level_setter
+                 WHERE teacher_barcode_scanner_serial_number = ?
+                 LIMIT 1
+             )
+             LIMIT 1`,
+            [student_id_number, teacher_barcode_scanner_serial_number, teacher_barcode_scanner_serial_number],
             (err, result) => {
                 if (err) return reject(err)
                 resolve(result.length > 0)
@@ -1141,10 +1200,10 @@ async function insertStudentAttendance(
     teacherId,
     teacherName
 ) {
-    // Check if student already exists in attendance
-    const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number)
+    // Check if student already exists in attendance for THIS teacher's class
+    const exists = await checkStudentIfAlreadyExistsInAttendance(student_id_number, teacher_barcode_scanner_serial_number)
     if (exists) {
-        throw new Error('Student already recorded in attendance.')
+        throw new Error('Student already recorded in attendance for this class.')
     }
 
     // Check teacher serial number + year level
@@ -1202,7 +1261,7 @@ async function insertStudentAttendance(
         teacher_barcode_scanner_serial_number
     )
 
-    writeActivityLog(student_id, `${student_firstname} ${student_middlename}. ${student_lastname}`, 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Teacher: ${teacherName || 'Unknown'} | Program: ${student_program}, Year: ${student_year_level}`)
+    writeActivityLog(student_id, `${student_firstname} ${student_middlename}. ${student_lastname}`, 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Teacher: ${teacherName || 'Unknown'} | Program: ${student_program}, Year: ${student_year_level}`, null, null)
     return 'Successfully inserted student attendance!'
 }
 
@@ -1499,7 +1558,7 @@ async function guardRegistration(
                 [guard_name, guard_email, hashedPassword, guard_designated_location, admin_id],
                 (err, result) => {
                     if (err) return reject(err);
-                    writeActivityLog(admin_id, null, 'admin', 'CREATE_GUARD', 'Guard', result.insertId, guard_name, `Registered guard: ${guard_email}, Location: ${guard_designated_location}`)
+                    writeActivityLog(admin_id, null, 'admin', 'CREATE_GUARD', 'Guard', result.insertId, guard_name, `Registered guard: ${guard_email}, Location: ${guard_designated_location}`, null, null)
                     resolve('Successfully registered!');
                 }
             );
@@ -1570,7 +1629,7 @@ function deleteProgram(id) {
 }
 
 // Admin Login
-async function adminLogin(email, password) {
+async function adminLogin(email, password, ip, userAgent) {
 
     const query = `
         SELECT 
@@ -1589,7 +1648,7 @@ async function adminLogin(email, password) {
             if (err) return reject({ message: err });
 
             if (result.length === 0) {
-                writeLoginLog(null, null, email, 'admin', 'FAILED');
+                writeLoginLog(null, null, email, 'admin', 'FAILED', ip, userAgent);
                 return reject('Invalid email or password');
             }
 
@@ -1601,7 +1660,7 @@ async function adminLogin(email, password) {
 
             if (isMatch) {
                 const token = generateToken(row);
-                writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'SUCCESS');
+                writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'SUCCESS', ip, userAgent);
                 return resolve({
                     ok: true,
                     message: 'Login successful',
@@ -1614,7 +1673,7 @@ async function adminLogin(email, password) {
                 });
             }
 
-            writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'FAILED');
+            writeLoginLog(row.admin_id, row.admin_name, row.admin_email, 'admin', 'FAILED', ip, userAgent);
             return reject('Invalid email or password');
         });
     });
@@ -1642,6 +1701,20 @@ async function setEventName(eventName, adminID) {
             resolve('Event updated successfully');
         });
     });
+}
+
+// Get active event name for an admin
+function getActiveEventName(adminID) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT event_name_set FROM event_setter WHERE admin_id = ? LIMIT 1',
+            [adminID],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve(result[0] || { event_name_set: '' })
+            }
+        )
+    })
 }
 
 
@@ -1747,7 +1820,7 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                 try {
                     await guardInsertAttendanceHistoryRecord(values);
 
-                    writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`)
+                    writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`, null, null)
                     resolve({
                         ok: true,
                         message: `${status} Recorded Successfully`,
@@ -1790,7 +1863,7 @@ async function guardInsertAttendanceHistoryRecord(values) {
 }
 
 // Guard Login
-async function guardLogin(email, password) {
+async function guardLogin(email, password, ip, userAgent) {
     return new Promise((resolve, reject) => {
         const query = "SELECT * FROM guards WHERE guard_email = ? LIMIT 1";
         db.execute(query, [email], async (err, result) => {
@@ -1798,14 +1871,14 @@ async function guardLogin(email, password) {
                 return reject({ message: "Database error", code: 500 });
             }
             if (result.length === 0) {
-                writeLoginLog(null, null, email, 'guard', 'FAILED');
+                writeLoginLog(null, null, email, 'guard', 'FAILED', ip, userAgent);
                 return reject({ message: "Account not found", code: 404 });
             }
             const guard = result[0];
             try {
                 const isMatch = await comparePassword(password, guard.guard_password);
                 if (!isMatch) {
-                    writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'FAILED');
+                    writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'FAILED', ip, userAgent);
                     return reject({ message: "Invalid password", code: 401 });
                 }
                 const payload = {
@@ -1815,7 +1888,7 @@ async function guardLogin(email, password) {
                     role: 'guard'
                 };
                 const token = generateToken(payload);
-                writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'SUCCESS');
+                writeLoginLog(guard.guard_id, guard.guard_name, email, 'guard', 'SUCCESS', ip, userAgent);
                 resolve({
                     message: "Login Successful",
                     token: token,
@@ -1925,7 +1998,7 @@ function adminDeleteStudents(student_id) {
                             connection.commit((err) => {
                                 connection.release()
                                 if (err) return reject({ ok: false, message: "Commit error: " + err, status_code: 500 })
-                                writeActivityLog(null, null, 'admin', 'DELETE_STUDENT', 'Student', student_id, null, `Deleted student ID: ${student_id}`)
+                                writeActivityLog(null, null, 'admin', 'DELETE_STUDENT', 'Student', student_id, null, `Deleted student ID: ${student_id}`, null, null)
                                 resolve({ ok: true, message: 'Successfully deleted student account and class records!', status_code: 200 })
                             })
                         })
@@ -1942,7 +2015,7 @@ function adminDeleteTeacher(teacher_id, admin_id) {
         db.execute('DELETE FROM teacher WHERE teacher_id = ? AND admin_id = ?', [teacher_id, admin_id], (err, result) => {
             if (err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
             if (result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
-            writeActivityLog(admin_id, null, 'admin', 'DELETE_TEACHER', 'Teacher', teacher_id, null, `Deleted teacher ID: ${teacher_id}`)
+            writeActivityLog(admin_id, null, 'admin', 'DELETE_TEACHER', 'Teacher', teacher_id, null, `Deleted teacher ID: ${teacher_id}`, null, null)
             resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200 })
         })
     })
@@ -1954,7 +2027,7 @@ function adminDeleteGuard(teacher_id, admin_id) {
         db.execute('DELETE FROM guards WHERE guard_id = ? AND admin_id = ?', [teacher_id, admin_id], (err, result) => {
             if (err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
             if (result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
-            writeActivityLog(admin_id, null, 'admin', 'DELETE_GUARD', 'Guard', teacher_id, null, `Deleted guard ID: ${teacher_id}`)
+            writeActivityLog(admin_id, null, 'admin', 'DELETE_GUARD', 'Guard', teacher_id, null, `Deleted guard ID: ${teacher_id}`, null, null)
             resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200 })
         })
     })
@@ -1989,15 +2062,7 @@ function getPresentPrograms() {
 }
 
 // Admin edit student accounts
-function adminEditStudentAccounts(
-    id,
-    id_number,
-    firstname,
-    middlename,
-    lastname,
-    program,
-    year_level
-) {
+function adminEditStudentAccounts(id, id_number, firstname, middlename, lastname, program, year_level, email) {
     return new Promise((resolve, reject) => {
 
         // Check if id_number is already used by another student
@@ -2006,73 +2071,76 @@ function adminEditStudentAccounts(
             [id_number, id],
             (err, rows) => {
                 if (err) return reject(err)
-                if (rows.length > 0) {
-                    return resolve({ ok: false, duplicate: true, message: `ID number "${id_number}" is already assigned to another student.` })
-                }
+                if (rows.length > 0) return resolve({ ok: false, duplicate: true, message: `ID number "${id_number}" is already assigned to another student.` })
 
-                // Get the OLD student_id_number so we can match in regular class
-                db.execute('SELECT student_id_number FROM student_accounts WHERE student_id = ?', [id], (err, rows) => {
-                    if (err) return reject(err)
-                    if (rows.length === 0) return reject(new Error('Student not found.'))
+                // Check if email is already used by another student
+                const emailCheck = email
+                    ? new Promise((res, rej) => db.execute(
+                        `SELECT student_id FROM student_accounts WHERE student_email = ? AND student_id != ?`,
+                        [email, id],
+                        (err, rows) => err ? rej(err) : res(rows)
+                    ))
+                    : Promise.resolve([])
 
-                    const old_id_number = rows[0].student_id_number
+                emailCheck.then(emailRows => {
+                    if (emailRows.length > 0) return resolve({ ok: false, duplicate_email: true, message: `Email "${email}" is already used by another student.` })
 
-                    db.getConnection((err, connection) => {
+                    // Get old id_number for related table update
+                    db.execute(`SELECT student_id_number FROM student_accounts WHERE student_id = ?`, [id], (err, rows) => {
                         if (err) return reject(err)
+                        if (rows.length === 0) return reject(new Error('Student not found.'))
+                        const old_id_number = rows[0].student_id_number
 
-                        connection.beginTransaction((err) => {
-                            if (err) {
-                                connection.release()
-                                return reject(err)
-                            }
+                        db.getConnection((err, connection) => {
+                            if (err) return reject(err)
+                            connection.beginTransaction(err => {
+                                if (err) { connection.release(); return reject(err) }
 
-                            // Update student_accounts
-                            const updateAccountQuery = `
-                                UPDATE student_accounts 
-                                SET 
-                                    student_id_number = ?, 
-                                    student_firstname = ?, 
-                                    student_middlename = ?, 
-                                    student_lastname = ?, 
-                                    student_program = ?, 
-                                    student_year_level = ?
-                                WHERE student_id = ?
-                            `
-                            connection.execute(updateAccountQuery, [id_number, firstname, middlename, lastname, program, year_level, id], (err, result) => {
-                                if (err) return connection.rollback(() => { connection.release(); reject(err) })
-                                if (result.affectedRows === 0) return connection.rollback(() => { connection.release(); reject(new Error('Update failed: Student not found.')) })
+                                const updateAccountQuery = `
+                                    UPDATE student_accounts SET
+                                        student_id_number = ?,
+                                        student_firstname = ?,
+                                        student_middlename = ?,
+                                        student_lastname = ?,
+                                        student_program = ?,
+                                        student_year_level = ?,
+                                        student_email = COALESCE(NULLIF(?, ''), student_email)
+                                    WHERE student_id = ?`
+                                connection.execute(updateAccountQuery,
+                                    [id_number, firstname, middlename, lastname, program, year_level, email || '', id],
+                                    (err, result) => {
+                                        if (err) return connection.rollback(() => { connection.release(); reject(err) })
+                                        if (result.affectedRows === 0) return connection.rollback(() => { connection.release(); reject(new Error('Student not found.')) })
 
-                                // Update student_records_regular_class
-                                const updateClassQuery = `
-                                    UPDATE student_records_regular_class 
-                                    SET 
-                                        student_id_number = ?, 
-                                        student_firstname = ?, 
-                                        student_middlename = ?, 
-                                        student_lastname = ?, 
-                                        student_program = ?, 
-                                        student_year_level = ?
-                                    WHERE student_id_number = ?
-                                `
-                                connection.execute(updateClassQuery, [id_number, firstname, middlename, lastname, program, year_level, old_id_number], (err) => {
-                                    if (err) return connection.rollback(() => { connection.release(); reject(err) })
-
-                                    connection.commit((err) => {
-                                        connection.release()
-                                        if (err) return reject(err)
-                                        resolve({ ok: true, message: 'Student account updated successfully!' })
+                                        const updateClassQuery = `
+                                            UPDATE student_records_regular_class SET
+                                                student_id_number = ?,
+                                                student_firstname = ?,
+                                                student_middlename = ?,
+                                                student_lastname = ?,
+                                                student_program = ?,
+                                                student_year_level = ?
+                                            WHERE student_id_number = ?`
+                                        connection.execute(updateClassQuery,
+                                            [id_number, firstname, middlename, lastname, program, year_level, old_id_number],
+                                            err => {
+                                                if (err) return connection.rollback(() => { connection.release(); reject(err) })
+                                                connection.commit(err => {
+                                                    connection.release()
+                                                    if (err) return reject(err)
+                                                    resolve({ ok: true, message: 'Student account updated successfully!' })
+                                                })
+                                            })
                                     })
-                                })
                             })
                         })
                     })
-                })
+                }).catch(reject)
             }
         )
     })
 }
 
-// Admin edit student accounts
 function adminEditTeacherAccounts(
     id,
     teacher_name,
@@ -2239,7 +2307,7 @@ function updateAdminProfilePicture(adminID, filename) {
 // ============================================================
 // SUPER ADMIN — Login
 // ============================================================
-async function superAdminLogin(email, password) {
+async function superAdminLogin(email, password, ip, userAgent) {
     return new Promise((resolve, reject) => {
         db.execute(
             'SELECT super_admin_id, super_admin_name, super_admin_email, super_admin_password, super_admin_profile_picture FROM super_admin_accounts WHERE super_admin_email = ? LIMIT 1',
@@ -2247,13 +2315,13 @@ async function superAdminLogin(email, password) {
             async (err, rows) => {
                 if (err) return reject(new Error('Database error.'))
                 if (rows.length === 0) {
-                    writeLoginLog(null, null, email, 'super_admin', 'FAILED');
+                    writeLoginLog(null, null, email, 'super_admin', 'FAILED', ip, userAgent);
                     return reject(new Error('Invalid email or password.'))
                 }
                 const row = rows[0]
                 const isMatch = await bcrypt.compare(password, row.super_admin_password)
                 if (!isMatch) {
-                    writeLoginLog(row.super_admin_id, row.super_admin_name, email, 'super_admin', 'FAILED');
+                    writeLoginLog(row.super_admin_id, row.super_admin_name, email, 'super_admin', 'FAILED', ip, userAgent);
                     return reject(new Error('Invalid email or password.'))
                 }
                 delete row.super_admin_password
@@ -2262,7 +2330,7 @@ async function superAdminLogin(email, password) {
                     JWT_SECRET,
                     { expiresIn: '24h' }
                 )
-                writeLoginLog(row.super_admin_id, row.super_admin_name, row.super_admin_email, 'super_admin', 'SUCCESS');
+                writeLoginLog(row.super_admin_id, row.super_admin_name, row.super_admin_email, 'super_admin', 'SUCCESS', ip, userAgent);
                 resolve({ ok: true, message: 'Login successful.', token, super_admin_name: row.super_admin_name })
             }
         )
@@ -2418,11 +2486,30 @@ async function superAdminGetLoginLogs(limit) {
     return new Promise((resolve, reject) => {
         db.execute(
             `SELECT log_id, user_id, user_name, user_email, role, status,
+                    IFNULL(ip_address, NULL) AS ip_address,
+                    IFNULL(device_info, NULL) AS device_info,
                     DATE_FORMAT(login_at, '%Y-%m-%d %H:%i:%s') AS login_at
              FROM system_login_logs
              ORDER BY login_at DESC
              LIMIT ?`,
-            [n], (err, rows) => { if (err) return reject(err); resolve(rows) }
+            [n],
+            (err, rows) => {
+                if (err) {
+                    // Fallback if new columns don't exist yet
+                    db.execute(
+                        `SELECT log_id, user_id, user_name, user_email, role, status,
+                                NULL AS ip_address, NULL AS device_info,
+                                DATE_FORMAT(login_at, '%Y-%m-%d %H:%i:%s') AS login_at
+                         FROM system_login_logs
+                         ORDER BY login_at DESC
+                         LIMIT ?`,
+                        [n],
+                        (err2, rows2) => { if (err2) return reject(err2); resolve(rows2) }
+                    )
+                } else {
+                    resolve(rows)
+                }
+            }
         )
     })
 }
@@ -2436,11 +2523,31 @@ async function superAdminGetActivityLogs(limit) {
         db.execute(
             `SELECT log_id, actor_id, actor_name, actor_role, action,
                     target_type, target_id, target_name, details,
+                    IFNULL(ip_address, NULL) AS ip_address,
+                    IFNULL(device_info, NULL) AS device_info,
                     DATE_FORMAT(performed_at, '%Y-%m-%d %H:%i:%s') AS performed_at
              FROM system_activity_logs
              ORDER BY performed_at DESC
              LIMIT ?`,
-            [n], (err, rows) => { if (err) return reject(err); resolve(rows) }
+            [n],
+            (err, rows) => {
+                if (err) {
+                    // Fallback if new columns don't exist yet
+                    db.execute(
+                        `SELECT log_id, actor_id, actor_name, actor_role, action,
+                                target_type, target_id, target_name, details,
+                                NULL AS ip_address, NULL AS device_info,
+                                DATE_FORMAT(performed_at, '%Y-%m-%d %H:%i:%s') AS performed_at
+                         FROM system_activity_logs
+                         ORDER BY performed_at DESC
+                         LIMIT ?`,
+                        [n],
+                        (err2, rows2) => { if (err2) return reject(err2); resolve(rows2) }
+                    )
+                } else {
+                    resolve(rows)
+                }
+            }
         )
     })
 }
@@ -2490,7 +2597,7 @@ async function superAdminCreateAdmin(adminName, adminEmail, adminPassword) {
             [adminName, adminEmail, hashed],
             (err, result) => {
                 if (err) return reject(err)
-                writeActivityLog(null, 'Super Admin', 'super_admin', 'CREATE_ADMIN', 'Admin', result.insertId, adminName, `Created admin: ${adminEmail}`)
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'CREATE_ADMIN', 'Admin', result.insertId, adminName, `Created admin: ${adminEmail}`, null, null)
                 resolve('Admin account created successfully.')
             }
         )
@@ -2510,7 +2617,7 @@ async function superAdminEditAdmin(adminId, adminName, adminEmail) {
             (err, result) => {
                 if (err) return reject(err)
                 if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
-                writeActivityLog(null, 'Super Admin', 'super_admin', 'EDIT_ADMIN', 'Admin', adminId, adminName, `Updated to email: ${adminEmail}`)
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'EDIT_ADMIN', 'Admin', adminId, adminName, `Updated to email: ${adminEmail}`, null, null)
                 resolve('Admin account updated successfully.')
             }
         )
@@ -2523,7 +2630,7 @@ async function superAdminDeleteAdmin(adminId) {
             (err, result) => {
                 if (err) return reject(err)
                 if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
-                writeActivityLog(null, 'Super Admin', 'super_admin', 'DELETE_ADMIN', 'Admin', adminId, null, `Deleted admin ID: ${adminId}`)
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'DELETE_ADMIN', 'Admin', adminId, null, `Deleted admin ID: ${adminId}`, null, null)
                 resolve('Admin account deleted successfully.')
             }
         )
@@ -2537,7 +2644,7 @@ async function superAdminResetAdminPassword(adminId, newPassword) {
             (err, result) => {
                 if (err) return reject(err)
                 if (result.affectedRows === 0) return reject(new Error('Admin not found.'))
-                writeActivityLog(null, 'Super Admin', 'super_admin', 'RESET_ADMIN_PASSWORD', 'Admin', adminId, null, `Reset password for admin ID: ${adminId}`)
+                writeActivityLog(null, 'Super Admin', 'super_admin', 'RESET_ADMIN_PASSWORD', 'Admin', adminId, null, `Reset password for admin ID: ${adminId}`, null, null)
                 resolve('Admin password reset successfully.')
             }
         )
@@ -2608,6 +2715,8 @@ module.exports = {
     guardLogin,
     guardInsertAttendanceRecord,
     setEventName,
+    getEventSet,
+    getActiveEventName,
     adminLogin,
     deleteProgram,
     generateBarcode,
@@ -2637,6 +2746,7 @@ module.exports = {
     teacherAddStudent,
     teacherGetStudentRegistered,
     teacherSubjectAndYearLevelSetter,
+    getActiveSubjectAndYearLevel,
     checkStudentIfExistsInRegistration,
     checkStudentToRegularClass,
     insertStudentAttendance,
@@ -2700,5 +2810,53 @@ module.exports = {
     superAdminGetActivityLogs,
     getStudentEnrolledTeachers,
     writeActivityLog,
-    writeLoginLog
+    writeLoginLog,
+    writeLogoutLog,
+    getSystemSetting,
+    setSystemSetting
+}
+
+function writeLogoutLog(userId, userName, userEmail, role, ip, userAgent) {
+    const cleanIp = (ip || '').replace(/^::ffff:/, '') || null;
+    const params  = [userId || null, userName || null, userEmail || null, role, 'LOGOUT', cleanIp, userAgent || null];
+
+    function tryInsert(attempt) {
+        db.execute(
+            'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status, ip_address, device_info) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            params,
+            (err) => {
+                if (!err) return;
+                console.error('[LogoutLog] INSERT failed (attempt ' + attempt + '):', err.message);
+                if (attempt < 3) {
+                    setTimeout(() => tryInsert(attempt + 1), 300 * attempt);
+                } else {
+                    db.execute(
+                        'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status) VALUES (?, ?, ?, ?, ?)',
+                        [userId || null, userName || null, userEmail || null, role, 'LOGOUT'],
+                        (err2) => { if (err2) console.error('[LogoutLog] Fallback INSERT failed:', err2.message); }
+                    );
+                }
+            }
+        );
+    }
+    tryInsert(1);
+}
+
+async function getSystemSetting(key) {
+    return new Promise((resolve, reject) => {
+        db.execute('SELECT setting_value FROM system_settings WHERE setting_key = ?', [key], (err, rows) => {
+            if (err) return reject(err)
+            resolve(rows[0]?.setting_value ?? null)
+        })
+    })
+}
+
+async function setSystemSetting(key, value) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()',
+            [key, value, value],
+            (err) => { if (err) return reject(err); resolve() }
+        )
+    })
 }

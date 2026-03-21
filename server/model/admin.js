@@ -47,12 +47,12 @@ admin.post('/add_program', async (req, res) => {
 
         const tok = services.verifyToken(services.removeBearer(req.headers['authorization'] || '')) || {}
         const message = await services.addProgram(programName);
-        services.writeActivityLog(tok.admin_id, tok.admin_name, 'admin', 'ADD_PROGRAM', 'Program', null, programName, `Added program: ${programName}`)
+        services.writeActivityLog(tok.admin_id, tok.admin_name, 'admin', 'ADD_PROGRAM', 'Program', null, programName, `Added program: ${programName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
 
         res.status(201).json({ 
             ok: true, 
             message: message 
-        });
+        }, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
 
     } catch (err) {
         console.error(err);
@@ -86,7 +86,7 @@ admin.delete('/delete_program/:id', async (req, res) => {
             return res.status(404).json({ ok: false, message: 'Program not found.' });
         }
 
-        services.writeActivityLog(tok.admin_id, tok.admin_name, 'admin', 'DELETE_PROGRAM', 'Program', null, programName, `Deleted program: ${programName}`)
+        services.writeActivityLog(tok.admin_id, tok.admin_name, 'admin', 'DELETE_PROGRAM', 'Program', null, programName, `Deleted program: ${programName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Program deleted successfully.' });
 
     } catch (err) {
@@ -106,10 +106,24 @@ admin.post('/set_event', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.setEventName(event_name, decodedToken.admin_id)
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'SET_EVENT', 'Event', null, event_name, `Set event name to: ${event_name}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'SET_EVENT', 'Event', null, event_name, `Set event name to: ${event_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Get Active Event Name
+admin.get('/get_active_event', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const result = await services.getActiveEventName(decodedToken.admin_id)
+        res.json({ ok: true, content: result })
+    } catch(err) {
+        console.error('[get_active_event]', err)
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -155,7 +169,7 @@ admin.post('/admin_change_name', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.changeAdminName(newName, decodedToken.admin_id)
-        services.writeActivityLog(decodedToken.admin_id, newName, 'admin', 'CHANGE_NAME', 'Admin', decodedToken.admin_id, newName, `Changed name to: ${newName}`)
+        services.writeActivityLog(decodedToken.admin_id, newName, 'admin', 'CHANGE_NAME', 'Admin', decodedToken.admin_id, newName, `Changed name to: ${newName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result.message })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
@@ -169,7 +183,7 @@ admin.put('/admin_change_password', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.updateAdminPassword(decodedToken.admin_id, current_password, new_password)
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'CHANGE_PASSWORD', 'Admin', decodedToken.admin_id, null, 'Admin changed their password')
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'CHANGE_PASSWORD', 'Admin', decodedToken.admin_id, null, 'Admin changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch(err) {
         if(err.status_code === 401) {
@@ -181,6 +195,87 @@ admin.put('/admin_change_password', async (req, res) => {
         }
     }
 })
+
+// Admin reset student password
+admin.put('/reset_student_password/:id', async (req, res) => {
+    const { new_password } = req.body;
+    if (!new_password || new_password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' });
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decodedToken = services.verifyToken(token);
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        const bcrypt = require('bcrypt');
+        const hashed = await bcrypt.hash(new_password, 10);
+        await new Promise((resolve, reject) => {
+            const db = require('../configuration/db');
+            db.execute('UPDATE student_accounts SET password = ? WHERE student_id = ?', [hashed, req.params.id],
+                (err, result) => {
+                    if (err) return reject(err);
+                    if (result.affectedRows === 0) return reject(new Error('Student not found.'));
+                    resolve();
+                });
+        });
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'RESET_STUDENT_PASSWORD', 'Student', req.params.id, null, `Reset password for student ID: ${req.params.id}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+        res.json({ ok: true, message: 'Student password reset successfully.' });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err });
+    }
+});
+
+// Admin reset teacher password
+admin.put('/reset_teacher_password/:id', async (req, res) => {
+    const { new_password } = req.body;
+    if (!new_password || new_password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' });
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decodedToken = services.verifyToken(token);
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        const bcrypt = require('bcrypt');
+        const hashed = await bcrypt.hash(new_password, 10);
+        await new Promise((resolve, reject) => {
+            const db = require('../configuration/db');
+            db.execute('UPDATE teacher SET teacher_password = ? WHERE teacher_id = ?', [hashed, req.params.id],
+                (err, result) => {
+                    if (err) return reject(err);
+                    if (result.affectedRows === 0) return reject(new Error('Teacher not found.'));
+                    resolve();
+                });
+        });
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'RESET_TEACHER_PASSWORD', 'Teacher', req.params.id, null, `Reset password for teacher ID: ${req.params.id}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+        res.json({ ok: true, message: 'Teacher password reset successfully.' });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err });
+    }
+});
+
+// Admin reset guard password
+admin.put('/reset_guard_password/:id', async (req, res) => {
+    const { new_password } = req.body;
+    if (!new_password || new_password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' });
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decodedToken = services.verifyToken(token);
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        const bcrypt = require('bcrypt');
+        const hashed = await bcrypt.hash(new_password, 10);
+        await new Promise((resolve, reject) => {
+            const db = require('../configuration/db');
+            db.execute('UPDATE guards SET guard_password = ? WHERE guard_id = ?', [hashed, req.params.id],
+                (err, result) => {
+                    if (err) return reject(err);
+                    if (result.affectedRows === 0) return reject(new Error('Guard not found.'));
+                    resolve();
+                });
+        });
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'RESET_GUARD_PASSWORD', 'Guard', req.params.id, null, `Reset password for guard ID: ${req.params.id}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+        res.json({ ok: true, message: 'Guard password reset successfully.' });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err });
+    }
+});
 
 // Admin delete student account
 admin.delete('/delete_student_account/:id', async (req, res) => {
@@ -197,7 +292,7 @@ admin.delete('/delete_student_account/:id', async (req, res) => {
             if (found) studentName = `${found.student_firstname} ${found.student_lastname}`
         } catch (_) {}
         const result = await services.adminDeleteStudents(id)
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'DELETE_STUDENT', 'Student', null, studentName, `Deleted student: ${studentName}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'DELETE_STUDENT', 'Student', null, studentName, `Deleted student: ${studentName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch(err) {
         if(err.status_code === 401) {
@@ -225,7 +320,7 @@ admin.delete('/delete_teacher_account/:id', async (req, res) => {
             if (found) teacherName = found.teacher_name
         } catch (_) {}
         const result = await services.adminDeleteTeacher(id, decodedToken.admin_id)
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'DELETE_TEACHER', 'Teacher', null, teacherName, `Deleted teacher: ${teacherName}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'DELETE_TEACHER', 'Teacher', null, teacherName, `Deleted teacher: ${teacherName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch(err) {
         if(err.status_code === 401) {
@@ -272,7 +367,7 @@ admin.delete('/delete_guard_account/:id', async (req, res) => {
             if (found) guardName = found.guard_name
         } catch (_) {}
         const result = await services.adminDeleteGuard(id, decodedToken.admin_id)
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'DELETE_GUARD', 'Guard', null, guardName, `Deleted guard: ${guardName}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'DELETE_GUARD', 'Guard', null, guardName, `Deleted guard: ${guardName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch(err) {
         if(err.status_code === 401) {
@@ -294,7 +389,8 @@ admin.put('/edit_student_account/:id', async (req, res) => {
         middlename, 
         lastname, 
         program, 
-        year_level 
+        year_level,
+        email
     } = req.body;
 
     try {
@@ -312,9 +408,10 @@ admin.put('/edit_student_account/:id', async (req, res) => {
             middlename, 
             lastname, 
             program, 
-            year_level
+            year_level,
+            email
         );
-        if (result.ok !== false) services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`)
+        if (result.ok !== false) services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result);
     } catch (err) {
         if (err.status_code === 401) {
@@ -352,7 +449,7 @@ admin.put('/edit_teacher_account/:id', async (req, res) => {
             teacher_program,
             decodedToken.admin_id
         );
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_TEACHER', 'Teacher', null, teacher_name, `Edited teacher: ${teacher_name} — ${teacher_email}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_TEACHER', 'Teacher', null, teacher_name, `Edited teacher: ${teacher_name} — ${teacher_email}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result);
     } catch (err) {
         if (err.status_code === 401) {
@@ -389,7 +486,7 @@ admin.put('/edit_guard_account/:id', async (req, res) => {
             guard_designated_location,
             decodedToken.admin_id
         );
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_GUARD', 'Guard', null, guard_name, `Edited guard: ${guard_name} — location: ${guard_designated_location}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_GUARD', 'Guard', null, guard_name, `Edited guard: ${guard_name} — location: ${guard_designated_location}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result);
     } catch (err) {
         if (err.status_code === 401) {
@@ -421,7 +518,7 @@ admin.post('/add_year_level', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const tokData = services.verifyToken(token) || {}
         const result = await services.addYearLevel(yearLevelName)
-        services.writeActivityLog(tokData.admin_id, tokData.admin_name, 'admin', 'ADD_YEAR_LEVEL', 'Year Level', null, yearLevelName, `Added year level: ${yearLevelName}`)
+        services.writeActivityLog(tokData.admin_id, tokData.admin_name, 'admin', 'ADD_YEAR_LEVEL', 'Year Level', null, yearLevelName, `Added year level: ${yearLevelName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.status(201).json({ ok: true, message: result })
     } catch (err) {
         res.status(400).json({ ok: false, message: err.message || err })
@@ -442,7 +539,7 @@ admin.delete('/delete_year_level/:id', async (req, res) => {
             if (found) yearLevelName = found.year_level_name
         } catch (_) {}
         const result = await services.deleteYearLevel(id)
-        services.writeActivityLog(tokData.admin_id, tokData.admin_name, 'admin', 'DELETE_YEAR_LEVEL', 'Year Level', null, yearLevelName, `Deleted year level: ${yearLevelName}`)
+        services.writeActivityLog(tokData.admin_id, tokData.admin_name, 'admin', 'DELETE_YEAR_LEVEL', 'Year Level', null, yearLevelName, `Deleted year level: ${yearLevelName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch (err) {
         res.status(400).json({ ok: false, message: err.message || err })
@@ -521,11 +618,22 @@ admin.put('/reset_student_device/:id', async (req, res) => {
         } catch (_) {}
 
         await services.adminResetStudentDevice(studentId)
-        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'RESET_STUDENT_DEVICE', 'Student', studentId, studentName, `Device binding reset for: ${studentName}`)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'RESET_STUDENT_DEVICE', 'Student', studentId, studentName, `Device binding reset for: ${studentName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: `Device binding reset for ${studentName}. They can now log in from a new device.` })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || 'Failed to reset device binding.' })
     }
+})
+
+
+// Logout
+admin.post('/logout', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decoded = services.verifyToken(token);
+        if (decoded) services.writeLogoutLog(decoded.admin_id, decoded.admin_name, decoded.admin_email, 'admin', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+        res.json({ ok: true });
+    } catch (_) { res.json({ ok: true }); }
 })
 
 module.exports = admin

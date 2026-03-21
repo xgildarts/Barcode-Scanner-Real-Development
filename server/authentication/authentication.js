@@ -67,7 +67,7 @@ router.post('/student_google_login', async (req, res) => {
     try {
         const { email, device_id } = req.body;
         if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' });
-        const result = await services.studentGoogleLogin(email, device_id || '');
+        const result = await services.studentGoogleLogin(email, device_id || '', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
         res.json(result);
     } catch (err) {
         console.error('Google login error:', err);
@@ -79,7 +79,7 @@ router.post('/student_google_login', async (req, res) => {
 router.post('/student_login', async (req, res) => {
     try {
         const { email, password, device_id} = req.body
-        const response = await services.studentLogin(email, password, device_id)
+        const response = await services.studentLogin(email, password, device_id, req.ip, req.body.device_info || req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(response)
     } catch(err) {
         console.error(err)
@@ -107,7 +107,7 @@ router.post('/teacher_registration', async (req, res) => {
 router.post('/teacher_login', async (req, res) => {
     const { email, password } = req.body
     try {
-        const result = await services.teacherLogin(email, password)
+        const result = await services.teacherLogin(email, password, req.ip, req.body.device_info || req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result.message, token: result.token, teacher_name: result.teacher_name })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
@@ -147,7 +147,7 @@ router.post('/admin_login', async (req, res) => {
             return res.status(400).json({ ok: false, message: 'Please enter email and password.' });
         }
 
-        const result = await services.adminLogin(email, password);
+        const result = await services.adminLogin(email, password, req.ip, req.body.device_info || req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
         
         // 3. Send Response
         res.json(result);

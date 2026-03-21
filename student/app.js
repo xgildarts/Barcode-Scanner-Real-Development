@@ -39,6 +39,78 @@ if (!navigator.onLine) showOfflineBanner();
 
 // CONFIG
 // ============================================================
+
+// ============================================================
+// DEVICE INFO — collected once, reused on every request
+// ============================================================
+let _cachedDeviceInfo = null;
+async function getDeviceInfo() {
+    try {
+        if (navigator.userAgentData) {
+            const data = await navigator.userAgentData.getHighEntropyValues([
+                'model', 'platform', 'platformVersion', 'mobile'
+            ]).catch(() => ({}));
+            const model    = (data.model || '').trim();
+            const platform = (data.platform || navigator.userAgentData.platform || '').trim();
+            const ver      = (data.platformVersion || '').split('.')[0];
+            const brands   = navigator.userAgentData.brands || [];
+            // Include Chromium as fallback brand
+            const browser  = brands.find(b => /chrome|edge|opera/i.test(b.brand) && !/chromium/i.test(b.brand))
+                          || brands.find(b => /chromium/i.test(b.brand));
+            const browserStr = browser
+                ? browser.brand.replace('Google Chrome','Chrome').replace('Microsoft Edge','Edge') + ' ' + browser.version.split('.')[0]
+                : '';
+            const osStr = platform + (ver && ver !== '0' ? ' ' + ver : '');
+            // Only trust modern path if platform is a real OS name (not empty, not generic Linux)
+            if (platform && platform !== 'Linux') {
+                const parts = [browserStr, osStr, model].filter(Boolean);
+                if (parts.length > 0) return parts.join(' \u00b7 ');
+            }
+        }
+    } catch (_) {}
+    return parseUAString(navigator.userAgent);
+}
+
+function parseUAString(ua) {
+    if (!ua) return 'Unknown Device';
+    // Chrome's frozen/reduced UA on desktop contains "Android 6.0; Nexus 5" as a fake placeholder.
+    // Detect this by checking if the UA also contains "Windows NT" or "Macintosh" — meaning
+    // the Android token is fake. Strip it and re-parse.
+    if (/Android/i.test(ua) && (/Windows NT/i.test(ua) || /Macintosh/i.test(ua))) {
+        ua = ua.replace(/\(Linux;[^)]*Android[^)]*\)\s*/i, '');
+    }
+    let browser = 'Browser', os = '';
+    if (ua.indexOf('Edg/') !== -1)               browser = 'Edge';
+    else if (ua.indexOf('OPR/') !== -1)          browser = 'Opera';
+    else if (ua.indexOf('SamsungBrowser') !== -1) browser = 'Samsung Browser';
+    else if (ua.indexOf('Chrome/') !== -1)       browser = 'Chrome';
+    else if (ua.indexOf('Firefox/') !== -1)      browser = 'Firefox';
+    else if (ua.indexOf('Safari/') !== -1)       browser = 'Safari';
+    if (ua.indexOf('Windows NT 10') !== -1)        os = 'Windows 10/11';
+    else if (ua.indexOf('Windows NT 6.3') !== -1) os = 'Windows 8.1';
+    else if (ua.indexOf('Windows NT 6') !== -1)    os = 'Windows 7/8';
+    else if (ua.indexOf('Android') !== -1) {
+        const vMatch = ua.match(/Android ([0-9.]+)/);
+        const mMatch = ua.match(/Android[^;]+;\s*([^)]+)\)/);
+        const raw = mMatch ? mMatch[1].replace(/\s*Build\/.*$/, '').trim() : '';
+        os = 'Android' + (vMatch ? ' ' + vMatch[1] : '');
+        if (raw && raw !== 'K') return browser + ' \u00b7 ' + os + ' \u00b7 ' + raw;
+    }
+    else if (ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1) {
+        const vMatch = ua.match(/OS ([0-9_]+)/);
+        os = 'iOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Mac OS X') !== -1) {
+        const vMatch = ua.match(/Mac OS X ([0-9_]+)/);
+        os = 'macOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
+    }
+    else if (ua.indexOf('Linux') !== -1) os = 'Linux';
+    // Get browser version from UA for the fallback path
+    const verMatch = ua.match(/(?:Chrome|Firefox|Safari|OPR|Edg)\/([0-9]+)/);
+    const browserVer = verMatch ? ' ' + verMatch[1] : '';
+    return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
+}
+
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const TOKEN    = localStorage.getItem('student_token');
 
@@ -46,6 +118,7 @@ const TOKEN    = localStorage.getItem('student_token');
 // API
 // ============================================================
 async function apiCall(endpoint, method = 'GET', body = null) {
+    const deviceInfo = localStorage.getItem('student_device_info') || '';
     const options = {
         method,
         headers: {
@@ -53,7 +126,12 @@ async function apiCall(endpoint, method = 'GET', body = null) {
             'Authorization': 'Bearer ' + TOKEN
         }
     };
-    if (body) options.body = JSON.stringify(body);
+    // Auto-inject device_info into all POST/PUT request bodies
+    if (method === 'POST' || method === 'PUT') {
+        options.body = JSON.stringify({ ...(body || {}), device_info: deviceInfo });
+    } else if (body) {
+        options.body = JSON.stringify(body);
+    }
 
     const res  = await fetch(`${BASE_URL}${endpoint}`, options);
     const data = await res.json();
@@ -105,13 +183,15 @@ function logout() {
         confirmButtonText: 'Yes, log out',
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6'
-    }).then(result => {
+    }).then(async result => {
         if (!result.isConfirmed) return;
         Swal.fire({ icon: 'success', title: 'Logging out...', text: 'See you again!', timer: 1500, showConfirmButton: false });
-        setTimeout(() => {
-            localStorage.removeItem('student_token');
-            window.location.href = 'student_login.html';
-        }, 1500);
+        try {
+            await apiCall('/students/logout', 'POST', { device_info: localStorage.getItem('student_device_info') || '' });
+        } catch (_) {}
+        localStorage.removeItem('student_token');
+        localStorage.removeItem('student_device_info');
+        window.location.href = 'student_login.html';
     });
 }
 
@@ -550,3 +630,64 @@ async function updatePassword() {
         Swal.fire({ icon: 'error', title: 'Update Failed', text: err.message || 'Something went wrong.' });
     }
 }
+// ============================================================
+// MAINTENANCE MODE POLLING
+// ============================================================
+let _maintenancePollInterval = null;
+let _maintenanceActive = false;
+
+async function checkMaintenanceMode() {
+    try {
+        const res  = await fetch(`${BASE_URL}/system/maintenance`);
+        const data = await res.json();
+        if (data.maintenance && !_maintenanceActive) {
+            _maintenanceActive = true;
+            showMaintenanceBanner();
+        } else if (!data.maintenance && _maintenanceActive) {
+            _maintenanceActive = false;
+            hideMaintenanceBanner();
+        }
+    } catch (_) {}
+}
+
+function showMaintenanceBanner() {
+    document.getElementById('maintenanceBanner')?.remove();
+    const banner = document.createElement('div');
+    banner.id = 'maintenanceBanner';
+    banner.innerHTML = `
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#fff;flex-shrink:0;">
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+        </svg>
+        <div>
+            <div style="font-weight:800;font-size:0.9rem;">🔧 System Maintenance</div>
+            <div style="font-size:0.78rem;opacity:0.9;margin-top:2px;">The system is under maintenance. All actions are temporarily disabled.</div>
+        </div>`;
+    banner.style.cssText = `
+        position:fixed;top:0;left:0;right:0;z-index:99999;
+        background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;
+        padding:14px 20px;display:flex;align-items:center;gap:14px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.35);font-family:inherit;`;
+    document.body.prepend(banner);
+    const overlay = document.createElement('div');
+    overlay.id = 'maintenanceOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.35);cursor:not-allowed;';
+    overlay.addEventListener('click', e => e.stopPropagation());
+    document.body.appendChild(overlay);
+    Swal.fire({
+        icon: 'warning',
+        title: '🔧 System Maintenance',
+        html: 'The system is currently under maintenance.<br>All actions are temporarily disabled.<br><br><strong>Please wait for maintenance to complete.</strong>',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+    });
+}
+
+function hideMaintenanceBanner() {
+    document.getElementById('maintenanceBanner')?.remove();
+    document.getElementById('maintenanceOverlay')?.remove();
+    Swal.close();
+    Swal.fire({ icon:'success', title:'System Online', text:'Maintenance is complete. You can continue.', timer:3000, showConfirmButton:false });
+}
+
+checkMaintenanceMode();
+_maintenancePollInterval = setInterval(checkMaintenanceMode, 15000);

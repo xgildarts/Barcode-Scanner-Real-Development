@@ -163,8 +163,20 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, decodedToken.teacher_barcode_scanner_serial_number)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', null, subject, `Set subject: ${subject}, year level: ${yearLevel}`)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', null, subject, `Set subject: ${subject}, year level: ${yearLevel}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Get current active subject and year level
+teacher.get('/get_active_subject', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const result = await services.getActiveSubjectAndYearLevel(decodedToken.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
     }
@@ -174,7 +186,8 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
 teacher.post('/teacher_attendance_insertion', async (req, res) => {
     const { barcode, teacher_barcode_scanner_serial_number } = req.body
 
-    console.log("Barcode:", barcode);
+    console.log("Barcode:", barcode)
+    console.log("Scanner Serial Number:", teacher_barcode_scanner_serial_number)
 
     try {
         // Check registration
@@ -301,7 +314,7 @@ teacher.delete('/delete_program/:id', async (req, res) => {
             if (found) subjectName = found.subject_name
         } catch (_) {}
         const result = await services.deleteSubject(subjectID)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'DELETE_SUBJECT', 'Subject', null, subjectName, `Deleted subject: ${subjectName}`)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'DELETE_SUBJECT', 'Subject', null, subjectName, `Deleted subject: ${subjectName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -315,7 +328,7 @@ teacher.post('/programs/add', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.addSubject(program_name, decodedToken.teacher_id)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'ADD_SUBJECT', 'Subject', null, program_name, `Added subject: ${program_name}`)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'ADD_SUBJECT', 'Subject', null, program_name, `Added subject: ${program_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -373,7 +386,7 @@ teacher.put('/update_student_record', async (req, res) => {
             program
         )
 
-        if (!result.duplicate) services.writeActivityLog(decodedToken.teacher_id || null, decodedToken.teacher_name || null, 'teacher', 'EDIT_STUDENT_RECORD', 'Student', req.body.student_id, `${req.body.firstname} ${req.body.lastname}`, `Edited class record: ${req.body.student_id_number}`)
+        if (!result.duplicate) services.writeActivityLog(decodedToken.teacher_id || null, decodedToken.teacher_name || null, 'teacher', 'EDIT_STUDENT_RECORD', 'Student', req.body.student_id, `${req.body.firstname} ${req.body.lastname}`, `Edited class record: ${req.body.student_id_number}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({
             ok: true,
             message: 'Student record updated successfully!',
@@ -402,7 +415,7 @@ teacher.delete('/delete_student_record/:id', async (req, res) => {
             if (found) studentName = `${found.student_firstname} ${found.student_lastname}`
         } catch (_) {}
         const result = await services.deleteStudentRegisteredRecord(id)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'DELETE_STUDENT_RECORD', 'Student', null, studentName, `Removed ${studentName} from class`)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'DELETE_STUDENT_RECORD', 'Student', null, studentName, `Removed ${studentName} from class`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result})
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -428,7 +441,7 @@ teacher.put('/change_password', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.updateTeacherPassword(decodedToken.teacher_id, current_password, new_password)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'CHANGE_PASSWORD', 'Teacher', decodedToken.teacher_id, null, 'Teacher changed their password')
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'CHANGE_PASSWORD', 'Teacher', decodedToken.teacher_id, null, 'Teacher changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Password updated successfully!', content: result})
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -442,7 +455,7 @@ teacher.put('/change_teacher_name', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name || newName, 'teacher', 'CHANGE_NAME', 'Teacher', decodedToken.teacher_id, newName, `Changed name to: ${newName}`)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name || newName, 'teacher', 'CHANGE_NAME', 'Teacher', decodedToken.teacher_id, newName, `Changed name to: ${newName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Successfully updated new name!', content: result})
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -571,7 +584,7 @@ teacher.post('/set_location', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         const result = await services.setTeacherLocation(decodedToken.teacher_id, latitude, longitude, radius)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_LOCATION', 'Location', decodedToken.teacher_id, null, `Set location: lat ${latitude}, lng ${longitude}, radius ${radius}m`)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_LOCATION', 'Location', decodedToken.teacher_id, null, `Set location: lat ${latitude}, lng ${longitude}, radius ${radius}m`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || err })
@@ -579,4 +592,22 @@ teacher.post('/set_location', async (req, res) => {
 })
 
 // Export route
+
+// Logout
+teacher.post('/logout', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization']);
+        const decoded = services.verifyToken(token);
+        if (decoded) {
+            // Fetch email from DB since it's not in the token
+            const db = require('../configuration/db');
+            db.execute('SELECT teacher_email FROM teacher WHERE teacher_id = ? LIMIT 1', [decoded.teacher_id], (err, rows) => {
+                const email = (!err && rows.length) ? rows[0].teacher_email : null;
+                services.writeLogoutLog(decoded.teacher_id, decoded.teacher_name, email, 'teacher', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+            });
+        }
+        res.json({ ok: true });
+    } catch (_) { res.json({ ok: true }); }
+})
+
 module.exports = teacher
