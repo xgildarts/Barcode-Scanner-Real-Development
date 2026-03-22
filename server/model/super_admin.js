@@ -4,6 +4,25 @@ const multer  = require('multer')
 const path    = require('path')
 const superAdmin = express.Router()
 
+// ── Message file upload (100 MB limit) ──────────────────────
+const msgStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '../../uploads/message_files/')
+        require('fs').mkdirSync(dir, { recursive: true })
+        cb(null, dir)
+    },
+    filename: (req, file, cb) => {
+        const ext  = path.extname(file.originalname)
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50)
+        cb(null, `msg_${Date.now()}_${base}${ext}`)
+    }
+})
+const uploadMsgFile = multer({
+    storage: msgStorage,
+    limits: { fileSize: 100 * 1024 * 1024 } // 100 MB
+})
+
+
 superAdmin.use(express.json())
 
 // ============================================================
@@ -835,3 +854,64 @@ superAdmin.post('/logout', requireSuperAdmin, (req, res) => {
 })
 
 module.exports = superAdmin
+// ── Notifications ──────────────────────────────────────────────
+superAdmin.get('/notifications', requireSuperAdmin, async (req, res) => {
+    try {
+        const rows  = await services.getNotifications('super_admin', req.query.limit || 50);
+        const count = await services.getUnreadCount('super_admin');
+        res.json({ ok: true, content: rows, unread: count });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+superAdmin.post('/notifications/read', requireSuperAdmin, async (req, res) => {
+    try {
+        await services.markNotificationsRead('super_admin', req.body.ids || []);
+        res.json({ ok: true });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+// ── Messaging ──────────────────────────────────────────────
+superAdmin.get('/messages/contacts', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const contacts = await services.getMessageContacts(tok.super_admin_id, 'super_admin')
+        const unread   = await services.getUnreadMessageCount(tok.super_admin_id, 'super_admin')
+        res.json({ ok: true, contacts, unread })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+superAdmin.get('/messages/conversation', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        await services.markMessagesRead(tok.super_admin_id, 'super_admin', parseInt(contact_id), contact_role)
+        const messages = await services.getConversation(tok.super_admin_id, 'super_admin', parseInt(contact_id), contact_role, 100)
+        res.json({ ok: true, messages })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+superAdmin.post('/messages/send', uploadMsgFile.single('file'), async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { receiver_id, receiver_role, receiver_name, content } = req.body
+        if (!content?.trim() && !req.file) return res.status(400).json({ ok: false, message: 'Message cannot be empty.' })
+        const senderName = tok.super_admin_name || 'super_admin'
+        const fileUrl  = req.file ? `/api/v1/uploads/message_files/${req.file.filename}` : null
+        const fileName = req.file ? req.file.originalname : null
+        const fileType = req.file ? req.file.mimetype : null
+        const id = await services.sendMessage(tok.super_admin_id, 'super_admin', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType)
+        res.json({ ok: true, id })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+superAdmin.get('/messages/search', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const users = await services.searchUsersForMessaging(req.query.q || '', tok.super_admin_id, 'super_admin')
+        res.json({ ok: true, users })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})

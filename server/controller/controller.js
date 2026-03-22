@@ -21,20 +21,22 @@ app.use(cors({
 }));
 app.set('trust proxy', true);
 app.use('/api/v1/uploads', express.static(path.join(__dirname, '../../uploads')))
+app.use('/api/v1/uploads/message_files', express.static(path.join(__dirname, '../../uploads/message_files')))
+app.use('/public', express.static(path.join(__dirname, '../../public')))  // logo & public assets
 
 
-// Static folders
-// app.use('/admin', express.static(path.join(__dirname, '../../admin')))
-// app.use('/guard', express.static(path.join(__dirname, '../../guard')))
-// app.use('/student', express.static(path.join(__dirname, '../../student')))
-// app.use('/teacher', express.static(path.join(__dirname, '../../teacher')))
-// app.use('/css', express.static(path.join(__dirname, '../../css')))
-// app.use('/public', express.static(path.join(__dirname, '../../public')))
+// Static folders — frontend served directly by Express
+app.use('/admin',       express.static(path.join(__dirname, '../../admin')))
+app.use('/guard',       express.static(path.join(__dirname, '../../guard')))
+app.use('/student',     express.static(path.join(__dirname, '../../student')))
+app.use('/teacher',     express.static(path.join(__dirname, '../../teacher')))
+app.use('/super_admin', express.static(path.join(__dirname, '../../super_admin')))
+app.use('/css',         express.static(path.join(__dirname, '../../css')))
 
-// Root redirect
-// app.get('/', (req, res) => {
-//     res.redirect('/student')
-// })
+// Root redirect — change to whichever role you want as default
+app.get('/', (req, res) => {
+    res.redirect('/student/student_dashboard.html')
+})
 
 const services = require('./services')
 

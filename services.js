@@ -295,7 +295,7 @@ async function manualInsertAttendance(
     student_id, student_id_number, student_firstname, student_middlename,
     student_lastname, student_email, student_year_level, student_guardian_number,
     student_program, teacher_barcode_scanner_serial_number,
-    teacherId, teacherName, ip, userAgent
+    teacherId, teacherName
 ) {
     const inClass = await checkStudentToRegularClass(student_id_number)
     if (!inClass) throw new Error('Student is not registered to this subject.')
@@ -324,7 +324,7 @@ async function manualInsertAttendance(
     await sendSMS(student_guardian_number,
         `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`)
 
-    writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`, ip || null, userAgent || null)
+    writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`, null, null)
     return 'Attendance recorded successfully!'
 }
 
@@ -631,42 +631,12 @@ async function studentGoogleLogin(email, device_id, ip, userAgent) {
 }
 
 // Get Student Attendance
-function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
+function getAttendanceHistoryForStudentOnly(studentID) {
     return new Promise((resolve, reject) => {
-        // If numeric student_id is available, use it (most precise)
-        // Otherwise fall back to student_id_number string match
-        if (studentID) {
-            db.execute(
-                'SELECT * FROM attendance_history_record WHERE student_id = ? ORDER BY attendance_date DESC, attendance_time DESC',
-                [studentID],
-                (err, result) => {
-                    if (err) return reject(err)
-                    // If no results found by ID, try by student_id_number as fallback
-                    if (result.length === 0 && studentIDNumber) {
-                        db.execute(
-                            'SELECT * FROM attendance_history_record WHERE student_id_number = ? ORDER BY attendance_date DESC, attendance_time DESC',
-                            [studentIDNumber],
-                            (err2, result2) => {
-                                if (err2) return reject(err2)
-                                resolve(result2)
-                            }
-                        )
-                    } else {
-                        resolve(result)
-                    }
-                }
-            )
-        } else {
-            // No student_id — use student_id_number directly
-            db.execute(
-                'SELECT * FROM attendance_history_record WHERE student_id_number = ? ORDER BY attendance_date DESC, attendance_time DESC',
-                [studentIDNumber],
-                (err, result) => {
-                    if (err) return reject(err)
-                    resolve(result)
-                }
-            )
-        }
+        db.execute('SELECT * FROM attendance_history_record WHERE student_id = ?', [studentID], (err, result) => {
+            if (err) { return reject(err) }
+            resolve(result)
+        })
     })
 }
 
@@ -868,7 +838,7 @@ function updateStudentBarcode(studentID, newBarcode, teacherSerial) {
 // Get all programs
 function getAllPrograms() {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT program_id, program_name, program_date_created FROM program ORDER BY program_id DESC', [], (err, result) => {
+        db.execute('SELECT program_id, program_name, program_date_created FROM program', [], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1360,7 +1330,7 @@ function insertStudentAttendanceHistory(
 // Get Student Attendance Now
 async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ? ORDER BY attendance_date DESC, attendance_time DESC', [teacher_barcode_scanner_serial_number], (err, result) => {
+        db.execute('SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ?', [teacher_barcode_scanner_serial_number], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1370,7 +1340,7 @@ async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number) {
 // Get Student Attendance History
 async function getStudentAttendanceHistory(teacher_barcode_scanner_serial_number) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_history_record WHERE teacher_barcode_scanner_serial_number = ? ORDER BY attendance_date DESC, attendance_time DESC', [teacher_barcode_scanner_serial_number], (err, result) => {
+        db.execute('SELECT * FROM attendance_history_record WHERE teacher_barcode_scanner_serial_number = ?', [teacher_barcode_scanner_serial_number], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1410,7 +1380,7 @@ async function addSubject(subjectName, teacherID) {
 // Get Year Levels
 async function teacherGetYearLevel() {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM year_level ORDER BY year_level_id DESC', [], (err, result) => {
+        db.execute('SELECT * FROM year_level', [], (err, result) => {
             if (err) { reject(err) }
             resolve(result)
         })
@@ -1562,7 +1532,7 @@ function updateTeacherName(teacherID, teacherNewName) {
 // Get Whole Campus Accounts
 function getWholeCampusAccounts(tableName) {
     return new Promise((resolve, reject) => {
-        db.execute(`SELECT * FROM ${tableName} ORDER BY 1 DESC`, [], (err, result) => {
+        db.execute(`SELECT * FROM ${tableName}`, [], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1741,7 +1711,7 @@ async function adminLogin(email, password, ip, userAgent) {
 // Get Admin data
 function getAdminData(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT admin_id, admin_name, admin_email, admin_profile_picture FROM admin_accounts WHERE admin_id = ?', [adminID], (err, result) => {
+        db.execute('SELECT admin_id, admin_name, admin_email, admin_profile_picture FROM admin_accounts;', [], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1964,7 +1934,7 @@ async function guardLogin(email, password, ip, userAgent) {
 // Get Events
 function getAttendanceEventRecords(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM event_attendance_record WHERE admin_id = ? ORDER BY date DESC, time DESC', [adminID], (err, result) => {
+        db.execute('SELECT * FROM event_attendance_record WHERE admin_id = ?', [adminID], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1974,7 +1944,7 @@ function getAttendanceEventRecords(adminID) {
 // Get Events History
 function getAttendanceEventHistoryRecords(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM event_attendance_history_record WHERE admin_id = ? ORDER BY date DESC, time DESC', [adminID], (err, result) => {
+        db.execute('SELECT * FROM event_attendance_history_record WHERE admin_id = ?', [adminID], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1985,7 +1955,7 @@ function getAttendanceEventHistoryRecords(adminID) {
 function getAttendanceEventsForTeacher(teacherID, tableName) {
     return new Promise(async (resolve, reject) => {
         const teacherData = await getTeacherData(teacherID)
-        db.execute(`SELECT * FROM ${tableName} WHERE student_program = ? ORDER BY date DESC, time DESC`, [teacherData[0].teacher_program], (err, result) => {
+        db.execute(`SELECT * FROM ${tableName} WHERE student_program = ?`, [teacherData[0].teacher_program], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -2309,7 +2279,7 @@ function adminEditGuardAccounts(
 function getYearLevels() {
     return new Promise((resolve, reject) => {
         db.execute(
-            `SELECT year_level_id, year_level_name, year_level_created FROM year_level ORDER BY year_level_id DESC`,
+            `SELECT year_level_id, year_level_name, year_level_created FROM year_level ORDER BY year_level_id ASC`,
             [],
             (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
@@ -2506,7 +2476,7 @@ async function resetSuperAdminPasswordWithOTP(email, newPassword) {
 async function superAdminGetAllAdmins() {
     return new Promise((resolve, reject) => {
         db.execute(
-            'SELECT admin_id, admin_name, admin_email, admin_profile_picture, date_account_created FROM admin_accounts ORDER BY admin_id DESC',
+            'SELECT admin_id, admin_name, admin_email, admin_profile_picture, date_account_created FROM admin_accounts ORDER BY admin_id ASC',
             [],
             (err, rows) => { if (err) return reject(err); resolve(rows) }
         )
@@ -2874,12 +2844,6 @@ module.exports = {
     getNotifications,
     markNotificationsRead,
     getUnreadCount,
-    sendMessage,
-    getConversation,
-    getMessageContacts,
-    getUnreadMessageCount,
-    markMessagesRead,
-    searchUsersForMessaging,
     writeLoginLog,
     writeLogoutLog,
     getSystemSetting,
@@ -3005,170 +2969,4 @@ function getUnreadCount(role) {
             (err, rows) => resolve(err ? 0 : (rows[0]?.cnt || 0))
         );
     });
-}
-
-// ============================================================
-// MESSAGING
-// ============================================================
-
-// Auto-create messages table — uses db.query (supports DDL better than db.execute)
-db.query(
-    `CREATE TABLE IF NOT EXISTS messages (
-        id            INT AUTO_INCREMENT PRIMARY KEY,
-        sender_id     INT          NOT NULL,
-        sender_role   VARCHAR(20)  NOT NULL,
-        sender_name   VARCHAR(255) NOT NULL,
-        receiver_id   INT          NOT NULL,
-        receiver_role VARCHAR(20)  NOT NULL,
-        receiver_name VARCHAR(255) NOT NULL,
-        content       TEXT,
-        file_url      VARCHAR(500) DEFAULT NULL,
-        file_name     VARCHAR(255) DEFAULT NULL,
-        file_type     VARCHAR(100) DEFAULT NULL,
-        is_read       TINYINT(1)   NOT NULL DEFAULT 0,
-        created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-    (err) => {
-        if (err) {
-            console.error('[Messages] Table creation failed:', err.message)
-        } else {
-            console.log('[Messages] Table ready')
-        }
-    }
-)
-
-// Send a message
-function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content, fileUrl, fileName, fileType) {
-    return new Promise((resolve, reject) => {
-        db.execute(
-            `INSERT INTO messages (sender_id, sender_role, sender_name, receiver_id, receiver_role, receiver_name, content, file_url, file_name, file_type)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content || null, fileUrl || null, fileName || null, fileType || null],
-            (err, result) => {
-                if (err) return reject(err)
-                resolve(result.insertId)
-            }
-        )
-    })
-}
-
-// Get conversation between two users
-function getConversation(userAId, userARole, userBId, userBRole, limit) {
-    const n = parseInt(limit) || 50
-    return new Promise((resolve) => {
-        db.execute(
-            `SELECT * FROM messages
-             WHERE (sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?)
-                OR (sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?)
-             ORDER BY created_at DESC
-             LIMIT ?`,
-            [userAId, userARole, userBId, userBRole,
-             userBId, userBRole, userAId, userARole, n],
-            (err, rows) => {
-                if (err) { console.error('[getConversation]', err.message); return resolve([]) }
-                resolve(rows.reverse())
-            }
-        )
-    })
-}
-
-// Get all contacts who have exchanged messages with this user + unread count
-function getMessageContacts(userId, userRole) {
-    // Step 1: get distinct contacts
-    const contactsSql = `
-        SELECT DISTINCT
-            CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_id   ELSE sender_id   END AS contact_id,
-            CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_role ELSE sender_role END AS contact_role,
-            CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_name ELSE sender_name END AS contact_name
-        FROM messages
-        WHERE (sender_id = ? AND sender_role = ?) OR (receiver_id = ? AND receiver_role = ?)
-    `
-    return new Promise((resolve) => {
-        db.execute(contactsSql,
-            [userId, userRole, userId, userRole, userId, userRole, userId, userRole, userId, userRole],
-            (err, contacts) => {
-                if (err) { console.error('[getMessageContacts]', err.message); return resolve([]) }
-                if (!contacts.length) return resolve([])
-
-                // Step 2: for each contact get last message + unread count
-                const tasks = contacts.map(c => new Promise(res => {
-                    db.execute(
-                        `SELECT content, sender_name, created_at,
-                                (SELECT COUNT(*) FROM messages
-                                 WHERE receiver_id = ? AND receiver_role = ?
-                                   AND sender_id = ? AND sender_role = ?
-                                   AND is_read = 0) AS unread
-                         FROM messages
-                         WHERE ((sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?)
-                             OR (sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?))
-                         ORDER BY created_at DESC LIMIT 1`,
-                        [
-                            userId, userRole, c.contact_id, c.contact_role,
-                            userId, userRole, c.contact_id, c.contact_role,
-                            c.contact_id, c.contact_role, userId, userRole
-                        ],
-                        (err2, rows) => {
-                            if (err2 || !rows.length) return res({ ...c, last_message: '', last_sender_name: '', unread: 0, last_message_at: null })
-                            res({
-                                ...c,
-                                last_message:     rows[0].content,
-                                last_sender_name: rows[0].sender_name,
-                                unread:           rows[0].unread || 0,
-                                last_message_at:  rows[0].created_at
-                            })
-                        }
-                    )
-                }))
-
-                Promise.all(tasks).then(results => {
-                    results.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at))
-                    resolve(results)
-                })
-            }
-        )
-    })
-}
-
-// Get unread message count for a user
-function getUnreadMessageCount(userId, userRole) {
-    return new Promise((resolve) => {
-        db.execute(
-            `SELECT COUNT(*) AS cnt FROM messages WHERE receiver_id = ? AND receiver_role = ? AND is_read = 0`,
-            [userId, userRole],
-            (err, rows) => resolve(err ? 0 : (rows[0]?.cnt || 0))
-        )
-    })
-}
-
-// Mark messages as read between two users
-function markMessagesRead(receiverId, receiverRole, senderId, senderRole) {
-    return new Promise((resolve) => {
-        db.execute(
-            `UPDATE messages SET is_read = 1
-             WHERE receiver_id = ? AND receiver_role = ? AND sender_id = ? AND sender_role = ? AND is_read = 0`,
-            [receiverId, receiverRole, senderId, senderRole],
-            (err) => { if (err) console.error('[markMessagesRead]', err.message); resolve() }
-        )
-    })
-}
-
-// Search users to start a new conversation
-function searchUsersForMessaging(query, excludeId, excludeRole) {
-    const like = `%${query}%`
-    const q = (sql, params) => new Promise((res, rej) => {
-        db.execute(sql, params, (err, rows) => { if (err) return res([]); res(rows) })
-    })
-    return Promise.all([
-        q(`SELECT student_id AS id, CONCAT(student_firstname,' ',student_lastname) AS name, 'student' AS role, student_email AS email FROM student_accounts WHERE (student_firstname LIKE ? OR student_lastname LIKE ? OR student_email LIKE ?) LIMIT 5`, [like, like, like]),
-        q(`SELECT teacher_id AS id, teacher_name AS name, 'teacher' AS role, teacher_email AS email FROM teacher WHERE (teacher_name LIKE ? OR teacher_email LIKE ?) LIMIT 5`, [like, like]),
-        q(`SELECT admin_id AS id, admin_name AS name, 'admin' AS role, admin_email AS email FROM admin_accounts WHERE (admin_name LIKE ? OR admin_email LIKE ?) LIMIT 5`, [like, like]),
-        q(`SELECT guard_id AS id, guard_name AS name, 'guard' AS role, guard_email AS email FROM guards WHERE (guard_name LIKE ? OR guard_email LIKE ?) LIMIT 5`, [like, like]),
-        q(`SELECT super_admin_id AS id, super_admin_name AS name, 'super_admin' AS role, super_admin_email AS email FROM super_admin_accounts WHERE (super_admin_name LIKE ? OR super_admin_email LIKE ?) LIMIT 5`, [like, like]),
-    ]).then(results => {
-        let users = []
-        results.forEach(rows => {
-            users = users.concat(rows.filter(u => !(u.id === excludeId && u.role === excludeRole)))
-        })
-        return users.slice(0, 15)
-    })
 }

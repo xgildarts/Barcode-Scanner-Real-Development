@@ -4,6 +4,25 @@ const multer  = require('multer')
 const path    = require('path')
 const teacher = express.Router()
 
+// ── Message file upload (100 MB limit) ──────────────────────
+const msgStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '../../uploads/message_files/')
+        require('fs').mkdirSync(dir, { recursive: true })
+        cb(null, dir)
+    },
+    filename: (req, file, cb) => {
+        const ext  = path.extname(file.originalname)
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50)
+        cb(null, `msg_${Date.now()}_${base}${ext}`)
+    }
+})
+const uploadMsgFile = multer({
+    storage: msgStorage,
+    limits: { fileSize: 100 * 1024 * 1024 } // 100 MB
+})
+
+
 teacher.use(express.json())
 
 // ============================================================
@@ -491,7 +510,9 @@ teacher.post('/manual_attendance', async (req, res) => {
             student_program,
             decodedToken.teacher_barcode_scanner_serial_number,
             decodedToken.teacher_id,
-            decodedToken.teacher_name
+            decodedToken.teacher_name,
+            req.ip,
+            req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']
         )
 
         res.json({ ok: true, message: result })
@@ -611,3 +632,48 @@ teacher.post('/logout', async (req, res) => {
 })
 
 module.exports = teacher
+// ── Messaging ──────────────────────────────────────────────
+teacher.get('/messages/contacts', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const contacts = await services.getMessageContacts(tok.teacher_id, 'teacher')
+        const unread   = await services.getUnreadMessageCount(tok.teacher_id, 'teacher')
+        res.json({ ok: true, contacts, unread })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+teacher.get('/messages/conversation', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        await services.markMessagesRead(tok.teacher_id, 'teacher', parseInt(contact_id), contact_role)
+        const messages = await services.getConversation(tok.teacher_id, 'teacher', parseInt(contact_id), contact_role, 100)
+        res.json({ ok: true, messages })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+teacher.post('/messages/send', uploadMsgFile.single('file'), async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { receiver_id, receiver_role, receiver_name, content } = req.body
+        if (!content?.trim() && !req.file) return res.status(400).json({ ok: false, message: 'Message cannot be empty.' })
+        const senderName = tok.teacher_name || 'teacher'
+        const fileUrl  = req.file ? `/api/v1/uploads/message_files/${req.file.filename}` : null
+        const fileName = req.file ? req.file.originalname : null
+        const fileType = req.file ? req.file.mimetype : null
+        const id = await services.sendMessage(tok.teacher_id, 'teacher', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType)
+        res.json({ ok: true, id })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+teacher.get('/messages/search', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const users = await services.searchUsersForMessaging(req.query.q || '', tok.teacher_id, 'teacher')
+        res.json({ ok: true, users })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})

@@ -1,0 +1,14 @@
+{
+    "liveServer.settings.ignoreFiles": [
+        ".vscode/**",
+        "**/*.ts",
+        "**/node_modules/**",
+        "server/**",
+        "public/uploads/**",
+        "uploads/**",
+        "**/uploads/**",
+        "**/*.log"
+    ],
+    "liveServer.settings.donotVerifyTags": true,
+    "liveServer.settings.donotShowInfoMsg": true
+}

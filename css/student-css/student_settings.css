@@ -139,9 +139,9 @@
 .logout-btn {
     width: 100%;
     padding: 13px;
-    background: white;
-    color: #e53935;
-    border: 2px solid #ffcdd2;
+    background: #fff0f0;
+    color: #c0392b;
+    border: 2px solid #f5c6c6;
     border-radius: 10px;
     font-size: 14px;
     font-weight: 700;
@@ -149,12 +149,36 @@
     transition: all 0.2s;
     margin-bottom: 24px;
     letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
+.logout-btn svg { fill: #c0392b; flex-shrink: 0; transition: fill 0.2s; }
+
 .logout-btn:hover {
-    background: #ffebee;
-    border-color: #e53935;
+    background: #c0392b;
+    border-color: #c0392b;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(192,57,43,0.3);
 }
+
+.logout-btn:hover svg { fill: #fff; }
+
+[data-theme="dark"] .logout-btn {
+    background: #2a1515 !important;
+    border-color: #5a2a2a !important;
+    color: #e57373 !important;
+}
+[data-theme="dark"] .logout-btn svg { fill: #e57373 !important; }
+[data-theme="dark"] .logout-btn:hover {
+    background: #c0392b !important;
+    border-color: #c0392b !important;
+    color: #fff !important;
+}
+[data-theme="dark"] .logout-btn:hover svg { fill: #fff !important; }
 
 @media (max-width: 480px) {
     .content-section,

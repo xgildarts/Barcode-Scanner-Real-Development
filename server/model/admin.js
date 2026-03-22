@@ -4,6 +4,25 @@ const multer  = require('multer')
 const path    = require('path')
 const admin = express.Router()
 
+// ── Message file upload (100 MB limit) ──────────────────────
+const msgStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '../../uploads/message_files/')
+        require('fs').mkdirSync(dir, { recursive: true })
+        cb(null, dir)
+    },
+    filename: (req, file, cb) => {
+        const ext  = path.extname(file.originalname)
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50)
+        cb(null, `msg_${Date.now()}_${base}${ext}`)
+    }
+})
+const uploadMsgFile = multer({
+    storage: msgStorage,
+    limits: { fileSize: 100 * 1024 * 1024 } // 100 MB
+})
+
+
 admin.use(express.json())
 
 // Multer — Admin Profile Picture
@@ -637,3 +656,64 @@ admin.post('/logout', async (req, res) => {
 })
 
 module.exports = admin
+// ── Notifications ──────────────────────────────────────────────
+admin.get('/notifications', async (req, res) => {
+    try {
+        const rows  = await services.getNotifications('admin', req.query.limit || 50);
+        const count = await services.getUnreadCount('admin');
+        res.json({ ok: true, content: rows, unread: count });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+admin.post('/notifications/read', async (req, res) => {
+    try {
+        await services.markNotificationsRead('admin', req.body.ids || []);
+        res.json({ ok: true });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+// ── Messaging ──────────────────────────────────────────────
+admin.get('/messages/contacts', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const contacts = await services.getMessageContacts(tok.admin_id, 'admin')
+        const unread   = await services.getUnreadMessageCount(tok.admin_id, 'admin')
+        res.json({ ok: true, contacts, unread })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+admin.get('/messages/conversation', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        await services.markMessagesRead(tok.admin_id, 'admin', parseInt(contact_id), contact_role)
+        const messages = await services.getConversation(tok.admin_id, 'admin', parseInt(contact_id), contact_role, 100)
+        res.json({ ok: true, messages })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+admin.post('/messages/send', uploadMsgFile.single('file'), async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { receiver_id, receiver_role, receiver_name, content } = req.body
+        if (!content?.trim() && !req.file) return res.status(400).json({ ok: false, message: 'Message cannot be empty.' })
+        const senderName = tok.admin_name || 'admin'
+        const fileUrl  = req.file ? `/api/v1/uploads/message_files/${req.file.filename}` : null
+        const fileName = req.file ? req.file.originalname : null
+        const fileType = req.file ? req.file.mimetype : null
+        const id = await services.sendMessage(tok.admin_id, 'admin', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType)
+        res.json({ ok: true, id })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+admin.get('/messages/search', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const users = await services.searchUsersForMessaging(req.query.q || '', tok.admin_id, 'admin')
+        res.json({ ok: true, users })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})

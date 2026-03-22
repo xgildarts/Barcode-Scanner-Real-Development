@@ -473,3 +473,34 @@
     fill: currentColor;
     transition: fill 0.2s;
 }
+/* ── Header logout button ────────────────────────────────── */
+.student-logout-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    flex-shrink: 0;
+}
+.student-logout-btn svg { fill: white; transition: fill 0.2s; }
+.student-logout-btn:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+    transform: translateY(-1px);
+}
+.student-logout-btn:active { transform: translateY(0); }
+
+[data-theme="dark"] .student-logout-btn {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .student-logout-btn:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+}

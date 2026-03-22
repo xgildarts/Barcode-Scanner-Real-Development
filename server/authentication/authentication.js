@@ -52,6 +52,14 @@ router.post('/student_registration', async (req, res) => {
             device_id
         );
 
+        // Notify admin & super admin
+        services.createNotification(
+            'new_student',
+            'New Student Registered',
+            `${firstName} ${middleName ? middleName + '. ' : ''}${lastName} (${idNumber}) registered — ${program}, ${yearLevel}`,
+            { student_id_number: idNumber, name: `${firstName} ${lastName}`, program, yearLevel, email }
+        ).catch(err => console.error('[Notification]', err));
+
         res.json({
             ok: true,
             message: 'Successfully registered!'

@@ -267,7 +267,7 @@
     left: -300px;
     width: 300px;
     height: 100vh;
-    background: linear-gradient(180deg, #3d7070 0%, #2c5f5f 100%);
+    background: linear-gradient(180deg, rgb(26, 69, 69) 0%, rgb(15, 46, 46) 100%);
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
     transition: left 0.3s ease;
     z-index: 1000;

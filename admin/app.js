@@ -1620,11 +1620,35 @@ document.getElementById('studentForm').addEventListener('submit', async function
 // EXPORT
 // ============================================================
 
-function printSection(tableId, title) {
+async function getLogoBase64() {
+    // Try absolute server URL first (most reliable), then relative fallbacks
+    const serverBase = URL_BASED.replace('/api/v1', '');
+    const attempts = [
+        serverBase + '/public/logo.png',
+        '../public/logo.png',
+        '/public/logo.png',
+    ];
+    for (const url of attempts) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const blob = await res.blob();
+            return await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        } catch { continue; }
+    }
+    return '';
+}
+
+async function printSection(tableId, title) {
     const table = document.getElementById(tableId);
     if (!table) return;
 
     const now  = new Date().toLocaleString('en-PH');
+    const logoSrc = await getLogoBase64();
 
     // Clone and strip Action columns
     const clone = table.cloneNode(true);
@@ -1651,6 +1675,7 @@ function printSection(tableId, title) {
         <style>
             body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
             .header { text-align: center; margin-bottom: 18px; }
+            .header img { width: 70px; height: 70px; object-fit: contain; border-radius: 50%; margin-bottom: 8px; }
             .header h2 { margin: 0; font-size: 1.1rem; text-transform: uppercase; color: #1a4545; }
             .header h3 { margin: 4px 0 2px; font-size: 1.3rem; }
             .header p  { margin: 0; font-size: 0.85rem; color: #555; }
@@ -1662,6 +1687,7 @@ function printSection(tableId, title) {
             @media print { body { margin: 0; } }
         </style></head><body>
             <div class="header">
+                ${logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;border-radius:50%;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">` : ''}
                 <h2>PanPacific University</h2>
                 <h3>${title}</h3>
                 <p>Generated: ${now} &nbsp;|&nbsp; Total Records: ${rows}</p>
@@ -2048,3 +2074,108 @@ async function loadSettingsStats() {
         if (el('settingsProfileName'))  el('settingsProfileName').textContent  = DOM.titleHeader?.dataset?.adminName || document.getElementById('adminProfileName')?.textContent || 'Admin';
     } catch (err) { console.error('[loadSettingsStats]', err); }
 }
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+let _notifOpen = false;
+let _notifData = [];
+const NOTIF_ENDPOINT = '/admin';
+
+async function fetchNotifications() {
+    try {
+        const res  = await apiFetch(`${NOTIF_ENDPOINT}/notifications?limit=50`);
+        if (!res || !res.ok) return;
+        const data = await res.json();
+        _notifData = data.content || [];
+        const unread = data.unread || 0;
+        const badge  = document.getElementById('notifBadge');
+        if (badge) {
+            if (unread > 0) {
+                badge.textContent = unread > 99 ? '99+' : unread;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        if (_notifOpen) renderNotifPanel();
+    } catch (e) { /* silent */ }
+}
+
+function renderNotifPanel() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+    if (!_notifData.length) {
+        list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+        return;
+    }
+    list.innerHTML = _notifData.map(n => {
+        const unread = !n.is_read;
+        const time   = formatNotifTime(n.created_at);
+        return `
+        <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead(${n.id})">
+            <div class="notif-icon">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            </div>
+            <div class="notif-body">
+                <div class="notif-title">${escHtml(n.title)}</div>
+                <div class="notif-msg">${escHtml(n.message || '')}</div>
+                <div class="notif-time">${time}</div>
+            </div>
+            ${unread ? '<div class="notif-dot"></div>' : ''}
+        </div>`;
+    }).join('');
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatNotifTime(dt) {
+    if (!dt) return '';
+    const d   = new Date(dt.replace(' ','T'));
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60)    return 'Just now';
+    if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return d.toLocaleDateString('en-PH', { month:'short', day:'numeric' });
+}
+
+function toggleNotifPanel() {
+    _notifOpen = !_notifOpen;
+    const panel   = document.getElementById('notifPanel');
+    const overlay = document.getElementById('notifOverlay');
+    panel.style.display   = _notifOpen ? 'flex' : 'none';
+    overlay.style.display = _notifOpen ? 'block' : 'none';
+    if (_notifOpen) renderNotifPanel();
+}
+
+function closeNotifPanel() {
+    _notifOpen = false;
+    const panel   = document.getElementById('notifPanel');
+    const overlay = document.getElementById('notifOverlay');
+    if (panel)   panel.style.display   = 'none';
+    if (overlay) overlay.style.display = 'none';
+}
+
+async function markOneRead(id) {
+    const item = _notifData.find(n => n.id === id);
+    if (item && !item.is_read) {
+        item.is_read = 1;
+        const res = await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [id] }) });
+        if (res) await res.json().catch(() => {});
+        fetchNotifications();
+    }
+}
+
+async function markAllRead() {
+    const res = await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) });
+    if (res) await res.json().catch(() => {});
+    _notifData.forEach(n => n.is_read = 1);
+    fetchNotifications();
+    renderNotifPanel();
+}
+
+// Poll every 10 seconds
+fetchNotifications();
+setInterval(fetchNotifications, 10000);

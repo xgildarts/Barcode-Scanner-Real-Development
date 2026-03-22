@@ -1797,11 +1797,35 @@ function exportTableToExcel(tableId, fileName) {
 // ============================================================
 // PRINT — Section specific
 // ============================================================
-function printSection(tableId, title) {
+async function getLogoBase64() {
+    // Try absolute server URL first (most reliable), then relative fallbacks
+    const serverBase = BASE_URL.replace('/api/v1', '');
+    const attempts = [
+        serverBase + '/public/logo.png',
+        '../public/logo.png',
+        '/public/logo.png',
+    ];
+    for (const url of attempts) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const blob = await res.blob();
+            return await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        } catch { continue; }
+    }
+    return '';
+}
+
+async function printSection(tableId, title) {
     const table = document.getElementById(tableId);
     if (!table) return window.print();
 
-    const now  = new Date().toLocaleString('en-PH');
+    const now     = new Date().toLocaleString('en-PH');
+    const logoSrc = await getLogoBase64();
     // Clone so we don't touch the live DOM
     const clone = table.cloneNode(true);
     // Find and remove Action columns
@@ -1830,6 +1854,7 @@ function printSection(tableId, title) {
             <style>
                 body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
                 .header { text-align: center; margin-bottom: 18px; }
+                .header img { width: 70px; height: 70px; object-fit: contain; border-radius: 50%; margin-bottom: 8px; }
                 .header h2 { margin: 0; font-size: 1.1rem; text-transform: uppercase; color: #1a4545; }
                 .header h3 { margin: 4px 0 2px; font-size: 1.3rem; }
                 .header p  { margin: 0; font-size: 0.85rem; color: #555; }
@@ -1843,6 +1868,7 @@ function printSection(tableId, title) {
         </head>
         <body>
             <div class="header">
+                ${logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;border-radius:50%;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">` : ''}
                 <h2>PanPacific University</h2>
                 <h3>${title}</h3>
                 <p>Generated: ${now} &nbsp;|&nbsp; Total Records: ${rows}</p>
@@ -1965,7 +1991,7 @@ function applyTheme(mode, font, size, save = true) {
     if (sidebar) {
         sidebar.style.background = mode === 'dark'
             ? 'linear-gradient(180deg, #0d1a2a 0%, #091422 100%)'
-            : 'linear-gradient(180deg, #4a7a7a 0%, #3d6b6b 100%)';
+            : 'linear-gradient(180deg, rgb(26, 69, 69) 0%, rgb(15, 46, 46) 100%)';
     }
 
     // Update button active states
