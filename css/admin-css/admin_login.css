@@ -198,4 +198,6 @@
         width: 100px;
         height: 100px;
     }
-}
+}/* Role badge — portal indicator */
+.logo-container { display:flex; flex-direction:column; align-items:center; }
+.role-badge { display:inline-flex; }

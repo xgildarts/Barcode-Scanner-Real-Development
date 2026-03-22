@@ -1345,6 +1345,21 @@
                         Refresh
                     </button>
                 </div>
+                <div class="filters-row" style="margin-top:10px;">
+                    <select class="filter-select" id="loginRoleFilter" onchange="applyLoginLogFilters()">
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                        <option value="guard">Guard</option>
+                        <option value="super_admin">Super Admin</option>
+                    </select>
+                    <select class="filter-select" id="loginStatusFilter" onchange="applyLoginLogFilters()">
+                        <option value="">All Status</option>
+                        <option value="SUCCESS">Success</option>
+                        <option value="FAILED">Failed</option>
+                    </select>
+                </div>
             </div>
             <div class="table-container">
                 <table class="attendance-table" id="loginLogsTable">

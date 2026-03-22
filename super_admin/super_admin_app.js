@@ -1885,10 +1885,7 @@ function initEventListeners() {
         if (e.target === this) closeAddYearLevelModal();
     });
 
-    document.getElementById('searchLoginLogs')?.addEventListener('input', function() {
-        const t = this.value.toLowerCase();
-        renderLoginLogsTable(_loginLogs.filter(l => (l.user_name||'').toLowerCase().includes(t)||(l.user_email||'').toLowerCase().includes(t)||(l.role||'').toLowerCase().includes(t)||(l.status||'').toLowerCase().includes(t)||(l.ip_address||'').toLowerCase().includes(t)||(l.device_info||'').toLowerCase().includes(t)));
-    });
+    document.getElementById('searchLoginLogs')?.addEventListener('input', applyLoginLogFilters);
 
     document.getElementById('searchActivityLogs')?.addEventListener('input', function() {
         const t = this.value.toLowerCase();
@@ -2207,7 +2204,7 @@ async function loadSystemStats() {
         const data = await res.json();
         if (!res.ok || !data.ok) return;
         const s = data.content;
-        if (DOM.sideBarStatsValue)    DOM.sideBarStatsValue.textContent    = s.total_admins;
+        if (DOM.sideBarStatsValue)    DOM.sideBarStatsValue.textContent    = s.total_event_attendees;
         if (DOM.statsValue)           DOM.statsValue.textContent           = s.total_event_attendees ?? 0;
         if (DOM.adminAccountCounts)   DOM.adminAccountCounts.textContent   = s.total_admins   + ' Accounts';
         if (DOM.teacherAccountCounts) DOM.teacherAccountCounts.textContent = s.total_teachers + ' Accounts';
@@ -2239,6 +2236,26 @@ async function renderLoginLogs() {
         const tbody = document.getElementById('loginLogsBody');
         if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px">Failed to load login logs.</td></tr>';
     }
+}
+
+function applyLoginLogFilters() {
+    const role   = (document.getElementById('loginRoleFilter')?.value   || '').toLowerCase();
+    const status = (document.getElementById('loginStatusFilter')?.value || '').toLowerCase();
+    const search = (document.getElementById('searchLoginLogs')?.value   || '').toLowerCase();
+
+    const filtered = _loginLogs.filter(l => {
+        const matchRole   = !role   || (l.role   || '').toLowerCase() === role;
+        const matchStatus = !status || (l.status || '').toLowerCase() === status;
+        const matchSearch = !search ||
+            (l.user_name  || '').toLowerCase().includes(search) ||
+            (l.user_email || '').toLowerCase().includes(search) ||
+            (l.role       || '').toLowerCase().includes(search) ||
+            (l.status     || '').toLowerCase().includes(search) ||
+            (l.ip_address || '').toLowerCase().includes(search) ||
+            (l.device_info|| '').toLowerCase().includes(search);
+        return matchRole && matchStatus && matchSearch;
+    });
+    renderLoginLogsTable(filtered);
 }
 
 function renderLoginLogsTable(logs) {

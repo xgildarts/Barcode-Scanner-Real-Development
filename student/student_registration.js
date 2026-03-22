@@ -120,6 +120,11 @@ function handleGoogleCredential(response) {
 function openGoogleStep2() {
     const modal = document.getElementById('googleStep2Modal');
     modal.style.display = 'flex';
+    // Always reset the device confirm checkbox and disable submit on open
+    const gChk = document.getElementById('g_deviceConfirm');
+    const gBtn = document.getElementById('g_submitBtn');
+    if (gChk) gChk.checked = false;
+    if (gBtn) { gBtn.disabled = true; gBtn.style.opacity = '0.5'; gBtn.style.cursor = 'not-allowed'; }
 
     // Show avatar & name
     if (_googleUser.picture) {

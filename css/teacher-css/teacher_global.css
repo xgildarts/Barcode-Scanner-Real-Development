@@ -1,404 +1,658 @@
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-background: linear-gradient(180deg, #d5e8df 0%, #c5d8cf 100%);
-min-height: 100vh;
-padding: 10px;
-display: flex;
-}
-
-.header {
-padding: 16px 10px;
-display: flex;
-justify-content: space-between;
-align-items: center;
-}
-
-.header-title {
-font-size: 24px;
-font-weight: 700;
-text-align: center;
-}
-
-.controls-section {
-padding: 16px 20px 20px;
-}
-
-.sections {
-display: none;
-}
-
-.sections.active {
-display: block;
-}
-/* ============================================================
-   THEME — CSS variables
-   ============================================================ */
-:root {
-    --t-accent:        #3d6b6b;
-    --t-accent-light:  #eef6f4;
-    --t-accent-border: #b2d8d0;
-    --t-surface:       #ffffff;
-    --t-surface-alt:   #f8faf9;
-    --t-surface-border:#e0ebe8;
-    --t-text-primary:  #1a4545;
-    --t-text-secondary:#5a7a7a;
-    --t-text-muted:    #9ab0b0;
-}
-[data-theme="dark"] {
-    --t-accent:        #5a9e9e;
-    --t-accent-light:  #1a2f2f;
-    --t-accent-border: #2d5a5a;
-    --t-surface:       #1a2535;
-    --t-surface-alt:   #14202e;
-    --t-surface-border:#2a3a4a;
-    --t-text-primary:  #e0eaf0;
-    --t-text-secondary:#8aaabb;
-    --t-text-muted:    #4a6a7a;
-}
-
-/* Font family cascade */
-[data-font="inter"]   *, [data-font="inter"]   { font-family: 'Inter', sans-serif !important; }
-[data-font="roboto"]  *, [data-font="roboto"]  { font-family: 'Roboto', sans-serif !important; }
-[data-font="poppins"] *, [data-font="poppins"] { font-family: 'Poppins', sans-serif !important; }
-[data-font="mono"]    *, [data-font="mono"]    { font-family: 'JetBrains Mono', monospace !important; }
-
-/* ============================================================
-   ACTIVE NAV HIGHLIGHT
-   ============================================================ */
-.menu-item.active-page {
-    background: rgba(255, 255, 255, 0.28) !important;
-    border-left: 3px solid #fff;
-    transform: translateX(4px);
-}
-
-/* ============================================================
-   SETTINGS PAGE — teacher-specific wrappers
-   ============================================================ */
-.teacher-password-section { margin-top: 24px; }
-
-.danger-zone-box {
-    border: 1.5px solid #f5c6cb;
-    border-radius: 12px;
-    padding: 16px;
-    background: #fff9f9;
-}
-
-.danger-zone-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.danger-zone-title {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #c0392b;
-}
-
-.danger-zone-sub {
-    font-size: 0.75rem;
-    color: #888;
-    margin-top: 2px;
-}
-
-.danger-logout-btn {
-    padding: 8px 16px;
-    background: #c0392b;
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s;
-}
-
-.danger-logout-btn:hover { background: #a93226; }
-
-/* Appearance buttons */
-.t-font-btn, .t-size-btn {
-    padding: 10px 8px;
-    border: 2px solid #e0ebe8;
-    border-radius: 10px;
-    background: #fff;
-    color: #5a7a7a;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .2s;
-    font-size: 0.82rem;
-}
-.t-font-btn.t-active, .t-size-btn.t-active,
-.t-font-btn:hover, .t-size-btn:hover {
-    border-color: #3d6b6b;
-    color: #3d6b6b;
-    background: #eef6f4;
-}
-.t-theme-mode-btn { color: #5a7a7a; }
-.t-theme-mode-btn.t-active {
-    border-color: #3d6b6b !important;
-    color: #3d6b6b;
-    background: #eef6f4 !important;
-}
-
-/* update password btn icon flex */
-.update-password-settings-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-/* ============================================================
-   DARK MODE — full overrides
-   ============================================================ */
-[data-theme="dark"] body {
-    background: #0f1c2e !important;
-    color: var(--t-text-primary) !important;
-}
-
-/* Header / top bar */
-[data-theme="dark"] .header { background: #1a2535 !important; }
-[data-theme="dark"] .header-title { color: #e0eaf0 !important; }
-[data-theme="dark"] .menu-btn svg { fill: #e0eaf0 !important; }
-
-/* Main content */
-[data-theme="dark"] .sections { background: #0f1c2e !important; }
-
-/* Profile section */
-[data-theme="dark"] .profile-section {
-    background: #1a2535 !important;
-    border-bottom-color: #2a3a4a !important;
-}
-[data-theme="dark"] .profile-name { color: #e0eaf0 !important; }
-[data-theme="dark"] .profile-email { color: #8aaabb !important; }
-[data-theme="dark"] .edit-profile-btn {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #e0eaf0 !important;
-}
-
-/* Content section */
-[data-theme="dark"] .content-section { background: #0f1c2e !important; }
-[data-theme="dark"] .section-title { color: #e0eaf0 !important; }
-
-/* Info card */
-[data-theme="dark"] .info-card {
-    background: #1a2535 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
-}
-[data-theme="dark"] .info-row { border-bottom-color: #2a3a4a !important; }
-[data-theme="dark"] .info-label { color: #8aaabb !important; }
-[data-theme="dark"] .info-value { color: #e0eaf0 !important; }
-[data-theme="dark"] .edit-settings-btn { color: #8aaabb !important; }
-[data-theme="dark"] .edit-settings-btn svg { fill: #8aaabb !important; }
-
-/* Form inputs */
-[data-theme="dark"] .password-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #e0eaf0 !important;
-}
-[data-theme="dark"] .password-input:focus { border-color: #5a9e9e !important; }
-[data-theme="dark"] .form-label { color: #8aaabb !important; }
-
-/* Update password btn */
-[data-theme="dark"] .update-password-settings-btn { background: #3d7a7a !important; }
-[data-theme="dark"] .update-password-settings-btn:hover { background: #2d6a6a !important; }
-
-/* Appearance buttons dark */
-[data-theme="dark"] .t-font-btn,
-[data-theme="dark"] .t-size-btn {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #8aaabb !important;
-}
-[data-theme="dark"] .t-font-btn.t-active,
-[data-theme="dark"] .t-size-btn.t-active,
-[data-theme="dark"] .t-font-btn:hover,
-[data-theme="dark"] .t-size-btn:hover {
-    border-color: #5a9e9e !important;
-    color: #7ecece !important;
-    background: #1a2f2f !important;
-}
-[data-theme="dark"] .t-theme-mode-btn {
-    border-color: #2a3a4a !important;
-    background: #1e2f3f !important;
-    color: #8aaabb !important;
-}
-[data-theme="dark"] .t-theme-mode-btn.t-active {
-    border-color: #5a9e9e !important;
-    color: #7ecece !important;
-    background: #1a2f2f !important;
-}
-
-/* Danger zone (shared classes from admin) */
-[data-theme="dark"] .danger-zone-box {
-    background: #1f0f0f !important;
-    border-color: #5a2020 !important;
-}
-[data-theme="dark"] .danger-zone-title { color: #e57373 !important; }
-[data-theme="dark"] .danger-zone-sub   { color: #6a7a7a !important; }
-[data-theme="dark"] .danger-logout-btn { background: #922b21 !important; }
-[data-theme="dark"] .danger-logout-btn:hover { background: #7b241c !important; }
-
-/* Modals */
-[data-theme="dark"] .record-modal-content,
-[data-theme="dark"] .custom-modal .record-modal-content {
-    background: #1a2535 !important;
-}
-[data-theme="dark"] .modal-body { background: #1a2535 !important; }
-[data-theme="dark"] .modal-body label,
-[data-theme="dark"] .modal-body .form-group label { color: #8aaabb !important; }
-[data-theme="dark"] .modal-body input,
-[data-theme="dark"] .modal-body select,
-[data-theme="dark"] .modal-body textarea {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #e0eaf0 !important;
-}
-[data-theme="dark"] .modal-footer { border-top-color: #2a3a4a !important; background: #1a2535 !important; }
-[data-theme="dark"] .modal-footer .cancel-btn {
-    background: #1e2f3f !important;
-    color: #8aaabb !important;
-}
-[data-theme="dark"] .modal-footer .save-btn { background: #3d7a7a !important; }
-[data-theme="dark"] .modal-header-student-registered { background: #2a5a56 !important; }
-
-/* Add Student modal — search results container */
-[data-theme="dark"] #studentSearchResults {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
-}
-
-/* Each search result row */
-[data-theme="dark"] #studentSearchResults > div {
-    border-bottom-color: #2a3a4a !important;
-    background: #1a2535 !important;
-}
-
-[data-theme="dark"] #studentSearchResults > div:hover {
-    background: #1e2f3f !important;
-}
-
-/* Student name inside result row */
-[data-theme="dark"] #studentSearchResults > div div:first-child {
-    color: #7ecece !important;
-}
-
-/* ID · program · year line */
-[data-theme="dark"] #studentSearchResults > div div:nth-child(2) {
-    color: #8aaabb !important;
-}
-
-/* Email line */
-[data-theme="dark"] #studentSearchResults > div div:nth-child(3) {
-    color: #5a7a8a !important;
-}
-
-/* Selected student preview card */
-[data-theme="dark"] #selectedStudentPreview {
-    background: #0e2020 !important;
-    border-color: #2a4a44 !important;
-}
-
-[data-theme="dark"] #previewName {
-    color: #7ecece !important;
-}
-
-[data-theme="dark"] #previewId,
-[data-theme="dark"] #previewProgram {
-    color: #8aaabb !important;
-}
-
-[data-theme="dark"] #previewEmail {
-    color: #5a7a8a !important;
-}
-
-/* Clear (✕) button inside preview */
-[data-theme="dark"] #selectedStudentPreview button {
-    color: #5a7a8a !important;
-}
-
-[data-theme="dark"] #selectedStudentPreview button:hover {
-    color: #8aaabb !important;
-}
-
-/* Disabled Add Student button */
-[data-theme="dark"] #confirmAddStudentBtn:disabled {
-    background: #1e3a3a !important;
-    color: #4a7a7a !important;
-}
-
-/* Enabled Add Student button */
-[data-theme="dark"] #confirmAddStudentBtn:not(:disabled) {
-    background: #3d7a7a !important;
-    color: #e0eaf0 !important;
-    opacity: 1 !important;
-    cursor: pointer !important;
-}
-
-/* Tables */
-[data-theme="dark"] .attendance-table,
-[data-theme="dark"] table {
-    background: #1a2535 !important;
-}
-[data-theme="dark"] th {
-    background: #1e3a3a !important;
-    color: #7ecece !important;
-    border-color: #2a3a4a !important;
-}
-[data-theme="dark"] td {
-    color: #e0eaf0 !important;
-    border-color: #2a3a4a !important;
-}
-[data-theme="dark"] tr:nth-child(even) { background: #14202e !important; }
-[data-theme="dark"] tr:hover { background: #1e2f3f !important; }
-
-/* Search */
-[data-theme="dark"] .search-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #e0eaf0 !important;
-}
-[data-theme="dark"] input[type="text"],
-[data-theme="dark"] input[type="search"],
-[data-theme="dark"] input[type="email"],
-[data-theme="dark"] select {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #e0eaf0 !important;
-}
-
-/* Cards */
-[data-theme="dark"] .student-card,
-[data-theme="dark"] .card,
-[data-theme="dark"] .info-box {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
-}
-
-/* Controls / sections bg */
-[data-theme="dark"] #settings,
-[data-theme="dark"] #dashboard,
-[data-theme="dark"] #attendanceNow,
-[data-theme="dark"] #attendanceHistory,
-[data-theme="dark"] #eventAttendance,
-[data-theme="dark"] #eventAttendanceHistory,
-[data-theme="dark"] #studentRegistered,
-[data-theme="dark"] #manualEntry,
-[data-theme="dark"] #location {
-    background: #0f1c2e !important;
-}
-
-/* Scrollbar */
-[data-theme="dark"] ::-webkit-scrollbar-track { background: #0f1c2e; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a3a4a; }
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(180deg, #d5e8df 0%, #c5d8cf 100%);
+  min-height: 100vh;
+  padding: 10px;
+  display: flex;
+  }
+  
+  .header {
+  padding: 16px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  }
+  
+  .header-title {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  }
+  
+  .controls-section {
+  padding: 16px 20px 20px;
+  }
+  
+  .sections {
+  display: none;
+  }
+  
+  .sections.active {
+  display: block;
+  }
+  /* ============================================================
+     THEME — CSS variables
+     ============================================================ */
+  :root {
+      --t-accent:        #3d6b6b;
+      --t-accent-light:  #eef6f4;
+      --t-accent-border: #b2d8d0;
+      --t-surface:       #ffffff;
+      --t-surface-alt:   #f8faf9;
+      --t-surface-border:#e0ebe8;
+      --t-text-primary:  #1a4545;
+      --t-text-secondary:#5a7a7a;
+      --t-text-muted:    #9ab0b0;
+  }
+  [data-theme="dark"] {
+      --t-accent:        #5a9e9e;
+      --t-accent-light:  #1a2f2f;
+      --t-accent-border: #2d5a5a;
+      --t-surface:       #1a2535;
+      --t-surface-alt:   #14202e;
+      --t-surface-border:#2a3a4a;
+      --t-text-primary:  #e0eaf0;
+      --t-text-secondary:#8aaabb;
+      --t-text-muted:    #4a6a7a;
+  }
+  
+  /* Font family cascade */
+  [data-font="inter"]   *, [data-font="inter"]   { font-family: 'Inter', sans-serif !important; }
+  [data-font="roboto"]  *, [data-font="roboto"]  { font-family: 'Roboto', sans-serif !important; }
+  [data-font="poppins"] *, [data-font="poppins"] { font-family: 'Poppins', sans-serif !important; }
+  [data-font="mono"]    *, [data-font="mono"]    { font-family: 'JetBrains Mono', monospace !important; }
+  
+  /* ============================================================
+     ACTIVE NAV HIGHLIGHT
+     ============================================================ */
+  .menu-item.active-page {
+      background: rgba(255, 255, 255, 0.28) !important;
+      border-left: 3px solid #fff;
+      transform: translateX(4px);
+  }
+  
+  /* ============================================================
+     SETTINGS PAGE — teacher-specific wrappers
+     ============================================================ */
+  .teacher-password-section { margin-top: 24px; }
+  
+  .danger-zone-box {
+      border: 1.5px solid #f5c6cb;
+      border-radius: 12px;
+      padding: 16px;
+      background: #fff9f9;
+  }
+  
+  .danger-zone-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+  }
+  
+  .danger-zone-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #c0392b;
+  }
+  
+  .danger-zone-sub {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 2px;
+  }
+  
+  .danger-logout-btn {
+      padding: 8px 16px;
+      background: #c0392b;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+  }
+  
+  .danger-logout-btn:hover { background: #a93226; }
+  
+  /* Appearance buttons */
+  .t-font-btn, .t-size-btn {
+      padding: 10px 8px;
+      border: 2px solid #e0ebe8;
+      border-radius: 10px;
+      background: #fff;
+      color: #5a7a7a;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      font-size: 0.82rem;
+  }
+  .t-font-btn.t-active, .t-size-btn.t-active,
+  .t-font-btn:hover, .t-size-btn:hover {
+      border-color: #3d6b6b;
+      color: #3d6b6b;
+      background: #eef6f4;
+  }
+  .t-theme-mode-btn { color: #5a7a7a; }
+  .t-theme-mode-btn.t-active {
+      border-color: #3d6b6b !important;
+      color: #3d6b6b;
+      background: #eef6f4 !important;
+  }
+  
+  /* update password btn icon flex */
+  .update-password-settings-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+  }
+  
+  /* ============================================================
+     DARK MODE — full overrides
+     ============================================================ */
+  [data-theme="dark"] body {
+      background: #0f1c2e !important;
+      color: var(--t-text-primary) !important;
+  }
+  
+  /* Header / top bar */
+  [data-theme="dark"] .header { background: #1a2535 !important; }
+  [data-theme="dark"] .header-title { color: #e0eaf0 !important; }
+  [data-theme="dark"] .menu-btn svg { fill: #e0eaf0 !important; }
+  
+  /* Main content */
+  [data-theme="dark"] .sections { background: #0f1c2e !important; }
+  
+  /* Profile section */
+  [data-theme="dark"] .profile-section {
+      background: #1a2535 !important;
+      border-bottom-color: #2a3a4a !important;
+  }
+  [data-theme="dark"] .profile-name { color: #e0eaf0 !important; }
+  [data-theme="dark"] .profile-email { color: #8aaabb !important; }
+  [data-theme="dark"] .edit-profile-btn {
+      background: #1e2f3f !important;
+      border-color: #2a3a4a !important;
+      color: #e0eaf0 !important;
+  }
+  
+  /* Content section */
+  [data-theme="dark"] .content-section { background: #0f1c2e !important; }
+  [data-theme="dark"] .section-title { color: #e0eaf0 !important; }
+  
+  /* Info card */
+  [data-theme="dark"] .info-card {
+      background: #1a2535 !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+  }
+  [data-theme="dark"] .info-row { border-bottom-color: #2a3a4a !important; }
+  [data-theme="dark"] .info-label { color: #8aaabb !important; }
+  [data-theme="dark"] .info-value { color: #e0eaf0 !important; }
+  [data-theme="dark"] .edit-settings-btn { color: #8aaabb !important; }
+  [data-theme="dark"] .edit-settings-btn svg { fill: #8aaabb !important; }
+  
+  /* Form inputs */
+  [data-theme="dark"] .password-input {
+      background: #1e2f3f !important;
+      border-color: #2a3a4a !important;
+      color: #e0eaf0 !important;
+  }
+  [data-theme="dark"] .password-input:focus { border-color: #5a9e9e !important; }
+  [data-theme="dark"] .form-label { color: #8aaabb !important; }
+  
+  /* Update password btn */
+  [data-theme="dark"] .update-password-settings-btn { background: #3d7a7a !important; }
+  [data-theme="dark"] .update-password-settings-btn:hover { background: #2d6a6a !important; }
+  
+  /* Appearance buttons dark */
+  [data-theme="dark"] .t-font-btn,
+  [data-theme="dark"] .t-size-btn {
+      background: #1e2f3f !important;
+      border-color: #2a3a4a !important;
+      color: #8aaabb !important;
+  }
+  [data-theme="dark"] .t-font-btn.t-active,
+  [data-theme="dark"] .t-size-btn.t-active,
+  [data-theme="dark"] .t-font-btn:hover,
+  [data-theme="dark"] .t-size-btn:hover {
+      border-color: #5a9e9e !important;
+      color: #7ecece !important;
+      background: #1a2f2f !important;
+  }
+  [data-theme="dark"] .t-theme-mode-btn {
+      border-color: #2a3a4a !important;
+      background: #1e2f3f !important;
+      color: #8aaabb !important;
+  }
+  [data-theme="dark"] .t-theme-mode-btn.t-active {
+      border-color: #5a9e9e !important;
+      color: #7ecece !important;
+      background: #1a2f2f !important;
+  }
+  
+  /* Danger zone (shared classes from admin) */
+  [data-theme="dark"] .danger-zone-box {
+      background: #1f0f0f !important;
+      border-color: #5a2020 !important;
+  }
+  [data-theme="dark"] .danger-zone-title { color: #e57373 !important; }
+  [data-theme="dark"] .danger-zone-sub   { color: #6a7a7a !important; }
+  [data-theme="dark"] .danger-logout-btn { background: #922b21 !important; }
+  [data-theme="dark"] .danger-logout-btn:hover { background: #7b241c !important; }
+  
+  /* Modals */
+  [data-theme="dark"] .record-modal-content,
+  [data-theme="dark"] .custom-modal .record-modal-content {
+      background: #1a2535 !important;
+  }
+  [data-theme="dark"] .modal-body { background: #1a2535 !important; }
+  [data-theme="dark"] .modal-body label,
+  [data-theme="dark"] .modal-body .form-group label { color: #8aaabb !important; }
+  [data-theme="dark"] .modal-body input,
+  [data-theme="dark"] .modal-body select,
+  [data-theme="dark"] .modal-body textarea {
+      background: #1e2f3f !important;
+      border-color: #2a3a4a !important;
+      color: #e0eaf0 !important;
+  }
+  [data-theme="dark"] .modal-footer { border-top-color: #2a3a4a !important; background: #1a2535 !important; }
+  [data-theme="dark"] .modal-footer .cancel-btn {
+      background: #1e2f3f !important;
+      color: #8aaabb !important;
+  }
+  [data-theme="dark"] .modal-footer .save-btn { background: #3d7a7a !important; }
+  [data-theme="dark"] .modal-header-student-registered { background: #2a5a56 !important; }
+  
+  /* Add Student modal — search results container */
+  [data-theme="dark"] #studentSearchResults {
+      background: #1a2535 !important;
+      border-color: #2a3a4a !important;
+  }
+  
+  /* Each search result row */
+  [data-theme="dark"] #studentSearchResults > div {
+      border-bottom-color: #2a3a4a !important;
+      background: #1a2535 !important;
+  }
+  
+  [data-theme="dark"] #studentSearchResults > div:hover {
+      background: #1e2f3f !important;
+  }
+  
+  /* Student name inside result row */
+  [data-theme="dark"] #studentSearchResults > div div:first-child {
+      color: #7ecece !important;
+  }
+  
+  /* ID · program · year line */
+  [data-theme="dark"] #studentSearchResults > div div:nth-child(2) {
+      color: #8aaabb !important;
+  }
+  
+  /* Email line */
+  [data-theme="dark"] #studentSearchResults > div div:nth-child(3) {
+      color: #5a7a8a !important;
+  }
+  
+  /* Selected student preview card */
+  [data-theme="dark"] #selectedStudentPreview {
+      background: #0e2020 !important;
+      border-color: #2a4a44 !important;
+  }
+  
+  [data-theme="dark"] #previewName {
+      color: #7ecece !important;
+  }
+  
+  [data-theme="dark"] #previewId,
+  [data-theme="dark"] #previewProgram {
+      color: #8aaabb !important;
+  }
+  
+  [data-theme="dark"] #previewEmail {
+      color: #5a7a8a !important;
+  }
+  
+  /* Clear (✕) button inside preview */
+  [data-theme="dark"] #selectedStudentPreview button {
+      color: #5a7a8a !important;
+  }
+  
+  [data-theme="dark"] #selectedStudentPreview button:hover {
+      color: #8aaabb !important;
+  }
+  
+  /* Disabled Add Student button */
+  [data-theme="dark"] #confirmAddStudentBtn:disabled {
+      background: #1e3a3a !important;
+      color: #4a7a7a !important;
+  }
+  
+  /* Enabled Add Student button */
+  [data-theme="dark"] #confirmAddStudentBtn:not(:disabled) {
+      background: #3d7a7a !important;
+      color: #e0eaf0 !important;
+      opacity: 1 !important;
+      cursor: pointer !important;
+  }
+  
+  /* Tables */
+  [data-theme="dark"] .attendance-table,
+  [data-theme="dark"] table {
+      background: #1a2535 !important;
+  }
+  [data-theme="dark"] th {
+      background: #1e3a3a !important;
+      color: #7ecece !important;
+      border-color: #2a3a4a !important;
+  }
+  [data-theme="dark"] td {
+      color: #e0eaf0 !important;
+      border-color: #2a3a4a !important;
+  }
+  [data-theme="dark"] tr:nth-child(even) { background: #14202e !important; }
+  [data-theme="dark"] tr:hover { background: #1e2f3f !important; }
+  
+  /* Search */
+  [data-theme="dark"] .search-input {
+      background: #1e2f3f !important;
+      border-color: #2a3a4a !important;
+      color: #e0eaf0 !important;
+  }
+  [data-theme="dark"] input[type="text"],
+  [data-theme="dark"] input[type="search"],
+  [data-theme="dark"] input[type="email"],
+  [data-theme="dark"] select {
+      background: #1e2f3f !important;
+      border-color: #2a3a4a !important;
+      color: #e0eaf0 !important;
+  }
+  
+  /* Cards */
+  [data-theme="dark"] .student-card,
+  [data-theme="dark"] .card,
+  [data-theme="dark"] .info-box {
+      background: #1a2535 !important;
+      border-color: #2a3a4a !important;
+  }
+  
+  /* Controls / sections bg */
+  [data-theme="dark"] #settings,
+  [data-theme="dark"] #dashboard,
+  [data-theme="dark"] #attendanceNow,
+  [data-theme="dark"] #attendanceHistory,
+  [data-theme="dark"] #eventAttendance,
+  [data-theme="dark"] #eventAttendanceHistory,
+  [data-theme="dark"] #studentRegistered,
+  [data-theme="dark"] #manualEntry,
+  [data-theme="dark"] #location {
+      background: #0f1c2e !important;
+  }
+  
+  /* Scrollbar */
+  [data-theme="dark"] ::-webkit-scrollbar-track { background: #0f1c2e; }
+  [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a3a4a; }
+  /* ============================================================
+     EMPTY STATE INDICATORS
+     Uses :empty pseudo-class — triggers automatically when JS
+     leaves the container with no child elements.
+     The ::before inserts the icon + message, ::after the subtext.
+     ============================================================ */
+  
+  /* ── Shared empty-state base ─────────────────────────────────────────────── */
+  #attendanceBody:empty,
+  #attendanceHistoryTableBody:empty,
+  #studentsBody:empty,
+  #eventAttendanceBody:empty,
+  #attendanceHistoryBody:empty {
+      height: 220px;
+      position: relative;
+  }
+  
+  #attendanceBody:empty::before,
+  #attendanceHistoryTableBody:empty::before,
+  #studentsBody:empty::before,
+  #eventAttendanceBody:empty::before,
+  #attendanceHistoryBody:empty::before {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 52px;
+      height: 52px;
+      background-color: #c8ddd9;
+      border-radius: 50%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M20 6h-2.18c.07-.44.18-.86.18-1 0-2.21-1.79-4-4-4s-4 1.79-4 4c0 .14.11.56.18 1H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-3c1.1 0 2 .9 2 2 0 .14-.11.56-.18 1h-3.64c-.07-.44-.18-.86-.18-1 0-1.1.9-2 2-2zm0 10l-4-4 1.41-1.41L14 10.17l4.59-4.58L20 7l-6 6z'/%3E%3C/svg%3E");
+      background-size: 28px 28px;
+      background-repeat: no-repeat;
+      background-position: center;
+  }
+  
+  #attendanceBody:empty::after,
+  #attendanceHistoryTableBody:empty::after,
+  #studentsBody:empty::after,
+  #eventAttendanceBody:empty::after,
+  #attendanceHistoryBody:empty::after {
+      content: 'No records found';
+      display: block;
+      position: absolute;
+      top: 108px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 600;
+      color: #8aadaa;
+  }
+  
+  /* ── Per-table custom messages ────────────────────────────────────────────── */
+  #attendanceBody:empty::after         { content: 'No students marked present yet'; }
+  #attendanceHistoryTableBody:empty::after { content: 'No attendance history found'; }
+  #studentsBody:empty::after           { content: 'No students registered yet'; }
+  #eventAttendanceBody:empty::after    { content: 'No event attendance records'; }
+  #attendanceHistoryBody:empty::after  { content: 'No event history found'; }
+  
+  /* ── Manual Entry list ────────────────────────────────────────────────────── */
+  #studentList:empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      gap: 10px;
+      color: #8aadaa;
+  }
+  
+  #studentList:empty::before {
+      content: '';
+      width: 52px;
+      height: 52px;
+      background-color: #c8ddd9;
+      border-radius: 50%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z'/%3E%3C/svg%3E");
+      background-size: 28px 28px;
+      background-repeat: no-repeat;
+      background-position: center;
+  }
+  
+  #studentList:empty::after {
+      content: 'No students in class roster';
+      font-size: 14px;
+      font-weight: 600;
+  }
+  
+  /* ── Academic Setup programs list ────────────────────────────────────────── */
+  #programsList:empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      gap: 10px;
+      color: #8aadaa;
+  }
+  
+  #programsList:empty::before {
+      content: '';
+      width: 52px;
+      height: 52px;
+      background-color: #c8ddd9;
+      border-radius: 50%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z'/%3E%3C/svg%3E");
+      background-size: 28px 28px;
+      background-repeat: no-repeat;
+      background-position: center;
+  }
+  
+  #programsList:empty::after {
+      content: 'No subjects added yet';
+      font-size: 14px;
+      font-weight: 600;
+  }
+  
+  /* ── Dark mode overrides ─────────────────────────────────────────────────── */
+  [data-theme="dark"] #attendanceBody:empty::before,
+  [data-theme="dark"] #attendanceHistoryTableBody:empty::before,
+  [data-theme="dark"] #studentsBody:empty::before,
+  [data-theme="dark"] #eventAttendanceBody:empty::before,
+  [data-theme="dark"] #attendanceHistoryBody:empty::before,
+  [data-theme="dark"] #studentList:empty::before,
+  [data-theme="dark"] #programsList:empty::before {
+      background-color: #2a3a4a;
+  }
+  
+  [data-theme="dark"] #attendanceBody:empty::after,
+  [data-theme="dark"] #attendanceHistoryTableBody:empty::after,
+  [data-theme="dark"] #studentsBody:empty::after,
+  [data-theme="dark"] #eventAttendanceBody:empty::after,
+  [data-theme="dark"] #attendanceHistoryBody:empty::after,
+  [data-theme="dark"] #studentList:empty,
+  [data-theme="dark"] #studentList:empty::after,
+  [data-theme="dark"] #programsList:empty,
+  [data-theme="dark"] #programsList:empty::after {
+      color: #4a7a8a;
+  }
+  
+  /* ============================================================
+     TOOLTIP SYSTEM
+     Usage: add data-tooltip="Your text here" to any element.
+     Tooltip appears above by default.
+     Add data-tooltip-pos="bottom|left|right" to change side.
+     ============================================================ */
+  
+  [data-tooltip] {
+      position: relative;
+  }
+  
+  [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 40, 40, 0.92);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.4;
+      white-space: nowrap;
+      padding: 6px 10px;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      transform: translateX(-50%) translateY(4px);
+      z-index: 9999;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      max-width: 220px;
+      white-space: normal;
+      text-align: center;
+  }
+  
+  [data-tooltip]::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 3px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: rgba(20, 40, 40, 0.92);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      z-index: 9999;
+  }
+  
+  [data-tooltip]:hover::after,
+  [data-tooltip]:hover::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+  }
+  
+  /* Bottom tooltip */
+  [data-tooltip][data-tooltip-pos="bottom"]::after {
+      bottom: auto;
+      top: calc(100% + 8px);
+      transform: translateX(-50%) translateY(-4px);
+  }
+  [data-tooltip][data-tooltip-pos="bottom"]::before {
+      bottom: auto;
+      top: calc(100% + 3px);
+      border-top-color: transparent;
+      border-bottom-color: rgba(20, 40, 40, 0.92);
+  }
+  [data-tooltip][data-tooltip-pos="bottom"]:hover::after {
+      transform: translateX(-50%) translateY(0);
+  }
+  
+  /* Right tooltip */
+  [data-tooltip][data-tooltip-pos="right"]::after {
+      bottom: auto;
+      top: 50%;
+      left: calc(100% + 8px);
+      transform: translateY(-50%) translateX(-4px);
+  }
+  [data-tooltip][data-tooltip-pos="right"]::before {
+      bottom: auto;
+      top: 50%;
+      left: calc(100% + 3px);
+      transform: translateY(-50%);
+      border-top-color: transparent;
+      border-right-color: rgba(20, 40, 40, 0.92);
+  }
+  [data-tooltip][data-tooltip-pos="right"]:hover::after {
+      transform: translateY(-50%) translateX(0);
+  }
+  
+  /* Left tooltip */
+  [data-tooltip][data-tooltip-pos="left"]::after {
+      bottom: auto;
+      top: 50%;
+      left: auto;
+      right: calc(100% + 8px);
+      transform: translateY(-50%) translateX(4px);
+  }
+  [data-tooltip][data-tooltip-pos="left"]::before {
+      bottom: auto;
+      top: 50%;
+      left: auto;
+      right: calc(100% + 3px);
+      transform: translateY(-50%);
+      border-top-color: transparent;
+      border-left-color: rgba(20, 40, 40, 0.92);
+  }
+  [data-tooltip][data-tooltip-pos="left"]:hover::after {
+      transform: translateY(-50%) translateX(0);
+  }

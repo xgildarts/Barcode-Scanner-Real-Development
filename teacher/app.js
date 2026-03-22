@@ -154,6 +154,49 @@ if (!navigator.onLine) showOfflineBanner();
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+
+    // ── Floating tooltip for elements inside overflow:hidden/auto containers ──
+    // (e.g. settings gear inside sidebar which has overflow-y:auto)
+    (function initFloatingTooltip() {
+        const tip = document.createElement('div');
+        tip.id = 'floatingTooltip';
+        tip.style.cssText = [
+            'position:fixed',
+            'background:rgba(20,40,40,0.92)',
+            'color:#fff',
+            'font-size:11px',
+            'font-weight:500',
+            'padding:6px 10px',
+            'border-radius:6px',
+            'pointer-events:none',
+            'opacity:0',
+            'transition:opacity 0.18s ease',
+            'z-index:99999',
+            'white-space:nowrap',
+            'box-shadow:0 2px 8px rgba(0,0,0,0.25)',
+        ].join(';');
+        document.body.appendChild(tip);
+
+        const gear = document.getElementById('settingsGearIcon');
+        if (!gear) return;
+
+        gear.addEventListener('mouseenter', () => {
+            tip.textContent = 'Settings';
+            const r = gear.getBoundingClientRect();
+            tip.style.opacity = '0';
+            tip.style.display = 'block';
+            // Position: right of the gear icon
+            const tipW = tip.offsetWidth;
+            tip.style.left = (r.right + 10) + 'px';
+            tip.style.top  = (r.top + r.height / 2 - tip.offsetHeight / 2) + 'px';
+            tip.style.opacity = '1';
+        });
+
+        gear.addEventListener('mouseleave', () => {
+            tip.style.opacity = '0';
+        });
+    })();
+
     checkToken();
     navigateTo('dashboard');
 
@@ -602,6 +645,10 @@ async function pollAttendanceSilently() {
         populateAttendanceNowFilters(data.content);
         applyAllNowFilters();
 
+        // Keep manual entry buttons in sync with live attendance
+        const presentIds = new Set(data.content.map(r => r.student_id_number));
+        syncManualEntryButtons(presentIds);
+
         // Flash live indicator if it exists
         const dot = document.getElementById('teacherLiveDot');
         if (dot) {
@@ -755,12 +802,20 @@ function setupNowDropdownFilter(filterId, columnIndex) {
 }
 
 function populateAttendanceNowFilters(data) {
-    const subjects = [...new Set(data.map(d => d.subject).filter(Boolean))].sort();
-    const years    = [...new Set(data.map(d => d.year_level).filter(Boolean))].sort();
-    const subSel   = document.getElementById('attendanceNowSubjectFilter');
-    const yearSel  = document.getElementById('attendanceNowYearFilter');
-    if (subSel)  { const c = subSel.value;  subSel.innerHTML  = '<option value="">All Subjects</option>'    + subjects.map(s => `<option value="${s}">${s}</option>`).join(''); subSel.value  = c; }
-    if (yearSel) { const c = yearSel.value; yearSel.innerHTML = '<option value="">All Year Levels</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');    yearSel.value = c; }
+    // Merge live attendance values into the DB-populated options (don't replace them)
+    const subSel  = document.getElementById('attendanceNowSubjectFilter');
+    const yearSel = document.getElementById('attendanceNowYearFilter');
+
+    const existingSubs  = subSel  ? [...subSel.options].map(o => o.value).filter(Boolean)  : [];
+    const existingYears = yearSel ? [...yearSel.options].map(o => o.value).filter(Boolean) : [];
+
+    const newSubs  = [...new Set(data.map(d => d.subject).filter(Boolean))].sort()
+        .filter(s => !existingSubs.includes(s));
+    const newYears = [...new Set(data.map(d => d.year_level).filter(Boolean))].sort()
+        .filter(y => !existingYears.includes(y));
+
+    if (subSel  && newSubs.length)  { const c = subSel.value;  subSel.innerHTML  += newSubs.map(s  => `<option value="${s}">${s}</option>`).join('');  subSel.value  = c; }
+    if (yearSel && newYears.length) { const c = yearSel.value; yearSel.innerHTML += newYears.map(y => `<option value="${y}">${y}</option>`).join(''); yearSel.value = c; }
 }
 
 function populateAttendanceHistoryFilters(data) {
@@ -900,7 +955,7 @@ async function loadStudentsRegistered() {
                 <td>${s.date_created.split('T')[0]}</td>
                 <td>
                     <div class="action-btns">
-                        <button class="edit-btn" onclick="editStudent('${dbId}','${s.student_id_number}','${s.student_firstname}','${mid}','${s.student_lastname}','${s.student_program}','${s.student_year_level}','${s.date_created.split('T')[0]}')">Edit</button>
+                        <button class="edit-btn" data-tooltip="Edit this student's record" onclick="editStudent('${dbId}','${s.student_id_number}','${s.student_firstname}','${mid}','${s.student_lastname}','${s.student_program}','${s.student_year_level}','${s.date_created.split('T')[0]}')">Edit</button>
                         <button class="delete-btn-student-registered" onclick="deleteStudent('${dbId}')">Delete</button>
                     </div>
                 </td>
@@ -1351,7 +1406,7 @@ async function renderSubjects() {
     document.getElementById('programsList').innerHTML = data.content.map(d => `
         <div class="program-card">
             <div class="program-name">${d.subject_name}</div>
-            <button class="delete-btn" onclick="deleteProgram(${d.subject_id}, '${d.subject_name}')">
+            <button class="delete-btn" data-tooltip="Delete this subject" onclick="deleteProgram(${d.subject_id}, '${d.subject_name}')">
                 <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
         </div>
@@ -1360,6 +1415,7 @@ async function renderSubjects() {
     const optionsHtml = data.content.map(d => `<option value="${d.subject_name}">${d.subject_name}</option>`).join('');
     document.getElementById('courseFilter').innerHTML                   = `<option value="">Select Subject</option>` + optionsHtml;
     document.getElementById('subjectFilterAttendanceHistory').innerHTML = `<option value="">All</option>` + optionsHtml;
+    document.getElementById('attendanceNowSubjectFilter').innerHTML     = `<option value="">All Subjects</option>` + optionsHtml;
 }
 
 async function addSubject() {
@@ -1404,6 +1460,8 @@ async function renderYearLevel() {
     document.getElementById('yearFilterAttendanceHistory').innerHTML = `<option value="">All</option>` + optionsHtml;
     document.getElementById('recordYearFilter').innerHTML            = `<option value="">Select Year Level</option>` + optionsHtml;
     document.getElementById('manualEntryYearFilter').innerHTML       = `<option value="">Select Year Level</option>` + optionsHtml;
+    document.getElementById('year_level').innerHTML                  = `<option value="">Select Year</option>` + optionsHtml;
+    document.getElementById('attendanceNowYearFilter').innerHTML       = `<option value="">All Year Levels</option>` + optionsHtml;
 }
 
 async function renderPrograms() {
@@ -1421,24 +1479,55 @@ function closeAddModal() { document.getElementById('addModal').classList.remove(
 // ============================================================
 // MANUAL ENTRY
 // ============================================================
+// Sync manual entry button states against a live Set of present student_id_numbers
+function syncManualEntryButtons(presentIds) {
+    document.querySelectorAll('#studentList .student-row').forEach(row => {
+        const btn = row.querySelector('.status-btn');
+        if (!btn) return;
+        // Extract student_id_number from the onclick attribute
+        const match = btn.getAttribute('onclick')?.match(/'(\d+)'/);
+        if (!match) return;
+        const idNum = match[1];
+        if (presentIds.has(idNum) && !btn.disabled) {
+            btn.textContent      = '✓ Present';
+            btn.disabled         = true;
+            btn.style.background = '#a0b8b0';
+            btn.style.cursor     = 'not-allowed';
+            btn.style.opacity    = '0.8';
+            btn.onclick          = null;
+        }
+    });
+}
+
 async function loadManualEntryStudents() {
     Swal.fire({ title: 'Loading students...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    const data = await apiCall('/teacher/get_student_registered');
+
+    // Fetch students and live attendance records in parallel
+    const [data, attData] = await Promise.all([
+        apiCall('/teacher/get_student_registered'),
+        apiCall('/teacher/teacher_attendance_record')
+    ]);
     Swal.close();
     if (!data || !data.content) return;
 
+    // Build a Set of student_id_numbers already marked present today
+    const presentIds = new Set(
+        (attData?.content ?? []).map(r => r.student_id_number)
+    );
+
     document.getElementById('studentList').innerHTML = data.content.map(student => {
-        const id  = student.student_id;
-        const mid = student.student_middlename ?? '';
-        const fullName = `${student.student_firstname} ${mid} ${student.student_lastname}`.trim();
-        // Escape values for safe inline onclick usage
-        const esc = v => (v ?? '').toString().replace(/'/g, "\\'");
-        return `
-            <div class="student-row">
-                <div class="student-name">${fullName}</div>
-                <div class="year-level">${student.student_year_level}</div>
-                <div class="action-buttons">
-                    <button id="btn-present-${id}" class="status-btn present-btn"
+        const id        = student.student_id;
+        const mid       = student.student_middlename ?? '';
+        const fullName  = `${student.student_firstname} ${mid} ${student.student_lastname}`.trim();
+        const esc       = v => (v ?? '').toString().replace(/'/g, "\\'");
+        const isPresent = presentIds.has(student.student_id_number);
+
+        const btn = isPresent
+            ? `<button id="btn-present-${id}" class="status-btn present-btn" data-tooltip="Manually mark this student as present" disabled
+                        style="background:#a0b8b0;cursor:not-allowed;opacity:0.8;">
+                        ✓ Present
+                    </button>`
+            : `<button id="btn-present-${id}" class="status-btn present-btn"
                         onclick="addToAttendance(
                             ${id},
                             '${esc(student.student_id_number)}',
@@ -1451,7 +1540,14 @@ async function loadManualEntryStudents() {
                             '${esc(student.student_program)}'
                         )">
                         Add to attendance
-                    </button>
+                    </button>`;
+
+        return `
+            <div class="student-row">
+                <div class="student-name">${fullName}</div>
+                <div class="year-level">${student.student_year_level}</div>
+                <div class="action-buttons">
+                    ${btn}
                 </div>
             </div>
         `;
@@ -1500,6 +1596,8 @@ async function addToAttendance(student_id, student_id_number, student_firstname,
         btn.disabled         = true;
         btn.style.background = '#a0b8b0';
         btn.style.cursor     = 'not-allowed';
+        btn.style.opacity    = '0.8';
+        btn.onclick          = null;
     }
 }
 

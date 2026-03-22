@@ -489,7 +489,17 @@ function writeLoginLog(userId, userName, userEmail, role, status, ip, userAgent)
                     db.execute(
                         'INSERT INTO system_login_logs (user_id, user_name, user_email, role, status) VALUES (?, ?, ?, ?, ?)',
                         [userId || null, userName || null, userEmail || null, role, status],
-                        (err2) => { if (err2) console.error('[LoginLog] Fallback INSERT failed:', err2.message); }
+                        (err2) => {
+                            if (err2) {
+                                console.error('[LoginLog] Fallback INSERT failed:', err2.message);
+                                // Last-resort: minimal insert with only required columns
+                                db.execute(
+                                    'INSERT INTO system_login_logs (role, status) VALUES (?, ?)',
+                                    [role, status],
+                                    (err3) => { if (err3) console.error('[LoginLog] Minimal INSERT failed:', err3.message); }
+                                );
+                            }
+                        }
                     );
                 }
             }
@@ -595,16 +605,21 @@ async function studentGoogleLogin(email, device_id, ip, userAgent) {
     return new Promise((resolve, reject) => {
         db.execute(query, [email], async (err, result) => {
             if (err) return reject({ message: err });
-            if (result.length === 0) return reject('No account found for this Google email. Please register first.');
+            if (result.length === 0) {
+                writeLoginLog(null, null, email, 'student', 'FAILED', ip, userAgent);
+                return reject('No account found for this Google email. Please register first.');
+            }
 
             const row = result[0];
 
             // Strict device binding — fingerprint must match what was registered
             if (!await deviceIDChecker(device_id, email)) {
+                writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'FAILED', ip, userAgent);
                 return reject('This device is not registered to your account. Please contact your administrator to reset your device.');
             }
 
             const token = generateToken(row);
+            writeLoginLog(row.student_id, `${row.student_firstname} ${row.student_lastname}`, email, 'student', 'SUCCESS', ip, userAgent);
             return resolve({
                 ok: true,
                 message: 'Successfully Login!',
@@ -741,7 +756,8 @@ function getStudentsData(studentId) {
                 student_middlename,
                 student_lastname,
                 student_year_level,
-                student_program
+                student_program,
+                student_profile_picture
             FROM student_accounts
             WHERE student_id = ?
         `;
@@ -1454,6 +1470,19 @@ function getTeacherData(teacherID) {
 }
 
 // Update Teacher Profile Picture
+function updateStudentProfilePicture(studentID, filename) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'UPDATE student_accounts SET student_profile_picture = ? WHERE student_id = ?',
+            [filename, studentID],
+            (err) => {
+                if (err) return reject(err)
+                resolve(filename)
+            }
+        )
+    })
+}
+
 function updateTeacherProfilePicture(teacherID, filename) {
     return new Promise((resolve, reject) => {
         db.execute(
@@ -2762,6 +2791,7 @@ module.exports = {
     getTeacherData,
     getTeacherBySerial,
     adminResetStudentDevice,
+    updateStudentProfilePicture,
     updateTeacherProfilePicture,
     updateTeacherPassword,
     updateTeacherName,

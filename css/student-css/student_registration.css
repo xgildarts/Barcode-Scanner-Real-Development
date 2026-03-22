@@ -174,3 +174,115 @@ h1 {
       grid-template-columns: 1fr;
   }
 }
+/* ── Show / Hide password button ─────────────────────────────── */
+.show-pw-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7aadaa;
+    transition: color 0.2s;
+    z-index: 2;
+}
+
+.show-pw-btn:hover {
+    color: #3d7070;
+}
+
+.eye-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    pointer-events: none;
+}
+
+/* Give password inputs right padding so text doesn't hide under the eye button */
+#password,
+#confirmPassword {
+    padding-right: 42px !important;
+}
+
+/* ── Device binding warning ──────────────────────────────────── */
+.device-warning {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #fff8e1;
+    border: 1.5px solid #f9a825;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.device-warning-icon {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    color: #f57f17;
+    margin-top: 1px;
+}
+
+.device-warning-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: #f57f17;
+}
+
+.device-warning-text {
+    font-size: 13px;
+    color: #5d4037;
+    line-height: 1.5;
+}
+
+.device-warning-text strong:first-child {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #e65100;
+    margin-bottom: 4px;
+}
+
+.device-warning-text p {
+    margin: 0;
+    font-size: 12.5px;
+    color: #6d4c41;
+}
+
+/* ── Device confirm checkbox ─────────────────────────────────── */
+.device-confirm-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    background: #f3f8f3;
+    border: 1.5px solid #c8e6c9;
+    border-radius: 8px;
+}
+
+.device-confirm-check {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    accent-color: #2c5f5f;
+    cursor: pointer;
+}
+
+.device-confirm-row label {
+    font-size: 13px;
+    color: #1a4545;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.device-confirm-row label strong {
+    color: #2c5f5f;
+}

@@ -242,10 +242,16 @@ async function loadProfileData() {
             student_middlename,
             student_lastname,
             student_year_level,
-            student_program
+            student_program,
+            student_profile_picture
         } = data.contents[0];
 
         const fullName = `${student_firstname} ${student_middlename}. ${student_lastname}`;
+
+        // Load saved profile picture if available
+        if (student_profile_picture) {
+            setStudentAvatar(`${BASE_URL}/uploads/profile_pictures/${student_profile_picture}`);
+        }
 
         document.querySelectorAll('.profile-info').forEach(p => {
             p.innerHTML = `
@@ -691,3 +697,129 @@ function hideMaintenanceBanner() {
 
 checkMaintenanceMode();
 _maintenancePollInterval = setInterval(checkMaintenanceMode, 15000);
+// ============================================================
+// APPEARANCE — Dark mode, Font family, Text size
+// ============================================================
+const S_THEME_KEY = 'student_theme';
+
+function sLoadTheme() {
+    const saved = JSON.parse(localStorage.getItem(S_THEME_KEY) || '{}');
+    sApplyTheme(saved.mode || 'light', saved.font || 'system', saved.size || 'medium', false);
+}
+
+function sApplyTheme(mode, font, size, save = true) {
+    const html = document.documentElement;
+
+    // Dark / light
+    html.setAttribute('data-theme', mode === 'dark' ? 'dark' : '');
+
+    // Font family
+    const fontMap = {
+        system:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        inter:   "'Inter', sans-serif",
+        poppins: "'Poppins', sans-serif",
+        roboto:  "'Roboto', sans-serif",
+        mono:    "'JetBrains Mono', 'Fira Code', monospace"
+    };
+    document.body.style.fontFamily = fontMap[font] || fontMap.system;
+
+    // Text size via zoom on sections
+    const zoomMap = { small: '0.88', medium: '1', large: '1.12' };
+    document.querySelectorAll('.sections').forEach(el => {
+        el.style.zoom = zoomMap[size] || '1';
+    });
+
+    // Sync button active states
+    document.querySelectorAll('.s-mode-btn').forEach(b => b.classList.remove('s-active'));
+    document.getElementById(mode === 'dark' ? 's-modeDark' : 's-modeLight')?.classList.add('s-active');
+    document.querySelectorAll('.s-font-btn').forEach(b => b.classList.toggle('s-active', b.dataset.font === font));
+    document.querySelectorAll('.s-size-btn').forEach(b => b.classList.toggle('s-active', b.dataset.size === size));
+
+    if (save) localStorage.setItem(S_THEME_KEY, JSON.stringify({ mode, font, size }));
+}
+
+function sSetMode(mode) {
+    const saved = JSON.parse(localStorage.getItem(S_THEME_KEY) || '{}');
+    sApplyTheme(mode, saved.font || 'system', saved.size || 'medium');
+}
+function sSetFont(font) {
+    const saved = JSON.parse(localStorage.getItem(S_THEME_KEY) || '{}');
+    sApplyTheme(saved.mode || 'light', font, saved.size || 'medium');
+}
+function sSetSize(size) {
+    const saved = JSON.parse(localStorage.getItem(S_THEME_KEY) || '{}');
+    sApplyTheme(saved.mode || 'light', saved.font || 'system', size);
+}
+
+// Load on startup
+sLoadTheme();
+
+// ============================================================
+// PROFILE PICTURE UPLOAD
+// ============================================================
+
+function setStudentAvatar(url) {
+    document.querySelectorAll('.avatar').forEach(av => {
+        av.innerHTML = `<img src="${url}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
+            onerror="this.parentElement.innerHTML='<svg viewBox=\'0 0 24 24\'><path d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/></svg>'"
+            alt="Profile">`;
+    });
+}
+
+// Wire camera icons and avatar clicks → open file picker
+document.querySelectorAll('.camera-icon').forEach(icon => {
+    icon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('studentProfilePicInput')?.click();
+    });
+});
+
+document.querySelectorAll('.avatar').forEach(av => {
+    av.addEventListener('click', () => {
+        document.getElementById('studentProfilePicInput')?.click();
+    });
+});
+
+// File selected → preview instantly then upload
+document.getElementById('studentProfilePicInput')?.addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024)
+        return Swal.fire({ icon: 'warning', title: 'File too large', text: 'Please choose an image under 5MB.' });
+
+    // Instant local preview before server responds
+    const reader = new FileReader();
+    reader.onload = e => setStudentAvatar(e.target.result);
+    reader.readAsDataURL(file);
+
+    const token    = localStorage.getItem('student_token');
+    const formData = new FormData();
+    formData.append('student_profile_picture', file);
+
+    Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const res  = await fetch(`${BASE_URL}/students/upload_profile_picture`, {
+            method:  'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body:    formData
+        });
+        const data = await res.json();
+        Swal.close();
+
+        if (res.ok && data.ok) {
+            setStudentAvatar(`${BASE_URL}/uploads/profile_pictures/${data.filename}`);
+            Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+        }
+    } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message || 'Network error.' });
+    }
+
+    // Reset so the same file can be re-selected if needed
+    this.value = '';
+});

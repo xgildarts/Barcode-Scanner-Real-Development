@@ -1,8 +1,31 @@
 const express = require('express')
 const services = require('../controller/services')
+const multer  = require('multer')
+const path    = require('path')
 const student = express.Router()
 
 student.use(express.json())
+
+// ============================================================
+// MULTER — Student Profile Picture Upload
+// ============================================================
+const studentPicStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
+    filename:    (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e6)
+        cb(null, 'student-' + unique + path.extname(file.originalname))
+    }
+})
+const uploadStudentPic = multer({
+    storage: studentPicStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = /jpeg|jpg|png|webp/
+        const valid   = allowed.test(path.extname(file.originalname).toLowerCase())
+                     && allowed.test(file.mimetype)
+        valid ? cb(null, true) : cb(new Error('Only JPEG, PNG, or WEBP images are allowed.'))
+    }
+})
 
 // Get Student Data's
 student.get('/student_get_data', async (req, res) => {
@@ -221,6 +244,20 @@ student.post('/logout', async (req, res) => {
         if (decoded) services.writeLogoutLog(decoded.student_id, `${decoded.student_firstname} ${decoded.student_lastname}`, decoded.student_email, 'student', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
         res.json({ ok: true });
     } catch (_) { res.json({ ok: true }); }
+})
+
+
+// Upload Student Profile Picture
+student.post('/upload_profile_picture', uploadStudentPic.single('student_profile_picture'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded.' })
+    try {
+        const token       = services.removeBearer(req.headers['authorization'])
+        const decoded     = services.verifyToken(token)
+        const filename    = await services.updateStudentProfilePicture(decoded.student_id, req.file.filename)
+        res.json({ ok: true, message: 'Profile picture updated!', filename })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
 })
 
 module.exports = student

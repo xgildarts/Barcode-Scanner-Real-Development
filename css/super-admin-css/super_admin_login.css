@@ -3,7 +3,7 @@
    Palette: Deep navy  #162d4a / #1e3a5f / #2d5282
    ============================================================ */
 
-body {
+   body {
     background: linear-gradient(135deg, #162d4a 0%, #2d5282 100%);
     display: flex;
     flex-direction: column;
@@ -213,3 +213,6 @@ body {
         height: 100px;
     }
 }
+/* Role badge — portal indicator */
+.logo-container { display:flex; flex-direction:column; align-items:center; }
+.role-badge { display:inline-flex; }

@@ -35,12 +35,16 @@
 
             <div class="name-row">
                 <div class="form-group">
-                    <label class="form-label">Middle Name</label>
+                    <label class="form-label">Middle Initial</label>
                     <div class="input-wrapper">
                         <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                         </svg>
-                        <input id="middleName" type="text" class="form-input" placeholder="Middle Name">
+                        <input id="middleName" type="text" class="form-input" placeholder="M.I."
+                            maxlength="1"
+                            oninput="this.value=this.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(0,1)"
+                            onkeydown="if(this.value.length>=1&&event.key.length===1)event.preventDefault(); if(event.key.length===1&&!/[a-zA-Z]/.test(event.key))event.preventDefault();"
+                            onpaste="event.preventDefault();var t=event.clipboardData.getData('text').replace(/[^a-zA-Z]/g,'').toUpperCase().charAt(0);if(t)this.value=t;">
                     </div>
                 </div>
 
@@ -167,6 +171,9 @@
                         <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                     </svg>
                     <input id="password" type="password" class="form-input" placeholder="Password" required>
+                    <button type="button" class="show-pw-btn" onclick="togglePw('password', this)" tabindex="-1" aria-label="Show password">
+                        <svg class="eye-icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
                 </div>
             </div>
 
@@ -179,6 +186,9 @@
                         <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
                     </svg>
                     <input id="confirmPassword" type="password" class="form-input" placeholder="Confirm Password" required>
+                    <button type="button" class="show-pw-btn" onclick="togglePw('confirmPassword', this)" tabindex="-1" aria-label="Show confirm password">
+                        <svg class="eye-icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
                 </div>
             </div>
 
@@ -186,7 +196,26 @@
                 <label for="terms">Must be at least 8 characters</label>
             </div>
 
-            <button type="submit" class="submit-btn">Create Account</button>
+            <!-- Device binding warning -->
+            <div class="device-warning">
+                <div class="device-warning-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                </div>
+                <div class="device-warning-text">
+                    <strong>Important — Device Binding</strong>
+                    <p>This account will be <strong>permanently linked to the device you are currently using</strong>. Make sure you are registering on <strong>your own personal device</strong>. If you register on someone else's device, you will not be able to log in from your own device later.</p>
+                </div>
+            </div>
+
+            <!-- Confirm checkbox -->
+            <div class="device-confirm-row">
+                <input type="checkbox" id="deviceConfirm" class="device-confirm-check">
+                <label for="deviceConfirm">I confirm that I am registering on <strong>my own device</strong>.</label>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>Create Account</button>
 
             <!-- Divider -->
             <div style="display:flex; align-items:center; margin:16px 0;">
@@ -266,19 +295,89 @@
 
             <div style="margin-bottom:16px;">
                 <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Password <span style="color:red">*</span></label>
-                <input id="g_password" type="password" placeholder="At least 8 characters" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+                <div class="input-wrapper" style="position:relative;">
+                    <input id="g_password" type="password" placeholder="At least 8 characters" style="width:100%; padding:10px 44px 10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+                    <button type="button" class="show-pw-btn" onclick="togglePw('g_password', this)" tabindex="-1" aria-label="Show password">
+                        <svg class="eye-icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                </div>
             </div>
 
             <div style="margin-bottom:24px;">
                 <label style="font-size:0.85rem; font-weight:600; color:#333; display:block; margin-bottom:6px;">Confirm Password <span style="color:red">*</span></label>
-                <input id="g_confirmPassword" type="password" placeholder="Confirm password" style="width:100%; padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+                <div class="input-wrapper" style="position:relative;">
+                    <input id="g_confirmPassword" type="password" placeholder="Confirm password" style="width:100%; padding:10px 44px 10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:0.95rem; box-sizing:border-box; outline:none;">
+                    <button type="button" class="show-pw-btn" onclick="togglePw('g_confirmPassword', this)" tabindex="-1" aria-label="Show confirm password">
+                        <svg class="eye-icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                </div>
             </div>
 
-            <button onclick="handleGoogleStep2Submit()" style="width:100%; padding:12px; background:#1a4545; color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:10px;">Complete Registration</button>
+            <!-- Device binding warning inside Google modal -->
+            <div style="display:flex;gap:10px;align-items:flex-start;background:#fff8e1;border:1.5px solid #f9a825;border-radius:10px;padding:13px;margin-bottom:14px;">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#f57f17;flex-shrink:0;margin-top:1px;">
+                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                </svg>
+                <div style="font-size:12.5px;color:#5d4037;line-height:1.5;">
+                    <strong style="display:block;font-size:13px;font-weight:700;color:#e65100;margin-bottom:3px;">Important — Device Binding</strong>
+                    This account will be <strong>permanently linked to the device you are currently using</strong>. Make sure you are registering on <strong>your own personal device</strong>.
+                </div>
+            </div>
+
+            <!-- Confirm checkbox -->
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:18px;padding:10px 12px;background:#f3f8f3;border:1.5px solid #c8e6c9;border-radius:8px;">
+                <input type="checkbox" id="g_deviceConfirm" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:#2c5f5f;cursor:pointer;">
+                <label for="g_deviceConfirm" style="font-size:13px;color:#1a4545;cursor:pointer;line-height:1.5;">I confirm that I am registering on <strong style="color:#2c5f5f;">my own device</strong>.</label>
+            </div>
+
+            <button id="g_submitBtn" onclick="handleGoogleStep2Submit()" style="width:100%; padding:12px; background:#1a4545; color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:not-allowed; margin-bottom:10px; opacity:0.5;" disabled>Complete Registration</button>
             <button onclick="closeGoogleStep2()" style="width:100%; padding:10px; background:transparent; color:#888; border:1.5px solid #ddd; border-radius:8px; font-size:0.9rem; cursor:pointer;">Cancel</button>
         </div>
     </div>
 
+    <script>
+        // ── Device confirm checkbox — enables submit button ─────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            // Main form confirm checkbox
+            const checkbox = document.getElementById('deviceConfirm');
+            const submitBtn = document.getElementById('submitBtn');
+            if (checkbox && submitBtn) {
+                checkbox.addEventListener('change', () => {
+                    submitBtn.disabled = !checkbox.checked;
+                    submitBtn.style.opacity = checkbox.checked ? '1' : '0.5';
+                    submitBtn.style.cursor = checkbox.checked ? 'pointer' : 'not-allowed';
+                });
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+
+            // Google modal confirm checkbox
+            // Use event delegation since the modal checkbox is always in the DOM
+            document.addEventListener('change', (e) => {
+                if (e.target.id === 'g_deviceConfirm') {
+                    const gBtn = document.getElementById('g_submitBtn');
+                    if (gBtn) {
+                        gBtn.disabled = !e.target.checked;
+                        gBtn.style.opacity = e.target.checked ? '1' : '0.5';
+                        gBtn.style.cursor = e.target.checked ? 'pointer' : 'not-allowed';
+                    }
+                }
+            });
+        });
+
+        // ── Show / Hide password ─────────────────────────────────────────
+        function togglePw(inputId, btn) {            const input = document.getElementById(inputId);
+            if (!input) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+
+            btn.querySelector('.eye-icon').innerHTML = isHidden
+                ? '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75C21.27 7.11 17 4 12 4c-1.27 0-2.49.2-3.64.57l2.17 2.17C11.19 6.69 11.57 7 12 7zm-9.56-2.97l2.29 2.29.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2.44 4.03zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>'
+                : '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+
+            btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="student_registration.js"></script>
