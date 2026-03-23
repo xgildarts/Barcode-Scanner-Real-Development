@@ -782,7 +782,35 @@ document.querySelectorAll('.avatar').forEach(av => {
 });
 
 // File selected → preview instantly then upload
+// Wrap with crop modal
+if (typeof initImageCrop === 'function') {
+    const _studentPicInput = document.getElementById('studentProfilePicInput');
+    if (_studentPicInput) {
+        initImageCrop(_studentPicInput, async (blob, dataUrl) => {
+            setStudentAvatar(dataUrl);
+            const token = localStorage.getItem('student_token');
+            const croppedFile = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+            const formData = new FormData();
+            formData.append('student_profile_picture', croppedFile);
+            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${BASE_URL}/students/upload_profile_picture`, {
+                    method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKEN }, body: formData
+                });
+                const data = await res.json();
+                Swal.close();
+                if (res.ok && data.ok) {
+                    setStudentAvatar(`${BASE_URL}/uploads/profile_pictures/${data.filename}`);
+                    Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+                }
+            } catch (err) { Swal.close(); Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message }); }
+        });
+    }
+}
 document.getElementById('studentProfilePicInput')?.addEventListener('change', async function () {
+    if (typeof initImageCrop === 'function') return; // handled by crop
     const file = this.files[0];
     if (!file) return;
 

@@ -210,3 +210,13 @@ guard.post('/messages/pin/:id', async (req, res) => {
         res.json({ ok: true, message: msg })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
+
+guard.put('/messages/edit/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { content } = req.body
+        await services.editMessage(parseInt(req.params.id), tok.guard_id, 'guard', content)
+        res.json({ ok: true })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})

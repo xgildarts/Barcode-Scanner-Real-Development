@@ -481,53 +481,29 @@ function setAdminAvatar(url) {
 document.addEventListener('DOMContentLoaded', () => {
     const picInput = document.getElementById('superAdminProfilePicInput');
     if (picInput) {
-        picInput.addEventListener('change', async function () {
-            const file = this.files[0];
-            if (!file) return;
-
-            const allowed = /jpeg|jpg|png|webp/;
-            if (!allowed.test(file.name.split('.').pop().toLowerCase())) {
-                return Swal.fire({ icon: 'warning', title: 'Invalid file type', text: 'Only JPEG, PNG, or WEBP images are allowed.' });
-            }
-            if (file.size > 10 * 1024 * 1024) {
-                return Swal.fire({ icon: 'warning', title: 'File too large', text: 'Please choose an image under 10MB.' });
-            }
-
-            // Instant preview
-            const reader = new FileReader();
-            reader.onload = e => setAdminAvatar(e.target.result);
-            reader.readAsDataURL(file);
-
-            const token = localStorage.getItem('super_admin_token');
-            const formData = new FormData();
-            formData.append('super_admin_profile_picture', file);
-
-            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            try {
-                const res = await fetch(`${URL_BASED}/super_admin/upload_profile_picture`, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    body: formData
-                });
-                const data = await res.json();
-                Swal.close();
-
-                if (res.ok && data.ok) {
-                    const url = `${URL_BASED}/uploads/profile_pictures/${data.filename}`;
-                    setAdminAvatar(url);
-                    Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
-                } else {
-                    Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
-                }
-            } catch (err) {
-                Swal.close();
-                console.error('[AdminProfilePic] Fetch error:', err);
-                Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message || 'Network error.' });
-            }
-
-            this.value = '';
-        });
+        initImageCrop(picInput, async (blob, dataUrl) => {
+                const sidebarAvatar = document.getElementById('sidebarAvatar');
+                const adminAvatar   = document.getElementById('adminAvatar');
+                if (sidebarAvatar) sidebarAvatar.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+                if (adminAvatar)   adminAvatar.innerHTML   = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+                const token = localStorage.getItem('super_admin_token');
+                const croppedFile = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+                const formData = new FormData();
+                formData.append('super_admin_profile_picture', croppedFile);
+                Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${URL_BASED}/super_admin/upload_profile_picture`, {
+                        method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
+                    });
+                    const data = await res.json();
+                    Swal.close();
+                    if (res.ok && data.ok) {
+                        Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+                    }
+                } catch (err) { Swal.close(); Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message }); }
+            });
     }
 });
 

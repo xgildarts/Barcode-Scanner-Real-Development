@@ -490,11 +490,41 @@ function setAdminAvatar(url) {
     if (adminAvatar) adminAvatar.innerHTML = imgTag;
 }
 
-// Profile picture upload handler
+// Profile picture upload handler — with crop modal
 document.addEventListener('DOMContentLoaded', () => {
     const picInput = document.getElementById('adminProfilePicInput');
     if (picInput) {
-        picInput.addEventListener('change', async function () {
+        if (typeof initImageCrop === 'function') {
+            initImageCrop(picInput, async (blob, dataUrl) => {
+                setAdminAvatar(dataUrl);
+                const token = localStorage.getItem('admin_token');
+                const croppedFile = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+                const formData = new FormData();
+                formData.append('admin_profile_picture', croppedFile);
+                Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${URL_BASED}/admin/upload_profile_picture`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    Swal.close();
+                    if (res.ok && data.ok) {
+                        setAdminAvatar(`${URL_BASED}/uploads/profile_pictures/${data.filename}`);
+                        Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+                    }
+                } catch (err) {
+                    Swal.close();
+                    console.error('[AdminProfilePic] Fetch error:', err);
+                    Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message || 'Network error.' });
+                }
+            });
+        } else {
+            // Fallback — no crop, direct upload
+            picInput.addEventListener('change', async function () {
             const file = this.files[0];
             if (!file) return;
 
@@ -506,7 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return Swal.fire({ icon: 'warning', title: 'File too large', text: 'Please choose an image under 10MB.' });
             }
 
-            // Instant preview
             const reader = new FileReader();
             reader.onload = e => setAdminAvatar(e.target.result);
             reader.readAsDataURL(file);
@@ -540,7 +569,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             this.value = '';
-        });
+            });
+        }
     }
 });
 

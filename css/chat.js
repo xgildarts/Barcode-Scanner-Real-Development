@@ -236,7 +236,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                                 <div class="chat-bubble">
                                     ${unsent
                                         ? `<span class="chat-unsent-label">${sent ? 'You unsent a message' : escHtml(m.sender_name) + ' unsent a message'}</span>`
-                                        : `${m.content ? escHtml(m.content) : ''}${m.file_url ? renderFileBubble(m.file_url, m.file_name, m.file_type) : ''}`
+                                        : `${m.content ? escHtml(m.content) : ''}${m.file_url ? renderFileBubble(m.file_url, m.file_name, m.file_type) : ''}${m.is_edited ? '<span class="chat-edited-label"> (edited)</span>' : ''}`
                                     }
                                 </div>
                             </div>
@@ -298,6 +298,18 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         const file     = fileInput?.files[0]
         if (!content && !file) return
 
+        // Handle edit mode
+        if (_editingMsgId) {
+            const msgId = _editingMsgId
+            window.cancelEdit()
+            const res = await _fetch(`${endpoint}/messages/edit/${msgId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ content })
+            })
+            if (res.ok) await loadMessages()
+            return
+        }
+
         chatInput.value = ''
         chatInput.style.height = 'auto'
         if (fileInput) fileInput.value = ''
@@ -333,6 +345,9 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
 
         let items = ''
         if (!isUnsent) {
+            if (isSent) {
+                items += `<div class="chat-ctx-item" onclick="doEdit(${msgId})">✏️ Edit</div>`
+            }
             items += `<div class="chat-ctx-item" onclick="doPin(${msgId})">📌 Pin</div>`
             items += `<div class="chat-ctx-item" onclick="doForward(${msgId})">↪️ Forward</div>`
             items += `<div class="chat-ctx-divider"></div>`
@@ -412,6 +427,52 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 chatInput.focus()
             }
         }, 200)
+    }
+
+    let _editingMsgId = null
+
+    window.doEdit = function(msgId) {
+        closeMsgMenu()
+        // Get current message text from bubble
+        const msgEl   = messagesEl?.querySelector(`[data-id="${msgId}"] .chat-bubble`)
+        const current = msgEl?.childNodes[0]?.textContent?.trim() || ''
+
+        // Show inline edit bar above input
+        _editingMsgId = msgId
+        let editBar = document.getElementById('chatEditBar')
+        if (!editBar) {
+            editBar = document.createElement('div')
+            editBar.id = 'chatEditBar'
+            editBar.className = 'chat-edit-bar'
+            const filePreview = document.getElementById('chatFilePreview')
+            filePreview?.parentNode?.insertBefore(editBar, filePreview)
+        }
+        editBar.innerHTML = `
+            <div class="chat-edit-bar-inner">
+                <span class="chat-edit-bar-icon">✏️</span>
+                <span class="chat-edit-bar-label">Editing message</span>
+                <button class="chat-edit-bar-cancel" onclick="cancelEdit()">×</button>
+            </div>
+        `
+        editBar.style.display = 'block'
+
+        // Pre-fill input with current message
+        if (chatInput) {
+            chatInput.value = current
+            chatInput.dispatchEvent(new Event('input'))
+            chatInput.focus()
+            chatInput.select()
+        }
+    }
+
+    window.cancelEdit = function() {
+        _editingMsgId = null
+        const editBar = document.getElementById('chatEditBar')
+        if (editBar) editBar.style.display = 'none'
+        if (chatInput) {
+            chatInput.value = ''
+            chatInput.style.height = 'auto'
+        }
     }
 
     // ── Panel toggle — assigned immediately so onclick works ─

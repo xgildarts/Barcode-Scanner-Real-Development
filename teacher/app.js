@@ -235,7 +235,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile picture upload
     const picInput = document.getElementById('teacherProfilePicInput');
     if (picInput) {
+        if (typeof initImageCrop === 'function') {
+            initImageCrop(picInput, async (blob, dataUrl) => {
+                // Preview
+                document.querySelectorAll('.avatar').forEach(el => {
+                    el.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+                });
+                const token = localStorage.getItem('teacher_token');
+                const croppedFile = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+                const formData = new FormData();
+                formData.append('teacher_profile_picture', croppedFile);
+                Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${BASE_URL}/teacher/upload_profile_picture`, {
+                        method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
+                    });
+                    const data = await res.json();
+                    Swal.close();
+                    if (res.ok && data.ok) {
+                        const url = `${BASE_URL}/uploads/profile_pictures/${data.filename}`;
+                        document.querySelectorAll('.avatar').forEach(el => {
+                            el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+                        });
+                        Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+                    }
+                } catch (err) { Swal.close(); Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message }); }
+            });
+        }
         picInput.addEventListener('change', async function () {
+            if (typeof initImageCrop === 'function') return;
             const file = this.files[0];
             if (!file) return;
 
@@ -1968,6 +1998,13 @@ function loadTheme() {
 }
 
 function applyTheme(mode, font, size, save = true) {
+    // Force correct sidebar color regardless of cached value
+    const _sidebar = document.getElementById('sidebar');
+    if (_sidebar) {
+        _sidebar.style.background = mode === 'dark'
+            ? 'linear-gradient(180deg, #0d1a2a 0%, #091422 100%)'
+            : 'linear-gradient(180deg, rgb(26, 69, 69) 0%, rgb(15, 46, 46) 100%)';
+    }
     const html = document.documentElement;
     html.setAttribute('data-theme', mode === 'dark' ? 'dark' : '');
 

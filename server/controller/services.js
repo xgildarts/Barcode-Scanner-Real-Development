@@ -2875,6 +2875,7 @@ module.exports = {
     markNotificationsRead,
     getUnreadCount,
     sendMessage,
+    editMessage,
     unsendMessage,
     deleteMessageForMe,
     pinMessage,
@@ -3030,6 +3031,8 @@ db.query(
         file_type     VARCHAR(100) DEFAULT NULL,
         is_read                  TINYINT(1)   NOT NULL DEFAULT 0,
         read_at                  DATETIME     DEFAULT NULL,
+        is_edited                TINYINT(1)   NOT NULL DEFAULT 0,
+        edited_at                DATETIME     DEFAULT NULL,
         is_unsent                TINYINT(1)   NOT NULL DEFAULT 0,
         deleted_for_sender       TINYINT(1)   NOT NULL DEFAULT 0,
         deleted_for_receiver     TINYINT(1)   NOT NULL DEFAULT 0,
@@ -3160,6 +3163,30 @@ function pinMessage(messageId, userId, userRole) {
                     if (err2) return reject(err2)
                     resolve(newPin ? 'Message pinned.' : 'Message unpinned.')
                 })
+            }
+        )
+    })
+}
+
+
+// Edit a message — only sender can edit their own non-unsent messages
+function editMessage(messageId, senderId, senderRole, newContent) {
+    return new Promise((resolve, reject) => {
+        if (!newContent?.trim()) return reject(new Error('Message cannot be empty.'))
+        db.execute(
+            `SELECT id FROM messages WHERE id = ? AND sender_id = ? AND sender_role = ? AND is_unsent = 0 LIMIT 1`,
+            [messageId, senderId, senderRole],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (!rows.length) return reject(new Error('Message not found or you are not the sender.'))
+                db.execute(
+                    `UPDATE messages SET content = ?, is_edited = 1, edited_at = NOW() WHERE id = ?`,
+                    [newContent.trim(), messageId],
+                    (err2) => {
+                        if (err2) return reject(err2)
+                        resolve('Message edited.')
+                    }
+                )
             }
         )
     })

@@ -1,0 +1,133 @@
+/* ============================================================
+   IMAGE CROP MODAL
+   ============================================================ */
+   #cropModal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.crop-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+}
+.crop-dialog {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    width: 370px;
+    max-width: 95vw;
+    overflow: hidden;
+    animation: crop-pop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes crop-pop {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+.crop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #eef4f2;
+}
+.crop-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a4545;
+}
+.crop-close-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 22px; color: #aaa; line-height: 1; padding: 0 4px;
+    transition: color 0.15s;
+}
+.crop-close-btn:hover { color: #e53935; }
+
+.crop-stage-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    background: #1a1a2e;
+}
+.crop-stage {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: grab;
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.15);
+}
+.crop-stage:active { cursor: grabbing; }
+#cropCanvas {
+    display: block;
+    border-radius: 0;
+}
+.crop-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+}
+.crop-drag-hint {
+    position: absolute;
+    bottom: 20px; left: 0; right: 0;
+    text-align: center;
+    font-size: 12px; color: rgba(255,255,255,0.6);
+    pointer-events: none;
+    transition: opacity 0.5s;
+}
+
+.crop-zoom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px 8px;
+}
+.crop-zoom-icon { font-size: 16px; }
+.crop-zoom-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: #c8ddd9;
+    outline: none;
+    cursor: pointer;
+}
+.crop-zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #2c5f5f;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+#cropZoomPct {
+    font-size: 12px; font-weight: 700; color: #1a4545;
+    min-width: 40px; text-align: right;
+}
+
+.crop-actions {
+    display: flex;
+    gap: 10px;
+    padding: 12px 20px 20px;
+}
+.crop-btn-cancel,
+.crop-btn-confirm {
+    flex: 1; padding: 11px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+}
+.crop-btn-cancel {
+    background: #f0f0f0; color: #666;
+}
+.crop-btn-cancel:hover { background: #e0e0e0; }
+.crop-btn-confirm {
+    background: linear-gradient(135deg, #2c5f5f 0%, #1a4545 100%);
+    color: white;
+    box-shadow: 0 3px 10px rgba(26,69,69,0.3);
+}
+.crop-btn-confirm:hover { transform: translateY(-1px); opacity: 0.92; }
