@@ -664,7 +664,21 @@ teacher.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
         const fileUrl  = req.file ? `/api/v1/uploads/message_files/${req.file.filename}` : null
         const fileName = req.file ? req.file.originalname : null
         const fileType = req.file ? req.file.mimetype : null
-        const id = await services.sendMessage(tok.teacher_id, 'teacher', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType)
+        // Fetch profile pictures for sender and receiver
+        const getSenderPic = () => new Promise(r => {
+            const picMap = { student:'student_profile_picture FROM student_accounts WHERE student_id', teacher:'teacher_profile_picture FROM teacher WHERE teacher_id', admin:'admin_profile_picture FROM admin_accounts WHERE admin_id', super_admin:'super_admin_profile_picture FROM super_admin_accounts WHERE super_admin_id', guard:null }
+            const col = picMap['teacher']
+            if (!col) return r(null)
+            require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [tok.teacher_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
+        })
+        const getReceiverPic = () => new Promise(r => {
+            const picCols = { student:'student_profile_picture FROM student_accounts WHERE student_id', teacher:'teacher_profile_picture FROM teacher WHERE teacher_id', admin:'admin_profile_picture FROM admin_accounts WHERE admin_id', super_admin:'super_admin_profile_picture FROM super_admin_accounts WHERE super_admin_id', guard:null }
+            const col = picCols[receiver_role]
+            if (!col) return r(null)
+            require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
+        })
+        const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
+        const id = await services.sendMessage(tok.teacher_id, 'teacher', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
         res.json({ ok: true, id })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
@@ -675,5 +689,33 @@ teacher.get('/messages/search', async (req, res) => {
         if (!tok) return res.status(401).json({ ok: false })
         const users = await services.searchUsersForMessaging(req.query.q || '', tok.teacher_id, 'teacher')
         res.json({ ok: true, users })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// ── Message actions ──────────────────────────────────────────
+teacher.delete('/messages/delete-for-me/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        await services.deleteMessageForMe(parseInt(req.params.id), tok.teacher_id, 'teacher')
+        res.json({ ok: true })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+teacher.delete('/messages/unsend/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        await services.unsendMessage(parseInt(req.params.id), tok.teacher_id, 'teacher')
+        res.json({ ok: true })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+teacher.post('/messages/pin/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const msg = await services.pinMessage(parseInt(req.params.id), tok.teacher_id, 'teacher')
+        res.json({ ok: true, message: msg })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })

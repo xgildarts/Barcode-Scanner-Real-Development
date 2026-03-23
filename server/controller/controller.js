@@ -35,7 +35,19 @@ app.use('/css',         express.static(path.join(__dirname, '../../css')))
 
 // Root redirect — change to whichever role you want as default
 app.get('/', (req, res) => {
-    res.redirect('/student/student_dashboard.html')
+    res.redirect('/student/student_login.html')
+})
+app.get('/admin', (req, res) => {
+    res.redirect('/admin/admin_login.html')
+})
+app.get('/guard', (req, res) => {
+    res.redirect('/guard/guard_login.html')
+})
+app.get('/super_admin', (req, res) => {
+    res.redirect('/super_admin/super_admin_login.html')
+})
+app.get('/teacher', (req, res) => {
+    res.redirect('/teacher/teacher_login.html')
 })
 
 const services = require('./services')

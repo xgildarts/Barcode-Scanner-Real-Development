@@ -40,9 +40,21 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     const convRoleEl    = document.getElementById('chatConvRole')
     const convAvatarEl  = document.getElementById('chatConvAvatar')
     const messagesEl    = document.getElementById('chatMessages')
-    const chatInput     = document.getElementById('chatInput')
+    const chatInput       = document.getElementById('chatInput')
+    const pinBar          = document.getElementById('chatPinBar')
+    const pinBarText      = document.getElementById('chatPinBarText')
+    const pinnedPanel     = document.getElementById('chatPinnedPanel')
+    const pinnedList      = document.getElementById('chatPinnedList')
 
     if (!panel) return // not injected yet
+
+    let _pinnedOpen = false
+    window.togglePinnedPanel = function() {
+        _pinnedOpen = !_pinnedOpen
+        if (pinnedPanel) pinnedPanel.style.display = _pinnedOpen ? 'block' : 'none'
+        const arrow = document.getElementById('chatPinBarArrow')
+        if (arrow) arrow.textContent = _pinnedOpen ? '▴' : '▾'
+    }
 
     // ── Helpers ──────────────────────────────────────────────
     function roleColor(role) {
@@ -52,6 +64,17 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         return { admin:'Admin', super_admin:'Super Admin', teacher:'Teacher', student:'Student', guard:'Guard' }[role] || role
     }
     function avatarInitial(name) { return (name || '?').charAt(0).toUpperCase() }
+    const _apiBase = () => (typeof URL_BASED !== 'undefined' ? URL_BASED : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace('/api/v1','')
+
+    function avatarHtml(name, role, picUrl, size = 40) {
+        const initial = avatarInitial(name)
+        const fs      = Math.round(size * 0.38)
+        if (picUrl) {
+            const src = _apiBase() + '/api/v1/uploads/profile_pictures/' + picUrl
+            return `<img class="chat-avatar-img" src="${escHtml(src)}" width="${size}" height="${size}" alt="${initial}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+        }
+        return `<div class="chat-avatar role-${role}" style="width:${size}px;height:${size}px;font-size:${fs}px;flex-shrink:0;">${initial}</div>`
+    }
     function formatTime(dt) {
         if (!dt) return ''
         const d = new Date(dt.replace ? dt.replace(' ', 'T') : dt)
@@ -132,8 +155,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             const preview = c.last_message ? escHtml(c.last_message).substring(0, 35) + (c.last_message.length > 35 ? '…' : '') : ''
             return `
             <div class="chat-contact-item ${unread > 0 ? 'has-unread' : ''}"
-                 onclick="window._chatOpenConv(${id}, '${role}', '${escHtml(name)}')">
-                <div class="chat-avatar role-${role}">${avatarInitial(name)}</div>
+                 onclick="window._chatOpenConv(${id}, '${role}', '${escHtml(name)}', '${c.profile_picture || c.contact_profile_picture || ''}')">
+                ${avatarHtml(name, role, c.profile_picture || c.contact_profile_picture, 40)}
                 <div class="chat-contact-info">
                     <div class="chat-contact-name">${escHtml(name)}</div>
                     <div class="chat-contact-role">${roleLabel(role)}</div>
@@ -145,14 +168,17 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     }
 
     // ── Conversation ─────────────────────────────────────────
-    window._chatOpenConv = async function(contactId, contactRole, contactName) {
-        _convContact = { id: contactId, role: contactRole, name: contactName }
+    window._chatOpenConv = async function(contactId, contactRole, contactName, profilePicture) {
+        _convContact = { id: contactId, role: contactRole, name: contactName, profilePicture: profilePicture || null }
 
         if (convNameEl)   convNameEl.textContent   = contactName
         if (convRoleEl)   convRoleEl.textContent   = roleLabel(contactRole)
-        if (convAvatarEl) {
-            convAvatarEl.textContent  = avatarInitial(contactName)
-            convAvatarEl.className    = `chat-avatar role-${contactRole}`
+        const convAvatarContainer = document.getElementById('chatConvAvatarWrap')
+        if (convAvatarContainer) {
+            convAvatarContainer.innerHTML = avatarHtml(contactName, contactRole, _convContact.profilePicture, 40)
+        } else if (convAvatarEl) {
+            convAvatarEl.textContent = avatarInitial(contactName)
+            convAvatarEl.className   = `chat-avatar role-${contactRole}`
         }
 
         listView?.classList.remove('active')
@@ -176,16 +202,42 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             }
             const msgs = data.messages || []
             const wasAtBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 60
-            messagesEl.innerHTML = msgs.map(m => {
-                const sent = String(m.sender_id) === String(myId) && m.sender_role === myRole
+            // Find last sent message index for seen receipt
+            let lastSentIdx = -1
+            msgs.forEach((m, i) => { if (String(m.sender_id) === String(myId) && m.sender_role === myRole && !m.is_unsent) lastSentIdx = i })
+
+            messagesEl.innerHTML = msgs.map((m, idx) => {
+                const sent   = String(m.sender_id) === String(myId) && m.sender_role === myRole
+                const unsent = m.is_unsent == 1
+                const pinned = m.is_pinned == 1
+                const isLastSent = sent && idx === lastSentIdx
+                const seenAvatarEl = avatarHtml(_convContact.name, _convContact.role, _convContact.profilePicture, 16)
+                const seenReceipt = isLastSent && m.is_read == 1
+                    ? `<div class="chat-seen-receipt">${seenAvatarEl} Seen ${m.read_at ? formatTime(m.read_at) : ''}</div>`
+                    : isLastSent ? `<div class="chat-seen-receipt chat-seen-sent">✓✓ Delivered</div>` : ''
+
+                const recvPic = !sent ? (m.sender_profile_picture || null) : null
+                const avatarEl = !sent ? avatarHtml(m.sender_name, m.sender_role, recvPic, 28) : ''
                 return `
-                <div class="chat-msg ${sent ? 'sent' : 'recv'}">
-                    ${!sent ? `<div class="chat-msg-sender">${escHtml(m.sender_name)}</div>` : ''}
-                    <div class="chat-bubble">
-                        ${m.content ? escHtml(m.content) : ''}
-                        ${m.file_url ? renderFileBubble(m.file_url, m.file_name, m.file_type) : ''}
+                <div class="chat-msg ${sent ? 'sent' : 'recv'} ${unsent ? 'unsent' : ''} ${pinned ? 'pinned' : ''}" data-id="${m.id}">
+                    <div class="chat-msg-row ${sent ? 'chat-msg-row-sent' : 'chat-msg-row-recv'}">
+                        ${!sent ? avatarEl : ''}
+                        <div class="chat-msg-body">
+                            ${!sent ? `<div class="chat-msg-sender">${escHtml(m.sender_name)}</div>` : ''}
+                            <div class="chat-msg-wrap">
+                                <button class="chat-msg-menu-btn" onclick="showMsgMenu(event,${m.id},${sent},${unsent})" title="Options">⋯</button>
+                                <div class="chat-bubble">
+                                    ${unsent
+                                        ? `<span class="chat-unsent-label">${sent ? 'You unsent a message' : escHtml(m.sender_name) + ' unsent a message'}</span>`
+                                        : `${m.content ? escHtml(m.content) : ''}${m.file_url ? renderFileBubble(m.file_url, m.file_name, m.file_type) : ''}`
+                                    }
+                                </div>
+                            </div>
+                            ${pinned && !unsent ? '<div class="chat-pin-label">📌 Pinned</div>' : ''}
+                            <div class="chat-msg-time">${formatTime(m.created_at)}</div>
+                        </div>
                     </div>
-                    <div class="chat-msg-time">${formatTime(m.created_at)}</div>
+                    ${seenReceipt}
                 </div>`
             }).join('') || `<div class="chat-empty">
                 <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
@@ -195,6 +247,35 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             if (wasAtBottom || msgs.length === 0) {
                 messagesEl.scrollTop = messagesEl.scrollHeight
             }
+
+            // Update pin bar
+            const pinnedMsgs = msgs.filter(m => m.is_pinned == 1 && m.is_unsent != 1)
+            if (pinBar) {
+                if (pinnedMsgs.length > 0) {
+                    pinBar.style.display = 'flex'
+                    if (pinBarText) pinBarText.textContent = `${pinnedMsgs.length} pinned message${pinnedMsgs.length > 1 ? 's' : ''}`
+                } else {
+                    pinBar.style.display = 'none'
+                    if (pinnedPanel) pinnedPanel.style.display = 'none'
+                    _pinnedOpen = false
+                }
+            }
+
+            // Render pinned panel list
+            if (pinnedList) {
+                pinnedList.innerHTML = pinnedMsgs.length ? pinnedMsgs.map(m => `
+                    <div class="chat-pinned-item" onclick="scrollToMsg(${m.id})">
+                        <div class="chat-pinned-item-sender">${escHtml(m.sender_name)}</div>
+                        <div class="chat-pinned-item-content">
+                            ${m.file_url
+                                ? `📎 ${escHtml(m.file_name || 'file')}`
+                                : escHtml((m.content || '').substring(0, 80) + (m.content?.length > 80 ? '…' : ''))}
+                        </div>
+                        <button class="chat-pinned-unpin" onclick="event.stopPropagation();doPin(${m.id})" title="Unpin">×</button>
+                    </div>`).join('')
+                : '<div style="padding:16px;text-align:center;color:#aaa;font-size:13px;">No pinned messages</div>'
+            }
+
             loadContacts()
         } catch (e) {
             console.error('[Chat] loadMessages error:', e)
@@ -233,6 +314,97 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     function clearFilePreview() {
         const prev = document.getElementById('chatFilePreview')
         if (prev) prev.innerHTML = ''
+    }
+
+    // ── 3-dot message menu ───────────────────────────────────
+    window.showMsgMenu = function(e, msgId, isSent, isUnsent) {
+        e.stopPropagation()
+        closeMsgMenu()
+
+        const menu = document.createElement('div')
+        menu.id = 'chatMsgMenu'
+
+        let items = ''
+        if (!isUnsent) {
+            items += `<div class="chat-ctx-item" onclick="doPin(${msgId})">📌 Pin</div>`
+            items += `<div class="chat-ctx-item" onclick="doForward(${msgId})">↪️ Forward</div>`
+            items += `<div class="chat-ctx-divider"></div>`
+            items += `<div class="chat-ctx-item chat-ctx-danger" onclick="doDeleteForMe(${msgId})">🗑️ Delete for me</div>`
+            if (isSent) {
+                items += `<div class="chat-ctx-item chat-ctx-danger" onclick="doUnsend(${msgId})">❌ Delete for everyone</div>`
+            }
+        }
+
+        menu.innerHTML = items || '<div class="chat-ctx-item" style="color:#aaa;cursor:default;">No actions</div>'
+        menu.style.cssText = `
+            position:fixed; z-index:99999;
+            background:#fff; border:1.5px solid #e0eee9;
+            border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,0.18);
+            padding:6px; min-width:200px; overflow:hidden;
+        `
+        const rect = e.currentTarget.getBoundingClientRect()
+        let top  = rect.bottom + 4
+        let left = rect.left - 160
+        if (left < 8) left = 8
+        if (top + 220 > window.innerHeight) top = rect.top - 220
+        menu.style.top  = top + 'px'
+        menu.style.left = left + 'px'
+        document.body.appendChild(menu)
+        setTimeout(() => document.addEventListener('click', closeMsgMenu, { once: true }), 10)
+    }
+
+    function closeMsgMenu() {
+        document.getElementById('chatMsgMenu')?.remove()
+    }
+
+    window.doDeleteForMe = async function(msgId) {
+        closeMsgMenu()
+        const res = await _fetch(`${endpoint}/messages/delete-for-me/${msgId}`, { method: 'DELETE' })
+        if (res.ok) await loadMessages()
+    }
+
+    window.doUnsend = async function(msgId) {
+        closeMsgMenu()
+        if (!confirm('Delete for everyone? They will see "this message was deleted".')) return
+        const res = await _fetch(`${endpoint}/messages/unsend/${msgId}`, { method: 'DELETE' })
+        if (res.ok) await loadMessages()
+    }
+
+    window.doPin = async function(msgId) {
+        closeMsgMenu()
+        const res = await _fetch(`${endpoint}/messages/pin/${msgId}`, { method: 'POST', body: '{}' })
+        if (res.ok) await loadMessages()
+    }
+
+    window.scrollToMsg = function(msgId) {
+        // Close pinned panel and scroll to the message
+        if (pinnedPanel) pinnedPanel.style.display = 'none'
+        _pinnedOpen = false
+        const arrow = document.getElementById('chatPinBarArrow')
+        if (arrow) arrow.textContent = '▾'
+        setTimeout(() => {
+            const el = messagesEl?.querySelector(`[data-id="${msgId}"]`)
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                el.classList.add('chat-msg-highlight')
+                setTimeout(() => el.classList.remove('chat-msg-highlight'), 1500)
+            }
+        }, 100)
+    }
+
+    window.doForward = function(msgId) {
+        closeMsgMenu()
+        const msgEl = messagesEl?.querySelector(`[data-id="${msgId}"] .chat-bubble`)
+        const text  = msgEl?.innerText?.trim() || ''
+        if (!text) return
+        window.chatBackToList()
+        setTimeout(() => {
+            if (chatInput) {
+                chatInput.value = '↪️ ' + text
+                chatInput.dispatchEvent(new Event('input'))
+                chatInput.focus()
+            }
+        }, 200)
     }
 
     // ── Panel toggle — assigned immediately so onclick works ─
@@ -305,7 +477,91 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
 
     document.getElementById('chatSendBtn')?.addEventListener('click', sendMessage)
 
-    // File attach preview
+    // ── Emoji Picker ─────────────────────────────────────────
+    const EMOJIS = [
+        '😀','😁','😂','🤣','😃','😄','😅','😆','😊','😋','😎','😍','🥰','😘','😗',
+        '🤔','🤗','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴',
+        '😷','🤒','🤕','🤢','🤧','🥵','🥶','😵','🤯','🤠','🥳','😎','🤓','🧐',
+        '😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖',
+        '👋','🤚','🖐️','✋','🖖','👌','🤏','✌️','🤞','🤟','🤘','👍','👎','✊','👊',
+        '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗',
+        '🔥','✨','⭐','🌟','💫','💥','🎉','🎊','🎈','🎁','🏆','🥇','🎯',
+        '😂','💯','👀','🙌','🤝','🙏','💪','🦾','✍️','👏','🤲',
+        '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷',
+        '🍕','🍔','🍟','🌮','🌯','🍜','🍝','🍣','🍱','🍛','🍦','🍰','🎂','☕','🧋',
+        '🚀','🛸','🌍','🌙','☀️','⚡','🌈','❄️','🌊','🔮'
+    ]
+
+    let _emojiOpen = false
+
+    function buildEmojiPicker() {
+        let picker = document.getElementById('chatEmojiPicker')
+        if (picker) return picker
+
+        picker = document.createElement('div')
+        picker.id = 'chatEmojiPicker'
+        picker.style.cssText = `
+            position:absolute; bottom:60px; left:8px; z-index:9999;
+            background:#fff; border:1.5px solid #dde8e6; border-radius:12px;
+            box-shadow:0 4px 20px rgba(0,0,0,0.15);
+            padding:10px; width:272px; max-height:220px;
+            overflow-y:auto; display:none;
+            display:grid; grid-template-columns:repeat(8,1fr);
+            gap:2px;
+        `
+        EMOJIS.forEach(emoji => {
+            const btn = document.createElement('button')
+            btn.textContent = emoji
+            btn.type = 'button'
+            btn.style.cssText = `
+                background:none; border:none; cursor:pointer;
+                font-size:22px; padding:4px; border-radius:6px;
+                transition:background 0.15s; line-height:1;
+            `
+            btn.addEventListener('mouseenter', () => btn.style.background = '#f0f5f5')
+            btn.addEventListener('mouseleave', () => btn.style.background = 'none')
+            btn.addEventListener('click', () => {
+                if (chatInput) {
+                    const start = chatInput.selectionStart
+                    const end   = chatInput.selectionEnd
+                    const val   = chatInput.value
+                    chatInput.value = val.slice(0, start) + emoji + val.slice(end)
+                    chatInput.selectionStart = chatInput.selectionEnd = start + emoji.length
+                    chatInput.focus()
+                    chatInput.dispatchEvent(new Event('input'))
+                }
+            })
+            picker.appendChild(btn)
+        })
+
+        // Append inside the chat panel so it stays within bounds
+        const convView = document.getElementById('chatConvView')
+        if (convView) convView.appendChild(picker)
+        else document.body.appendChild(picker)
+        return picker
+    }
+
+    function toggleEmojiPicker() {
+        const picker = buildEmojiPicker()
+        _emojiOpen = !_emojiOpen
+        picker.style.display = _emojiOpen ? 'grid' : 'none'
+    }
+
+    document.getElementById('chatEmojiBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation()
+        toggleEmojiPicker()
+    })
+
+    // Close emoji picker when clicking outside
+    document.addEventListener('click', (e) => {
+        if (_emojiOpen && !e.target.closest('#chatEmojiPicker') && !e.target.closest('#chatEmojiBtn')) {
+            const picker = document.getElementById('chatEmojiPicker')
+            if (picker) picker.style.display = 'none'
+            _emojiOpen = false
+        }
+    })
+
+    // ── File attach preview
     document.getElementById('chatFileInput')?.addEventListener('change', (e) => {
         const file = e.target.files[0]
         const prev = document.getElementById('chatFilePreview')

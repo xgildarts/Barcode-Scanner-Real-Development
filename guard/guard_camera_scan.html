@@ -77,11 +77,25 @@
             <div class="chat-view" id="chatConvView">
                 <div class="chat-conv-header">
                     <button class="chat-back-btn" onclick="chatBackToList()">&#8592;</button>
-                    <div class="chat-avatar role-student" id="chatConvAvatar">?</div>
-                    <div>
+                    <div id="chatConvAvatarWrap"><div class="chat-avatar role-student" id="chatConvAvatar">?</div></div>
+                    <div style="flex:1;min-width:0;">
                         <div class="chat-conv-name" id="chatConvName"></div>
                         <div class="chat-conv-role" id="chatConvRole"></div>
                     </div>
+                </div>
+                <!-- Pinned bar — shows when there are pinned messages -->
+                <div class="chat-pin-bar" id="chatPinBar" style="display:none;" onclick="togglePinnedPanel()">
+                    <span class="chat-pin-bar-icon">📌</span>
+                    <span class="chat-pin-bar-text" id="chatPinBarText">1 pinned message</span>
+                    <span class="chat-pin-bar-arrow" id="chatPinBarArrow">▾</span>
+                </div>
+                <!-- Pinned messages panel -->
+                <div class="chat-pinned-panel" id="chatPinnedPanel" style="display:none;">
+                    <div class="chat-pinned-header">
+                        <span>📌 Pinned Messages</span>
+                        <button class="chat-pinned-close" onclick="togglePinnedPanel()">×</button>
+                    </div>
+                    <div class="chat-pinned-list" id="chatPinnedList"></div>
                 </div>
                 <div class="chat-messages" id="chatMessages"></div>
                 <div id="chatFilePreview" class="chat-file-preview-bar"></div>
@@ -92,7 +106,10 @@
                         </svg>
                         <input type="file" id="chatFileInput" style="display:none" accept="*/*">
                     </label>
-                    <textarea class="chat-input" id="chatInput" placeholder="Type a message..." rows="1"></textarea>
+                    <button class="chat-emoji-btn" id="chatEmojiBtn" title="Emoji" type="button">
+                        😊
+                    </button>
+                                        <textarea class="chat-input" id="chatInput" placeholder="Type a message..." rows="1"></textarea>
                     <button class="chat-send-btn" id="chatSendBtn">
                         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                     </button>

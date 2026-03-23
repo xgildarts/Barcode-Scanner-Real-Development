@@ -2875,6 +2875,9 @@ module.exports = {
     markNotificationsRead,
     getUnreadCount,
     sendMessage,
+    unsendMessage,
+    deleteMessageForMe,
+    pinMessage,
     getConversation,
     getMessageContacts,
     getUnreadMessageCount,
@@ -3025,8 +3028,16 @@ db.query(
         file_url      VARCHAR(500) DEFAULT NULL,
         file_name     VARCHAR(255) DEFAULT NULL,
         file_type     VARCHAR(100) DEFAULT NULL,
-        is_read       TINYINT(1)   NOT NULL DEFAULT 0,
-        created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+        is_read                  TINYINT(1)   NOT NULL DEFAULT 0,
+        read_at                  DATETIME     DEFAULT NULL,
+        is_unsent                TINYINT(1)   NOT NULL DEFAULT 0,
+        deleted_for_sender       TINYINT(1)   NOT NULL DEFAULT 0,
+        deleted_for_receiver     TINYINT(1)   NOT NULL DEFAULT 0,
+        is_pinned                TINYINT(1)   NOT NULL DEFAULT 0,
+        forwarded_from_id        INT          DEFAULT NULL,
+        sender_profile_picture   VARCHAR(500) DEFAULT NULL,
+        receiver_profile_picture VARCHAR(500) DEFAULT NULL,
+        created_at               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     (err) => {
         if (err) {
@@ -3038,12 +3049,12 @@ db.query(
 )
 
 // Send a message
-function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content, fileUrl, fileName, fileType) {
+function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content, fileUrl, fileName, fileType, senderPic, receiverPic) {
     return new Promise((resolve, reject) => {
         db.execute(
-            `INSERT INTO messages (sender_id, sender_role, sender_name, receiver_id, receiver_role, receiver_name, content, file_url, file_name, file_type)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content || null, fileUrl || null, fileName || null, fileType || null],
+            `INSERT INTO messages (sender_id, sender_role, sender_name, receiver_id, receiver_role, receiver_name, content, file_url, file_name, file_type, sender_profile_picture, receiver_profile_picture)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content || null, fileUrl || null, fileName || null, fileType || null, senderPic || null, receiverPic || null],
             (err, result) => {
                 if (err) return reject(err)
                 resolve(result.insertId)
@@ -3058,8 +3069,13 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
     return new Promise((resolve) => {
         db.execute(
             `SELECT * FROM messages
-             WHERE (sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?)
-                OR (sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?)
+             WHERE (
+                sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?
+                AND deleted_for_sender = 0
+             ) OR (
+                sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?
+                AND deleted_for_receiver = 0
+             )
              ORDER BY created_at DESC
              LIMIT ?`,
             [userAId, userARole, userBId, userBRole,
@@ -3067,6 +3083,83 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
             (err, rows) => {
                 if (err) { console.error('[getConversation]', err.message); return resolve([]) }
                 resolve(rows.reverse())
+            }
+        )
+    })
+}
+
+
+// Delete for me only (sender deletes for themselves, receiver still sees it)
+function deleteMessageForMe(messageId, userId, userRole) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT id, sender_id, sender_role, receiver_id, receiver_role FROM messages WHERE id = ? LIMIT 1`,
+            [messageId],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (!rows.length) return reject(new Error('Message not found.'))
+                const m = rows[0]
+                const isSender   = String(m.sender_id)   === String(userId) && m.sender_role   === userRole
+                const isReceiver = String(m.receiver_id) === String(userId) && m.receiver_role === userRole
+                if (!isSender && !isReceiver) return reject(new Error('Unauthorized.'))
+                const col = isSender ? 'deleted_for_sender' : 'deleted_for_receiver'
+                db.execute(`UPDATE messages SET ${col} = 1 WHERE id = ?`, [messageId], (err2) => {
+                    if (err2) return reject(err2)
+                    resolve('Deleted for you.')
+                })
+            }
+        )
+    })
+}
+
+// Delete for everyone — sender only, leaves "unsent" trace
+function unsendMessage(messageId, senderId, senderRole) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT id, file_url FROM messages WHERE id = ? AND sender_id = ? AND sender_role = ? LIMIT 1`,
+            [messageId, senderId, senderRole],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (!rows.length) return reject(new Error('Message not found or you are not the sender.'))
+                const fileUrl = rows[0].file_url
+                db.execute(
+                    `UPDATE messages SET content = NULL, file_url = NULL, file_name = NULL, file_type = NULL,
+                     is_unsent = 1, deleted_for_sender = 0, deleted_for_receiver = 0 WHERE id = ?`,
+                    [messageId],
+                    (err2) => {
+                        if (err2) return reject(err2)
+                        if (fileUrl) {
+                            const pathMod = require('path')
+                            const fs = require('fs')
+                            const fp = pathMod.join(__dirname, '../../', fileUrl.replace('/api/v1/', ''))
+                            fs.unlink(fp, () => {})
+                        }
+                        resolve('Message unsent for everyone.')
+                    }
+                )
+            }
+        )
+    })
+}
+
+// Pin / unpin a message
+function pinMessage(messageId, userId, userRole) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT id, sender_id, sender_role, receiver_id, receiver_role, is_pinned FROM messages WHERE id = ? LIMIT 1`,
+            [messageId],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (!rows.length) return reject(new Error('Message not found.'))
+                const m = rows[0]
+                const involved = (String(m.sender_id) === String(userId) && m.sender_role === userRole) ||
+                                 (String(m.receiver_id) === String(userId) && m.receiver_role === userRole)
+                if (!involved) return reject(new Error('Unauthorized.'))
+                const newPin = m.is_pinned ? 0 : 1
+                db.execute(`UPDATE messages SET is_pinned = ? WHERE id = ?`, [newPin, messageId], (err2) => {
+                    if (err2) return reject(err2)
+                    resolve(newPin ? 'Message pinned.' : 'Message unpinned.')
+                })
             }
         )
     })
@@ -3094,6 +3187,7 @@ function getMessageContacts(userId, userRole) {
                 const tasks = contacts.map(c => new Promise(res => {
                     db.execute(
                         `SELECT content, sender_name, created_at,
+                                sender_profile_picture, receiver_profile_picture,
                                 (SELECT COUNT(*) FROM messages
                                  WHERE receiver_id = ? AND receiver_role = ?
                                    AND sender_id = ? AND sender_role = ?
@@ -3108,13 +3202,17 @@ function getMessageContacts(userId, userRole) {
                             c.contact_id, c.contact_role, userId, userRole
                         ],
                         (err2, rows) => {
-                            if (err2 || !rows.length) return res({ ...c, last_message: '', last_sender_name: '', unread: 0, last_message_at: null })
+                            if (err2 || !rows.length) return res({ ...c, last_message: '', last_sender_name: '', unread: 0, last_message_at: null, contact_profile_picture: null })
+                            // The contact's pic is sender_pic if contact is sender, else receiver_pic
+                            const isSenderContact = true // contact can be either role
+                            const contactPic = rows[0].sender_profile_picture || rows[0].receiver_profile_picture || null
                             res({
                                 ...c,
-                                last_message:     rows[0].content,
-                                last_sender_name: rows[0].sender_name,
-                                unread:           rows[0].unread || 0,
-                                last_message_at:  rows[0].created_at
+                                last_message:            rows[0].content,
+                                last_sender_name:        rows[0].sender_name,
+                                unread:                  rows[0].unread || 0,
+                                last_message_at:         rows[0].created_at,
+                                contact_profile_picture: contactPic
                             })
                         }
                     )
@@ -3144,7 +3242,7 @@ function getUnreadMessageCount(userId, userRole) {
 function markMessagesRead(receiverId, receiverRole, senderId, senderRole) {
     return new Promise((resolve) => {
         db.execute(
-            `UPDATE messages SET is_read = 1
+            `UPDATE messages SET is_read = 1, read_at = NOW()
              WHERE receiver_id = ? AND receiver_role = ? AND sender_id = ? AND sender_role = ? AND is_read = 0`,
             [receiverId, receiverRole, senderId, senderRole],
             (err) => { if (err) console.error('[markMessagesRead]', err.message); resolve() }
@@ -3159,11 +3257,11 @@ function searchUsersForMessaging(query, excludeId, excludeRole) {
         db.execute(sql, params, (err, rows) => { if (err) return res([]); res(rows) })
     })
     return Promise.all([
-        q(`SELECT student_id AS id, CONCAT(student_firstname,' ',student_lastname) AS name, 'student' AS role, student_email AS email FROM student_accounts WHERE (student_firstname LIKE ? OR student_lastname LIKE ? OR student_email LIKE ?) LIMIT 5`, [like, like, like]),
-        q(`SELECT teacher_id AS id, teacher_name AS name, 'teacher' AS role, teacher_email AS email FROM teacher WHERE (teacher_name LIKE ? OR teacher_email LIKE ?) LIMIT 5`, [like, like]),
-        q(`SELECT admin_id AS id, admin_name AS name, 'admin' AS role, admin_email AS email FROM admin_accounts WHERE (admin_name LIKE ? OR admin_email LIKE ?) LIMIT 5`, [like, like]),
-        q(`SELECT guard_id AS id, guard_name AS name, 'guard' AS role, guard_email AS email FROM guards WHERE (guard_name LIKE ? OR guard_email LIKE ?) LIMIT 5`, [like, like]),
-        q(`SELECT super_admin_id AS id, super_admin_name AS name, 'super_admin' AS role, super_admin_email AS email FROM super_admin_accounts WHERE (super_admin_name LIKE ? OR super_admin_email LIKE ?) LIMIT 5`, [like, like]),
+        q(`SELECT student_id AS id, CONCAT(student_firstname,' ',student_lastname) AS name, 'student' AS role, student_email AS email, student_profile_picture AS profile_picture FROM student_accounts WHERE (student_firstname LIKE ? OR student_lastname LIKE ? OR student_email LIKE ?) LIMIT 5`, [like, like, like]),
+        q(`SELECT teacher_id AS id, teacher_name AS name, 'teacher' AS role, teacher_email AS email, teacher_profile_picture AS profile_picture FROM teacher WHERE (teacher_name LIKE ? OR teacher_email LIKE ?) LIMIT 5`, [like, like]),
+        q(`SELECT admin_id AS id, admin_name AS name, 'admin' AS role, admin_email AS email, admin_profile_picture AS profile_picture FROM admin_accounts WHERE (admin_name LIKE ? OR admin_email LIKE ?) LIMIT 5`, [like, like]),
+        q(`SELECT guard_id AS id, guard_name AS name, 'guard' AS role, guard_email AS email, NULL AS profile_picture FROM guards WHERE (guard_name LIKE ? OR guard_email LIKE ?) LIMIT 5`, [like, like]),
+        q(`SELECT super_admin_id AS id, super_admin_name AS name, 'super_admin' AS role, super_admin_email AS email, super_admin_profile_picture AS profile_picture FROM super_admin_accounts WHERE (super_admin_name LIKE ? OR super_admin_email LIKE ?) LIMIT 5`, [like, like]),
     ]).then(results => {
         let users = []
         results.forEach(rows => {
