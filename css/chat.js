@@ -204,14 +204,21 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             const wasAtBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 60
             // Find last sent message index for seen receipt
             let lastSentIdx = -1
-            msgs.forEach((m, i) => { if (String(m.sender_id) === String(myId) && m.sender_role === myRole && !m.is_unsent) lastSentIdx = i })
+            let contactPicFromMsg = _convContact.profilePicture
+            msgs.forEach((m, i) => {
+                if (String(m.sender_id) === String(myId) && m.sender_role === myRole && !m.is_unsent) {
+                    lastSentIdx = i
+                    // receiver_profile_picture on sent msgs = the contact's pic
+                    if (m.receiver_profile_picture) contactPicFromMsg = m.receiver_profile_picture
+                }
+            })
 
             messagesEl.innerHTML = msgs.map((m, idx) => {
                 const sent   = String(m.sender_id) === String(myId) && m.sender_role === myRole
                 const unsent = m.is_unsent == 1
                 const pinned = m.is_pinned == 1
                 const isLastSent = sent && idx === lastSentIdx
-                const seenAvatarEl = avatarHtml(_convContact.name, _convContact.role, _convContact.profilePicture, 16)
+                const seenAvatarEl = avatarHtml(_convContact.name, _convContact.role, contactPicFromMsg, 16)
                 const seenReceipt = isLastSent && m.is_read == 1
                     ? `<div class="chat-seen-receipt">${seenAvatarEl} Seen ${m.read_at ? formatTime(m.read_at) : ''}</div>`
                     : isLastSent ? `<div class="chat-seen-receipt chat-seen-sent">✓✓ Delivered</div>` : ''

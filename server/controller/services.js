@@ -3186,7 +3186,7 @@ function getMessageContacts(userId, userRole) {
                 // Step 2: for each contact get last message + unread count
                 const tasks = contacts.map(c => new Promise(res => {
                     db.execute(
-                        `SELECT content, sender_name, created_at,
+                        `SELECT content, sender_id, sender_role, sender_name, created_at,
                                 sender_profile_picture, receiver_profile_picture,
                                 (SELECT COUNT(*) FROM messages
                                  WHERE receiver_id = ? AND receiver_role = ?
@@ -3204,15 +3204,21 @@ function getMessageContacts(userId, userRole) {
                         (err2, rows) => {
                             if (err2 || !rows.length) return res({ ...c, last_message: '', last_sender_name: '', unread: 0, last_message_at: null, contact_profile_picture: null })
                             // The contact's pic is sender_pic if contact is sender, else receiver_pic
-                            const isSenderContact = true // contact can be either role
-                            const contactPic = rows[0].sender_profile_picture || rows[0].receiver_profile_picture || null
+                            // Pick the pic belonging to the CONTACT, not the current user
+                            // If contact is the sender of this last message, use sender_pic
+                            // If contact is the receiver, use receiver_pic
+                            const contactIsSender = String(rows[0].sender_id) === String(c.contact_id) &&
+                                                    rows[0].sender_role === c.contact_role
+                            const contactPic = contactIsSender
+                                ? rows[0].sender_profile_picture
+                                : rows[0].receiver_profile_picture
                             res({
                                 ...c,
                                 last_message:            rows[0].content,
                                 last_sender_name:        rows[0].sender_name,
                                 unread:                  rows[0].unread || 0,
                                 last_message_at:         rows[0].created_at,
-                                contact_profile_picture: contactPic
+                                contact_profile_picture: contactPic || null
                             })
                         }
                     )
