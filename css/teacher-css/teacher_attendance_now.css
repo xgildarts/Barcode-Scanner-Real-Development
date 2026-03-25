@@ -57,6 +57,32 @@
     font-style: italic;
 }
 
+.export-btn {
+    background: #3d6b6b;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.export-btn:hover {
+    background: #2c5a5a;
+}
+
+.export-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: white;
+}
+
 .refresh-btn {
     background: #4a7a7a;
     color: white;
@@ -142,32 +168,54 @@
 .attendance-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 860px;
     table-layout: fixed;
 }
+
+/* Fixed column widths — thead and tbody both use table-layout:fixed so they stay in sync */
+.attendance-table th:nth-child(1),
+.attendance-table td:nth-child(1) { width: 110px; }   /* ID Number */
+.attendance-table th:nth-child(2),
+.attendance-table td:nth-child(2) { width: 18%;   }   /* Full Name — percentage so it grows */
+.attendance-table th:nth-child(3),
+.attendance-table td:nth-child(3) { width: 130px; }   /* Subject */
+.attendance-table th:nth-child(4),
+.attendance-table td:nth-child(4) { width: 100px; }   /* Year Level */
+.attendance-table th:nth-child(5),
+.attendance-table td:nth-child(5) { width: 88px;  }   /* Time In */
+.attendance-table th:nth-child(6),
+.attendance-table td:nth-child(6) { width: 100px; }   /* Date */
+.attendance-table th:nth-child(7),
+.attendance-table td:nth-child(7) { width: 105px; }   /* Status */
+.attendance-table th:nth-child(8),
+.attendance-table td:nth-child(8) { width: 215px; }   /* Action */
 
 .attendance-table thead {
     background: #3d6b6b;
     color: white;
-}
-
-.attendance-table thead tr {
     display: table;
     width: 100%;
     table-layout: fixed;
 }
 
+.attendance-table thead tr {
+    display: table-row;
+    width: 100%;
+}
+
 .attendance-table th {
-    padding: 16px 12px;
+    padding: 14px 12px;
     text-align: left;
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .attendance-table tbody {
     display: block;
-    max-height: 420px;
+    max-height: 460px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -177,7 +225,6 @@
     width: 100%;
     table-layout: fixed;
     border-bottom: 1px solid #e0e0e0;
-    height: 60px;
 }
 
 .attendance-table tbody tr:hover {
@@ -185,12 +232,20 @@
 }
 
 .attendance-table td {
-    padding: 12px;
+    padding: 10px 12px;
     font-size: 13px;
     color: #333;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Full Name — allow wrap so long names aren't clipped */
+.attendance-table td:nth-child(2) {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.35;
 }
 
 .checkbox-cell {
@@ -228,6 +283,11 @@
 @media (max-width: 768px) {
     .search-row {
         flex-wrap: wrap;
+    }
+
+    .export-btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .action-btn {
@@ -393,4 +453,221 @@
 }
 [data-theme="dark"] .search-wrapper:focus-within .search-icon {
     fill: #7ecece !important;
+}
+/* ── Present / Absent row indicators ── */
+.row-present {
+    background-color: #f0fdf4 !important;
+    border-left: 4px solid #22c55e;
+}
+.row-absent {
+    background-color: #fff5f5 !important;
+    border-left: 4px solid #ef4444;
+}
+.row-present:hover {
+    background-color: #dcfce7 !important;
+}
+.row-absent:hover {
+    background-color: #fee2e2 !important;
+}
+
+[data-theme="dark"] .row-present {
+    background-color: #0d2b1a !important;
+    border-left: 4px solid #22c55e;
+}
+[data-theme="dark"] .row-absent {
+    background-color: #2b0d0d !important;
+    border-left: 4px solid #ef4444;
+}
+
+/* ── Late row ── */
+.row-late {
+    background-color: #f5f3ff !important;
+    border-left: 4px solid #7c3aed;
+}
+.row-late:hover {
+    background-color: #ede9fe !important;
+}
+[data-theme="dark"] .row-late {
+    background-color: #1e1433 !important;
+    border-left: 4px solid #7c3aed;
+}
+
+/* ── Excused row ── */
+.row-excused {
+    background-color: #fffbeb !important;
+    border-left: 4px solid #f59e0b;
+}
+.row-excused:hover {
+    background-color: #fef3c7 !important;
+}
+[data-theme="dark"] .row-excused {
+    background-color: #2b1f05 !important;
+    border-left: 4px solid #f59e0b;
+}
+
+/* ── Action buttons ── */
+.attendance-action-btns {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.att-action-btn {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    opacity: 0.45;
+    background: #f3f4f6;
+    color: #374151;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.att-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.25;
+}
+.att-action-btn.active {
+    opacity: 1;
+    color: #fff;
+}
+.btn-present         { border-color: #22c55e; color: #15803d; }
+.btn-present:hover   { background: #dcfce7; opacity: 1; }
+.btn-present.active  { background: #16a34a; border-color: #16a34a; }
+
+.btn-absent          { border-color: #ef4444; color: #b91c1c; }
+.btn-absent:hover    { background: #fee2e2; opacity: 1; }
+.btn-absent.active   { background: #dc2626; border-color: #dc2626; }
+
+.btn-late            { border-color: #7c3aed; color: #5b21b6; }
+.btn-late:hover      { background: #ede9fe; opacity: 1; }
+.btn-late.active     { background: #7c3aed; border-color: #7c3aed; }
+
+.btn-excused         { border-color: #f59e0b; color: #92400e; }
+.btn-excused:hover   { background: #fef3c7; opacity: 1; }
+.btn-excused.active  { background: #d97706; border-color: #d97706; }
+
+[data-theme="dark"] .att-action-btn          { background: #1f2937; color: #d1d5db; }
+[data-theme="dark"] .btn-present:hover       { background: #14532d; }
+[data-theme="dark"] .btn-present.active      { background: #16a34a; }
+[data-theme="dark"] .btn-absent:hover        { background: #450a0a; }
+[data-theme="dark"] .btn-absent.active       { background: #dc2626; }
+[data-theme="dark"] .btn-late:hover          { background: #2e1065; }
+[data-theme="dark"] .btn-late.active         { background: #7c3aed; }
+[data-theme="dark"] .btn-excused:hover       { background: #422006; }
+[data-theme="dark"] .btn-excused.active      { background: #d97706; }
+/* ============================================================
+   MOBILE RESPONSIVE — Attendance Now
+   ============================================================ */
+
+@media (max-width: 600px) {
+    /* Search row wraps cleanly */
+    .search-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .search-wrapper {
+        width: 100%;
+    }
+
+    .export-btn,
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+        font-size: 12px;
+        padding: 9px 12px;
+    }
+
+    /* Filters wrap */
+    .filters-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .filter-select {
+        flex: 1 1 140px;
+        min-width: 0;
+        font-size: 12px;
+    }
+
+    /* Attendance table — card layout on mobile */
+    .attendance-table,
+    .attendance-table thead,
+    .attendance-table tbody,
+    .attendance-table th,
+    .attendance-table td,
+    .attendance-table tr {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .attendance-table thead {
+        display: none !important;
+    }
+
+    .attendance-table tbody {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .attendance-table tbody tr {
+        background: #fff;
+        border: 1px solid #e0ebe8;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        position: relative;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .attendance-table tbody tr.row-present { border-left: 4px solid #22c55e; }
+    .attendance-table tbody tr.row-absent  { border-left: 4px solid #ef4444; }
+    .attendance-table tbody tr.row-late    { border-left: 4px solid #7c3aed; }
+    .attendance-table tbody tr.row-excused { border-left: 4px solid #f59e0b; }
+
+    .attendance-table td {
+        padding: 4px 0 !important;
+        font-size: 13px !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        border: none !important;
+    }
+
+    /* Data labels via ::before */
+    .attendance-table td:nth-child(1)::before { content: 'ID: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(2)::before { content: 'Name: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(3)::before { content: 'Subject: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(4)::before { content: 'Year: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(5)::before { content: 'Time In: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(6)::before { content: 'Date: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(7)::before { content: 'Status: '; font-weight: 700; color: #5a7a7a; }
+    .attendance-table td:nth-child(8)::before { content: 'Action: '; font-weight: 700; color: #5a7a7a; display: block; margin-bottom: 4px; }
+
+    /* Action buttons wrap on mobile */
+    .attendance-action-btns {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .att-action-btn {
+        flex: 1 1 70px;
+        text-align: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        padding: 6px 8px;
+    }
+}
+
+/* Dark mode card rows on mobile */
+@media (max-width: 600px) {
+    [data-theme="dark"] .attendance-table tbody tr {
+        background: #1a2535;
+        border-color: #2a3a4a;
+    }
 }

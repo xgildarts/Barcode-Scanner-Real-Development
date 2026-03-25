@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 23, 2026 at 06:22 PM
+-- Generation Time: Mar 25, 2026 at 04:11 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -41,7 +41,7 @@ CREATE TABLE `admin_accounts` (
 --
 
 INSERT INTO `admin_accounts` (`admin_id`, `admin_name`, `admin_email`, `admin_profile_picture`, `admin_password`, `date_account_created`) VALUES
-(1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin-1774286246774-277301.png', '$2b$10$WLX3Xkyz5en54kOO/5ZpouaRVWh2a9COy/rskR8Z/sqwBLYYB30ra', '2026-02-09 00:02:44'),
+(1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin-1774291107115-669.jpg', '$2b$10$WLX3Xkyz5en54kOO/5ZpouaRVWh2a9COy/rskR8Z/sqwBLYYB30ra', '2026-02-09 00:02:44'),
 (2, 'Steven John A. Agustin', 'steven.agustin.admin@panpacificu.edu.ph', NULL, '$2b$10$mDndtidBYe2/oHD.7lxoIuJlt.x6rBHFOTSuo1NPJk.tUA9TRSLay', '2026-03-22 02:29:34');
 
 -- --------------------------------------------------------
@@ -108,130 +108,6 @@ CREATE TABLE `attendance_history_record` (
   `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `attendance_history_record`
---
-
-INSERT INTO `attendance_history_record` (`attendance_id`, `student_id_number`, `student_middlename`, `student_lastname`, `student_firstname`, `student_program`, `attendance_time`, `attendance_date`, `year_level`, `subject`, `location_generated`, `device_id`, `student_id`, `teacher_barcode_scanner_serial_number`) VALUES
-(1, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '01:45:34', '2026-02-02', '3rd Year', 'Big Data', NULL, NULL, 11, 'TSN17698767256291441'),
-(2, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '12:59:35', '2026-02-02', '3rd Year', 'Event-Driven Ecoast Day', NULL, NULL, 11, 'TSN17698767256291441'),
-(3, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '13:10:44', '2026-02-02', '3rd Year', 'Event-Driven Ecoast Day', NULL, NULL, 11, 'TSN17698767256291441'),
-(4, '1231345', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '13:41:02', '2026-02-02', '3rd Year', 'Event-Driven Ecoast Day', NULL, NULL, 13, 'TSN17698767256291441'),
-(5, '1231345', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '18:06:21', '2026-02-03', '3rd Year', 'Digital Marketing', NULL, NULL, 13, 'TSN17698767256291441'),
-(6, '1231345', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '18:30:51', '2026-02-04', '3rd Year', 'Digital Marketing', NULL, NULL, 13, 'TSN17698767256291441'),
-(7, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '20:54:04', '2026-02-09', '3rd Year', 'Digital Marketing', NULL, NULL, 16, 'TSN17698767256291441'),
-(8, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '15:51:34', '2026-03-02', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441'),
-(9, '1231379', 'A', 'Selga', 'Charimea', 'BS in Information Technology', '01:02:37', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 9, 'TSN17698767256291441'),
-(10, '1231377', 'A', 'Dragneel', 'Natsu', 'BS in Computer Science', '01:05:32', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 12, 'TSN17698767256291441'),
-(11, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '01:10:41', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 7, 'TSN17698767256291441'),
-(12, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '09:34:56', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 17, 'TSN17698767256291441'),
-(13, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '09:45:41', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 7, 'TSN17698767256291441'),
-(14, '1231379', 'A', 'Castillo', 'Gabriel', 'BS in Information Technology', '10:06:52', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 18, 'TSN17698767256291441'),
-(15, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '10:07:03', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 17, 'TSN17698767256291441'),
-(16, '1231372', 'A', 'Agustin', 'Steven John', 'BS in Information Technology', '10:26:31', '2026-03-07', '3rd Year', 'Programming', NULL, NULL, 20, 'TSN17698767256291441'),
-(17, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '21:27:43', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 16, 'TSN17698767256291441'),
-(18, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '21:31:19', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 7, 'TSN17698767256291441'),
-(19, '1231379', 'A', 'Selga', 'Charimea', 'BS in Information Technology', '21:31:22', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 9, 'TSN17698767256291441'),
-(20, '1231377', 'A', 'Dragneel', 'Natsu', 'BS in Computer Science', '21:31:26', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 12, 'TSN17698767256291441'),
-(21, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '21:31:28', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 16, 'TSN17698767256291441'),
-(22, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '21:31:30', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 17, 'TSN17698767256291441'),
-(23, '1231372', 'A', 'Agustin', 'Steven John', 'BS in Information Technology', '21:38:58', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 20, 'TSN17698767256291441'),
-(24, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '21:47:48', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 7, 'TSN17698767256291441'),
-(25, '1231379', 'A', 'Selga', 'Charimea', 'BS in Information Technology', '21:47:51', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 9, 'TSN17698767256291441'),
-(26, '1231377', 'A', 'Dragneel', 'Natsu', 'BS in Computer Science', '21:47:53', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 12, 'TSN17698767256291441'),
-(27, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '21:47:55', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 16, 'TSN17698767256291441'),
-(28, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '21:47:57', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 17, 'TSN17698767256291441'),
-(29, '1231376', 'A', 'Castillo', 'Gabriel', 'BS in Information Technology', '21:47:59', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 19, 'TSN17698767256291441'),
-(30, '1231372', 'A', 'Agustin', 'Steven John', 'BS in Information Technology', '21:48:01', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 20, 'TSN17698767256291441'),
-(31, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '22:59:56', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 7, 'TSN17698767256291441'),
-(32, '1231377', 'A', 'Dragneel', 'Natsu', 'BS in Computer Science', '23:00:07', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 12, 'TSN17698767256291441'),
-(33, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '23:00:11', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 16, 'TSN17698767256291441'),
-(34, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '23:00:14', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 17, 'TSN17698767256291441'),
-(35, '1231376', 'A', 'Castillo', 'Gabriel', 'BS in Information Technology', '23:00:16', '2026-03-07', '3rd Year', 'Big Data', NULL, NULL, 19, 'TSN17698767256291441'),
-(36, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '09:45:14', '2026-03-10', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441'),
-(37, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '12:53:39', '2026-03-11', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(38, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '14:15:17', '2026-03-11', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(39, '1231377', 'A', 'Dragneel', 'Natsu', 'BS in Computer Science', '14:14:30', '2026-03-12', '3rd Year', 'Programming', NULL, NULL, 12, 'TSN17698767256291441'),
-(40, '1231374', 'A', 'Lachica', 'Andrea', 'BS in Information Technology', '14:14:34', '2026-03-12', '3rd Year', 'Programming', NULL, NULL, 7, 'TSN17698767256291441'),
-(41, '123123', 'M.', 'Toka', 'Luna', 'BS in Criminology', '14:17:44', '2026-03-12', '2nd Year', 'Programming', NULL, NULL, 24, 'TSN17698767256291441'),
-(42, '1777227272', 'S', 'Zuckerberg', 'Mark', 'BS in Computer Engineering', '14:33:08', '2026-03-12', '4th Year', 'Digital Marketing', NULL, NULL, 34, 'TSN17698767256291441'),
-(43, '1777227272', 'S', 'Zuckerberg', 'Mark', 'BS in Computer Engineering', '14:34:00', '2026-03-12', '4th Year', 'Digital Marketing', NULL, NULL, 34, 'TSN17698767256291441'),
-(44, '1777227272', 'S', 'Zuckerberg', 'Mark', 'BS in Computer Engineering', '14:37:11', '2026-03-12', '4th Year', 'Digital Marketing', NULL, NULL, 34, 'TSN17698767256291441'),
-(45, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '23:40:00', '2026-03-12', '3rd Year', 'Event-Driven Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(46, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '00:38:08', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441'),
-(47, '1231370', 'A', 'Agustin (CoAST)', 'Steven John', 'BS in Information Technology', '00:45:39', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 31, 'TSN17698767256291441'),
-(48, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '00:46:09', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 28, 'TSN17698767256291441'),
-(49, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '00:46:12', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 27, 'TSN17698767256291441'),
-(50, '1231574', 'L', 'Magbitang', 'Alexander', 'BS in Information Technology', '00:46:20', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441'),
-(51, '321', 'E', 'Lachica', 'Andrea', 'BS in Information Technology', '00:46:24', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 22, 'TSN17698767256291441'),
-(52, '1231426', 'M', 'Selga', 'Charimea', 'BS in Information Technology', '00:46:27', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 21, 'TSN17698767256291441'),
-(53, '1231376', 'A', 'Castillo', 'Gabriel', 'BS in Information Technology', '00:46:38', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 19, 'TSN17698767256291441'),
-(54, '1231371', 'A', 'Salvarion', 'Mayen', 'BS in Information Technology', '00:46:41', '2026-03-13', '3rd Year', 'Big Data', NULL, NULL, 17, 'TSN17698767256291441'),
-(55, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '12:28:17', '2026-03-14', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441'),
-(56, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '16:21:31', '2026-03-14', '3rd Year', 'Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(57, '1231574', 'L', 'Magbitang', 'Alexander', 'BS in Information Technology', '16:30:42', '2026-03-14', '3rd Year', 'Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(58, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '17:03:46', '2026-03-14', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(59, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '17:04:14', '2026-03-14', '3rd Year', 'Programming', NULL, NULL, 27, 'TSN17698767256291441'),
-(60, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '17:17:50', '2026-03-14', '3rd Year', 'Event-Driven Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(61, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '21:08:10', '2026-03-14', '3rd Year', 'Programming', NULL, NULL, 28, 'TSN17698767256291441'),
-(62, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '21:38:04', '2026-03-14', '3rd Year', 'Programming', NULL, NULL, 27, 'TSN17698767256291441'),
-(63, '1231426', 'M', 'Selga', 'Charimea', 'BS in Information Technology', '23:16:39', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 21, 'TSN17698767256291441'),
-(64, '1231574', 'L', 'Magbitang', 'Alexander', 'BS in Information Technology', '23:16:41', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(65, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '23:16:43', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 27, 'TSN17698767256291441'),
-(66, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '23:16:45', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 28, 'TSN17698767256291441'),
-(67, '12312313787', 'A', 'Agustin (CoAST)', 'Steven John', 'BS in Information Technology', '23:16:47', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 33, 'TSN17698767256291441'),
-(68, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '23:16:49', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(69, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '23:16:54', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 45, 'TSN17698767256291441'),
-(70, '123123123', 'M', 'Cabote (ECoAST)', 'Angel Mageri', 'BS in Information Technology', '23:16:57', '2026-03-15', '3rd Year', 'Programming', NULL, NULL, 46, 'TSN17698767256291441'),
-(71, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '01:01:34', '2026-03-16', '3rd Year', 'App Dev', NULL, NULL, 34, 'TSN17734603098321716'),
-(72, '1231426', 'M', 'Selga', 'Charimea', 'BS in Information Technology', '11:53:25', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 21, 'TSN17698767256291441'),
-(73, '737773', 'A', 'Agustin', 'Zaiejan', 'BS in Information Technology', '15:19:10', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(74, '737773', 'A', 'Agustin', 'Zaiejan', 'BS in Information Technology', '15:22:10', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(75, '737773', 'A', 'Agustin', 'Zaiejan', 'BS in Information Technology', '15:28:15', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(76, '12312313787', 'A', 'Agustin (CoAST)', 'Steven John', 'BS in Information Technology', '21:01:43', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 33, 'TSN17698767256291441'),
-(77, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '21:01:46', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 28, 'TSN17698767256291441'),
-(78, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '21:01:50', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 27, 'TSN17698767256291441'),
-(79, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', 'BS in Information Technology', '21:01:54', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 46, 'TSN17698767256291441'),
-(80, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '21:02:00', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(81, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '21:02:02', '2026-03-16', '3rd Year', 'Programming', NULL, NULL, 45, 'TSN17698767256291441'),
-(82, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '13:24:35', '2026-03-19', '3rd Year', 'Event-Driven Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(83, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '14:38:35', '2026-03-19', '3rd Year', 'Event-Driven Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(84, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '17:49:17', '2026-03-19', '3rd Year', 'Physics', NULL, NULL, 23, 'TSN17736807667173940'),
-(85, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '16:04:19', '2026-03-20', '3rd Year', 'Big Data', NULL, NULL, 23, 'TSN17698767256291441'),
-(86, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '17:00:24', '2026-03-20', '3rd Year', 'Computer Programming', NULL, NULL, 23, 'TSN17736807667173940'),
-(87, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '17:01:20', '2026-03-20', '3rd Year', 'Event-Driven Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(88, '1231426', 'M', 'Selga', 'Charimea', 'BS in Information Technology', '12:30:38', '2026-03-21', '3rd Year', 'Big Data', NULL, NULL, 21, 'TSN17698767256291441'),
-(89, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '12:30:55', '2026-03-21', '3rd Year', 'Big Data', NULL, NULL, 27, 'TSN17698767256291441'),
-(90, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '12:31:01', '2026-03-21', '3rd Year', 'Big Data', NULL, NULL, 28, 'TSN17698767256291441'),
-(91, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '12:31:09', '2026-03-21', '3rd Year', 'Big Data', NULL, NULL, 42, 'TSN17698767256291441'),
-(92, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '12:31:15', '2026-03-21', '3rd Year', 'Big Data', NULL, NULL, 45, 'TSN17698767256291441'),
-(93, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', 'BS in Information Technology', '12:31:27', '2026-03-21', '3rd Year', 'Big Data', NULL, NULL, 56, 'TSN17698767256291441'),
-(94, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '17:07:30', '2026-03-21', '3rd Year', 'Computer Programming', NULL, NULL, 23, 'TSN17736807667173940'),
-(95, '1231426', 'M', 'Selga', 'Charimea', 'BS in Information Technology', '12:13:52', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 21, 'TSN17698767256291441'),
-(96, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '12:13:55', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 27, 'TSN17698767256291441'),
-(97, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '12:13:59', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 28, 'TSN17698767256291441'),
-(98, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '12:14:03', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 42, 'TSN17698767256291441'),
-(99, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', 'BS in Information Technology', '12:14:06', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 46, 'TSN17698767256291441'),
-(100, '737773', 'A', 'Agustin', 'Zaiejan', 'BS in Information Technology', '12:14:10', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 49, 'TSN17698767256291441'),
-(101, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', 'BS in Information Technology', '12:14:17', '2026-03-22', '3rd Year', 'Big Data', NULL, NULL, 56, 'TSN17698767256291441'),
-(102, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '12:25:16', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(103, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '12:37:42', '2026-03-22', '3rd Year', 'Computer Programming', NULL, NULL, 23, 'TSN17736807667173940'),
-(104, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', 'BS in Information Technology', '13:15:44', '2026-03-22', '3rd Year', 'Computer Programming', NULL, NULL, 50, 'TSN17736807667173940'),
-(105, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', 'BS in Information Technology', '13:15:50', '2026-03-22', '3rd Year', 'Computer Programming', NULL, NULL, 57, 'TSN17736807667173940'),
-(106, '67', 'A', 'Kiyomi', 'Yuumi', 'BS in Mechanics', '14:40:21', '2026-03-22', '2nd Year', 'Mathematics', NULL, NULL, 47, 'TSN17736807667173940'),
-(107, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '15:29:15', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 27, 'TSN17698767256291441'),
-(108, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '20:33:53', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 28, 'TSN17698767256291441'),
-(109, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '20:33:56', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 42, 'TSN17698767256291441'),
-(110, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', 'BS in Information Technology', '20:33:59', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 46, 'TSN17698767256291441'),
-(111, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '20:34:02', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 45, 'TSN17698767256291441'),
-(112, '737773', 'A', 'Agustin', 'Zaiejan', 'BS in Information Technology', '20:34:06', '2026-03-22', '3rd Year', 'Programming', NULL, NULL, 49, 'TSN17698767256291441'),
-(113, '456', 'A', 'Ramirez', 'Andria', 'BS Education', '20:34:52', '2026-03-22', '1st Year', 'Big Data', NULL, NULL, 48, 'TSN17698767256291441'),
-(114, '1231426', 'M', 'Selga', 'Charimea', 'BS in Information Technology', '02:32:31', '2026-03-23', '3rd Year', 'Big Data', NULL, NULL, 21, 'TSN17698767256291441'),
-(115, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', 'BS in Information Technology', '02:32:33', '2026-03-23', '3rd Year', 'Big Data', NULL, NULL, 27, 'TSN17698767256291441'),
-(116, '1231231231231', 'A', 'Dragneel', 'Natsu', 'BS in Information Technology', '02:32:35', '2026-03-23', '3rd Year', 'Big Data', NULL, NULL, 28, 'TSN17698767256291441'),
-(117, '14567', 'A', 'Chua', 'Diane', 'RPSEA', '02:32:37', '2026-03-23', '3rd Year', 'Big Data', NULL, NULL, 42, 'TSN17698767256291441'),
-(118, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '11:13:34', '2026-03-23', '3rd Year', 'Big Data', NULL, NULL, 45, 'TSN17698767256291441');
-
 -- --------------------------------------------------------
 
 --
@@ -252,8 +128,51 @@ CREATE TABLE `attendance_record` (
   `location_generated` varchar(255) DEFAULT NULL,
   `device_id` varchar(255) DEFAULT NULL,
   `student_id` int(11) DEFAULT NULL,
-  `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL
+  `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL,
+  `attendance_status` enum('Present','Absent','Excused') NOT NULL DEFAULT 'Present'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance_record`
+--
+
+INSERT INTO `attendance_record` (`attendance_id`, `student_id_number`, `student_middlename`, `student_lastname`, `student_firstname`, `student_program`, `attendance_time`, `attendance_date`, `year_level`, `subject`, `location_generated`, `device_id`, `student_id`, `teacher_barcode_scanner_serial_number`, `attendance_status`) VALUES
+(137, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '11:40:36', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(138, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '11:42:47', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(139, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '11:42:49', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(140, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '11:42:51', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(141, '1231333', 'A', 'Heartfilla', 'Lucy', NULL, '11:42:51', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(142, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '11:42:53', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(143, '897', 'A', 'Lachica', 'Andrea', NULL, '11:42:54', '2026-03-25', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(144, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:23:26', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(145, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '12:23:27', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(146, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '12:23:28', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(147, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '12:23:28', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Absent'),
+(148, '1231333', 'A', 'Heartfilla', 'Lucy', NULL, '12:23:29', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Absent'),
+(149, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '12:23:32', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(150, '897', 'A', 'Lachica', 'Andrea', NULL, '12:23:33', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(151, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '12:23:49', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(152, '1231426', 'M', 'Selga', 'Charimea', NULL, '12:23:49', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(153, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:30:20', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(154, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '12:30:22', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(155, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '12:30:25', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(156, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '12:30:26', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(157, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '12:30:28', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
+(158, '1231333', 'A', 'Heartfilla', 'Lucy', NULL, '12:30:31', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Absent'),
+(159, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '12:30:31', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Absent'),
+(160, '897', 'A', 'Lachica', 'Andrea', NULL, '12:30:32', '2026-03-25', '3rd Year', 'Event-Driven Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Absent'),
+(161, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:34:40', '2026-03-25', '3rd Year', 'Database Lec', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(162, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '12:34:40', '2026-03-25', '3rd Year', 'Database Lec', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(163, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:34:43', '2026-03-25', '3rd Year', 'Database Lec', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(164, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:39:32', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(165, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:39:42', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(166, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:40:00', '2026-03-25', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(167, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '12:40:17', '2026-03-25', '3rd Year', 'Sample', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(168, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '20:24:11', '2026-03-25', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(169, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '20:24:12', '2026-03-25', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(170, '1231392', 'Agmata', 'Aquino', 'Jan Ray', NULL, '20:24:13', '2026-03-25', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(171, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '20:24:13', '2026-03-25', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
+(172, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '20:24:15', '2026-03-25', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present');
 
 -- --------------------------------------------------------
 
@@ -322,7 +241,10 @@ INSERT INTO `event_attendance_history_record` (`event_id`, `student_id`, `studen
 (38, 46, 'Steven John A. Agustin (CoAST)', '1231377', 'BS in Information Technology', '3rd Year', 'Foundation day', 'Gray Fullbusters', 'Main Gate', '12:45:19', '2026-03-21', 'TIME IN', 5, 1),
 (39, 46, 'Steven John A. Agustin (CoAST)', '1231377', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '15:24:02', '2026-03-22', 'TIME IN', 5, 1),
 (40, 46, 'Steven John A. Agustin (CoAST)', '1231377', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '15:24:17', '2026-03-22', 'TIME OUT', 5, 1),
-(41, 49, 'Andrea A. Lachica', '897', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '13:13:12', '2026-03-23', 'TIME IN', 5, 1);
+(41, 49, 'Andrea A. Lachica', '897', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '13:13:12', '2026-03-23', 'TIME IN', 5, 1),
+(42, 51, 'Ace-cin A. Kyoshi', '848484', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '12:54:57', '2026-03-24', 'TIME IN', 5, 1),
+(43, 51, 'Ace-cin A. Kyoshi', '848484', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '12:55:16', '2026-03-24', 'TIME OUT', 5, 1),
+(44, 26, 'Luna M. Toka', '123123', 'BS in Criminology', '2nd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '14:09:41', '2026-03-24', 'TIME IN', 5, 1);
 
 -- --------------------------------------------------------
 
@@ -459,9 +381,9 @@ INSERT INTO `messages` (`id`, `sender_id`, `sender_role`, `sender_name`, `receiv
 (28, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 10:00:33', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:00:31'),
 (29, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'ahahaha', NULL, NULL, NULL, 1, '2026-03-23 10:00:43', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:00:41'),
 (30, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'What\'s', NULL, NULL, NULL, 1, '2026-03-23 10:01:21', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:01:19'),
-(31, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Hello!', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:02'),
-(32, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'This is the new feature I put in to our System', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:19'),
-(33, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'It is great?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:23'),
+(31, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Hello!', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:02'),
+(32, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'This is the new feature I put in to our System', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:19'),
+(33, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'It is great?', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:23'),
 (34, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 10:06:42', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:22'),
 (35, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'What?', NULL, NULL, NULL, 1, '2026-03-23 10:06:42', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:31'),
 (36, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'It\'s working?', NULL, NULL, NULL, 1, '2026-03-23 10:06:55', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:51'),
@@ -480,7 +402,44 @@ INSERT INTO `messages` (`id`, `sender_id`, `sender_role`, `sender_name`, `receiv
 (49, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Good day admin!, I have problem with my account', NULL, NULL, NULL, 1, '2026-03-23 13:06:33', 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:06:30'),
 (50, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', 'Good day! Super admin, Can I see my login logs?', NULL, NULL, NULL, 1, '2026-03-23 13:20:54', 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774240930680-701646.png', 'superadmin-1774242535609-552779.png', '2026-03-23 13:08:57'),
 (51, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', 'what is problem?', NULL, NULL, NULL, 1, '2026-03-24 01:18:15', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:09:45'),
-(52, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'I can\'t upload profile mam', NULL, NULL, NULL, 1, '2026-03-23 20:12:43', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 20:12:32');
+(52, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'I can\'t upload profile mam', NULL, NULL, NULL, 1, '2026-03-23 20:12:43', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 20:12:32'),
+(53, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', '↪️ yes sure, account for you or a student ?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774286273203-115898.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 01:26:16'),
+(54, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Test mo crop image', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:04'),
+(55, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'nu agbalen', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:08'),
+(56, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', '😂😂', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:15'),
+(57, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Bleeeee', NULL, NULL, NULL, 1, '2026-03-24 10:27:12', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774180359937-849543.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:27:08'),
+(58, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Edit message', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:28'),
+(59, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'test mo', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:30'),
+(60, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'haha', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:31'),
+(61, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Bleeee', NULL, NULL, NULL, 1, '2026-03-24 10:28:52', 0, 1, '2026-03-24 10:29:00', 0, 0, 0, NULL, 'student-1774319257454-911589.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:28:52'),
+(62, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'edit mo', NULL, NULL, NULL, 1, '2026-03-24 10:29:00', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:58'),
+(63, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'test mo haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:02', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:00'),
+(64, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Balinen', NULL, NULL, NULL, 1, '2026-03-24 10:29:08', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774319257454-911589.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:29:05'),
+(65, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Nice haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:14', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:13'),
+(66, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'inaramid nga chat box haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:22', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:19'),
+(67, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', '??', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:25'),
+(68, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'any follow up?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:30'),
+(69, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'student?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:31'),
+(70, 42, 'student', 'Zaiejan', 49, 'student', 'Andrea Lachica', 'Hello hamste🤣', NULL, NULL, NULL, 1, '2026-03-24 15:21:38', 0, 1, '2026-03-24 15:21:57', 0, 0, 1, NULL, 'student-1774336806254-514881.jpg', 'student-1774336848701-75789.jpg', '2026-03-24 15:21:20'),
+(71, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', '↪️ Hello hamste🤣 (edited)', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:22:28'),
+(72, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774336989582_Panpacific-University-North-Philippines.jpg', 'Panpacific-University-North-Philippines.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:23:09'),
+(73, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', 'uurje', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:27:30'),
+(74, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774337265049_IMG_20260324_152540_866.jpg', 'IMG_20260324_152540_866.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:27:45'),
+(75, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774337285402_IMG_20260324_152540_866.jpg', 'IMG_20260324_152540_866.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:28:05'),
+(76, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', '😎', NULL, NULL, NULL, 1, '2026-03-24 22:56:21', 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-24 22:43:08'),
+(77, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364467541_e4fe201a-02d2-4f18-86db-5ba51fb76fe5.jpg', 'e4fe201a-02d2-4f18-86db-5ba51fb76fe5.jpg', 'image/jpeg', 1, '2026-03-24 23:01:19', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:07'),
+(78, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364472134_IMG_20260324_100235_526.jpg', 'IMG_20260324_100235_526.jpg', 'image/jpeg', 1, '2026-03-24 23:01:19', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:12'),
+(79, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364519814_81a14f46-e4a1-4425-b287-10583c982900__1_.jpg', '81a14f46-e4a1-4425-b287-10583c982900 (1).jpg', 'image/jpeg', 1, '2026-03-24 23:02:02', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:59'),
+(80, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', 'hello', NULL, NULL, NULL, 1, '2026-03-25 00:56:59', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-25 00:56:56'),
+(81, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'This is the list of the class Mam', '/api/v1/uploads/message_files/msg_1774374886612_Admin_Appointment_History.xlsx', 'Admin Appointment History.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 1, '2026-03-25 01:55:00', 0, 0, NULL, 0, 0, 1, NULL, 'student-1774291218077-659300.jpg', 'admin-1774291107115-669.jpg', '2026-03-25 01:54:46'),
+(82, 35, 'student', 'Natsu', 43, 'student', 'Jan Ray Aquino', NULL, NULL, NULL, NULL, 1, '2026-03-25 19:41:10', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', NULL, '2026-03-25 19:40:55'),
+(83, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 19:41:19', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', '2026-03-25 19:41:17'),
+(84, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:07:40', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:05'),
+(85, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:07:40', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:25'),
+(86, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:08:40', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:49'),
+(87, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:15:56', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:15:53'),
+(88, 43, 'student', 'Jan Ray', 1, 'super_admin', 'Super Administrator', 'Can I Request to reset my Device Binding', NULL, NULL, NULL, 1, '2026-03-25 20:16:41', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-25 20:16:37'),
+(89, 1, 'super_admin', 'Super Administrator', 43, 'student', 'Jan Ray Aquino', 'Yes!!', NULL, NULL, NULL, 1, '2026-03-25 20:16:58', 0, 0, NULL, 0, 0, 0, NULL, 'superadmin-1774318366514-851420.jpg', 'student-1774440304501-238054.jpg', '2026-03-25 20:16:58');
 
 -- --------------------------------------------------------
 
@@ -505,7 +464,10 @@ CREATE TABLE `notifications` (
 
 INSERT INTO `notifications` (`id`, `type`, `title`, `message`, `meta`, `is_read_admin`, `is_read_super`, `created_at`) VALUES
 (1, 'new_student', 'New Student Registered', 'Albert A. Wesker (12313795) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"12313795\",\"name\":\"Albert Wesker\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"albert@panpacificu.edu.ph\"}', 1, 1, '2026-03-22 19:34:26'),
-(2, 'new_student', 'New Student Registered', 'Andrea A. Lachica (897) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"897\",\"name\":\"Andrea Lachica\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"andrea.lachica@panpacificu.edu.ph\"}', 1, 0, '2026-03-23 12:28:44');
+(2, 'new_student', 'New Student Registered', 'Andrea A. Lachica (897) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"897\",\"name\":\"Andrea Lachica\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"andrea.lachica@panpacificu.edu.ph\"}', 1, 1, '2026-03-23 12:28:44'),
+(3, 'new_student', 'New Student Registered', 'Gabriel Castillo. Castillo (ECoAST) (789789) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"789789\",\"name\":\"Gabriel Castillo (ECoAST)\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"gabriel.castillo.ecoast@panpacificu.edu.ph\"}', 1, 1, '2026-03-24 11:19:41'),
+(4, 'new_student', 'New Student Registered', 'Ace-cin Kyoshi (848484) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"848484\",\"name\":\"Ace-cin Kyoshi\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"kyoshiacecin@gmail.com\"}', 1, 1, '2026-03-24 12:48:42'),
+(5, 'new_student', 'New Student Registered', 'Maxene Franco (12334575) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"12334575\",\"name\":\"Maxene Franco\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"maxenefranco@gmail.com\"}', 1, 1, '2026-03-24 23:00:11');
 
 -- --------------------------------------------------------
 
@@ -564,23 +526,25 @@ CREATE TABLE `student_accounts` (
 
 INSERT INTO `student_accounts` (`student_id`, `student_id_number`, `student_firstname`, `student_middlename`, `student_lastname`, `student_email`, `password`, `student_year_level`, `student_guardian_number`, `student_program`, `location_generated`, `barcode`, `barcode_date_generated`, `device_id`, `admin_id`, `barcode_teacher_serial`, `student_profile_picture`) VALUES
 (18, '1233345989', 'Agrifina', 'A', 'Agaran', 'agrifina@panpacificu.edu.ph', '$2b$10$OuBrVjLjQIjpZ6DNU.rpROthB9qekSgTqujfjA0B/gsMIrH9WFaJG', '3rd Year', '+639481239328', 'BS Education', '', 'BC17708947181891836', '2026-02-12 19:11:58', '', 1, NULL, NULL),
-(19, '1231422', 'Charimea', 'M', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '$2b$10$.VzGuTyj7ZlUsdb/Vd5cUeDKBMqawDkcEZEUlKF9jug/E28aFC9/W', '3rd Year', '+639563543429', 'BS in Information Technology', '', 'BC17708952022486423', '2026-02-12 19:20:02', 'b8d006cd57914cf55af091e1aa64aa53cfbce04637e3467feaeeedeb02e2cf08', 1, NULL, 'student-1774180359937-849543.jpg'),
+(19, '1231422', 'Charimea', 'M', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '$2b$10$.VzGuTyj7ZlUsdb/Vd5cUeDKBMqawDkcEZEUlKF9jug/E28aFC9/W', '3rd Year', '+639563543429', 'BS in Information Technology', '', 'BC17708952022486423', '2026-02-12 19:20:02', 'b8d006cd57914cf55af091e1aa64aa53cfbce04637e3467feaeeedeb02e2cf08', 1, NULL, 'student-1774319257454-911589.jpg'),
 (23, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucyheart@panpacificu.edu.ph', '$2b$10$617POruNNIa1m8LeMYdKS.9IjOgJqbMX.N1.wInPcKK6hYj26weHy', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17741975430858488', '2026-03-23 00:39:03', '8596927ce8a26ec5db6831cb162f7da752db54b19ec598e9714fb28fcbbdda54', 0, 'TSN17736807667173940', 'student-1774159341046-561222.png'),
 (25, '14567', 'Diane', 'A', 'Chua', 'dwynna@gmail.com', '$2b$10$haEoY2zIw3gGj0k4wHFHKOIoXTJu2soBKV1/T1tICPwSy5CPd9Ceu', '3rd Year', '+639195364085', 'RPSEA', '', 'BC17728938112284412', '2026-03-07 22:30:11', '', 0, NULL, NULL),
-(26, '123123', 'Luna', 'M', 'Toka', 'lunatoka@gmail.com', '$2b$10$5s.sqyEQozw1ukpJCFToSuFsmPmhTvxjspj9koWCt/tmP8ORg7wFC', '2nd Year', '+639455415405', 'BS in Criminology', '', 'BC17730263477958911', '2026-03-09 11:19:07', '', 0, NULL, NULL),
+(26, '123123', 'Luna', 'M', 'Toka', 'lunatoka@gmail.com', '$2b$10$5s.sqyEQozw1ukpJCFToSuFsmPmhTvxjspj9koWCt/tmP8ORg7wFC', '2nd Year', '+639455415405', 'BS in Criminology', '', 'BC17743311630866537', '2026-03-24 13:57:38', 'becb852897243ae674ae8c1ac62dbbb097a92f9606ec12abed80303b063bd7ff', 0, 'TSN17698767256291441', NULL),
 (28, '456', 'Andria', 'A', 'Ramirez', 'andria@gmail.com', '$2b$10$sO26fMQvVakQtiCy4Zoal.Yn09ulCejCe61giWID5iWnna/nuCs0K', '1st Year', '+639615842358', 'BS Education', '', 'BC17731513173571253', '2026-03-10 22:01:57', '', 0, NULL, NULL),
-(29, '1231574', 'Alexander', 'L', 'Magbitang', 'alexander.magbitang.ecoast@panpacificu.edu.ph', '$2b$10$sz2Q0ajsshSDGiQOkeWv0.NrqzTMDw5DxxPO7qJRgVkXDu0zAYNVW', '3rd Year', '+639455964091', 'BS in Information Technology', '', 'BC17732101025598406', '2026-03-11 14:21:42', '', 0, NULL, NULL),
 (32, '12313598', 'Princess', 'O', 'Obillo (ECoAST)', 'princess.obillo.ecoast@panpacificu.edu.ph', '$2b$10$OJRhAThkJPVmRtZKwn3TgumarOGVk/t16kx3llQsT2hn/xSknESa.', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17732896532762650', '2026-03-12 12:27:33', '', 0, NULL, NULL),
 (33, '12312312312', 'Marfel Gem', 'A', 'Gallarde (ECoAST)', 'marfel.gallarde.ecoast@panpacificu.edu.ph', '$2b$10$tKtaOIS4wk/b8R9x/bw9Fee6fVO54mEl2S9jjzGtsOKFMwlRGBJPO', '4th Year', '+639763891308', 'BS in Computer Engineering', '', 'BC17732910277928988', '2026-03-12 12:50:27', '', 0, NULL, NULL),
-(35, '1231231231231', 'Natsu', 'B', 'Dragneel', 'xnatsu25@gmail.com', '$2b$10$z2EKEoHbu6d0TBxeh2BgnezZJCcTCB.6mSjVoYM9nakkmUaeUFMK2', '3rd Year', '+63639763891308', 'BS in Information Technology', '', 'BC17741978032688002', '2026-03-23 00:43:23', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', 'student-1774204990603-169913.png'),
+(35, '1231231231231', 'Natsu', 'B', 'Dragneel', 'xnatsu25@gmail.com', '$2b$10$z2EKEoHbu6d0TBxeh2BgnezZJCcTCB.6mSjVoYM9nakkmUaeUFMK2', '3rd Year', '+63639763891308', 'BS in Information Technology', '', 'BC17741978032688002', '2026-03-23 00:43:23', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', 'student-1774291218077-659300.jpg'),
 (41, '123123123', 'Angel Mageri', 'A', 'Cabote (ECoAST)', 'angel.cabote.ecoast@panpacificu.edu.ph', '$2b$10$FUo8ACmR2EdY44cNkkLNvuPknzBlR/EnpRy3nWZ2T2Ou5r1GlVlGe', '3rd Year', '+639763891307', 'BS in Information Technology', '', 'BC17741978321072707', '2026-03-23 00:43:52', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', 'student-1774204811919-842386.jpg'),
-(42, '737773', 'Zaiejan', 'A', 'Agustin', 'zaiejanagustin@gmail.com', '$2b$10$siGOJgd3GAIWr85GZy0p3OcoaXjkulNqVh1.aCfaJVCNyfs.NsUju', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17736449111529783', '2026-03-16 15:08:31', '8596927ce8a26ec5db6831cb162f7da752db54b19ec598e9714fb28fcbbdda54', 0, NULL, NULL),
-(43, '1231392', 'Jan Ray', 'Agmata', 'Aquino', 'janrayaquino9@gmail.com', '$2b$10$ILpPmsYI.iv3Y9BAWj6AK.ht72RhYFkLxP8hd8RfPebBWKqc6khYu', '3rd Year', '+6309661672889', 'BS in Information Technology', '', 'BC17736592032317119', '2026-03-16 19:06:43', '', 0, NULL, NULL),
+(42, '737773', 'Zaiejan', 'A', 'Agustin', 'zaiejanagustin@gmail.com', '$2b$10$siGOJgd3GAIWr85GZy0p3OcoaXjkulNqVh1.aCfaJVCNyfs.NsUju', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743368484166337', '2026-03-24 15:20:49', '8596927ce8a26ec5db6831cb162f7da752db54b19ec598e9714fb28fcbbdda54', 0, 'TSN17698767256291441', 'student-1774336806254-514881.jpg'),
+(43, '1231392', 'Jan Ray', 'Agmata', 'Aquino', 'janrayaquino9@gmail.com', '$2b$10$ILpPmsYI.iv3Y9BAWj6AK.ht72RhYFkLxP8hd8RfPebBWKqc6khYu', '3rd Year', '+6309661672889', 'BS in Information Technology', '', 'BC17744410522244656', '2026-03-25 20:17:34', 'f13ed5af0fa248d3f4b9934ee6c8590beea01a441cc61bcf2f79b684bcfc6916', 0, 'TSN17698767256291441', 'student-1774440304501-238054.jpg'),
 (44, '1010', 'Jasmin', 'A', 'Pastor', 'jasmin@gmail.com', '$2b$10$H/YJjdnT2pZemnE6pStiSOpXJFwJbrcP./632TD6BR0Zc61ai69Ki', 'SBE', '+63639615842353', 'BS in Mechanics', '', 'BC17739113039904719', '2026-03-19 17:14:11', '', 0, 'TSN17739090200094291', NULL),
 (46, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$9CJD/U5MPDMB/3.f18vYSeklWLX1TT90cl4Q6ls0sow54K3TDY61O', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17741971412966285', '2026-03-23 00:32:21', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', NULL),
 (47, '67', 'Yuumi', 'A', 'Kiyomi', 'example@panpacificu.edu.ph', '$2b$10$nyCzO4gK0WKF9Uc0y23nUOuueYCmnqzVZf7r/HgNL4fgYk6IDSl8S', '2nd Year', '+636767676767', 'BS in Mechanics', '', 'BC17741610878194590', '2026-03-22 14:37:38', 'fb311b2397651ca64b39658572971b21aef645f36ba2d6ac45b9ff8683585e05', 0, 'TSN17736807667173940', 'student-1774161481694-153469.jpg'),
 (48, '12313795', 'Albert', 'A', 'Wesker', 'albert@panpacificu.edu.ph', '$2b$10$ma7s87MRnZwc1LNpU/jUj.YKiAeNHoonX3Cx.bdkQSLq4xe6yHZ3C', '3rd Year', '+639481239328', 'BS in Information Technology', '', 'BC17741792669036245', '2026-03-22 19:34:26', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, NULL, NULL),
-(49, '897', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '$2b$10$Bjns138ua26/ukNYd4t8xu.HT1Vzx9NsRMwdv4Bzn60EfW4cHHx6O', '3rd Year', '+63639195366089', 'BS in Information Technology', '', 'BC17742401247732238', '2026-03-23 12:28:44', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, NULL, NULL);
+(49, '897', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '$2b$10$Bjns138ua26/ukNYd4t8xu.HT1Vzx9NsRMwdv4Bzn60EfW4cHHx6O', '3rd Year', '+63639195366089', 'BS in Information Technology', '', 'BC17743308931349513', '2026-03-24 13:41:33', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, 'TSN17698767256291441', 'student-1774336848701-75789.jpg'),
+(50, '789789', 'Gabriel', 'C', 'Castillo (ECoAST)', 'gabriel.castillo.ecoast@panpacificu.edu.ph', '$2b$10$d0beM1nkSogQhpQh7H6FWuku2OuCwZcw5P0YZ5yyEqrZUktnSRQMO', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743223815308001', '2026-03-24 11:19:41', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, NULL, NULL),
+(51, '848484', 'Ace-cin', 'A', 'Kyoshi', 'kyoshiacecin@gmail.com', '$2b$10$4rt76ulRlULz5z/O0vZ30ejrhRIqOpFD8c2hbyYAIjbYFqsykk9Xu', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743277221125271', '2026-03-24 12:48:42', 'df189a5ca5f4afaa93fdf3ff5d9fdfa596d4bd8f46f7aa75d099005641fb756e', 0, NULL, NULL),
+(52, '12334575', 'Maxene', 'M', 'Franco', 'maxenefranco@gmail.com', '$2b$10$TZMBOWs9jDo4iJm7jxMI0uiwkw6qvtPGl1YsweYA6diR3c86MVehu', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743644117422361', '2026-03-24 23:00:11', '10a844abe274ce41b81a44eec9506deabd3ecffe9ccdeb2a9bb17b737500cac2', 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -614,11 +578,9 @@ INSERT INTO `student_records_regular_class` (`student_id`, `student_id_number`, 
 (34, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17734603098321716', '2026-03-14 12:58:54'),
 (36, '123123123', 'Angel Mageri', 'A', 'Cabote (ECoAST)', 'angel.cabote.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891307', NULL, 'BS in Information Technology', 'TSN17734603098321716', '2026-03-14 15:23:15'),
 (41, '14567', 'Diane', 'A', 'Chua', 'dwynna@gmail.com', '3rd Year', '+639195364085', NULL, 'RPSEA', 'TSN17734603098321716', '2026-03-14 15:29:45'),
-(42, '14567', 'Diane', 'A', 'Chua', 'dwynna@gmail.com', '3rd Year', '+639195364085', NULL, 'RPSEA', 'TSN17698767256291441', '2026-03-14 15:29:51'),
 (44, '12312312312', 'Marfel Gem', 'A', 'Gallarde (ECoAST)', 'marfel.gallarde.ecoast@panpacificu.edu.ph', '4th Year', '+639763891308', NULL, 'BS in Computer Engineering', 'TSN17698767256291441', '2026-03-15 10:43:01'),
 (45, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-15 10:49:14'),
 (46, '123123123', 'Angel Mageri', 'A', 'Cabote (ECoAST)', 'angel.cabote.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891307', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-15 10:49:22'),
-(48, '456', 'Andria', 'A', 'Ramirez', 'andria@gmail.com', '1st Year', '+639615842358', NULL, 'BS Education', 'TSN17698767256291441', '2026-03-16 12:17:18'),
 (49, '737773', 'Zaiejan', 'A', 'Agustin', 'zaiejanagustin@gmail.com', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-16 15:09:21'),
 (50, '123123123', 'Angel Mageri', 'A', 'Cabote (ECoAST)', 'angel.cabote.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891307', NULL, 'BS in Information Technology', 'TSN17736807667173940', '2026-03-17 01:08:41'),
 (51, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17736807667173940', '2026-03-19 13:18:46'),
@@ -627,9 +589,10 @@ INSERT INTO `student_records_regular_class` (`student_id`, `student_id_number`, 
 (54, '1010', 'Jasmin', 'A', 'Pastor', 'jasmin@gmail.com', 'SBE', '+63639615842353', NULL, 'BS in Mechanics', 'TSN17736807667173940', '2026-03-19 17:13:42'),
 (56, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-20 00:57:00'),
 (57, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17736807667173940', '2026-03-20 00:57:14'),
-(58, '1010', 'Jasmin', 'A', 'Pastor', 'jasmin@gmail.com', 'SBE', '+63639615842353', NULL, 'BS in Mechanics', 'TSN17698767256291441', '2026-03-20 17:31:10'),
-(59, '1231574', 'Alexander', 'L', 'Magbitang', 'alexander.magbitang.ecoast@panpacificu.edu.ph', '3rd Year', '+639455964091', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-22 13:02:10'),
-(60, '67', 'Yuumi', 'A', 'Kiyomi', 'example@panpacificu.edu.ph', '2nd Year', '+636767676767', NULL, 'BS in Mechanics', 'TSN17736807667173940', '2026-03-22 14:37:32');
+(60, '67', 'Yuumi', 'A', 'Kiyomi', 'example@panpacificu.edu.ph', '2nd Year', '+636767676767', NULL, 'BS in Mechanics', 'TSN17736807667173940', '2026-03-22 14:37:32'),
+(61, '848484', 'Ace-cin', 'A', 'Kyoshi', 'kyoshiacecin@gmail.com', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-24 12:54:19'),
+(62, '897', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '3rd Year', '+63639195366089', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-24 13:41:06'),
+(64, '1231392', 'Jan Ray', 'Agmata', 'Aquino', 'janrayaquino9@gmail.com', '3rd Year', '+6309661672889', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-25 20:17:32');
 
 -- --------------------------------------------------------
 
@@ -672,27 +635,103 @@ CREATE TABLE `subject_and_year_level_setter` (
   `id` int(11) NOT NULL,
   `subject_name_set` varchar(255) DEFAULT NULL,
   `year_level_set` varchar(255) DEFAULT NULL,
-  `teacher_barcode_scanner_serial_number` varchar(255) DEFAULT NULL
+  `teacher_barcode_scanner_serial_number` varchar(255) DEFAULT NULL,
+  `class_time_set` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `subject_and_year_level_setter`
 --
 
-INSERT INTO `subject_and_year_level_setter` (`id`, `subject_name_set`, `year_level_set`, `teacher_barcode_scanner_serial_number`) VALUES
-(2, 'Big Data', '3rd Year', 'TSN17698767256291441'),
-(3, '', '', 'TSN17704826980131949'),
-(4, '', '', 'TSN17704837387017092'),
-(5, '', '', 'TSN17704837433987368'),
-(6, 'Programming Lec', '3rd Year', 'TSN17713351187271590'),
-(7, '', '', 'TSN17713353120404545'),
-(8, '', '', 'TSN17713354408022460'),
-(9, '', '', 'TSN17719208025622022'),
-(10, '', '', 'TSN17719241460167887'),
-(11, '', '', 'TSN17734601215899710'),
-(12, 'App Dev', '3rd Year', 'TSN17734603098321716'),
-(13, 'Mathematics', '2nd Year', 'TSN17736807667173940'),
-(14, 'Math', 'SBE', 'TSN17739090200094291');
+INSERT INTO `subject_and_year_level_setter` (`id`, `subject_name_set`, `year_level_set`, `teacher_barcode_scanner_serial_number`, `class_time_set`) VALUES
+(2, 'Integrative Programming', '3rd Year', 'TSN17698767256291441', '20:25'),
+(3, '', '', 'TSN17704826980131949', NULL),
+(4, '', '', 'TSN17704837387017092', NULL),
+(5, '', '', 'TSN17704837433987368', NULL),
+(6, 'Programming Lec', '3rd Year', 'TSN17713351187271590', NULL),
+(7, '', '', 'TSN17713353120404545', NULL),
+(8, '', '', 'TSN17713354408022460', NULL),
+(9, '', '', 'TSN17719208025622022', NULL),
+(10, '', '', 'TSN17719241460167887', NULL),
+(11, '', '', 'TSN17734601215899710', NULL),
+(12, 'App Dev', '3rd Year', 'TSN17734603098321716', NULL),
+(13, 'Mathematics', '2nd Year', 'TSN17736807667173940', NULL),
+(14, 'Math', 'SBE', 'TSN17739090200094291', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `subject_class_list`
+--
+
+CREATE TABLE `subject_class_list` (
+  `id` int(11) NOT NULL,
+  `subject_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `subject_class_list`
+--
+
+INSERT INTO `subject_class_list` (`id`, `subject_id`, `student_id`, `teacher_barcode_scanner_serial_number`) VALUES
+(1, 1, 21, 'TSN17698767256291441'),
+(2, 1, 28, 'TSN17698767256291441'),
+(3, 1, 45, 'TSN17698767256291441'),
+(4, 1, 46, 'TSN17698767256291441'),
+(5, 1, 27, 'TSN17698767256291441'),
+(7, 1, 49, 'TSN17698767256291441'),
+(8, 1, 56, 'TSN17698767256291441'),
+(9, 1, 61, 'TSN17698767256291441'),
+(10, 1, 62, 'TSN17698767256291441'),
+(11, 2, 21, 'TSN17698767256291441'),
+(12, 2, 28, 'TSN17698767256291441'),
+(13, 2, 45, 'TSN17698767256291441'),
+(14, 2, 27, 'TSN17698767256291441'),
+(15, 2, 46, 'TSN17698767256291441'),
+(16, 2, 49, 'TSN17698767256291441'),
+(17, 2, 56, 'TSN17698767256291441'),
+(18, 2, 61, 'TSN17698767256291441'),
+(19, 2, 62, 'TSN17698767256291441'),
+(20, 3, 21, 'TSN17698767256291441'),
+(21, 3, 27, 'TSN17698767256291441'),
+(22, 3, 28, 'TSN17698767256291441'),
+(23, 3, 45, 'TSN17698767256291441'),
+(24, 3, 46, 'TSN17698767256291441'),
+(25, 3, 49, 'TSN17698767256291441'),
+(26, 3, 56, 'TSN17698767256291441'),
+(27, 3, 61, 'TSN17698767256291441'),
+(28, 3, 62, 'TSN17698767256291441'),
+(29, 22, 21, 'TSN17698767256291441'),
+(30, 22, 27, 'TSN17698767256291441'),
+(31, 22, 28, 'TSN17698767256291441'),
+(32, 22, 45, 'TSN17698767256291441'),
+(33, 22, 46, 'TSN17698767256291441'),
+(34, 22, 49, 'TSN17698767256291441'),
+(35, 22, 56, 'TSN17698767256291441'),
+(36, 22, 61, 'TSN17698767256291441'),
+(37, 22, 62, 'TSN17698767256291441'),
+(39, 4, 21, 'TSN17698767256291441'),
+(40, 4, 27, 'TSN17698767256291441'),
+(41, 4, 28, 'TSN17698767256291441'),
+(43, 4, 45, 'TSN17698767256291441'),
+(44, 4, 46, 'TSN17698767256291441'),
+(45, 4, 49, 'TSN17698767256291441'),
+(46, 4, 56, 'TSN17698767256291441'),
+(47, 4, 61, 'TSN17698767256291441'),
+(48, 4, 62, 'TSN17698767256291441'),
+(49, 4, 64, 'TSN17698767256291441'),
+(50, 5, 21, 'TSN17698767256291441'),
+(51, 5, 27, 'TSN17698767256291441'),
+(52, 5, 28, 'TSN17698767256291441'),
+(53, 5, 45, 'TSN17698767256291441'),
+(54, 5, 46, 'TSN17698767256291441'),
+(55, 5, 49, 'TSN17698767256291441'),
+(56, 5, 56, 'TSN17698767256291441'),
+(57, 5, 61, 'TSN17698767256291441'),
+(58, 5, 62, 'TSN17698767256291441'),
+(59, 5, 64, 'TSN17698767256291441');
 
 -- --------------------------------------------------------
 
@@ -714,7 +753,7 @@ CREATE TABLE `super_admin_accounts` (
 --
 
 INSERT INTO `super_admin_accounts` (`super_admin_id`, `super_admin_name`, `super_admin_email`, `super_admin_password`, `super_admin_profile_picture`, `date_account_created`) VALUES
-(1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', '$2b$10$d4kXfzxstDkpQPR5Gp8YZeove4F2/T5Ga/EaS8g7y9c4ddf9HITP6', 'superadmin-1774242535609-552779.png', '2026-03-15 11:22:58');
+(1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', '$2b$10$d4kXfzxstDkpQPR5Gp8YZeove4F2/T5Ga/EaS8g7y9c4ddf9HITP6', 'superadmin-1774318366514-851420.jpg', '2026-03-15 11:22:58');
 
 -- --------------------------------------------------------
 
@@ -1020,7 +1059,49 @@ INSERT INTO `system_activity_logs` (`log_id`, `actor_id`, `actor_name`, `actor_r
 (275, 7, 'Steven John A. Agustin', 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', '1231333', 'Lucy A. Heartfilla', 'Manual entry by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-23 11:13:35'),
 (276, 1, 'Super Administrator', 'super_admin', 'MAINTENANCE_TOGGLE', 'System', '', 'Maintenance ON', 'Maintenance mode turned ON', '124.6.158.140', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-23 11:15:54'),
 (277, 1, 'Super Administrator', 'super_admin', 'MAINTENANCE_TOGGLE', 'System', '', 'Maintenance OFF', 'Maintenance mode turned OFF', '124.6.158.140', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-23 11:16:43'),
-(278, 5, 'Gray Fullbusters', 'guard', 'EVENT_TIME_IN', 'Event Attendance', '897', 'Andrea A. Lachica', 'Event: Sample | Location: Main Gate', NULL, NULL, '2026-03-23 13:13:12');
+(278, 5, 'Gray Fullbusters', 'guard', 'EVENT_TIME_IN', 'Event Attendance', '897', 'Andrea A. Lachica', 'Event: Sample | Location: Main Gate', NULL, NULL, '2026-03-23 13:13:12'),
+(279, NULL, NULL, 'admin', 'DELETE_STUDENT', 'Student', '29', NULL, 'Deleted student ID: 29', NULL, NULL, '2026-03-24 10:25:05'),
+(280, 1, 'Super Administrator', 'super_admin', 'DELETE_STUDENT', 'Student', '', 'Alexander Magbitang', 'Deleted student: Alexander Magbitang', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 10:25:05'),
+(281, 1, 'CSS Admin', 'admin', 'EDIT_STUDENT', 'Student', '', 'Gabriel Castillo (ECoAST)', 'Edited student: Gabriel Castillo (ECoAST) — BS in Information Technology 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 11:30:04'),
+(282, 1, 'CSS Admin', 'admin', 'EDIT_STUDENT', 'Student', '', 'Gabriel Castillo (ECoAST)', 'Edited student: Gabriel Castillo (ECoAST) — BS in Information Technology 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 11:30:15'),
+(283, 1, 'CSS Admin', 'admin', 'EDIT_STUDENT', 'Student', '', 'Ace-cin Kyoshi', 'Edited student: Ace-cin Kyoshi — BS in Information Technology 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 12:53:28'),
+(284, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '848484', 'Ace-cin Kyoshi', 'Added by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-24 12:54:19'),
+(285, 5, 'Gray Fullbusters', 'guard', 'EVENT_TIME_IN', 'Event Attendance', '848484', 'Ace-cin A. Kyoshi', 'Event: Sample | Location: Main Gate', NULL, NULL, '2026-03-24 12:54:57'),
+(286, 5, 'Gray Fullbusters', 'guard', 'EVENT_TIME_OUT', 'Event Attendance', '848484', 'Ace-cin A. Kyoshi', 'Event: Sample | Location: Main Gate', NULL, NULL, '2026-03-24 12:55:16'),
+(287, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '897', 'Andrea Lachica', 'Added by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-24 13:41:06'),
+(288, 7, 'Steven John A. Agustin', 'teacher', 'SET_LOCATION', 'Location', '7', NULL, 'Set location: lat 16.03041564451211, lng 120.74390132743584, radius 50m', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 13:41:27'),
+(289, 49, 'Andrea Lachica', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Andrea Lachica', 'Regenerated barcode — ID No: 897', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:41:33'),
+(290, 49, 'Andrea A. Lachica', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '897', 'Andrea A. Lachica', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-24 13:43:43'),
+(291, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '123123', 'Luna Toka', 'Added by Steven John A. Agustin — Program: BS in Criminology, Year: 2nd Year', NULL, NULL, '2026-03-24 13:45:56'),
+(292, 26, 'Luna Toka', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Luna Toka', 'Regenerated barcode — ID No: 123123', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 13:46:04'),
+(293, 7, 'Steven John A. Agustin', 'teacher', 'ADD_SUBJECT', 'Subject', '', 'Sample', 'Added subject: Sample', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 13:49:02'),
+(294, 26, 'Luna Toka', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Luna Toka', 'Regenerated barcode — ID No: 123123', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 13:56:44'),
+(295, 26, 'Luna Toka', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Luna Toka', 'Regenerated barcode — ID No: 123123', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 13:57:38'),
+(296, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Programming', 'Set subject: Programming, year level: 2nd Year', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 13:58:48'),
+(297, 26, 'Luna M. Toka', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '123123', 'Luna M. Toka', 'Teacher: Steven John A. Agustin | Program: BS in Criminology, Year: 2nd Year', NULL, NULL, '2026-03-24 13:58:56'),
+(298, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_STUDENT_RECORD', 'Student', '', 'Diane Chua', 'Removed Diane Chua from class', '124.6.158.140', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 14:01:39'),
+(299, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Database Lec', 'Set subject: Database Lec, year level: 3rd Year', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 14:03:38'),
+(300, 7, 'Steven John A. Agustin', 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', '1231426', 'Charimea M. Selga', 'Manual entry by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 14:03:45'),
+(301, 1, 'Super Administrator', 'super_admin', 'MAINTENANCE_TOGGLE', 'System', '', 'Maintenance ON', 'Maintenance mode turned ON', '124.6.158.140', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 14:08:54'),
+(302, 1, 'Super Administrator', 'super_admin', 'MAINTENANCE_TOGGLE', 'System', '', 'Maintenance OFF', 'Maintenance mode turned OFF', '124.6.158.140', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 14:09:03'),
+(303, 5, 'Gray Fullbusters', 'guard', 'EVENT_TIME_IN', 'Event Attendance', '123123', 'Luna M. Toka', 'Event: Sample | Location: Main Gate', NULL, NULL, '2026-03-24 14:09:41'),
+(304, 42, 'Zaiejan Agustin', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Zaiejan Agustin', 'Regenerated barcode — ID No: 737773', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:20:49'),
+(305, 1, 'CSS Admin', 'admin', 'EDIT_STUDENT', 'Student', '', 'Maxene Franco', 'Edited student: Maxene Franco — BS in Information Technology 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 01:03:26'),
+(306, 7, 'Steven John A. Agustin', 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', '1231426', 'Charimea M. Selga', 'Manual entry by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 11:02:10'),
+(307, 7, 'Steven John A. Agustin', 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', '12313598', 'Princess O. Obillo (ECoAST)', 'Manual entry by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 11:02:12'),
+(308, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_STUDENT_RECORD', 'Student', '', 'Andria Ramirez', 'Removed Andria Ramirez from class', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 11:08:07'),
+(309, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_STUDENT_RECORD', 'Student', '', 'Jasmin Pastor', 'Removed Jasmin Pastor from class', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 11:08:10'),
+(310, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_STUDENT_RECORD', 'Student', '', 'Luna Toka', 'Removed Luna Toka from class', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 11:08:12'),
+(311, 7, 'Steven John A. Agustin', 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', '737773', 'Zaiejan A. Agustin', 'Manual entry by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 11:24:32'),
+(312, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Big Data', 'Set subject: Big Data, year level: 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 11:24:57'),
+(313, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Programming', 'Set subject: Programming, year level: 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 12:39:57'),
+(314, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Programming', 'Set subject: Programming, year level: 3rd Year', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 13:17:29'),
+(315, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_SUBJECT', 'Subject', '', 'Sample', 'Deleted subject: Sample', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 18:36:19'),
+(316, 1, 'Super Administrator', 'super_admin', 'RESET_STUDENT_DEVICE', 'Student', '43', 'Jan Ray Aquino', 'Device binding reset for: Jan Ray Aquino', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 19:47:24'),
+(317, 7, 'Steven John A. Agustin', 'teacher', 'SET_LOCATION', 'Location', '7', NULL, 'Set location: lat 16.079996614554997, lng 120.7352907007391, radius 100m', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 20:14:26'),
+(318, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '1231392', 'Jan Ray Aquino', 'Added by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-25 20:17:32'),
+(319, 43, 'Jan Ray Aquino', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Jan Ray Aquino', 'Regenerated barcode — ID No: 1231392', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 20:17:34'),
+(320, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 20:25', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 20:24:08');
 
 -- --------------------------------------------------------
 
@@ -1322,7 +1403,111 @@ INSERT INTO `system_login_logs` (`log_id`, `user_id`, `user_name`, `user_email`,
 (275, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-23 16:25:21'),
 (276, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 19:50:11'),
 (277, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-23 20:01:13'),
-(278, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-23 20:14:29');
+(278, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-23 20:14:29'),
+(279, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 01:33:45'),
+(280, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 01:46:52'),
+(281, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 10:07:50'),
+(282, 19, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '182.255.40.171', 'Chromium 145 · Android 14 · CPH2387', '2026-03-24 10:26:51'),
+(283, 19, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '182.255.40.171', 'Chromium 145 · Android 14 · CPH2387', '2026-03-24 10:28:22'),
+(284, 19, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '182.255.40.171', 'Chromium 145 · Android 14 · CPH2387', '2026-03-24 10:28:40'),
+(285, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 11:18:18'),
+(286, 50, 'Gabriel Castillo (ECoAST)', 'gabriel.castillo.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 11:19:50'),
+(287, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 11:24:20'),
+(288, 42, 'Zaiejan Agustin', 'zaiejanagustin@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 10; CPH2179) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36', '2026-03-24 12:45:51'),
+(289, 50, 'Gabriel Castillo (ECoAST)', 'gabriel.castillo.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 12:45:57'),
+(290, 50, 'Gabriel Castillo (ECoAST)', 'gabriel.castillo.ecoast@panpacificu.edu.ph', 'student', 'FAILED', '136.158.120.56', 'Chrome 146 · Android 6 · Nexus 5', '2026-03-24 12:46:01'),
+(291, NULL, NULL, 'stevenjohnagustin25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 12:46:18'),
+(292, 51, 'Ace-cin Kyoshi', 'kyoshiacecin@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 10; CPH2179) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36', '2026-03-24 12:49:01'),
+(293, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 12:52:52'),
+(294, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 13:38:57'),
+(295, NULL, NULL, 'andrea.lachica.@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:39:02'),
+(296, NULL, NULL, 'andrea.lachica.@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:39:20'),
+(297, NULL, NULL, 'andrea.lachica.@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:39:26'),
+(298, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 13:40:02'),
+(299, 49, 'Andrea Lachica', 'andrea.lachica@panpacificu.edu.ph', 'student', 'SUCCESS', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:40:34'),
+(300, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '124.6.158.140', 'Edge 146 · Windows 19', '2026-03-24 13:40:35'),
+(301, NULL, NULL, 'natsu@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 13:41:57'),
+(302, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 13:42:02'),
+(303, 49, 'Andrea Lachica', 'andrea.lachica@panpacificu.edu.ph', 'student', 'LOGOUT', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:45:09'),
+(304, 26, 'Luna Toka', 'lunatoka@gmail.com', 'student', 'SUCCESS', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 13:45:11'),
+(305, 49, 'Andrea Lachica', 'andrea.lachica@panpacificu.edu.ph', 'student', 'SUCCESS', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 13:45:29'),
+(306, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'LOGOUT', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 14:05:40'),
+(307, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 14:09:30'),
+(308, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'LOGOUT', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 14:10:04'),
+(309, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:13:28');
+INSERT INTO `system_login_logs` (`log_id`, `user_id`, `user_name`, `user_email`, `role`, `status`, `ip_address`, `device_info`, `login_at`) VALUES
+(310, NULL, NULL, 'lucy@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:15:09'),
+(311, NULL, NULL, 'lucy@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:15:16'),
+(312, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '124.6.158.140', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '2026-03-24 15:15:23'),
+(313, 49, 'Andrea Lachica', 'andrea.lachica@panpacificu.edu.ph', 'student', 'SUCCESS', '124.6.158.140', 'Chrome 146 · Android 16 · SM-A156E', '2026-03-24 15:16:42'),
+(314, NULL, NULL, 'lucy@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:17:59'),
+(315, NULL, NULL, 'lucy@panpacific.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:18:08'),
+(316, NULL, NULL, 'lucy@panpacificu.edu.ph', 'student', 'FAILED', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:18:23'),
+(317, 42, 'Zaiejan Agustin', 'zaiejanagustin@gmail.com', 'student', 'SUCCESS', '124.6.158.140', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '2026-03-24 15:18:39'),
+(318, 42, 'Zaiejan Agustin', 'zaiejanagustin@gmail.com', 'student', 'LOGOUT', '124.6.158.140', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-24 15:27:08'),
+(319, 42, 'Zaiejan Agustin', 'zaiejanagustin@gmail.com', 'student', 'SUCCESS', '124.6.158.140', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '2026-03-24 15:27:18'),
+(320, 26, 'Luna Toka', 'lunatoka@gmail.com', 'student', 'LOGOUT', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:29:12'),
+(321, 26, 'Luna Toka', 'lunatoka@gmail.com', 'student', 'SUCCESS', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:29:18'),
+(322, 26, 'Luna Toka', 'lunatoka@gmail.com', 'student', 'LOGOUT', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:29:34'),
+(323, NULL, NULL, 'charimeaselga@gmail.com', 'student', 'FAILED', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:29:37'),
+(324, NULL, NULL, 'charimeaselga@gmail.com', 'student', 'FAILED', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:29:45'),
+(325, 19, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'student', 'FAILED', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:29:59'),
+(326, 19, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'student', 'FAILED', '58.69.165.115', 'Chrome 146 · Android 14 · CPH2387', '2026-03-24 15:30:02'),
+(327, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 22:42:51'),
+(328, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 22:52:26'),
+(329, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 22:52:29'),
+(330, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-24 22:52:59'),
+(331, 52, 'Maxene Franco', 'maxenefranco@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 23:00:23'),
+(332, 52, 'Maxene Franco', 'maxenefranco@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 00:51:26'),
+(333, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 00:53:00'),
+(334, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 01:03:45'),
+(335, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-25 01:53:41'),
+(336, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 10:59:11'),
+(337, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 12:57:11'),
+(338, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 18:34:59'),
+(339, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'SUCCESS', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:40:19'),
+(340, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'SUCCESS', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:43:32'),
+(341, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:45:07'),
+(342, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:45:18'),
+(343, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:45:26'),
+(344, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-03-25 19:45:36'),
+(345, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:46:02'),
+(346, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:46:34'),
+(347, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-25 19:46:55'),
+(348, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:47:11'),
+(349, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'SUCCESS', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 19:47:28'),
+(350, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:11'),
+(351, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:15'),
+(352, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:20'),
+(353, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:23'),
+(354, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:24'),
+(355, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:28'),
+(356, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:55'),
+(357, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 19:59:57'),
+(358, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:00:00'),
+(359, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:00:17'),
+(360, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:00:52'),
+(361, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'SUCCESS', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 20:04:43'),
+(362, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:07:38'),
+(363, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:07:40'),
+(364, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'LOGOUT', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 20:07:54'),
+(365, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:00'),
+(366, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:13'),
+(367, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:15'),
+(368, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:16'),
+(369, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:19'),
+(370, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:22'),
+(371, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:27'),
+(372, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:53'),
+(373, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:08:58'),
+(374, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:09:28'),
+(375, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:09:30'),
+(376, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:09:34'),
+(377, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:09:37'),
+(378, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:09:43'),
+(379, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-25 20:10:38'),
+(380, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'SUCCESS', '49.150.35.37', 'Browser · iOS 18.7', '2026-03-25 20:12:51'),
+(381, 43, 'Jan Ray Aquino', 'janrayaquino9@gmail.com', 'student', 'SUCCESS', '49.150.35.37', 'Safari 604 · iOS 18.7', '2026-03-25 20:13:01');
 
 -- --------------------------------------------------------
 
@@ -1342,7 +1527,7 @@ CREATE TABLE `system_settings` (
 --
 
 INSERT INTO `system_settings` (`id`, `setting_key`, `setting_value`, `updated_at`) VALUES
-(1, 'maintenance_mode', '0', '2026-03-23 03:16:43');
+(1, 'maintenance_mode', '0', '2026-03-24 06:09:03');
 
 -- --------------------------------------------------------
 
@@ -1370,7 +1555,7 @@ CREATE TABLE `teacher` (
 --
 
 INSERT INTO `teacher` (`teacher_id`, `teacher_name`, `teacher_profile_picture`, `teacher_email`, `teacher_password`, `teacher_program`, `teacher_current_subject`, `teacher_location`, `teacher_location_radius`, `created_at`, `teacher_barcode_scanner_serial_number`, `admin_id`) VALUES
-(7, 'Steven John A. Agustin', 'teacher-1774286273203-115898.jpg', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$j5nYLjVE7BGPwRwM3ELoJez2glRdd8LbnvHq8VDj9qxUMBHDpARCq', 'BS in Information Technology', NULL, '{\"latitude\":15.93,\"longitude\":120.51}', 50, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
+(7, 'Steven John A. Agustin', 'teacher-1774291178630-987411.jpg', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$j5nYLjVE7BGPwRwM3ELoJez2glRdd8LbnvHq8VDj9qxUMBHDpARCq', 'BS in Information Technology', NULL, '{\"latitude\":16.079996614554997,\"longitude\":120.7352907007391}', 100, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
 (18, 'Mark Zuckerberg', 'teacher-1773680898788-757146.webp', 'markzuckerberg@panpacificu.edu.ph', '$2b$10$pgqV81EPWO.u2aOGz51M5O//Dma2hohn5F/t2bY0vWfAJm..dg9PO', 'BS in Information Technology', NULL, '{\"latitude\":16.01788971286583,\"longitude\":120.74942350387575}', 100, '2026-03-16 17:06:06', 'TSN17736807667173940', 1),
 (19, 'Andrea B. Lachica', NULL, 'andrea@panpacificu.edu.ph', '$2b$10$9HmOHucmCL6f7ZseaO0SSuNIBOrs0JaaFgixPTR2AXsAHuLLyZNsu', 'BS in Criminology', NULL, '{\"latitude\":16.026207,\"longitude\":120.7763817}', 50, '2026-03-19 08:30:20', 'TSN17739090200094291', 1);
 
@@ -1505,6 +1690,13 @@ ALTER TABLE `subject_and_year_level_setter`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `subject_class_list`
+--
+ALTER TABLE `subject_class_list`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_student_subject` (`subject_id`,`student_id`);
+
+--
 -- Indexes for table `super_admin_accounts`
 --
 ALTER TABLE `super_admin_accounts`
@@ -1574,25 +1766,25 @@ ALTER TABLE `admin_login_logs`
 -- AUTO_INCREMENT for table `attendance_history_record`
 --
 ALTER TABLE `attendance_history_record`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
 -- AUTO_INCREMENT for table `attendance_record`
 --
 ALTER TABLE `attendance_record`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=131;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=173;
 
 --
 -- AUTO_INCREMENT for table `event_attendance_history_record`
 --
 ALTER TABLE `event_attendance_history_record`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `event_attendance_record`
 --
 ALTER TABLE `event_attendance_record`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `event_setter`
@@ -1610,13 +1802,13 @@ ALTER TABLE `guards`
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `program`
@@ -1628,25 +1820,31 @@ ALTER TABLE `program`
 -- AUTO_INCREMENT for table `student_accounts`
 --
 ALTER TABLE `student_accounts`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `student_records_regular_class`
 --
 ALTER TABLE `student_records_regular_class`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
 
 --
 -- AUTO_INCREMENT for table `subject`
 --
 ALTER TABLE `subject`
-  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `subject_and_year_level_setter`
 --
 ALTER TABLE `subject_and_year_level_setter`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT for table `subject_class_list`
+--
+ALTER TABLE `subject_class_list`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `super_admin_accounts`
@@ -1658,19 +1856,19 @@ ALTER TABLE `super_admin_accounts`
 -- AUTO_INCREMENT for table `system_activity_logs`
 --
 ALTER TABLE `system_activity_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=279;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=321;
 
 --
 -- AUTO_INCREMENT for table `system_login_logs`
 --
 ALTER TABLE `system_login_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=279;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=382;
 
 --
 -- AUTO_INCREMENT for table `system_settings`
 --
 ALTER TABLE `system_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `teacher`

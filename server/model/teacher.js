@@ -177,12 +177,12 @@ teacher.get('/get_total_attendance_record', async (req, res) => {
 
 // Subject and Year Level Setter
 teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
-    const { subject, yearLevel } = req.body
+    const { subject, yearLevel, classTime } = req.body
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
-        const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, decodedToken.teacher_barcode_scanner_serial_number)
-        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', null, subject, `Set subject: ${subject}, year level: ${yearLevel}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, classTime || null, decodedToken.teacher_barcode_scanner_serial_number)
+        services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', null, subject, `Set subject: ${subject}, year level: ${yearLevel}, class time: ${classTime || 'not set'}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -270,7 +270,8 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
         )
 
         // Send SMS to Guardian
-        await services.sendSMS(student_guardian_number, `${student_firstname} ${student_middlename}. ${student_lastname} Your child has attended school today.`);
+        const smsMiddle = student_middlename ? student_middlename.charAt(0).toUpperCase() + '.' : '';
+        await services.sendSMS(student_guardian_number, `${student_firstname}${smsMiddle ? ' ' + smsMiddle : ''} ${student_lastname} Your child has attended school today.`);
 
         res.json({ ok: true, message: response })
 
@@ -521,6 +522,56 @@ teacher.post('/manual_attendance', async (req, res) => {
     }
 })
 
+// Update attendance status for an existing record (Present / Absent / Excused)
+teacher.put('/update_attendance_status/:attendance_id', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const { attendance_id } = req.params
+        const { status } = req.body
+
+        const allowedStatuses = ['Present', 'Absent', 'Late', 'Excused']
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ ok: false, message: 'Invalid status value.' })
+        }
+
+        const result = await services.updateAttendanceStatus(
+            attendance_id,
+            status,
+            decodedToken.teacher_barcode_scanner_serial_number
+        )
+        res.json({ ok: true, message: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Insert a manual Absent or Excused record for a student with no existing record
+teacher.post('/insert_manual_status', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        const {
+            student_id, student_id_number, student_firstname, student_middlename,
+            student_lastname, student_program, student_year_level, subject, status
+        } = req.body
+
+        const allowedStatuses = ['Present', 'Absent', 'Late', 'Excused']
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ ok: false, message: 'Invalid status value.' })
+        }
+
+        const result = await services.insertManualStatusRecord(
+            student_id, student_id_number, student_firstname, student_middlename,
+            student_lastname, student_program, student_year_level, subject,
+            decodedToken.teacher_barcode_scanner_serial_number, status
+        )
+        res.json({ ok: true, message: result.message, insertId: result.insertId })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
 // Get attendance event for teacher
 teacher.get('/get_event_attendance', async (req, res) => {
     try {
@@ -728,4 +779,44 @@ teacher.put('/messages/edit/:id', async (req, res) => {
         await services.editMessage(parseInt(req.params.id), tok.teacher_id, 'teacher', content)
         res.json({ ok: true })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+// ============================================================
+// SUBJECT CLASS LIST ROUTES
+// ============================================================
+
+// Get students in a subject's class list
+teacher.get('/subject-class-list/:subjectId', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decoded = services.verifyToken(token)
+        const result = await services.getSubjectClassList(req.params.subjectId, decoded.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, content: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Add a student to a subject's class list
+teacher.post('/subject-class-list/add', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decoded = services.verifyToken(token)
+        const { subjectId, studentId } = req.body
+        await services.addStudentToSubjectClassList(subjectId, studentId, decoded.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, message: 'Student added to class list!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Remove a student from a subject's class list
+teacher.delete('/subject-class-list/remove/:id', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decoded = services.verifyToken(token)
+        await services.removeStudentFromSubjectClassList(req.params.id, decoded.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, message: 'Student removed from class list!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
 })

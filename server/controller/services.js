@@ -1,34 +1,10 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const db = require('../configuration/db');
-const cron = require('node-cron')
 const nodemailer = require('nodemailer')
 const SALT_ROUNDS = 10
 const JWT_SECRET = process.env.TOKEN_KEYWORD;
 
-// ============================================================
-// DAILY ATTENDANCE CLEANUP — runs at midnight Manila time
-// ============================================================
-cron.schedule('* * * * *', () => {
-    // Clear regular attendance records older than today
-    db.execute(
-        `DELETE FROM attendance_record WHERE attendance_date < CURDATE()`,
-        [],
-        (err, result) => {
-            if (err) { console.error('[Cron] Failed to clean attendance_record:', err); return }
-            console.log(`[Cron] Deleted ${result.affectedRows} old attendance record(s) at ${new Date().toLocaleString()}`)
-        }
-    )
-    // Clear event attendance records older than today
-    db.execute(
-        `DELETE FROM event_attendance_record WHERE date < CURDATE()`,
-        [],
-        (err, result) => {
-            if (err) { console.error('[Cron] Failed to clean event_attendance_record:', err); return }
-            console.log(`[Cron] Deleted ${result.affectedRows} old event attendance record(s) at ${new Date().toLocaleString()}`)
-        }
-    )
-}, { timezone: 'Asia/Manila' })
 
 // ============================================================
 // EMAIL / OTP (Forgot Password)
@@ -633,40 +609,47 @@ async function studentGoogleLogin(email, device_id, ip, userAgent) {
 // Get Student Attendance
 function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
     return new Promise((resolve, reject) => {
-        // If numeric student_id is available, use it (most precise)
-        // Otherwise fall back to student_id_number string match
-        if (studentID) {
-            db.execute(
-                'SELECT * FROM attendance_history_record WHERE student_id = ? ORDER BY attendance_date DESC, attendance_time DESC',
-                [studentID],
-                (err, result) => {
-                    if (err) return reject(err)
-                    // If no results found by ID, try by student_id_number as fallback
-                    if (result.length === 0 && studentIDNumber) {
-                        db.execute(
-                            'SELECT * FROM attendance_history_record WHERE student_id_number = ? ORDER BY attendance_date DESC, attendance_time DESC',
-                            [studentIDNumber],
-                            (err2, result2) => {
-                                if (err2) return reject(err2)
-                                resolve(result2)
-                            }
-                        )
-                    } else {
-                        resolve(result)
-                    }
-                }
-            )
-        } else {
-            // No student_id — use student_id_number directly
-            db.execute(
-                'SELECT * FROM attendance_history_record WHERE student_id_number = ? ORDER BY attendance_date DESC, attendance_time DESC',
-                [studentIDNumber],
-                (err, result) => {
-                    if (err) return reject(err)
-                    resolve(result)
-                }
-            )
-        }
+        // Always JOIN student_accounts so name columns reflect the current account data,
+        // not whatever was snapshotted at insert time (prevents stale/wrong name display).
+        const sql = `
+            SELECT
+                h.attendance_id AS id, h.student_id, h.student_id_number,
+                sa.student_firstname, sa.student_middlename, sa.student_lastname,
+                h.year_level, h.subject, h.student_program,
+                h.teacher_barcode_scanner_serial_number,
+                h.attendance_date, h.attendance_time
+            FROM attendance_history_record h
+            LEFT JOIN student_accounts sa
+                ON sa.student_id = h.student_id
+            WHERE ${studentID ? 'h.student_id = ?' : 'h.student_id_number = ?'}
+            ORDER BY h.attendance_date DESC, h.attendance_time DESC
+        `;
+        const param = studentID ? studentID : studentIDNumber;
+        db.execute(sql, [param], (err, result) => {
+            if (err) return reject(err)
+            // If no rows found by student_id, fall back to student_id_number
+            if (result.length === 0 && studentID && studentIDNumber) {
+                const sql2 = `
+                    SELECT
+                        h.attendance_id AS id, h.student_id, h.student_id_number,
+                        sa.student_firstname, sa.student_middlename, sa.student_lastname,
+                        h.year_level, h.subject, h.student_program,
+                        h.teacher_barcode_scanner_serial_number,
+                        h.attendance_date, h.attendance_time
+                    FROM attendance_history_record h
+                    LEFT JOIN student_accounts sa
+                        ON sa.student_id = h.student_id
+                    WHERE h.student_id_number = ?
+                    ORDER BY h.attendance_date DESC, h.attendance_time DESC
+                `;
+                db.execute(sql2, [studentIDNumber], (err2, result2) => {
+                    if (err2) return reject(err2)
+                    resolve(result2)
+                })
+            } else {
+                resolve(result)
+            }
+        })
     })
 }
 
@@ -1115,27 +1098,28 @@ async function teacherGetStudentRegistered(teacherBarcodeScannerSerialNumber) {
 function getActiveSubjectAndYearLevel(teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
         db.execute(
-            `SELECT subject_name_set, year_level_set 
+            `SELECT subject_name_set, year_level_set, class_time_set 
              FROM subject_and_year_level_setter 
              WHERE teacher_barcode_scanner_serial_number = ? 
              LIMIT 1`,
             [teacherBarcodeScannerSerialNumber],
             (err, result) => {
                 if (err) return reject(err)
-                resolve(result[0] || { subject_name_set: '', year_level_set: '' })
+                resolve(result[0] || { subject_name_set: '', year_level_set: '', class_time_set: '' })
             }
         )
     })
 }
 
 // Teacher Subject And Year Level Setter
-async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber) {
+async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, classTimeSet, teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
         db.execute(`UPDATE subject_and_year_level_setter 
                     SET subject_name_set = ?, 
-                    year_level_set = ? 
+                    year_level_set = ?,
+                    class_time_set = ?
                     WHERE teacher_barcode_scanner_serial_number = ?`,
-            [subjectSet, yearLevelSet, teacherBarcodeScannerSerialNumber],
+            [subjectSet, yearLevelSet, classTimeSet || null, teacherBarcodeScannerSerialNumber],
             (err, result) => {
                 if (err) { return reject(err) }
                 resolve('Successfully set!')
@@ -2756,6 +2740,44 @@ function getTeacherBySerial(teacherSerial) {
     })
 }
 
+// Update attendance status (Present / Absent / Excused) for an existing record
+async function updateAttendanceStatus(attendance_id, new_status, teacher_barcode_scanner_serial_number) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `UPDATE attendance_record SET attendance_status = ? WHERE attendance_id = ? AND teacher_barcode_scanner_serial_number = ?`,
+            [new_status, attendance_id, teacher_barcode_scanner_serial_number],
+            (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Record not found or not authorized.'))
+                resolve('Status updated successfully.')
+            }
+        )
+    })
+}
+
+// Insert a manual absent/excused record for a student who has no record yet
+async function insertManualStatusRecord(
+    student_id, student_id_number, student_firstname, student_middlename,
+    student_lastname, student_program, student_year_level, subject,
+    teacher_barcode_scanner_serial_number, attendance_status
+) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT INTO attendance_record 
+             (student_id, student_id_number, student_firstname, student_middlename, student_lastname,
+              student_program, year_level, subject, teacher_barcode_scanner_serial_number, attendance_status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [student_id || null, student_id_number, student_firstname, student_middlename || null,
+             student_lastname, student_program || null, student_year_level, subject,
+             teacher_barcode_scanner_serial_number, attendance_status],
+            (err, result) => {
+                if (err) return reject(err)
+                resolve({ insertId: result.insertId, message: 'Record inserted successfully.' })
+            }
+        )
+    })
+}
+
 module.exports = {
     sendSMS,
     adminEditGuardAccounts,
@@ -2811,6 +2833,8 @@ module.exports = {
     insertStudentAttendance,
     checkYearLevelAndSerialNumber,
     getStudentAttendanceNow,
+    updateAttendanceStatus,
+    insertManualStatusRecord,
     getStudentAttendanceHistory,
     getStudentSubjects,
     deleteSubject,
@@ -2884,6 +2908,9 @@ module.exports = {
     getUnreadMessageCount,
     markMessagesRead,
     searchUsersForMessaging,
+    getSubjectClassList,
+    addStudentToSubjectClassList,
+    removeStudentFromSubjectClassList,
     writeLoginLog,
     writeLogoutLog,
     getSystemSetting,
@@ -3281,6 +3308,48 @@ function markMessagesRead(receiverId, receiverRole, senderId, senderRole) {
             (err) => { if (err) console.error('[markMessagesRead]', err.message); resolve() }
         )
     })
+}
+
+// ============================================================
+// SUBJECT CLASS LIST (roster of students per subject)
+// ============================================================
+
+function getSubjectClassList(subjectId, teacherSerial) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT scl.id, scl.subject_id, scl.student_id,
+                    s.student_id_number, s.student_firstname, s.student_middlename,
+                    s.student_lastname, s.student_year_level, s.student_program
+             FROM subject_class_list scl
+             JOIN student_records_regular_class s
+               ON scl.student_id = s.student_id
+             WHERE scl.subject_id = ? AND scl.teacher_barcode_scanner_serial_number = ?
+             ORDER BY s.student_lastname, s.student_firstname`,
+            [subjectId, teacherSerial],
+            (err, result) => { if (err) return reject(err); resolve(result); }
+        );
+    });
+}
+
+function addStudentToSubjectClassList(subjectId, studentId, teacherSerial) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `INSERT IGNORE INTO subject_class_list (subject_id, student_id, teacher_barcode_scanner_serial_number)
+             VALUES (?, ?, ?)`,
+            [subjectId, studentId, teacherSerial],
+            (err, result) => { if (err) return reject(err); resolve(result); }
+        );
+    });
+}
+
+function removeStudentFromSubjectClassList(id, teacherSerial) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `DELETE FROM subject_class_list WHERE id = ? AND teacher_barcode_scanner_serial_number = ?`,
+            [id, teacherSerial],
+            (err, result) => { if (err) return reject(err); resolve(result); }
+        );
+    });
 }
 
 // Search users to start a new conversation

@@ -103,11 +103,24 @@ const DOM = {
 // ============================================================
 // STATE
 // ============================================================
+// Stores row data for attendance action buttons — keyed by a simple index
+// to avoid JSON-in-HTML-attribute escaping issues
+const _attendanceRowDataMap = new Map();
+let _attendanceRowDataCounter = 0;
+
+// Manual Entry row data map — same pattern, avoids JSON-in-HTML-attribute issues
 let state = {
     totalPresent: 0,
     totalStudentRegistered: 0,
     attendanceStatus: {},
-    manualStudents: []
+    manualStudents: [],
+    allRegisteredStudents: [],
+    allAttendanceRecords: [],
+    allSubjects: [],
+    activeSubjectId:   null,
+    activeSubjectName: '',
+    activeYearLevel:   '',
+    activeSubjectTime: ''
 };
 
 // Map state
@@ -203,9 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Data
     getStudentAttendanceRecords().then(() => startTeacherPolling());
     loadStudentsRegistered();
-    getStudentAttendanceHistoryRecords();
     getTeacherDataToServer();
-    loadManualEntryStudents();
     Promise.all([renderSubjects(), renderYearLevel(), renderPrograms()])
         .then(() => loadActiveSubject());
     Swal.fire({ title: 'Loading event data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -215,16 +226,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Search
     setupTableSearch('searchInputAttendance', 'attendanceBody');
-    setupTableSearch('searchInputAttendanceHistory', 'attendanceHistoryTableBody');
     setupTableSearch('searchInput', 'studentsBody');
-    setupManualEntryFilterSearch();
 
     // Filters
-    setupHistoryDropdownFilter('subjectFilterAttendanceHistory', 4);
-    setupHistoryDropdownFilter('yearFilterAttendanceHistory',    5);
-    setupNowDropdownFilter('attendanceNowSubjectFilter', 4);
-    setupNowDropdownFilter('attendanceNowYearFilter',    5);
-    setupManualEntryFilter();
+
+    // Date filter for Attendance Now — auto-set to today and re-render on change
+    const _dateFilterEl = document.getElementById('attendanceNowDateFilter');
+    if (_dateFilterEl) {
+        _dateFilterEl.value = new Date().toISOString().split('T')[0];
+        _dateFilterEl.addEventListener('change', () => renderAttendanceNowMerged());
+    }
+
+    // Re-render attendance list whenever the Active Class Setup dropdowns change
+    document.getElementById('courseFilter')?.addEventListener('change', () => renderAttendanceNowMerged());
+    document.getElementById('yearFilter')?.addEventListener('change',   () => renderAttendanceNowMerged());
+
     studentRegisteredDropdownFilter('recordYearFilter', 5);
 
     // Close buttons on stat cards
@@ -417,9 +433,7 @@ const NAV_TITLES = {
     dashboard:         'Dashboard',
     location:          'Location',
     attendanceNow:     'Attendance',
-    history:           'Attendance History',
     studentRegistered: 'Student Records',
-    manualEntry:       'Manual Entry',
     eventAttendance:   'Event Attendance',
     eventHistory:      'Event Attendance History',
     academicSetup:     'Academic Setup',
@@ -537,17 +551,75 @@ function updateDashboardChart() {
 // ============================================================
 // ATTENDANCE
 // ============================================================
-function buildAttendanceRow(d) {
+function buildAttendanceRow(d, statusOverride) {
+    const status = statusOverride || d.attendance_status || 'Present';
+    const isPresent = status === 'Present';
+    const isLate    = status === 'Late';
+    const isExcused = status === 'Excused';
+    const isAbsent  = status === 'Absent';
+
+    let statusBadge;
+    if (isPresent) {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:#d4f4e7;color:#1a6b3a;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">
+               <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>Present
+           </span>`;
+    } else if (isLate) {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">
+               <span style="width:8px;height:8px;border-radius:50%;background:#7c3aed;display:inline-block;"></span>Late
+           </span>`;
+    } else if (isExcused) {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">
+               <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>Excused
+           </span>`;
+    } else {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:#fde8e8;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">
+               <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Absent
+           </span>`;
+    }
+
+    const fullName = [d.student_firstname, d.student_middlename ? d.student_middlename.charAt(0) + '.' : '', d.student_lastname].filter(Boolean).join(' ');
+    const timeIn = d.attendance_time ? formatTime(d.attendance_time) : '<span style="color:#aaa;">—</span>';
+    const dateIn = d.attendance_date ? formatDate(d.attendance_date) : '<span style="color:#aaa;">—</span>';
+
+    // Store row data in map with a simple key — avoids JSON-in-HTML-attribute escaping bugs
+    const rowKey = _attendanceRowDataCounter++;
+    _attendanceRowDataMap.set(rowKey, {
+        attendance_id:      d.attendance_id || null,
+        student_id:         d.student_id || null,
+        student_id_number:  d.student_id_number,
+        student_firstname:  d.student_firstname,
+        student_middlename: d.student_middlename || '',
+        student_lastname:   d.student_lastname,
+        student_program:    d.student_program || '',
+        year_level:         d.year_level || d.student_year_level || '',
+        subject:            d.subject || ''
+    });
+
+    const actionButtons = `
+        <div class="attendance-action-btns">
+            <button class="att-action-btn btn-present ${isPresent ? 'active' : ''}"
+                onclick="setAttendanceStatus(this, ${rowKey}, 'Present')"
+                title="Mark Present">✓ Present</button>
+            <button class="att-action-btn btn-late ${isLate ? 'active' : ''}"
+                onclick="setAttendanceStatus(this, ${rowKey}, 'Late')"
+                title="Mark Late">⏰ Late</button>
+            <button class="att-action-btn btn-absent ${isAbsent ? 'active' : ''}"
+                onclick="setAttendanceStatus(this, ${rowKey}, 'Absent')"
+                title="Mark Absent">✗ Absent</button>
+            <button class="att-action-btn btn-excused ${isExcused ? 'active' : ''}"
+                onclick="setAttendanceStatus(this, ${rowKey}, 'Excused')"
+                title="Mark Excused">⊘ Excuse</button>
+        </div>`;
+
     return `
         <td>${d.student_id_number}</td>
-        <td>${d.student_firstname}</td>
-        <td>${d.student_middlename || ''}</td>
-        <td>${d.student_lastname}</td>
-        <td>${d.subject}</td>
-        <td>${d.year_level}</td>
-        <td>${d.student_program}</td>
-        <td>${formatTime(d.attendance_time)}</td>
-        <td>${formatDate(d.attendance_date)}</td>
+        <td>${fullName}</td>
+        <td>${d.subject || '—'}</td>
+        <td>${d.year_level || d.student_year_level || '—'}</td>
+        <td>${timeIn}</td>
+        <td>${dateIn}</td>
+        <td>${statusBadge}</td>
+        <td>${actionButtons}</td>
     `;
 }
 
@@ -558,14 +630,11 @@ async function getStudentAttendanceRecords() {
     if (!data) return;
 
     state.totalPresent = data.content.length;
+    state.allAttendanceRecords = data.content;
     _lastAttendanceCount = data.content.length;
-    // Only draw chart if registered count is already loaded; otherwise loadStudentsRegistered() will call it
     if (state.totalStudentRegistered > 0) updateDashboardChart();
 
-    document.getElementById('attendanceBody').innerHTML = data.content
-        .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
-        .join('');
-    populateAttendanceNowFilters(data.content);
+    renderAttendanceNowMerged();
 }
 
 // ============================================================
@@ -665,20 +734,12 @@ async function pollAttendanceSilently() {
         // Only re-render if count changed
         if (_lastAttendanceCount !== -1 && data.content.length === _lastAttendanceCount) return;
 
-        _lastAttendanceCount  = data.content.length;
-        state.totalPresent    = data.content.length;
+        _lastAttendanceCount      = data.content.length;
+        state.totalPresent        = data.content.length;
+        state.allAttendanceRecords = data.content;
         if (state.totalStudentRegistered > 0) updateDashboardChart();
 
-        document.getElementById('attendanceBody').innerHTML = data.content
-            .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
-            .join('');
-        populateAttendanceNowFilters(data.content);
-        applyAllNowFilters();
-
-        // Keep manual entry buttons in sync with live attendance
-        const presentIds = new Set(data.content.map(r => r.student_id_number));
-        syncManualEntryButtons(presentIds);
-
+        renderAttendanceNowMerged();
         // Flash live indicator if it exists
         const dot = document.getElementById('teacherLiveDot');
         if (dot) {
@@ -696,25 +757,9 @@ function startTeacherPolling() {
     _teacherPollInterval = setInterval(pollAttendanceSilently, 5000);
 }
 
-async function getStudentAttendanceHistoryRecords() {
-    Swal.fire({ title: 'Loading history...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    const data = await apiCall('/teacher/teacher_attendance_history_record');
-    Swal.close();
-    if (!data) return;
-    document.getElementById('attendanceHistoryTableBody').innerHTML = data.content
-        .map(d => `<tr>${buildAttendanceRow(d)}</tr>`)
-        .join('');
-    populateAttendanceHistoryFilters(data.content);
-}
-
 async function refreshAttendance() {
     await getStudentAttendanceRecords();
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Attendance list refreshed', showConfirmButton: false, timer: 1500, timerProgressBar: true });
-}
-
-async function refreshAttendanceHistory() {
-    await getStudentAttendanceHistoryRecords();
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'History list refreshed', showConfirmButton: false, timer: 1500, timerProgressBar: true });
 }
 
 // ============================================================
@@ -793,69 +838,186 @@ function setupTableSearch(inputId, tableBodyId) {
     });
 }
 
-function setupHistoryDropdownFilter(filterId, columnIndex) {
-    document.getElementById(filterId).addEventListener('change', function () {
-        const term = this.value.toLowerCase();
-        let hasMatch = false;
-        document.querySelectorAll('#attendanceHistoryTableBody tr').forEach(row => {
-            if (row.style.display === 'none' && this.value === '') return; // don't unhide rows hidden by other filters
-            const isMatch = !term || row.cells[columnIndex]?.textContent.trim().toLowerCase() === term;
-            row.style.display = isMatch ? '' : 'none';
-            if (isMatch) hasMatch = true;
-        });
-        applyAllHistoryFilters();
+
+// Renders Attendance Now using the subject class list as the fixed roster.
+// Present = student has an attendance record today for the active subject.
+// Absent  = student is in the class list but has NOT scanned today.
+async function renderAttendanceNowMerged() {
+    // Clear row data map so stale keys don't accumulate across re-renders
+    _attendanceRowDataMap.clear();
+    _attendanceRowDataCounter = 0;
+
+    // Read active subject from the dropdowns (source of truth — already pre-selected on load)
+    const subjectName = document.getElementById('courseFilter')?.value || state.activeSubjectName || '';
+    const yearLevel   = document.getElementById('yearFilter')?.value   || state.activeYearLevel   || '';
+    const dateFilter  = document.getElementById('attendanceNowDateFilter')?.value || '';
+
+    // Resolve subject_id from allSubjects list using the dropdown value
+    const matchedSubject = state.allSubjects?.find(s => s.subject_name === subjectName);
+    const subjectId      = matchedSubject?.subject_id || state.activeSubjectId || null;
+
+    // Fetch the class roster for the active subject (if one is set)
+    let roster = [];
+    if (subjectId) {
+        const rosterData = await apiCall(`/teacher/subject-class-list/${subjectId}`, 'GET');
+        roster = rosterData?.content || [];
+    } else {
+        // No active subject set — fall back to all registered students
+        roster = state.allRegisteredStudents || [];
+    }
+
+    // Build attendance lookup: student_id_number → record
+    // Filter by active subject name and selected date
+    const presentMap = {};
+    state.allAttendanceRecords.forEach(r => {
+        const matchSubject = !subjectName || (r.subject || '').toLowerCase() === subjectName.toLowerCase();
+        const matchDate    = !dateFilter  || (r.attendance_date ? r.attendance_date.split('T')[0] : '') === dateFilter;
+        if (matchSubject && matchDate) {
+            presentMap[r.student_id_number] = r;
+        }
     });
-}
 
-function applyAllHistoryFilters() {
-    const subject = document.getElementById('subjectFilterAttendanceHistory')?.value.toLowerCase() || '';
-    const year    = document.getElementById('yearFilterAttendanceHistory')?.value.toLowerCase() || '';
-    document.querySelectorAll('#attendanceHistoryTableBody tr').forEach(row => {
-        const matchSubject = !subject || row.cells[4]?.textContent.trim().toLowerCase() === subject;
-        const matchYear    = !year    || row.cells[5]?.textContent.trim().toLowerCase() === year;
-        row.style.display = (matchSubject && matchYear) ? '' : 'none';
+    if (roster.length === 0 && Object.keys(presentMap).length === 0) {
+        document.getElementById('attendanceBody').innerHTML =
+            `<tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">
+                ${subjectId ? 'No students in this class list yet. Use “Manage Class” to add students.' : 'No active subject set. Please select a subject and year level above.'}
+            </td></tr>`;
+        return;
+    }
+
+    // If roster is empty but we have attendance records (fallback — no class list yet)
+    const sourceList = roster.length > 0 ? roster : Object.values(presentMap).map(r => ({
+        student_id_number:  r.student_id_number,
+        student_firstname:  r.student_firstname,
+        student_middlename: r.student_middlename,
+        student_lastname:   r.student_lastname,
+        student_year_level: r.year_level
+    }));
+
+    // Class time for late detection — "HH:MM" format
+    const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+
+    const rows = sourceList.map(s => {
+        const rec       = presentMap[s.student_id_number];
+        const isPresent = !!rec;
+
+        // Auto-detect Late: student scanned in but after the set class start time
+        let recStatus = rec?.attendance_status || (isPresent ? 'Present' : 'Absent');
+        if (isPresent && recStatus === 'Present' && classTime && rec.attendance_time) {
+            // attendance_time may be "HH:MM:SS" or "HH:MM" — take first 5 chars for "HH:MM"
+            const scanTime = rec.attendance_time.substring(0, 5);
+            if (scanTime > classTime) recStatus = 'Late';
+        }
+        const rowData   = isPresent ? rec : {
+            student_id_number:  s.student_id_number,
+            student_firstname:  s.student_firstname,
+            student_middlename: s.student_middlename,
+            student_lastname:   s.student_lastname,
+            subject:            subjectName || '—',
+            year_level:         s.student_year_level,
+            attendance_time:    null,
+            attendance_date:    null
+        };
+        let rowClass = 'row-absent';
+        if (recStatus === 'Present') rowClass = 'row-present';
+        else if (recStatus === 'Late')    rowClass = 'row-late';
+        else if (recStatus === 'Excused') rowClass = 'row-excused';
+        return `<tr class="${rowClass}">${buildAttendanceRow(rowData, recStatus)}</tr>`;
     });
+
+    document.getElementById('attendanceBody').innerHTML = rows.join('');
 }
 
-function applyAllNowFilters() {
-    const subject = document.getElementById('attendanceNowSubjectFilter')?.value.toLowerCase() || '';
-    const year    = document.getElementById('attendanceNowYearFilter')?.value.toLowerCase() || '';
-    document.querySelectorAll('#attendanceBody tr').forEach(row => {
-        const matchSubject = !subject || row.cells[4]?.textContent.trim().toLowerCase() === subject;
-        const matchYear    = !year    || row.cells[5]?.textContent.trim().toLowerCase() === year;
-        row.style.display = (matchSubject && matchYear) ? '' : 'none';
-    });
+
+async function setAttendanceStatus(btn, rowKey, newStatus) {
+    const d = _attendanceRowDataMap.get(rowKey);
+    if (!d) { console.error('Row data not found for key:', rowKey); return; }
+
+    // Find the row and all buttons in this row
+    const row = btn.closest('tr');
+    const allBtns = row.querySelectorAll('.att-action-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    try {
+        if (d.attendance_id) {
+            // Record exists — just update the status
+            const res = await apiCall(`/teacher/update_attendance_status/${d.attendance_id}`, 'PUT', { status: newStatus });
+            if (!res || !res.ok) throw new Error(res?.message || 'Failed to update status.');
+        } else {
+            // No record yet (was absent) — insert a new manual record
+            const res = await apiCall('/teacher/insert_manual_status', 'POST', {
+                student_id:         d.student_id,
+                student_id_number:  d.student_id_number,
+                student_firstname:  d.student_firstname,
+                student_middlename: d.student_middlename,
+                student_lastname:   d.student_lastname,
+                student_program:    d.student_program,
+                student_year_level: d.year_level,
+                subject:            d.subject,
+                status:             newStatus
+            });
+            if (!res || !res.ok) throw new Error(res?.message || 'Failed to insert record.');
+            // Store the new attendance_id so future clicks update instead of insert
+            d.attendance_id = res.insertId;
+        }
+
+        // Update row class
+        row.classList.remove('row-present', 'row-late', 'row-absent', 'row-excused');
+        if (newStatus === 'Present')      row.classList.add('row-present');
+        else if (newStatus === 'Late')    row.classList.add('row-late');
+        else if (newStatus === 'Excused') row.classList.add('row-excused');
+        else                              row.classList.add('row-absent');
+
+        // Update status badge
+        const statusCell = row.cells[6];
+        if (newStatus === 'Present') {
+            statusCell.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;background:#d4f4e7;color:#1a6b3a;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>Present</span>`;
+        } else if (newStatus === 'Late') {
+            statusCell.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#7c3aed;display:inline-block;"></span>Late</span>`;
+        } else if (newStatus === 'Excused') {
+            statusCell.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>Excused</span>`;
+        } else {
+            statusCell.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;background:#fde8e8;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Absent</span>`;
+        }
+
+        // Update active button highlight
+        allBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update map with new attendance_id so future clicks use PUT not POST
+        _attendanceRowDataMap.set(rowKey, d);
+
+        // Update local state so polling doesn't override the change
+        const idx = state.allAttendanceRecords.findIndex(r => r.student_id_number === d.student_id_number);
+        if (idx !== -1) {
+            state.allAttendanceRecords[idx].attendance_status = newStatus;
+            if (d.attendance_id) state.allAttendanceRecords[idx].attendance_id = d.attendance_id;
+        } else if (newStatus !== 'Absent') {
+            // Newly inserted record — push to state so polling knows about it
+            state.allAttendanceRecords.push({
+                attendance_id:      d.attendance_id,
+                student_id_number:  d.student_id_number,
+                student_firstname:  d.student_firstname,
+                student_middlename: d.student_middlename,
+                student_lastname:   d.student_lastname,
+                student_program:    d.student_program,
+                year_level:         d.year_level,
+                subject:            d.subject,
+                attendance_time:    null,
+                attendance_date:    new Date().toISOString().split('T')[0],
+                attendance_status:  newStatus
+            });
+        }
+
+        Swal.fire({ icon: 'success', title: `Marked ${newStatus}`, timer: 1200, showConfirmButton: false, toast: true, position: 'top-end' });
+
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    } finally {
+        allBtns.forEach(b => b.disabled = false);
+    }
 }
 
-function setupNowDropdownFilter(filterId, columnIndex) {
-    document.getElementById(filterId)?.addEventListener('change', () => applyAllNowFilters());
-}
-
-function populateAttendanceNowFilters(data) {
-    // Merge live attendance values into the DB-populated options (don't replace them)
-    const subSel  = document.getElementById('attendanceNowSubjectFilter');
-    const yearSel = document.getElementById('attendanceNowYearFilter');
-
-    const existingSubs  = subSel  ? [...subSel.options].map(o => o.value).filter(Boolean)  : [];
-    const existingYears = yearSel ? [...yearSel.options].map(o => o.value).filter(Boolean) : [];
-
-    const newSubs  = [...new Set(data.map(d => d.subject).filter(Boolean))].sort()
-        .filter(s => !existingSubs.includes(s));
-    const newYears = [...new Set(data.map(d => d.year_level).filter(Boolean))].sort()
-        .filter(y => !existingYears.includes(y));
-
-    if (subSel  && newSubs.length)  { const c = subSel.value;  subSel.innerHTML  += newSubs.map(s  => `<option value="${s}">${s}</option>`).join('');  subSel.value  = c; }
-    if (yearSel && newYears.length) { const c = yearSel.value; yearSel.innerHTML += newYears.map(y => `<option value="${y}">${y}</option>`).join(''); yearSel.value = c; }
-}
-
-function populateAttendanceHistoryFilters(data) {
-    const subjects = [...new Set(data.map(d => d.subject).filter(Boolean))].sort();
-    const years    = [...new Set(data.map(d => d.year_level).filter(Boolean))].sort();
-    const subSel   = document.getElementById('subjectFilterAttendanceHistory');
-    const yearSel  = document.getElementById('yearFilterAttendanceHistory');
-    if (subSel)  { const c = subSel.value;  subSel.innerHTML  = '<option value="">All Subjects</option>'    + subjects.map(s => `<option value="${s}">${s}</option>`).join(''); subSel.value  = c; }
-    if (yearSel) { const c = yearSel.value; yearSel.innerHTML = '<option value="">All Year Levels</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');    yearSel.value = c; }
-}
 
 function studentRegisteredDropdownFilter(filterId, columnIndex) {
     document.getElementById(filterId).addEventListener('change', function () {
@@ -872,34 +1034,6 @@ function studentRegisteredDropdownFilter(filterId, columnIndex) {
     });
 }
 
-function setupManualEntryFilter() {
-    const filterDropdown = document.getElementById('manualEntryYearFilter');
-    const studentList = document.getElementById('studentList');
-    if (!filterDropdown || !studentList) return;
-
-    filterDropdown.addEventListener('change', function () {
-        const selected = this.value.trim().toLowerCase();
-        studentList.querySelectorAll('.student-row').forEach(row => {
-            const yearText = row.querySelector('.year-level').textContent.trim().toLowerCase();
-            const isMatch = !selected || yearText === selected || selected.includes(yearText);
-            row.style.display = isMatch ? 'grid' : 'none';
-        });
-    });
-}
-
-function setupManualEntryFilterSearch() {
-    const searchInput = document.getElementById('manualEntrySearchInput');
-    const studentList = document.getElementById('studentList');
-    if (!searchInput || !studentList) return;
-
-    searchInput.addEventListener('input', function () {
-        const term = this.value.toLowerCase().trim();
-        studentList.querySelectorAll('.student-row').forEach(row => {
-            const name = row.querySelector('.student-name').textContent.toLowerCase();
-            row.style.display = name.includes(term) ? 'grid' : 'none';
-        });
-    });
-}
 
 // Event attendance filters — shared helper
 function filterTableRows(tbody, term) {
@@ -967,8 +1101,8 @@ async function loadStudentsRegistered() {
     if (!data || !data.content) return;
 
     state.totalStudentRegistered = data.content.length;
+    state.allRegisteredStudents  = data.content;  // store for Present/Absent merge
     document.getElementById('totalStudents').textContent = state.totalStudentRegistered;
-    // Draw chart now that we have both totals (attendance may have already loaded)
     updateDashboardChart();
 
     document.getElementById('studentsBody').innerHTML = data.content.map(s => {
@@ -1374,6 +1508,8 @@ async function subjectAndYearLevelSetter() {
     const subject   = document.getElementById('courseFilter').value;
     const yearLevel = document.getElementById('yearFilter').value;
 
+    const classTime = document.getElementById('classTimeInput')?.value || '';
+
     if (!subject || !yearLevel) {
         return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select both a subject and a year level before setting.' });
     }
@@ -1388,9 +1524,16 @@ async function subjectAndYearLevelSetter() {
 
     if (result.isConfirmed) {
         Swal.fire({ title: 'Updating settings...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const res = await apiCall('/teacher/teacher_subject_and_year_level_setter', 'PUT', { subject, yearLevel });
+        const res = await apiCall('/teacher/teacher_subject_and_year_level_setter', 'PUT', { subject, yearLevel, classTime });
         if (res) {
-            renderActiveSubject(subject, yearLevel);
+            // Find subject_id from allSubjects list
+            const matched = state.allSubjects?.find(s => s.subject_name === subject);
+            state.activeSubjectId   = matched?.subject_id || null;
+            state.activeSubjectName = subject;
+            state.activeYearLevel   = yearLevel;
+            state.activeSubjectTime = classTime;
+            renderActiveSubject(subject, yearLevel, classTime);
+            renderAttendanceNowMerged();
             Swal.fire('Updated!', res.message, 'success');
         }
     }
@@ -1400,22 +1543,32 @@ async function subjectAndYearLevelSetter() {
 async function loadActiveSubject() {
     const data = await apiCall('/teacher/get_active_subject', 'GET');
     if (!data || !data.content) return;
-    const { subject_name_set, year_level_set } = data.content;
+    const { subject_name_set, year_level_set, subject_id, class_time_set } = data.content;
+
+    // Store in state for use by renderAttendanceNowMerged
+    state.activeSubjectId   = subject_id       || null;
+    state.activeSubjectName = subject_name_set || '';
+    state.activeYearLevel   = year_level_set   || '';
+    state.activeSubjectTime = class_time_set   || '';
 
     // Pre-select dropdowns to match the currently active values
-    const courseFilter = document.getElementById('courseFilter');
-    const yearFilter   = document.getElementById('yearFilter');
-    if (courseFilter && subject_name_set) courseFilter.value = subject_name_set;
-    if (yearFilter   && year_level_set)   yearFilter.value   = year_level_set;
+    const courseFilter  = document.getElementById('courseFilter');
+    const yearFilter    = document.getElementById('yearFilter');
+    const classTimeInput = document.getElementById('classTimeInput');
+    if (courseFilter   && subject_name_set) courseFilter.value   = subject_name_set;
+    if (yearFilter     && year_level_set)   yearFilter.value     = year_level_set;
+    if (classTimeInput && class_time_set)   classTimeInput.value = class_time_set;
 
-    renderActiveSubject(subject_name_set, year_level_set);
+    renderActiveSubject(subject_name_set, year_level_set, class_time_set);
+    renderAttendanceNowMerged();
 }
 
-function renderActiveSubject(subject, yearLevel) {
+function renderActiveSubject(subject, yearLevel, classTime) {
     const el = document.getElementById('activeSubjectDisplay');
     if (!el) return;
     if (subject && yearLevel) {
-        el.textContent = `✓ ${subject} — ${yearLevel}`;
+        const timePart = classTime ? ` @ ${classTime}` : '';
+        el.textContent = `✓ ${subject} — ${yearLevel}${timePart}`;
         el.style.background = '#c8ece5';
         el.style.color = '#1a5c4f';
     } else if (subject) {
@@ -1433,19 +1586,26 @@ async function renderSubjects() {
     const data = await apiCall('/teacher/get_subjects', 'GET');
     if (!data) return;
 
+    // Store subjects in state so renderAttendanceNowMerged can look up subject_id by name
+    state.allSubjects = data.content;
+
     document.getElementById('programsList').innerHTML = data.content.map(d => `
         <div class="program-card">
             <div class="program-name">${d.subject_name}</div>
-            <button class="delete-btn" data-tooltip="Delete this subject" onclick="deleteProgram(${d.subject_id}, '${d.subject_name}')">
-                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-            </button>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <button class="manage-class-btn" data-tooltip="Manage students in this subject" onclick="openManageClassModal(${d.subject_id}, '${d.subject_name.replace(/'/g,"\\'")}')">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    Manage Class
+                </button>
+                <button class="delete-btn" data-tooltip="Delete this subject" onclick="deleteProgram(${d.subject_id}, '${d.subject_name.replace(/'/g,"\\'")}')">
+                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+            </div>
         </div>
     `).join('');
 
     const optionsHtml = data.content.map(d => `<option value="${d.subject_name}">${d.subject_name}</option>`).join('');
     document.getElementById('courseFilter').innerHTML                   = `<option value="">Select Subject</option>` + optionsHtml;
-    document.getElementById('subjectFilterAttendanceHistory').innerHTML = `<option value="">All</option>` + optionsHtml;
-    document.getElementById('attendanceNowSubjectFilter').innerHTML     = `<option value="">All Subjects</option>` + optionsHtml;
 }
 
 async function addSubject() {
@@ -1481,17 +1641,119 @@ function deleteProgram(program_id, program_name) {
     });
 }
 
+// ============================================================
+// MANAGE CLASS MODAL
+// ============================================================
+let _manageClassSubjectId   = null;
+let _manageClassSubjectName = '';
+
+async function openManageClassModal(subjectId, subjectName) {
+    _manageClassSubjectId   = subjectId;
+    _manageClassSubjectName = subjectName;
+
+    const modal = document.getElementById('manageClassModal');
+    document.getElementById('manageClassTitle').textContent = `Manage Class — ${subjectName}`;
+    modal.style.display = 'flex';
+
+    await refreshManageClassLists();
+}
+
+function closeManageClassModal() {
+    document.getElementById('manageClassModal').style.display = 'none';
+    _manageClassSubjectId   = null;
+    _manageClassSubjectName = '';
+}
+
+async function refreshManageClassLists() {
+    const [rosterData, allData] = await Promise.all([
+        apiCall(`/teacher/subject-class-list/${_manageClassSubjectId}`, 'GET'),
+        apiCall('/teacher/get_student_registered', 'GET')
+    ]);
+
+    const roster     = rosterData?.content  || [];
+    const allStudents = allData?.content    || [];
+    const rosterIds  = new Set(roster.map(r => r.student_id));
+
+    // Enrolled list
+    const enrolledEl = document.getElementById('manageClassEnrolled');
+    enrolledEl.innerHTML = roster.length
+        ? roster.map(s => {
+            const mid  = s.student_middlename ? s.student_middlename.charAt(0) + '. ' : '';
+            const name = `${s.student_firstname} ${mid}${s.student_lastname}`;
+            return `
+            <div class="mcl-row" id="mcl-enrolled-${s.id}">
+                <div class="mcl-info">
+                    <span class="mcl-name">${name}</span>
+                    <span class="mcl-meta">${s.student_id_number} · ${s.student_year_level}</span>
+                </div>
+                <button class="mcl-remove-btn" onclick="removeFromClassList(${s.id})">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    Remove
+                </button>
+            </div>`;
+        }).join('')
+        : `<div style="color:#999;font-size:0.82rem;padding:12px 0;text-align:center;">No students enrolled yet.</div>`;
+
+    // Available list (not yet in roster)
+    const availableEl = document.getElementById('manageClassAvailable');
+    const available   = allStudents.filter(s => !rosterIds.has(s.student_id));
+    availableEl.innerHTML = available.length
+        ? available.map(s => {
+            const mid  = s.student_middlename ? s.student_middlename.charAt(0) + '. ' : '';
+            const name = `${s.student_firstname} ${mid}${s.student_lastname}`;
+            return `
+            <div class="mcl-row" id="mcl-available-${s.student_id}">
+                <div class="mcl-info">
+                    <span class="mcl-name">${name}</span>
+                    <span class="mcl-meta">${s.student_id_number} · ${s.student_year_level}</span>
+                </div>
+                <button class="mcl-add-btn" onclick="addToClassList(${s.student_id})">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Add
+                </button>
+            </div>`;
+        }).join('')
+        : `<div style="color:#999;font-size:0.82rem;padding:12px 0;text-align:center;">All registered students are enrolled.</div>`;
+
+    // Live search for available students
+    const searchEl = document.getElementById('manageClassSearch');
+    if (searchEl) {
+        searchEl.oninput = function () {
+            const term = this.value.toLowerCase();
+            document.querySelectorAll('#manageClassAvailable .mcl-row').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        };
+    }
+}
+
+async function addToClassList(studentId) {
+    const res = await apiCall('/teacher/subject-class-list/add', 'POST', {
+        subjectId: _manageClassSubjectId,
+        studentId
+    });
+    if (res?.ok) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Student added!', showConfirmButton: false, timer: 1200 });
+        await refreshManageClassLists();
+    }
+}
+
+async function removeFromClassList(id) {
+    const res = await apiCall(`/teacher/subject-class-list/remove/${id}`, 'DELETE');
+    if (res?.ok) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Student removed.', showConfirmButton: false, timer: 1200 });
+        await refreshManageClassLists();
+    }
+}
+
 async function renderYearLevel() {
     const data = await apiCall('/teacher/get_year_levels', 'GET');
     if (!data) return;
 
     const optionsHtml = data.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('');
     document.getElementById('yearFilter').innerHTML                  = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('yearFilterAttendanceHistory').innerHTML = `<option value="">All</option>` + optionsHtml;
     document.getElementById('recordYearFilter').innerHTML            = `<option value="">Select Year Level</option>` + optionsHtml;
-    document.getElementById('manualEntryYearFilter').innerHTML       = `<option value="">Select Year Level</option>` + optionsHtml;
     document.getElementById('year_level').innerHTML                  = `<option value="">Select Year</option>` + optionsHtml;
-    document.getElementById('attendanceNowYearFilter').innerHTML       = `<option value="">All Year Levels</option>` + optionsHtml;
 }
 
 async function renderPrograms() {
@@ -1506,135 +1768,6 @@ async function renderPrograms() {
 function openAddModal()  { document.getElementById('addModal').classList.add('active'); document.getElementById('programNameInput').focus(); }
 function closeAddModal() { document.getElementById('addModal').classList.remove('active'); }
 
-// ============================================================
-// MANUAL ENTRY
-// ============================================================
-// Sync manual entry button states against a live Set of present student_id_numbers
-function syncManualEntryButtons(presentIds) {
-    document.querySelectorAll('#studentList .student-row').forEach(row => {
-        const btn = row.querySelector('.status-btn');
-        if (!btn) return;
-        // Extract student_id_number from the onclick attribute
-        const match = btn.getAttribute('onclick')?.match(/'(\d+)'/);
-        if (!match) return;
-        const idNum = match[1];
-        if (presentIds.has(idNum) && !btn.disabled) {
-            btn.textContent      = '✓ Present';
-            btn.disabled         = true;
-            btn.style.background = '#a0b8b0';
-            btn.style.cursor     = 'not-allowed';
-            btn.style.opacity    = '0.8';
-            btn.onclick          = null;
-        }
-    });
-}
-
-async function loadManualEntryStudents() {
-    Swal.fire({ title: 'Loading students...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-    // Fetch students and live attendance records in parallel
-    const [data, attData] = await Promise.all([
-        apiCall('/teacher/get_student_registered'),
-        apiCall('/teacher/teacher_attendance_record')
-    ]);
-    Swal.close();
-    if (!data || !data.content) return;
-
-    // Build a Set of student_id_numbers already marked present today
-    const presentIds = new Set(
-        (attData?.content ?? []).map(r => r.student_id_number)
-    );
-
-    document.getElementById('studentList').innerHTML = data.content.map(student => {
-        const id        = student.student_id;
-        const mid       = student.student_middlename ?? '';
-        const fullName  = `${student.student_firstname} ${mid} ${student.student_lastname}`.trim();
-        const esc       = v => (v ?? '').toString().replace(/'/g, "\\'");
-        const isPresent = presentIds.has(student.student_id_number);
-
-        const btn = isPresent
-            ? `<button id="btn-present-${id}" class="status-btn present-btn" data-tooltip="Manually mark this student as present" disabled
-                        style="background:#a0b8b0;cursor:not-allowed;opacity:0.8;">
-                        ✓ Present
-                    </button>`
-            : `<button id="btn-present-${id}" class="status-btn present-btn"
-                        onclick="addToAttendance(
-                            ${id},
-                            '${esc(student.student_id_number)}',
-                            '${esc(student.student_firstname)}',
-                            '${esc(mid)}',
-                            '${esc(student.student_lastname)}',
-                            '${esc(student.student_email)}',
-                            '${esc(student.student_year_level)}',
-                            '${esc(student.student_guardian_number)}',
-                            '${esc(student.student_program)}'
-                        )">
-                        Add to attendance
-                    </button>`;
-
-        return `
-            <div class="student-row">
-                <div class="student-name">${fullName}</div>
-                <div class="year-level">${student.student_year_level}</div>
-                <div class="action-buttons">
-                    ${btn}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-async function addToAttendance(student_id, student_id_number, student_firstname, student_middlename, student_lastname, student_email, student_year_level, student_guardian_number, student_program) {
-    const btn = document.getElementById(`btn-present-${student_id}`);
-
-    const confirm = await Swal.fire({
-        title: 'Add to Attendance?',
-        html: `<strong>${student_firstname} ${student_middlename} ${student_lastname}</strong><br>${student_program} — ${student_year_level}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, mark present',
-        confirmButtonColor: '#5a8a7a'
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    Swal.fire({ title: 'Recording attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-    const res = await apiCall('/teacher/manual_attendance', 'POST', {
-        student_id,
-        student_id_number,
-        student_firstname,
-        student_middlename,
-        student_lastname,
-        student_email,
-        student_year_level,
-        student_guardian_number,
-        student_program
-    });
-
-    if (!res) return;
-
-    Swal.fire({ icon: 'success', title: 'Recorded!', text: res.message, timer: 2000, showConfirmButton: false });
-
-    // Reload attendance
-    refreshAttendance();
-    refreshAttendanceHistory();
-
-    // Disable the button so the same student can't be added twice in the same session
-    if (btn) {
-        btn.textContent      = '✓ Present';
-        btn.disabled         = true;
-        btn.style.background = '#a0b8b0';
-        btn.style.cursor     = 'not-allowed';
-        btn.style.opacity    = '0.8';
-        btn.onclick          = null;
-    }
-}
-
-// FIX: removed call to undefined renderManualStudents()
-function markManualStatus(name, status) {
-    state.attendanceStatus[name] = status;
-}
 
 // ============================================================
 // TEACHER PROFILE & SETTINGS
@@ -1918,7 +2051,6 @@ function saveChanges() {
 
 function printList()       { printSection('studentsTable', 'Student Records'); }
 function printAttendance() { printSection('eventAttendanceTable', 'Event Attendance'); }
-function printPage()       { printSection('attendanceHistoryTable', 'Attendance History'); }
 function applyFilters()    { /* hook in filter logic here */ }
 
 // ============================================================

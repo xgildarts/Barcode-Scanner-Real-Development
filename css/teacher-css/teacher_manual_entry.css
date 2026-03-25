@@ -343,3 +343,114 @@
 [data-theme="dark"] .search-wrapper:focus-within .search-icon {
     fill: #7ecece !important;
 }
+
+/* ── Upgraded Manual Entry 3-button action layout ── */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+
+.me-action-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    opacity: 0.45;
+    background: #f3f4f6;
+    color: #374151;
+    white-space: nowrap;
+}
+.me-action-btn:disabled { cursor: not-allowed; opacity: 0.2; }
+.me-action-btn.active   { opacity: 1; color: #fff; }
+
+.me-btn-present             { border-color: #22c55e; color: #15803d; }
+.me-btn-present:hover       { background: #dcfce7; opacity: 1; }
+.me-btn-present.active      { background: #16a34a; border-color: #16a34a; }
+
+.me-btn-absent              { border-color: #ef4444; color: #b91c1c; }
+.me-btn-absent:hover        { background: #fee2e2; opacity: 1; }
+.me-btn-absent.active       { background: #dc2626; border-color: #dc2626; }
+
+.me-btn-excused             { border-color: #f59e0b; color: #92400e; }
+.me-btn-excused:hover       { background: #fef3c7; opacity: 1; }
+.me-btn-excused.active      { background: #d97706; border-color: #d97706; }
+
+/* Dark mode */
+[data-theme="dark"] .me-action-btn        { background: #1f2937; color: #d1d5db; }
+[data-theme="dark"] .me-btn-present:hover { background: #14532d; }
+[data-theme="dark"] .me-btn-present.active { background: #16a34a; }
+[data-theme="dark"] .me-btn-absent:hover  { background: #450a0a; }
+[data-theme="dark"] .me-btn-absent.active { background: #dc2626; }
+[data-theme="dark"] .me-btn-excused:hover { background: #422006; }
+[data-theme="dark"] .me-btn-excused.active { background: #d97706; }
+/* ============================================================
+   MOBILE RESPONSIVE — Manual Entry
+   ============================================================ */
+
+@media (max-width: 600px) {
+    .content-card {
+        margin: 0 10px;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    /* Stack columns: name full width, year below, actions full width */
+    .table-header {
+        grid-template-columns: 1fr 1fr;
+        margin: -10px -10px 10px -10px;
+        font-size: 11px;
+        padding: 10px;
+    }
+
+    /* Hide "Actions" header on mobile */
+    .table-header .header-cell:nth-child(3) {
+        display: none;
+    }
+
+    .student-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 6px;
+        padding: 10px 8px;
+    }
+
+    /* Action buttons span full width */
+    .action-buttons {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .me-action-btn,
+    .status-btn {
+        flex: 1 1 70px;
+        text-align: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        padding: 7px 8px;
+    }
+
+    .student-list {
+        max-height: 65vh;
+    }
+
+    .search-section {
+        padding: 0 10px 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    .table-header {
+        grid-template-columns: 1fr;
+    }
+
+    .student-row {
+        grid-template-columns: 1fr;
+    }
+}

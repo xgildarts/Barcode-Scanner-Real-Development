@@ -2196,6 +2196,41 @@ async function markOneRead(id) {
         if (res) await res.json().catch(() => {});
         fetchNotifications();
     }
+
+    // Redirect to Student Accounts and highlight the registered student
+    if (item && item.type === 'new_student') {
+        closeNotifPanel();
+        navigateTo('studentAccountManagement');
+        const meta = item.meta;
+        const metaObj = typeof meta === 'string' ? JSON.parse(meta) : meta;
+        const fullName = metaObj?.name || '';
+        const firstName = fullName.split(' ')[0];
+        if (firstName) {
+            setTimeout(() => {
+                const searchInput = document.getElementById('searchFilterStudentsAccounts');
+                if (searchInput) {
+                    searchInput.value = firstName;
+                    filterCards('#studentsList', '.student-card', firstName);
+                }
+                // Highlight all visible cards after filter (filterCards already matched by name)
+                setTimeout(() => {
+                    const visible = Array.from(document.querySelectorAll('#studentsList .student-card'))
+                        .filter(card => card.style.display !== 'none');
+                    if (visible.length > 0) {
+                        visible[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    visible.forEach(card => {
+                        card.style.boxShadow = '0 0 0 3px #3b82f6, 0 2px 6px rgba(0,0,0,0.1)';
+                        card.style.border = '1.5px solid #3b82f6';
+                        setTimeout(() => {
+                            card.style.boxShadow = '';
+                            card.style.border = '';
+                        }, 3000);
+                    });
+                }, 150);
+            }, 300);
+        }
+    }
 }
 
 async function markAllRead() {

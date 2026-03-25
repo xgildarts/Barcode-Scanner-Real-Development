@@ -246,7 +246,8 @@ async function loadProfileData() {
             student_profile_picture
         } = data.contents[0];
 
-        const fullName = `${student_firstname} ${student_middlename}. ${student_lastname}`;
+        const mid = student_middlename ? student_middlename.charAt(0).toUpperCase() + '.' : '';
+        const fullName = `${student_firstname}${mid ? ' ' + mid : ''} ${student_lastname}`.trim();
 
         // Load saved profile picture if available
         if (student_profile_picture) {
@@ -525,11 +526,11 @@ async function getAttendanceHistory() {
 
         body.innerHTML = data.content.map(d => `
             <tr>
-                <td>${d.attendance_date.split('T')[0]}</td>
+                <td>${d.attendance_date ? String(d.attendance_date).split('T')[0] : '—'}</td>
                 <td>${formatTime(d.attendance_time)}</td>
                 <td>${d.subject || 'N/A'}</td>
-                <td>${d.student_firstname} ${d.student_middlename}. ${d.student_lastname}</td>
-                <td>${d.student_id_number}</td>
+                <td>${d.student_firstname || ''}${d.student_middlename ? ' ' + d.student_middlename.charAt(0).toUpperCase() + '.' : ''} ${d.student_lastname || ''}</td>
+                <td>${d.student_id_number || '—'}</td>
             </tr>
         `).join('');
 

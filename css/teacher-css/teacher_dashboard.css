@@ -869,3 +869,85 @@
 [data-theme="dark"] .logout-btn:hover svg {
     fill: #e57373;
 }
+/* ============================================================
+   MOBILE RESPONSIVE — Dashboard
+   ============================================================ */
+
+/* Fix hardcoded modal widths */
+.modal-box {
+    width: min(600px, 95vw) !important;
+    max-height: 92vh;
+    margin: 0 auto;
+}
+
+.record-modal-content {
+    width: min(600px, 95vw) !important;
+    margin: 0 12px;
+}
+
+.modal-overlay {
+    padding: 12px;
+}
+
+/* Stats row — 2 columns on small phones */
+@media (max-width: 480px) {
+    .stats-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 14px 10px;
+        gap: 8px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .stat-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .stat-value {
+        font-size: 20px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .dashboard-content {
+        padding: 14px 12px;
+    }
+
+    .overview-section {
+        padding: 16px 14px;
+    }
+
+    .legend {
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    /* Modal form name row stacks */
+    .name-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Logout button — hide text on very small screens */
+@media (max-width: 380px) {
+    .logout-btn span {
+        display: none;
+    }
+
+    .logout-btn {
+        padding: 7px 10px;
+    }
+}

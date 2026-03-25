@@ -246,3 +246,39 @@
 [data-theme="dark"] .search-wrapper:focus-within .search-icon {
     fill: #7ecece !important;
 }
+/* ============================================================
+   MOBILE RESPONSIVE — Students Registered
+   ============================================================ */
+
+@media (max-width: 600px) {
+    .search-row { flex-direction: column; gap: 8px; }
+    .export-btn, .action-btn { width: 100%; justify-content: center; }
+    .filters-row { flex-wrap: wrap; gap: 8px; }
+    .filter-select { flex: 1 1 130px; min-width: 0; font-size: 12px; }
+
+    table, thead, tbody, th, td, tr { display: block !important; width: 100% !important; min-width: 0 !important; }
+    thead { display: none !important; }
+
+    tbody tr {
+        background: #fff;
+        border: 1px solid #e0ebe8;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    td {
+        padding: 3px 0 !important;
+        font-size: 13px !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        border: none !important;
+    }
+
+    [data-theme="dark"] tbody tr {
+        background: #1a2535;
+        border-color: #2a3a4a;
+    }
+}

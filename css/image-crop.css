@@ -38,22 +38,39 @@
     border-bottom: 1px solid #eef4f2;
 }
 .crop-title {
-    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
     font-weight: 700;
     color: #1a4545;
+    letter-spacing: 0.01em;
+}
+.crop-title svg {
+    color: #2c5f5f;
+    flex-shrink: 0;
 }
 .crop-close-btn {
-    background: none; border: none; cursor: pointer;
-    font-size: 22px; color: #aaa; line-height: 1; padding: 0 4px;
-    transition: color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #888;
+    transition: background 0.15s, color 0.15s;
+    padding: 0;
 }
-.crop-close-btn:hover { color: #e53935; }
+.crop-close-btn:hover { background: #ffe5e5; color: #e53935; }
 
 .crop-stage-wrap {
     display: flex;
     justify-content: center;
     padding: 16px;
-    background: #1a1a2e;
+    background: #111827;
 }
 .crop-stage {
     position: relative;
@@ -62,7 +79,7 @@
     border-radius: 12px;
     overflow: hidden;
     cursor: grab;
-    box-shadow: 0 0 0 4px rgba(255,255,255,0.15);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
 }
 .crop-stage:active { cursor: grabbing; }
 #cropCanvas {
@@ -74,11 +91,17 @@
 }
 .crop-drag-hint {
     position: absolute;
-    bottom: 20px; left: 0; right: 0;
-    text-align: center;
-    font-size: 12px; color: rgba(255,255,255,0.6);
+    bottom: 14px; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.55);
     pointer-events: none;
     transition: opacity 0.5s;
+    letter-spacing: 0.03em;
 }
 
 .crop-zoom-row {
@@ -87,7 +110,12 @@
     gap: 10px;
     padding: 14px 20px 8px;
 }
-.crop-zoom-icon { font-size: 16px; }
+.crop-zoom-icon {
+    display: flex;
+    align-items: center;
+    color: #2c5f5f;
+    flex-shrink: 0;
+}
 .crop-zoom-slider {
     flex: 1;
     -webkit-appearance: none;
@@ -117,14 +145,25 @@
 }
 .crop-btn-cancel,
 .crop-btn-confirm {
-    flex: 1; padding: 11px; border: none; border-radius: 10px;
-    font-size: 14px; font-weight: 700; cursor: pointer;
-    transition: transform 0.15s, opacity 0.15s;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s, background 0.15s;
+    letter-spacing: 0.02em;
 }
 .crop-btn-cancel {
-    background: #f0f0f0; color: #666;
+    background: #f0f0f0;
+    color: #555;
 }
-.crop-btn-cancel:hover { background: #e0e0e0; }
+.crop-btn-cancel:hover { background: #e4e4e4; }
 .crop-btn-confirm {
     background: linear-gradient(135deg, #2c5f5f 0%, #1a4545 100%);
     color: white;

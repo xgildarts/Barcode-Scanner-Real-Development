@@ -144,7 +144,7 @@ student.get('/get_attendance_history_record', async (req, res) => {
         const result = await services.getAttendanceHistoryForStudentOnly(studentId, studentIdNumber)
         res.json({ ok: true, message: 'Successfully retrieved student history attendance!', content: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
