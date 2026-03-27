@@ -3,7 +3,6 @@ body {
     padding-bottom: 100px;
 }
 
-
 .back-btn {
     background: none;
     border: none;
@@ -251,10 +250,10 @@ body {
         font-size: 14px;
     }
 }
-/* ============================================================
-   DARK MODE — Academic setup
-   ============================================================ */
 
+/* ============================================================
+DARK MODE — Academic setup
+============================================================ */
 /* Add Subject button */
 [data-theme="dark"] .add-program-btn {
     background: linear-gradient(135deg, #1e4a3a 0%, #2a5a4a 100%) !important;

@@ -237,6 +237,20 @@ document.addEventListener('DOMContentLoaded', () => {
         _dateFilterEl.addEventListener('change', () => renderAttendanceNowMerged());
     }
 
+    // Status filter pills
+    document.querySelectorAll('#statusFilterPills .status-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#statusFilterPills .status-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyAttendanceStatusFilter(btn.dataset.status);
+        });
+    });
+
+    // Sortable column headers
+    document.querySelectorAll('#attendanceNowTable thead th.sortable').forEach(th => {
+        th.addEventListener('click', () => sortAttendanceTable(th));
+    });
+
     // Re-render attendance list whenever the Active Class Setup dropdowns change
     document.getElementById('courseFilter')?.addEventListener('change', () => renderAttendanceNowMerged());
     document.getElementById('yearFilter')?.addEventListener('change',   () => renderAttendanceNowMerged());
@@ -497,27 +511,57 @@ DOM.sidebarOverlay.addEventListener('click', () => {
 let _dashboardChart = null;
 
 function updateDashboardChart() {
-    const total   = state.totalStudentRegistered;
-    const present = state.totalPresent;
-    const absent  = Math.max(total - present, 0);
+    const total = state.totalStudentRegistered;
+
+    // Count each status from attendance records filtered by active subject/date
+    const subjectName = document.getElementById('courseFilter')?.value || state.activeSubjectName || '';
+    const dateFilter  = document.getElementById('attendanceNowDateFilter')?.value || '';
+    const classTime   = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+
+    let countPresent = 0, countLate = 0, countExcused = 0;
+    const seenIds = new Set();
+
+    state.allAttendanceRecords.forEach(r => {
+        const matchSubject = !subjectName || (r.subject || '').toLowerCase() === subjectName.toLowerCase();
+        const matchDate    = !dateFilter  || (r.attendance_date ? r.attendance_date.split('T')[0] : '') === dateFilter;
+        if (matchSubject && matchDate && !seenIds.has(r.student_id_number)) {
+            seenIds.add(r.student_id_number);
+            let status = r.attendance_status || 'Present';
+            // Auto-detect Late
+            if (status === 'Present' && classTime && r.attendance_time) {
+                const scanTime = r.attendance_time.substring(0, 5);
+                if (scanTime > classTime) status = 'Late';
+            }
+            if (status === 'Present')      countPresent++;
+            else if (status === 'Late')    countLate++;
+            else if (status === 'Excused') countExcused++;
+        }
+    });
+
+    const countAbsent = Math.max(total - countPresent - countLate - countExcused, 0);
 
     // Update stat cards
-    document.getElementById('totalPresents').textContent      = present;
-    document.getElementById('bottomTotalPresent').textContent = 'Presents ' + present;
-    document.getElementById('totalStudentAbsent').textContent = absent;
-    document.getElementById('bottomTotalAbsent').textContent  = 'Absent ' + absent;
-    document.getElementById('centerTotalStudents').textContent = total;
+    document.getElementById('totalPresents').textContent         = countPresent;
+    document.getElementById('totalStudentLate').textContent      = countLate;
+    document.getElementById('totalStudentExcused').textContent   = countExcused;
+    document.getElementById('totalStudentAbsent').textContent    = countAbsent;
+    document.getElementById('bottomTotalPresent').textContent    = 'Present ' + countPresent;
+    document.getElementById('bottomTotalLate').textContent       = 'Late ' + countLate;
+    document.getElementById('bottomTotalExcused').textContent    = 'Excused ' + countExcused;
+    document.getElementById('bottomTotalAbsent').textContent     = 'Absent ' + countAbsent;
+    document.getElementById('centerTotalStudents').textContent   = total;
 
     const canvas = document.getElementById('donutChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    const data    = total > 0 ? [present, absent] : [0, 1];
-    const colors  = total > 0 ? ['#5a8a7a', '#d88888'] : ['#e0e0e0', '#e0e0e0'];
+    const hasData = total > 0;
+    const chartData   = hasData ? [countPresent, countLate, countExcused, countAbsent] : [1, 0, 0, 0];
+    const chartColors = hasData ? ['#22c55e', '#7c3aed', '#f59e0b', '#ef4444'] : ['#e0e0e0', '#e0e0e0', '#e0e0e0', '#e0e0e0'];
 
     if (_dashboardChart) {
-        _dashboardChart.data.datasets[0].data   = data;
-        _dashboardChart.data.datasets[0].backgroundColor = colors;
+        _dashboardChart.data.datasets[0].data            = chartData;
+        _dashboardChart.data.datasets[0].backgroundColor = chartColors;
         _dashboardChart.update();
         return;
     }
@@ -525,10 +569,10 @@ function updateDashboardChart() {
     _dashboardChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Present', 'Absent'],
+            labels: ['Present', 'Late', 'Excused', 'Absent'],
             datasets: [{
-                data,
-                backgroundColor: colors,
+                data: chartData,
+                backgroundColor: chartColors,
                 borderWidth: 0,
                 hoverOffset: 6
             }]
@@ -612,14 +656,14 @@ function buildAttendanceRow(d, statusOverride) {
         </div>`;
 
     return `
-        <td>${d.student_id_number}</td>
-        <td>${fullName}</td>
-        <td>${d.subject || '—'}</td>
-        <td>${d.year_level || d.student_year_level || '—'}</td>
-        <td>${timeIn}</td>
-        <td>${dateIn}</td>
-        <td>${statusBadge}</td>
-        <td>${actionButtons}</td>
+        <td data-label="ID No.">${d.student_id_number}</td>
+        <td data-label="Name">${fullName}</td>
+        <td data-label="Subject">${d.subject || '—'}</td>
+        <td data-label="Year">${d.year_level || d.student_year_level || '—'}</td>
+        <td data-label="Time In">${timeIn}</td>
+        <td data-label="Date">${dateIn}</td>
+        <td data-label="Status">${statusBadge}</td>
+        <td data-label="Action">${actionButtons}</td>
     `;
 }
 
@@ -666,14 +710,14 @@ async function pollEventAttendanceSilently() {
                     DOM.eventAttendanceBody.innerHTML = data1.content.length
                         ? data1.content.map(d => `
                         <tr>
-                            <td>${d.student_id_number}</td>
-                            <td>${d.student_name}</td>
-                            <td>${d.student_program}</td>
-                            <td>${d.student_year_level}</td>
-                            <td>${formatDate(d.date)}</td>
-                            <td>${formatTime(d.time)}</td>
-                            <td>${d.event_name}</td>
-                            <td>${d.status}</td>
+                            <td data-label="ID No.">${d.student_id_number}</td>
+                            <td data-label="Name">${d.student_name}</td>
+                            <td data-label="Program">${d.student_program}</td>
+                            <td data-label="Year">${d.student_year_level}</td>
+                            <td data-label="Date">${formatDate(d.date)}</td>
+                            <td data-label="Time">${formatTime(d.time)}</td>
+                            <td data-label="Event">${d.event_name}</td>
+                            <td data-label="Status">${d.status}</td>
                         </tr>`).join('')
                         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
                     const dot1 = document.getElementById('liveDotEvent');
@@ -695,14 +739,14 @@ async function pollEventAttendanceSilently() {
                     DOM.eventAttendanceHistoryBody.innerHTML = data2.content.length
                         ? data2.content.map(d => `
                         <tr>
-                            <td>${d.student_id_number}</td>
-                            <td>${d.student_name}</td>
-                            <td>${d.student_program}</td>
-                            <td>${d.student_year_level}</td>
-                            <td>${formatDate(d.date)}</td>
-                            <td>${formatTime(d.time)}</td>
-                            <td>${d.event_name}</td>
-                            <td>${d.status}</td>
+                            <td data-label="ID No.">${d.student_id_number}</td>
+                            <td data-label="Name">${d.student_name}</td>
+                            <td data-label="Program">${d.student_program}</td>
+                            <td data-label="Year">${d.student_year_level}</td>
+                            <td data-label="Date">${formatDate(d.date)}</td>
+                            <td data-label="Time">${formatTime(d.time)}</td>
+                            <td data-label="Event">${d.event_name}</td>
+                            <td data-label="Status">${d.status}</td>
                         </tr>`).join('')
                         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
                     const dot2 = document.getElementById('liveDotEventHistory');
@@ -724,6 +768,9 @@ function startEventPolling() {
 
 async function pollAttendanceSilently() {
     try {
+        // Do NOT auto-reset date filter — user may have selected a past date intentionally.
+        // Only auto-update if the user has NOT manually changed the filter away from today.
+
         const res  = await fetch(`${BASE_URL}/teacher/teacher_attendance_record`, {
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
         });
@@ -783,14 +830,14 @@ async function renderEventAttendanceRecord() {
     DOM.eventAttendanceBody.innerHTML = data.content.length
         ? data.content.map(d => `
         <tr>
-            <td>${d.student_id_number}</td>
-            <td>${d.student_name}</td>
-            <td>${d.student_program}</td>
-            <td>${d.student_year_level}</td>
-            <td>${formatDate(d.date)}</td>
-            <td>${formatTime(d.time)}</td>
-            <td>${d.event_name}</td>
-            <td>${d.status}</td>
+            <td data-label="ID No.">${d.student_id_number}</td>
+            <td data-label="Name">${d.student_name}</td>
+            <td data-label="Program">${d.student_program}</td>
+            <td data-label="Year">${d.student_year_level}</td>
+            <td data-label="Date">${formatDate(d.date)}</td>
+            <td data-label="Time">${formatTime(d.time)}</td>
+            <td data-label="Event">${d.event_name}</td>
+            <td data-label="Status">${d.status}</td>
         </tr>`).join('')
         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
 
@@ -807,14 +854,14 @@ async function renderEventAttendanceHistoryRecord() {
     DOM.eventAttendanceHistoryBody.innerHTML = data.content.length
         ? data.content.map(d => `
         <tr>
-            <td>${d.student_id_number}</td>
-            <td>${d.student_name}</td>
-            <td>${d.student_program}</td>
-            <td>${d.student_year_level}</td>
-            <td>${formatDate(d.date)}</td>
-            <td>${formatTime(d.time)}</td>
-            <td>${d.event_name}</td>
-            <td>${d.status}</td>
+            <td data-label="ID No.">${d.student_id_number}</td>
+            <td data-label="Name">${d.student_name}</td>
+            <td data-label="Program">${d.student_program}</td>
+            <td data-label="Year">${d.student_year_level}</td>
+            <td data-label="Date">${formatDate(d.date)}</td>
+            <td data-label="Time">${formatTime(d.time)}</td>
+            <td data-label="Event">${d.event_name}</td>
+            <td data-label="Status">${d.status}</td>
         </tr>`).join('')
         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
 
@@ -842,6 +889,62 @@ function setupTableSearch(inputId, tableBodyId) {
 // Renders Attendance Now using the subject class list as the fixed roster.
 // Present = student has an attendance record today for the active subject.
 // Absent  = student is in the class list but has NOT scanned today.
+// ============================================================
+// STATUS FILTER — show/hide rows by status without re-fetching
+// ============================================================
+function applyAttendanceStatusFilter(status) {
+    const rows = document.querySelectorAll('#attendanceBody tr');
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            const statusCell = row.querySelector('td[data-label="Status"]');
+            const rowText = statusCell ? statusCell.textContent.trim().toLowerCase() : '';
+            row.style.display = rowText.includes(status.toLowerCase()) ? '' : 'none';
+        }
+    });
+}
+
+// ============================================================
+// SORTABLE COLUMN HEADERS
+// ============================================================
+let _sortColIndex = -1;
+let _sortAsc = true;
+
+function sortAttendanceTable(th) {
+    const colIndex = parseInt(th.dataset.col);
+    const tbody    = document.getElementById('attendanceBody');
+    const rows     = Array.from(tbody.querySelectorAll('tr'));
+
+    // Toggle direction if same column clicked again
+    if (_sortColIndex === colIndex) {
+        _sortAsc = !_sortAsc;
+    } else {
+        _sortColIndex = colIndex;
+        _sortAsc = true;
+    }
+
+    // Update header arrow indicators
+    document.querySelectorAll('#attendanceNowTable thead th.sortable').forEach(h => {
+        h.classList.remove('sort-asc', 'sort-desc');
+        h.querySelector('.sort-arrow').textContent = '↕';
+    });
+    th.classList.add(_sortAsc ? 'sort-asc' : 'sort-desc');
+    th.querySelector('.sort-arrow').textContent = _sortAsc ? '↑' : '↓';
+
+    rows.sort((a, b) => {
+        const aCell = a.querySelectorAll('td')[colIndex];
+        const bCell = b.querySelectorAll('td')[colIndex];
+        const aVal  = aCell ? aCell.textContent.trim().toLowerCase() : '';
+        const bVal  = bCell ? bCell.textContent.trim().toLowerCase() : '';
+        if (aVal < bVal) return _sortAsc ? -1 : 1;
+        if (aVal > bVal) return _sortAsc ? 1 : -1;
+        return 0;
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+}
+
 async function renderAttendanceNowMerged() {
     // Clear row data map so stale keys don't accumulate across re-renders
     _attendanceRowDataMap.clear();
@@ -926,6 +1029,22 @@ async function renderAttendanceNowMerged() {
     });
 
     document.getElementById('attendanceBody').innerHTML = rows.join('');
+
+    // Re-apply active status filter pill after render
+    const activePill = document.querySelector('#statusFilterPills .status-pill.active');
+    if (activePill && activePill.dataset.status !== 'all') {
+        applyAttendanceStatusFilter(activePill.dataset.status);
+    }
+
+    // Re-apply sort if a column is currently sorted
+    if (_sortColIndex >= 0) {
+        const th = document.querySelector(`#attendanceNowTable thead th.sortable[data-col="${_sortColIndex}"]`);
+        if (th) {
+            // Temporarily flip so sortAttendanceTable toggles back to correct direction
+            _sortAsc = !_sortAsc;
+            sortAttendanceTable(th);
+        }
+    }
 }
 
 
@@ -1110,14 +1229,14 @@ async function loadStudentsRegistered() {
         const dbId = s.student_id;
         return `
             <tr>
-                <td>${s.student_id_number}</td>
-                <td>${s.student_firstname}</td>
-                <td>${mid || '-'}</td>
-                <td>${s.student_lastname}</td>
-                <td>${s.student_program}</td>
-                <td>${s.student_year_level}</td>
-                <td>${s.date_created.split('T')[0]}</td>
-                <td>
+                <td data-label="ID No.">${s.student_id_number}</td>
+                <td data-label="First Name">${s.student_firstname}</td>
+                <td data-label="M.I.">${mid || '-'}</td>
+                <td data-label="Last Name">${s.student_lastname}</td>
+                <td data-label="Program">${s.student_program}</td>
+                <td data-label="Year">${s.student_year_level}</td>
+                <td data-label="Date">${s.date_created.split('T')[0]}</td>
+                <td data-label="Action">
                     <div class="action-btns">
                         <button class="edit-btn" data-tooltip="Edit this student's record" onclick="editStudent('${dbId}','${s.student_id_number}','${s.student_firstname}','${mid}','${s.student_lastname}','${s.student_program}','${s.student_year_level}','${s.date_created.split('T')[0]}')">Edit</button>
                         <button class="delete-btn-student-registered" onclick="deleteStudent('${dbId}')">Delete</button>

@@ -3,125 +3,6 @@
     padding: 16px 20px;
 }
 
-.search-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.search-wrapper {
-    flex: 1;
-    position: relative;
-}
-
-.search-icon {
-    position: absolute;
-    left: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-    fill: #7aadaa;
-    color: #7aadaa;
-    transition: fill 0.2s ease, color 0.2s ease;
-    pointer-events: none;
-    display: block;
-}
-
-.search-icon path {
-    fill: inherit;
-}
-
-.search-input {
-    width: 100%;
-    padding: 11px 14px 11px 42px;
-    border: 1.5px solid #dde8e6;
-    border-radius: 10px;
-    font-size: 13.5px;
-    background: #f7fafa;
-    color: #1a4545;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    outline: none;
-}
-
-.search-input:focus {
-    border-color: #5a8a7a;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(90, 138, 122, 0.12);
-}
-
-.search-input:focus + .search-icon,
-.search-wrapper:focus-within .search-icon,
-.search-wrapper:focus-within .search-icon path {
-    fill: #3d7070 !important;
-}
-
-.search-input::placeholder {
-    color: #a0b8b5;
-    font-style: italic;
-}
-
-.action-btn {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.print-btn {
-    background: #3d6b6b;
-    color: white;
-}
-
-.print-btn:hover {
-    background: #2c5a5a;
-}
-
-.save-btn {
-    background: #5a8a7a;
-    color: white;
-}
-
-.save-btn:hover {
-    background: #4a7a6a;
-}
-
-.action-btn svg {
-    width: 16px;
-    height: 16px;
-    fill: white;
-}
-
-.filters-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.filter-select {
-    padding: 10px 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    background: white;
-    cursor: pointer;
-    font-weight: 600;
-    color: #333;
-    min-width: 140px;
-}
-
-.filter-select:focus {
-    outline: 2px solid #5a8a7a;
-}
-
 .table-container {
     overflow-x: auto;
     background: white;
@@ -198,23 +79,6 @@
 }
 
 @media (max-width: 768px) {
-    .search-row {
-        flex-wrap: wrap;
-    }
-
-    .action-btn {
-        font-size: 11px;
-        padding: 8px 12px;
-    }
-
-    .filters-row {
-        flex-wrap: wrap;
-    }
-
-    .filter-select {
-        min-width: 100px;
-        font-size: 12px;
-    }
 
     .attendance-table th,
     .attendance-table td {
@@ -224,59 +88,60 @@
 }
 
 /* Search bar — dark mode */
-[data-theme="dark"] .search-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #c0d0d8 !important;
-    box-shadow: none !important;
-}
-[data-theme="dark"] .search-input:focus {
-    border-color: #7ecece !important;
-    background: #1a2535 !important;
-    box-shadow: 0 0 0 3px rgba(126,206,206,0.12) !important;
-}
-[data-theme="dark"] .search-input::placeholder {
-    color: #4a6a7a !important;
-}
-[data-theme="dark"] .search-icon {
-    fill: #4a7a8a !important;
-}
-[data-theme="dark"] .search-wrapper:focus-within .search-icon {
-    fill: #7ecece !important;
-}
 /* ============================================================
    MOBILE RESPONSIVE — Event Attendance
    ============================================================ */
+@media (max-width: 640px) {
+    .attendance-table thead { display: none !important; }
 
-@media (max-width: 600px) {
-    .search-row { flex-direction: column; gap: 8px; }
-    .export-btn, .action-btn { width: 100%; justify-content: center; }
-    .filters-row { flex-wrap: wrap; gap: 8px; }
-    .filter-select { flex: 1 1 130px; min-width: 0; font-size: 12px; }
+    .attendance-table tbody {
+        display: block !important;
+        max-height: none !important;
+        overflow: visible !important;
+        width: 100% !important;
+    }
 
-    table, thead, tbody, th, td, tr { display: block !important; width: 100% !important; min-width: 0 !important; }
-    thead { display: none !important; }
-
-    tbody tr {
-        background: #fff;
+    .attendance-table tbody tr {
+        display: block !important;
+        width: 100% !important;
         border: 1px solid #e0ebe8;
         border-radius: 10px;
         margin-bottom: 10px;
         padding: 10px 12px;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        background: #fff;
+        box-sizing: border-box;
     }
 
-    td {
+    .attendance-table tbody td {
+        display: flex !important;
+        align-items: flex-start;
+        gap: 6px;
         padding: 3px 0 !important;
         font-size: 13px !important;
         white-space: normal !important;
         overflow: visible !important;
         text-overflow: unset !important;
         border: none !important;
+        width: 100% !important;
+        box-sizing: border-box;
     }
 
-    [data-theme="dark"] tbody tr {
+    .attendance-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #5a7a7a;
+        font-size: 11px;
+        min-width: 68px;
+        flex-shrink: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        padding-top: 2px;
+    }
+
+    [data-theme="dark"] .attendance-table tbody tr {
         background: #1a2535;
         border-color: #2a3a4a;
     }
+    [data-theme="dark"] .attendance-table tbody td::before { color: #5a9e9e; }
 }

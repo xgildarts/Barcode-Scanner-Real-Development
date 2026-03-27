@@ -146,11 +146,11 @@
 }
 
 .stat-icon.presents {
-    background: #5a8a7a;
+    background: #22c55e;
 }
 
 .stat-icon.absents {
-    background: #d88888;
+    background: #ef4444;
 }
 
 .stat-icon svg {
@@ -253,11 +253,11 @@
 }
 
 .legend-color.presents {
-    background: #5a8a7a;
+    background: #22c55e;
 }
 
 .legend-color.absents {
-    background: #d88888;
+    background: #ef4444;
 }
 
 /* Sidebar */
@@ -716,7 +716,8 @@
     }
 }
 
-@media (min-width: 1024px) {
+
+@media (min-width: 1358px) {
     /* Sidebar always visible on desktop */
     .sidebar {
         left: 0;
@@ -737,7 +738,7 @@
         margin-left: 380px;
     }
 
-    /* Optional: hide hamburger menu on desktop */
+    /* Hide hamburger menu on desktop */
     .menu-btn {
         display: none;
     }
@@ -873,26 +874,29 @@
    MOBILE RESPONSIVE — Dashboard
    ============================================================ */
 
-/* Fix hardcoded modal widths */
-.modal-box {
-    width: min(600px, 95vw) !important;
-    max-height: 92vh;
-    margin: 0 auto;
-}
+/* Fix hardcoded modal widths on mobile */
+@media (max-width: 640px) {
+    .modal-box {
+        width: 95vw !important;
+        max-height: 92vh;
+        margin: 0 auto;
+        padding: 16px;
+    }
 
-.record-modal-content {
-    width: min(600px, 95vw) !important;
-    margin: 0 12px;
-}
+    .record-modal-content {
+        width: 95vw !important;
+        margin: 0 10px;
+    }
 
-.modal-overlay {
-    padding: 12px;
-}
+    .modal-overlay {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 40px;
+    }
 
-/* Stats row — 2 columns on small phones */
-@media (max-width: 480px) {
+    /* Stats: 2-column grid instead of horizontal flex */
     .stats-row {
-        display: grid;
+        display: grid !important;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
     }
@@ -930,23 +934,26 @@
     }
 
     .legend {
-        gap: 14px;
+        gap: 12px;
         flex-wrap: wrap;
         justify-content: center;
     }
 
-    /* Modal form name row stacks */
     .name-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Header: keep hamburger + logout visible */
+    .header {
+        padding: 12px 10px;
     }
 }
 
-/* Logout button — hide text on very small screens */
+/* Tiny screens: hide logout label, keep icon */
 @media (max-width: 380px) {
-    .logout-btn span {
+    .logout-btn .logout-text {
         display: none;
     }
-
     .logout-btn {
         padding: 7px 10px;
     }

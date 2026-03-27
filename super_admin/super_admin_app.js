@@ -345,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generateProgramSelectionOnTeacher();
     generateYearLevelSelections();
     loadClassTeacherPicker();
+    loadSubjectTeacherPicker();
     initChart();
     initEventListeners();
 });
@@ -1051,6 +1052,273 @@ async function deleteYearLevel(id, name) {
         renderYearLevels();
     } catch (err) {
         console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+// ============================================================
+// SUBJECTS (per teacher) — ACADEMIC SETUP
+// ============================================================
+
+let _saSubjectTeacherId   = null;
+let _saSubjectTeacherName = '';
+
+/** Populate the teacher picker in the Subjects section */
+async function loadSubjectTeacherPicker() {
+    try {
+        const res  = await apiFetch('/super_admin/class/get_teachers');
+        const data = await res.json();
+        if (!res.ok) return;
+        const picker = document.getElementById('subjectTeacherPicker');
+        if (!picker) return;
+        picker.innerHTML = '<option value="">— Choose a teacher —</option>' +
+            data.content.map(t =>
+                `<option value="${t.teacher_id}">${t.teacher_name}${t.teacher_program ? ' · ' + t.teacher_program : ''}</option>`
+            ).join('');
+    } catch (err) {
+        console.error('loadSubjectTeacherPicker', err);
+    }
+}
+
+/** Called when the teacher picker changes */
+async function onSubjectTeacherChange() {
+    const picker = document.getElementById('subjectTeacherPicker');
+    _saSubjectTeacherId   = picker.value || null;
+    _saSubjectTeacherName = picker.options[picker.selectedIndex]?.text || '';
+
+    const addBtn = document.getElementById('addSubjectBtn');
+    if (!_saSubjectTeacherId) {
+        if (addBtn) addBtn.style.display = 'none';
+        document.getElementById('subjectsList').innerHTML = '';
+        return;
+    }
+    if (addBtn) addBtn.style.display = '';
+    await renderSubjectsForTeacher();
+}
+
+/** Render subject cards for the selected teacher */
+async function renderSubjectsForTeacher() {
+    if (!_saSubjectTeacherId) return;
+    try {
+        const res  = await apiFetch(`/super_admin/class/get_subjects/${_saSubjectTeacherId}`);
+        const data = await res.json();
+        if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+
+        const list = document.getElementById('subjectsList');
+        if (!data.content || data.content.length === 0) {
+            list.innerHTML = '<p style="font-size:13px;color:#888;padding:8px 0;">No subjects yet for this teacher.</p>';
+            return;
+        }
+
+        list.innerHTML = data.content.map(s => `
+            <div class="program-card">
+                <div class="program-name">${s.subject_name}</div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <button class="sa-manage-class-btn"
+                        data-tooltip="Manage students enrolled in this subject"
+                        onclick="openSaManageClassModal(${s.subject_id}, '${s.subject_name.replace(/'/g, "\\'")}')">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                        Manage Class
+                    </button>
+                    <button class="delete-btn" data-tooltip="Delete this subject"
+                        onclick="deleteSaSubject(${s.subject_id}, '${s.subject_name.replace(/'/g, "\\'")}')">
+                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('renderSubjectsForTeacher', err);
+    }
+}
+
+function openAddSubjectModal() {
+    document.getElementById('addSubjectModal').classList.add('active');
+    const input = document.getElementById('subjectNameInput');
+    input.value = '';
+    input.focus();
+}
+
+function closeAddSubjectModal() {
+    document.getElementById('addSubjectModal').classList.remove('active');
+}
+
+async function addSubjectForTeacher() {
+    if (!_saSubjectTeacherId) return;
+    const input = document.getElementById('subjectNameInput');
+    const subjectName = input.value.trim();
+    if (!subjectName) return Swal.fire({ icon: 'warning', title: 'Missing Input', text: 'Please enter a subject name.' });
+
+    showLoading();
+    try {
+        const res  = await apiFetch(`/super_admin/class/add_subject/${_saSubjectTeacherId}`, {
+            method: 'POST',
+            body: JSON.stringify({ subject_name: subjectName })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to add subject.');
+        input.value = '';
+        closeAddSubjectModal();
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Subject Added', showConfirmButton: false, timer: 1500 });
+        renderSubjectsForTeacher();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+async function deleteSaSubject(subjectId, subjectName) {
+    const result = await Swal.fire({
+        title: 'Delete Subject?',
+        text: `Are you sure you want to delete "${subjectName}"? This cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it'
+    });
+    if (!result.isConfirmed) return;
+
+    showLoading();
+    try {
+        const res  = await apiFetch(`/super_admin/class/delete_subject/${subjectId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to delete subject.');
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Subject Deleted', showConfirmButton: false, timer: 1500 });
+        renderSubjectsForTeacher();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+// ============================================================
+// MANAGE CLASS MODAL (super admin)
+// ============================================================
+
+let _saManageClassSubjectId   = null;
+let _saManageClassSubjectName = '';
+
+async function openSaManageClassModal(subjectId, subjectName) {
+    _saManageClassSubjectId   = subjectId;
+    _saManageClassSubjectName = subjectName;
+
+    document.getElementById('saManageClassTitle').textContent = `Manage Class — ${subjectName}`;
+    document.getElementById('saManageClassModal').style.display = 'flex';
+
+    await refreshSaManageClassLists();
+}
+
+function closeSaManageClassModal() {
+    document.getElementById('saManageClassModal').style.display = 'none';
+    _saManageClassSubjectId   = null;
+    _saManageClassSubjectName = '';
+}
+
+async function refreshSaManageClassLists() {
+    if (!_saSubjectTeacherId || !_saManageClassSubjectId) return;
+
+    try {
+        const [rosterRes, allRes] = await Promise.all([
+            apiFetch(`/super_admin/class/subject_class_list/${_saSubjectTeacherId}/${_saManageClassSubjectId}`),
+            apiFetch(`/super_admin/class/roster/${_saSubjectTeacherId}`)
+        ]);
+        const rosterData = await rosterRes.json();
+        const allData    = await allRes.json();
+
+        const roster      = rosterData?.content  || [];
+        const allStudents = allData?.content      || [];
+        const rosterIds   = new Set(roster.map(r => r.student_id));
+
+        // ── Enrolled list ──
+        const enrolledEl = document.getElementById('saManageClassEnrolled');
+        enrolledEl.innerHTML = roster.length
+            ? roster.map(s => {
+                const mid  = s.student_middlename ? s.student_middlename.charAt(0) + '. ' : '';
+                const name = `${s.student_firstname} ${mid}${s.student_lastname}`;
+                return `
+                <div class="sa-mcl-row" id="sa-mcl-enrolled-${s.id}">
+                    <div class="sa-mcl-info">
+                        <span class="sa-mcl-name">${name}</span>
+                        <span class="sa-mcl-meta">${s.student_id_number} · ${s.student_year_level}</span>
+                    </div>
+                    <button class="sa-mcl-remove-btn" onclick="saRemoveFromClassList(${s.id})">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                        Remove
+                    </button>
+                </div>`;
+            }).join('')
+            : `<div style="color:#999;font-size:0.82rem;padding:12px 0;text-align:center;">No students enrolled yet.</div>`;
+
+        // ── Available list (not yet enrolled in this subject) ──
+        const availableEl = document.getElementById('saManageClassAvailable');
+        const available   = allStudents.filter(s => !rosterIds.has(s.student_id));
+        availableEl.innerHTML = available.length
+            ? available.map(s => {
+                const mid  = s.student_middlename ? s.student_middlename.charAt(0) + '. ' : '';
+                const name = `${s.student_firstname} ${mid}${s.student_lastname}`;
+                return `
+                <div class="sa-mcl-row" id="sa-mcl-available-${s.student_id}">
+                    <div class="sa-mcl-info">
+                        <span class="sa-mcl-name">${name}</span>
+                        <span class="sa-mcl-meta">${s.student_id_number} · ${s.student_year_level}</span>
+                    </div>
+                    <button class="sa-mcl-add-btn" onclick="saAddToClassList(${s.student_id})">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add
+                    </button>
+                </div>`;
+            }).join('')
+            : `<div style="color:#999;font-size:0.82rem;padding:12px 0;text-align:center;">All registered students are enrolled.</div>`;
+
+        // ── Live search ──
+        const searchEl = document.getElementById('saManageClassSearch');
+        if (searchEl) {
+            searchEl.oninput = function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#saManageClassAvailable .sa-mcl-row').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+                });
+            };
+        }
+    } catch (err) {
+        console.error('refreshSaManageClassLists', err);
+    }
+}
+
+async function saAddToClassList(studentId) {
+    try {
+        const res  = await apiFetch('/super_admin/class/subject_class_list/add', {
+            method: 'POST',
+            body: JSON.stringify({
+                teacher_id: _saSubjectTeacherId,
+                subject_id: _saManageClassSubjectId,
+                student_id: studentId
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Student added!', showConfirmButton: false, timer: 1200 });
+        await refreshSaManageClassLists();
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+async function saRemoveFromClassList(id) {
+    try {
+        const res  = await apiFetch(`/super_admin/class/subject_class_list/remove/${id}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ teacher_id: _saSubjectTeacherId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Student removed.', showConfirmButton: false, timer: 1200 });
+        await refreshSaManageClassLists();
+    } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error', text: err.message });
     }
 }
@@ -1885,6 +2153,17 @@ function initEventListeners() {
     });
     document.getElementById('addYearLevelModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeAddYearLevelModal();
+    });
+    document.getElementById('addSubjectModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeAddSubjectModal();
+    });
+    document.getElementById('saManageClassModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeSaManageClassModal();
+    });
+
+    // Enter key for subject name input
+    document.getElementById('subjectNameInput')?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addSubjectForTeacher();
     });
 
     document.getElementById('searchLoginLogs')?.addEventListener('input', applyLoginLogFilters);

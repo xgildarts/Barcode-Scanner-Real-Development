@@ -38,18 +38,18 @@
     overflow: hidden;
     /* Double ring */
     box-shadow:
-        0 0 0 3px rgba(255,255,255,0.6),
-        0 0 0 7px rgba(255,255,255,0.12),
-        0 8px 24px rgba(0,0,0,0.3);
+    0 0 0 3px rgba(255,255,255,0.6),
+    0 0 0 7px rgba(255,255,255,0.12),
+    0 8px 24px rgba(0,0,0,0.3);
     transition: box-shadow 0.25s ease, transform 0.25s ease;
     cursor: pointer;
 }
 
 .avatar:hover {
     box-shadow:
-        0 0 0 3px #ffffff,
-        0 0 0 7px rgba(255,255,255,0.25),
-        0 10px 28px rgba(0,0,0,0.4);
+    0 0 0 3px #ffffff,
+    0 0 0 7px rgba(255,255,255,0.25),
+    0 10px 28px rgba(0,0,0,0.4);
     transform: scale(1.03);
 }
 
@@ -280,20 +280,24 @@
         padding: 0 16px 16px;
     }
 }
+
 /* ── Dark mode ── */
 [data-theme="dark"] .profile-section {
     background: linear-gradient(160deg, #1a2f2f 0%, #0f1c1c 100%) !important;
 }
+
 [data-theme="dark"] .profile-name  { color: #e0eaf0 !important; }
 [data-theme="dark"] .profile-email { color: #5a8a8a !important; }
 [data-theme="dark"] .camera-badge  {
     background: #1e2f2f !important;
     border-color: #7ecece !important;
 }
+
 [data-theme="dark"] .camera-badge svg { fill: #7ecece !important; }
 [data-theme="dark"] .edit-profile-btn {
     background: rgba(126,206,206,0.1) !important;
     border-color: rgba(126,206,206,0.3) !important;
     color: #7ecece !important;
 }
+
 [data-theme="dark"] .edit-profile-btn svg { fill: #7ecece !important; }

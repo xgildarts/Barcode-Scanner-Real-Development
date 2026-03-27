@@ -41,6 +41,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     const convAvatarEl  = document.getElementById('chatConvAvatar')
     const messagesEl    = document.getElementById('chatMessages')
     const chatInput       = document.getElementById('chatInput')
+    let   _pastedFile     = null   // holds clipboard-pasted image
     const pinBar          = document.getElementById('chatPinBar')
     const pinBarText      = document.getElementById('chatPinBarText')
     const pinnedPanel     = document.getElementById('chatPinnedPanel')
@@ -295,8 +296,18 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         if (!_convContact || !chatInput) return
         const content  = chatInput.value.trim()
         const fileInput = document.getElementById('chatFileInput')
-        const file     = fileInput?.files[0]
+        const file     = fileInput?.files[0] || _pastedFile
         if (!content && !file) return
+
+        // Hard cap — safety net even if preview check was bypassed
+        if (file && file.size > 20 * 1024 * 1024) {
+            const sizeMB = (file.size / 1024 / 1024).toFixed(1)
+            const prev = document.getElementById('chatFilePreview')
+            if (prev) prev.innerHTML = `<div class="chat-file-preview-item error">⚠️ File too large (${sizeMB}MB). Max 20MB.</div>`
+            if (fileInput) fileInput.value = ''
+            _pastedFile = null
+            return
+        }
 
         // Handle edit mode
         if (_editingMsgId) {
@@ -313,6 +324,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         chatInput.value = ''
         chatInput.style.height = 'auto'
         if (fileInput) fileInput.value = ''
+        _pastedFile = null
         clearFilePreview()
 
         const formData = new FormData()
@@ -322,11 +334,80 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         if (content) formData.append('content', content)
         if (file)    formData.append('file', file)
 
-        await fetch(`${endpoint}/messages/send`, {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + getToken() },
-            body: formData
-        })
+        // Show sending indicator bubble
+        const msgList = document.getElementById('chatMessages')
+        const sendingBubble = document.createElement('div')
+        sendingBubble.id = 'chatSendingBubble'
+        sendingBubble.className = 'chat-msg sent'
+
+        const isImage = file && file.type.startsWith('image/')
+
+        if (isImage) {
+            // For images: show thumbnail with spinner overlay immediately using FileReader
+            const objectUrl = URL.createObjectURL(file)
+            sendingBubble.innerHTML = `
+                <div class="chat-bubble chat-sending-bubble chat-sending-img-bubble">
+                    ${content ? `<div class="chat-sending-caption">${escHtml(content)}</div>` : ''}
+                    <div class="chat-sending-img-wrap">
+                        <img src="${objectUrl}" class="chat-sending-img" alt="${escHtml(file.name)}">
+                        <div class="chat-sending-img-overlay">
+                            <div class="chat-sending-spinner"></div>
+                        </div>
+                    </div>
+                    <div class="chat-sending-status">
+                        <div class="chat-sending-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="chat-sending-label">Sending…</span>
+                    </div>
+                </div>`
+            if (msgList) {
+                msgList.appendChild(sendingBubble)
+                msgList.scrollTop = msgList.scrollHeight
+            }
+
+            // Let the browser paint the bubble before the upload blocks the thread
+            await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)))
+
+            await fetch(`${endpoint}/messages/send`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + getToken() },
+                body: formData
+            })
+
+            URL.revokeObjectURL(objectUrl)
+        } else {
+            // For text / non-image files: show name + animated dots
+            const fileIcon = file ? `<div class="chat-sending-file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    <span>${escHtml(file.name)}</span>
+                </div>` : `<span>${escHtml(content)}</span>`
+            sendingBubble.innerHTML = `
+                <div class="chat-bubble chat-sending-bubble">
+                    ${fileIcon}
+                    <div class="chat-sending-status">
+                        <div class="chat-sending-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="chat-sending-label">Sending…</span>
+                    </div>
+                </div>`
+            if (msgList) {
+                msgList.appendChild(sendingBubble)
+                msgList.scrollTop = msgList.scrollHeight
+            }
+
+            // Let the browser paint the bubble before the upload blocks the thread
+            await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)))
+
+            await fetch(`${endpoint}/messages/send`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + getToken() },
+                body: formData
+            })
+        }
+
+        sendingBubble.remove()
         await loadMessages()
     }
 
@@ -346,14 +427,14 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         let items = ''
         if (!isUnsent) {
             if (isSent) {
-                items += `<div class="chat-ctx-item" onclick="doEdit(${msgId})">✏️ Edit</div>`
+                items += `<div class="chat-ctx-item" onclick="doEdit(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</div>`
             }
-            items += `<div class="chat-ctx-item" onclick="doPin(${msgId})">📌 Pin</div>`
-            items += `<div class="chat-ctx-item" onclick="doForward(${msgId})">↪️ Forward</div>`
+            items += `<div class="chat-ctx-item" onclick="doPin(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg> Pin</div>`
+            items += `<div class="chat-ctx-item" onclick="doForward(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg> Forward</div>`
             items += `<div class="chat-ctx-divider"></div>`
-            items += `<div class="chat-ctx-item chat-ctx-danger" onclick="doDeleteForMe(${msgId})">🗑️ Delete for me</div>`
+            items += `<div class="chat-ctx-item chat-ctx-danger" onclick="doDeleteForMe(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Delete for me</div>`
             if (isSent) {
-                items += `<div class="chat-ctx-item chat-ctx-danger" onclick="doUnsend(${msgId})">❌ Delete for everyone</div>`
+                items += `<div class="chat-ctx-item chat-ctx-danger" onclick="doUnsend(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg> Delete for everyone</div>`
             }
         }
 
@@ -541,6 +622,103 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             chatInput.style.height = 'auto'
             chatInput.style.height = Math.min(chatInput.scrollHeight, 80) + 'px'
         })
+
+        // ── Ctrl+V / paste image from clipboard ──────────────
+        chatInput.addEventListener('paste', e => {
+            const items = e.clipboardData?.items
+            if (!items) return
+            for (const item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    e.preventDefault()
+                    const file = item.getAsFile()
+                    if (!file) return
+                    setPastedFile(file)
+                    return
+                }
+            }
+        })
+
+        // ── Right-click context menu with Paste option ────────
+        chatInput.addEventListener('contextmenu', async e => {
+            // Only intercept if clipboard might have an image
+            // We show our custom menu always so user can paste text too
+            try {
+                const clipItems = await navigator.clipboard.read().catch(() => null)
+                if (!clipItems) return // browser denied — fall back to native
+                const hasImage = clipItems.some(item => item.types.some(t => t.startsWith('image/')))
+                if (!hasImage) return // no image in clipboard — use native menu
+                e.preventDefault()
+
+                // Remove any existing custom menu
+                document.getElementById('chatPasteMenu')?.remove()
+
+                const menu = document.createElement('div')
+                menu.id = 'chatPasteMenu'
+                menu.className = 'chat-paste-menu'
+                menu.innerHTML = `
+                    <div class="chat-paste-menu-item" id="chatPasteMenuItem">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="2" width="6" height="4" rx="1"/>
+                            <path d="M9 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2"/>
+                        </svg>
+                        Paste Image
+                    </div>`
+
+                menu.style.left = e.clientX + 'px'
+                menu.style.top  = e.clientY + 'px'
+                document.body.appendChild(menu)
+
+                document.getElementById('chatPasteMenuItem').addEventListener('click', async () => {
+                    menu.remove()
+                    try {
+                        const items = await navigator.clipboard.read()
+                        for (const item of items) {
+                            const imageType = item.types.find(t => t.startsWith('image/'))
+                            if (imageType) {
+                                const blob = await item.getType(imageType)
+                                const ext  = imageType.split('/')[1] || 'png'
+                                const file = new File([blob], `screenshot.${ext}`, { type: imageType })
+                                setPastedFile(file)
+                                break
+                            }
+                        }
+                    } catch(err) { console.warn('Clipboard read failed:', err) }
+                })
+
+                // Close on outside click
+                setTimeout(() => {
+                    const close = (ev) => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close) } }
+                    document.addEventListener('click', close)
+                }, 0)
+            } catch(err) { /* fall back to native context menu */ }
+        })
+    }
+
+    function setPastedFile(file) {
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1)
+        const prev   = document.getElementById('chatFilePreview')
+        if (file.size > 20 * 1024 * 1024) {
+            if (prev) prev.innerHTML = `<div class="chat-file-preview-item error">⚠️ File too large (${sizeMB}MB). Max 20MB.</div>`
+            return
+        }
+        _pastedFile = file
+        // Show image thumbnail preview
+        const url = URL.createObjectURL(file)
+        if (prev) {
+            prev.innerHTML = `
+                <div class="chat-file-preview-item chat-file-preview-img-item">
+                    <img src="${url}" class="chat-file-preview-thumb" alt="screenshot">
+                    <span class="chat-file-preview-name">${escHtml(file.name)}</span>
+                    <span class="chat-file-preview-size">${sizeMB}MB</span>
+                    <button class="chat-file-remove" id="chatPasteRemove">×</button>
+                </div>`
+            document.getElementById('chatPasteRemove')?.addEventListener('click', () => {
+                URL.revokeObjectURL(url)
+                _pastedFile = null
+                prev.innerHTML = ''
+            })
+        }
+        chatInput?.focus()
     }
 
     document.getElementById('chatSendBtn')?.addEventListener('click', sendMessage)
@@ -637,8 +815,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         if (!file) { prev.innerHTML = ''; return }
 
         const sizeMB = (file.size / 1024 / 1024).toFixed(1)
-        if (file.size > 100 * 1024 * 1024) {
-            prev.innerHTML = `<div class="chat-file-preview-item error">⚠️ File too large (${sizeMB}MB). Max 100MB.</div>`
+        if (file.size > 20 * 1024 * 1024) {
+            prev.innerHTML = `<div class="chat-file-preview-item error">⚠️ File too large (${sizeMB}MB). Max 20MB.</div>`
             e.target.value = ''
             return
         }

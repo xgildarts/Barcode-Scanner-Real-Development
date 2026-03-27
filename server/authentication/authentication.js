@@ -173,4 +173,46 @@ router.post('/admin_login', async (req, res) => {
 
 
 
+// Student Contact Request — issues a scoped guest token so a locked-out student
+// can message Admin / Super Admin without a full login.
+router.post('/student_contact_request', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ ok: false, message: 'Email is required.' });
+
+    const db = require('../configuration/db');
+    db.execute(
+        'SELECT student_id, student_firstname, student_lastname FROM student_accounts WHERE student_email = ? LIMIT 1',
+        [email],
+        (err, rows) => {
+            if (err) return res.status(500).json({ ok: false, message: 'Server error.' });
+            if (!rows || rows.length === 0) return res.status(404).json({ ok: false, message: 'No account found for this email.' });
+
+            const student = rows[0];
+            const jwt = require('jsonwebtoken');
+            const JWT_SECRET = process.env.TOKEN_KEYWORD;
+
+            // Scoped guest token — valid 2 hours, role marks it as contact-only
+            const guestToken = jwt.sign(
+                {
+                    student_id: student.student_id,
+                    student_firstname: student.student_firstname,
+                    student_lastname: student.student_lastname,
+                    student_email: email,
+                    role: 'student',
+                    scope: 'contact_only'
+                },
+                JWT_SECRET,
+                { expiresIn: '2h' }
+            );
+
+            res.json({
+                ok: true,
+                guest_token: guestToken,
+                student_id: student.student_id,
+                student_name: `${student.student_firstname} ${student.student_lastname}`
+            });
+        }
+    );
+});
+
 module.exports = router;

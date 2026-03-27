@@ -1183,6 +1183,7 @@ async function checkStudentIfAlreadyExistsInAttendance(student_id_number, teache
             `SELECT 1 FROM attendance_record 
              WHERE student_id_number = ? 
              AND teacher_barcode_scanner_serial_number = ?
+             AND DATE(attendance_date) = CURDATE()
              AND subject = (
                  SELECT subject_name_set FROM subject_and_year_level_setter
                  WHERE teacher_barcode_scanner_serial_number = ?

@@ -387,3 +387,165 @@ student.put('/messages/edit/:id', async (req, res) => {
         res.json({ ok: true })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
+
+// ── Contact-Only Guest Messaging (device-locked-out students) ──────────────────
+// Uses the scoped guest_token from /authentication/student_contact_request
+
+function verifyGuestToken(req) {
+    const token = services.removeBearer(req.headers['authorization']);
+    const tok = services.verifyToken(token);
+    if (!tok || tok.scope !== 'contact_only') return null;
+    return tok;
+}
+
+// GET /api/v1/students/contact/admins — list all admins and super admins
+student.get('/contact/admins', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+
+        const db = require('../configuration/db');
+
+        const admins = await new Promise((resolve, reject) => {
+            db.execute(
+                "SELECT admin_id AS id, admin_name AS name, 'admin' AS role, admin_profile_picture AS pic FROM admin_accounts",
+                [],
+                (err, rows) => err ? reject(err) : resolve(rows)
+            );
+        });
+
+        const superAdmins = await new Promise((resolve, reject) => {
+            db.execute(
+                "SELECT super_admin_id AS id, super_admin_name AS name, 'super_admin' AS role, super_admin_profile_picture AS pic FROM super_admin_accounts",
+                [],
+                (err, rows) => err ? reject(err) : resolve(rows)
+            );
+        });
+
+        res.json({ ok: true, contacts: [...admins, ...superAdmins] });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// GET /api/v1/students/contact/conversation?contact_id=&contact_role=
+student.get('/contact/conversation', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+
+        const { contact_id, contact_role } = req.query;
+        if (!contact_id || !contact_role) return res.status(400).json({ ok: false, message: 'contact_id and contact_role are required.' });
+
+        await services.markMessagesRead(tok.student_id, 'student', parseInt(contact_id), contact_role);
+        const messages = await services.getConversation(tok.student_id, 'student', parseInt(contact_id), contact_role, 100);
+        res.json({ ok: true, messages });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// POST /api/v1/students/contact/send
+student.post('/contact/send', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+
+        const { receiver_id, receiver_role, receiver_name, content } = req.body;
+        if (!content?.trim()) return res.status(400).json({ ok: false, message: 'Message cannot be empty.' });
+        if (!['admin', 'super_admin'].includes(receiver_role)) return res.status(403).json({ ok: false, message: 'You can only message admin or super admin.' });
+
+        const senderName = `${tok.student_firstname} ${tok.student_lastname}`;
+        const id = await services.sendMessage(
+            tok.student_id, 'student', senderName,
+            parseInt(receiver_id), receiver_role, receiver_name,
+            content.trim(), null, null, null, null, null
+        );
+        res.json({ ok: true, id });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// POST /api/v1/students/contact/send — file upload support
+const uploadContactFile = require('multer')({
+    storage: require('multer').diskStorage({
+        destination: (req, file, cb) => {
+            const dir = require('path').join(__dirname, '../../uploads/message_files/');
+            require('fs').mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+            const unique = Date.now() + '-' + Math.round(Math.random()*1e9);
+            cb(null, unique + '-' + file.originalname);
+        }
+    }),
+    limits: { fileSize: 20 * 1024 * 1024 }
+});
+
+// Override the basic /contact/send with file-upload capable one
+// (the previous plain-JSON one stays as fallback but this handles multipart)
+student.post('/contact/send-file', uploadContactFile.single('file'), async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+
+        const { receiver_id, receiver_role, receiver_name, content } = req.body;
+        if (!content?.trim() && !req.file) return res.status(400).json({ ok: false, message: 'Message cannot be empty.' });
+        if (!['admin', 'super_admin'].includes(receiver_role)) return res.status(403).json({ ok: false, message: 'You can only message admin or super admin.' });
+
+        const senderName = `${tok.student_firstname} ${tok.student_lastname}`;
+        const fileUrl  = req.file ? `/api/v1/uploads/message_files/${req.file.filename}` : null;
+        const fileName = req.file ? req.file.originalname : null;
+        const fileType = req.file ? req.file.mimetype : null;
+        const id = await services.sendMessage(
+            tok.student_id, 'student', senderName,
+            parseInt(receiver_id), receiver_role, receiver_name,
+            content?.trim() || null, fileUrl, fileName, fileType, null, null
+        );
+        res.json({ ok: true, id });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// PUT /api/v1/students/contact/edit/:id
+student.put('/contact/edit/:id', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+        const { content } = req.body;
+        await services.editMessage(parseInt(req.params.id), tok.student_id, 'student', content);
+        res.json({ ok: true });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+// DELETE /api/v1/students/contact/delete-for-me/:id
+student.delete('/contact/delete-for-me/:id', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+        await services.deleteMessageForMe(parseInt(req.params.id), tok.student_id, 'student');
+        res.json({ ok: true });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+// DELETE /api/v1/students/contact/unsend/:id
+student.delete('/contact/unsend/:id', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+        await services.unsendMessage(parseInt(req.params.id), tok.student_id, 'student');
+        res.json({ ok: true });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});
+
+// POST /api/v1/students/contact/pin/:id
+student.post('/contact/pin/:id', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req);
+        if (!tok) return res.status(401).json({ ok: false, message: 'Invalid or insufficient token.' });
+        const msg = await services.pinMessage(parseInt(req.params.id), tok.student_id, 'student');
+        res.json({ ok: true, message: msg });
+    } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
+});

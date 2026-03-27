@@ -811,6 +811,80 @@ superAdmin.put('/class/set_location/:teacher_id', requireSuperAdmin, async (req,
     }
 })
 
+// ============================================================
+// SUBJECT MANAGEMENT (on behalf of a teacher)
+// ============================================================
+
+// Add a subject for a teacher
+superAdmin.post('/class/add_subject/:teacher_id', requireSuperAdmin, async (req, res) => {
+    const { subject_name } = req.body
+    if (!subject_name) return res.status(400).json({ ok: false, message: 'subject_name is required.' })
+    try {
+        const teacher = await getTeacherSerial(req.params.teacher_id)
+        await services.addSubject(subject_name, teacher.teacher_id)
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'ADD_SUBJECT', 'Subject', teacher.teacher_id, subject_name, `SuperAdmin added subject: ${subject_name} for teacher: ${teacher.teacher_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        res.json({ ok: true, message: 'Subject added successfully!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Delete a subject for a teacher
+superAdmin.delete('/class/delete_subject/:subject_id', requireSuperAdmin, async (req, res) => {
+    try {
+        let subjectName = `Subject ID: ${req.params.subject_id}`
+        try {
+            const all = await services.getStudentSubjects(null) // fallback name lookup
+        } catch (_) {}
+        await services.deleteSubject(req.params.subject_id)
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'DELETE_SUBJECT', 'Subject', null, subjectName, `SuperAdmin deleted subject ID: ${req.params.subject_id}`, req.ip, req.headers['x-device-info'] || req.headers['user-agent'])
+        res.json({ ok: true, message: 'Subject deleted successfully!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// ============================================================
+// SUBJECT CLASS LIST — enroll/remove students per subject
+// ============================================================
+
+// Get enrolled students for a subject (scoped to a teacher's serial)
+superAdmin.get('/class/subject_class_list/:teacher_id/:subject_id', requireSuperAdmin, async (req, res) => {
+    try {
+        const teacher = await getTeacherSerial(req.params.teacher_id)
+        const result = await services.getSubjectClassList(req.params.subject_id, teacher.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, content: result })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Enroll a student into a subject
+superAdmin.post('/class/subject_class_list/add', requireSuperAdmin, async (req, res) => {
+    const { teacher_id, subject_id, student_id } = req.body
+    if (!teacher_id || !subject_id || !student_id) return res.status(400).json({ ok: false, message: 'teacher_id, subject_id, and student_id are required.' })
+    try {
+        const teacher = await getTeacherSerial(teacher_id)
+        await services.addStudentToSubjectClassList(subject_id, student_id, teacher.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, message: 'Student enrolled in subject!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Remove a student from a subject
+superAdmin.delete('/class/subject_class_list/remove/:id', requireSuperAdmin, async (req, res) => {
+    const { teacher_id } = req.body
+    if (!teacher_id) return res.status(400).json({ ok: false, message: 'teacher_id is required.' })
+    try {
+        const teacher = await getTeacherSerial(teacher_id)
+        await services.removeStudentFromSubjectClassList(req.params.id, teacher.teacher_barcode_scanner_serial_number)
+        res.json({ ok: true, message: 'Student removed from subject!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
 // Manual attendance entry for a teacher's class
 superAdmin.post('/class/manual_attendance/:teacher_id', requireSuperAdmin, async (req, res) => {
     const {

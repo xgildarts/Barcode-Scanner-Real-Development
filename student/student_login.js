@@ -239,6 +239,8 @@ document.getElementById('loginForm').addEventListener('submit', async function (
 
             Swal.fire({ icon: 'success', title: 'Login Successful', text: `Welcome back, ${data.student_firstname}!`, confirmButtonColor: '#3085d6' })
                 .then(() => window.location.href = 'student_dashboard.html');
+        } else if (data.message && data.message.includes('device is not registered')) {
+            showDeviceNotRegisteredAlert(email);
         } else {
             Swal.fire({ icon: 'error', title: 'Login Failed', text: data.message || 'Invalid email or password.' });
         }
@@ -312,21 +314,53 @@ async function handleGoogleLogin(response) {
             });
             window.location.href = 'student_dashboard.html';
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
-                text: data.message || 'No account found. Please register first.',
-                confirmButtonText: data.message === 'Device is not registered to this account!' ? 'OK' : 'Register',
-                showCancelButton: data.message !== 'Device is not registered to this account!',
-                cancelButtonText: 'Cancel',
-                confirmButtonColor: '#1a4545'
-            }).then(result => {
-                if (result.isConfirmed && data.message !== 'Device is not registered to this account!') {
-                    window.location.href = 'student_registration.html';
-                }
-            });
+            if (data.message && data.message.includes('device is not registered')) {
+                showDeviceNotRegisteredAlert(email);
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Failed',
+                    text: data.message || 'No account found. Please register first.',
+                    confirmButtonText: 'Register',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#1a4545'
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'student_registration.html';
+                    }
+                });
+            }
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Network Error', text: 'Please try again later.' });
     }
+}
+// ============================================================
+// DEVICE NOT REGISTERED — Contact Admin Alert
+// ============================================================
+function showDeviceNotRegisteredAlert(email) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Device Not Recognized',
+        html: `
+            <p style="margin-bottom:10px;color:#555;font-size:14px;">
+                Your account is <strong>not registered</strong> to this device.<br>
+                Please contact your administrator to reset your device binding.
+            </p>
+            <p style="font-size:13px;color:#888;">You can send a message directly to Admin or Super Admin below.</p>
+        `,
+        confirmButtonText: '💬 Chat Admin / Super Admin',
+        showCancelButton: true,
+        cancelButtonText: 'Close',
+        confirmButtonColor: '#1a4545',
+        cancelButtonColor: '#aaa',
+        reverseButtons: false
+    }).then(result => {
+        if (result.isConfirmed) {
+            sessionStorage.setItem('contact_reason', 'device_not_registered');
+            sessionStorage.setItem('contact_email', email);
+            window.location.href = 'student_contact_admin.html';
+        }
+    });
 }
