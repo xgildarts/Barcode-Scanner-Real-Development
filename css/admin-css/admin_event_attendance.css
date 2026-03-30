@@ -55,19 +55,11 @@
    controls-section (~120px) + header bar (~60px) = ~180px
    Add extra for the set-event filters row (~52px)
    ============================================================ */
-#eventAttendance .table-container {
-    max-height: calc(100vh - 240px);
-    overflow-y: auto;
-    overflow-x: auto;
+/* Event attendance — scoped table height */
+#eventAttendance .attendance-table tbody {
+    max-height: calc(100vh - 300px);
 }
 
-#eventAttendance .attendance-table {
-    table-layout: fixed;
-    width: 100%;
-}
-
-#eventAttendance .attendance-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 10;
+@media (max-width: 1025px) {
+    #eventAttendance .attendance-table tbody { max-height: none; }
 }

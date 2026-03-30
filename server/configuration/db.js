@@ -2,17 +2,40 @@ const mysql = require('mysql2')
 require('dotenv').config();
 
 const connection = mysql.createPool({
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    timezone: '+08:00',         // Philippine Standard Time (UTC+8)
-    dateStrings: true           // Return DATE/TIME columns as strings, not JS Date objects
-                                // Prevents UTC conversion shifting dates by -8 hours
+    host:              process.env.DB_HOST || 'localhost',
+    user:              process.env.DB_USERNAME,
+    password:          process.env.DB_PASSWORD,
+    database:          process.env.DB_NAME,
+    timezone:          '+08:00',
+    dateStrings:       true,
+    waitForConnections: true,
+    connectionLimit:   10,
+    queueLimit:        0,
+    enableKeepAlive:   true,
+    keepAliveInitialDelay: 10000
 })
 
 connection.getConnection((err, conn) => {
-    if(err) return console.log('Error: ' + err)
+    if (err) return console.error('[DB] Connection error:', err.message)
     console.log('Connected!')
+    conn.release()
+})
+
+// ── Prevent pool connection errors from crashing the process ──
+// ECONNRESET / PROTOCOL_CONNECTION_LOST are normal when MySQL
+// drops idle connections — the pool handles reconnection automatically
+connection.on('error', (err) => {
+    if (
+        err.code === 'ECONNRESET' ||
+        err.code === 'PROTOCOL_CONNECTION_LOST' ||
+        err.code === 'ENOTFOUND' ||
+        err.code === 'ETIMEDOUT' ||
+        err.fatal
+    ) {
+        console.warn('[DB] Pool connection lost, will reconnect automatically:', err.code)
+        return  // pool handles reconnection — don't crash
+    }
+    console.error('[DB] Unexpected pool error:', err)
 })
 
 module.exports = connection;

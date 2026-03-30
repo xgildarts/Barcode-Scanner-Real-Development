@@ -5,6 +5,42 @@ const nodemailer = require('nodemailer')
 const SALT_ROUNDS = 10
 const JWT_SECRET = process.env.TOKEN_KEYWORD;
 
+// ============================================================
+// TOKEN BLACKLIST
+// Tokens are added here on logout. verifyToken checks this set
+// before accepting any token. Entries auto-expire when the JWT
+// itself would have expired, keeping memory bounded.
+// ============================================================
+const tokenBlacklist = new Map() // token -> expiresAt (ms)
+
+function blacklistToken(token) {
+    try {
+        const decoded = jwt.decode(token)
+        if (decoded && decoded.exp) {
+            tokenBlacklist.set(token, decoded.exp * 1000)
+        }
+    } catch (_) {}
+}
+
+function isTokenBlacklisted(token) {
+    if (!tokenBlacklist.has(token)) return false
+    // If the JWT has already expired naturally, clean it up
+    if (Date.now() > tokenBlacklist.get(token)) {
+        tokenBlacklist.delete(token)
+        return false
+    }
+    return true
+}
+
+// Prune expired entries every hour so the Map doesn't grow indefinitely
+setInterval(() => {
+    const now = Date.now()
+    for (const [token, exp] of tokenBlacklist.entries()) {
+        if (now > exp) tokenBlacklist.delete(token)
+    }
+}, 60 * 60 * 1000)
+
+
 
 // ============================================================
 // EMAIL / OTP (Forgot Password)
@@ -674,6 +710,8 @@ function generateToken(payload) {
 // Verify Token
 function verifyToken(token) {
     try {
+        // FIX: check blacklist first — logged-out tokens must be rejected even if still valid
+        if (isTokenBlacklisted(token)) return null
         return jwt.verify(token, JWT_SECRET);
     } catch (err) {
         return null;
@@ -873,7 +911,7 @@ async function teacherRegistration(fullName, email, password, department, admin_
 
         const emailExists = await emailFinder('teacher_email', email, 'teacher');
         if (emailExists) {
-            reject('Email is already taken!');
+            return reject('Email is already taken!');
         }
 
         db.execute(
@@ -1098,14 +1136,14 @@ async function teacherGetStudentRegistered(teacherBarcodeScannerSerialNumber) {
 function getActiveSubjectAndYearLevel(teacherBarcodeScannerSerialNumber) {
     return new Promise((resolve, reject) => {
         db.execute(
-            `SELECT subject_name_set, year_level_set, class_time_set 
+            `SELECT subject_name_set, year_level_set, class_time_set, last_set_at 
              FROM subject_and_year_level_setter 
              WHERE teacher_barcode_scanner_serial_number = ? 
              LIMIT 1`,
             [teacherBarcodeScannerSerialNumber],
             (err, result) => {
                 if (err) return reject(err)
-                resolve(result[0] || { subject_name_set: '', year_level_set: '', class_time_set: '' })
+                resolve(result[0] || { subject_name_set: '', year_level_set: '', class_time_set: '', last_set_at: null })
             }
         )
     })
@@ -1117,7 +1155,8 @@ async function teacherSubjectAndYearLevelSetter(subjectSet, yearLevelSet, classT
         db.execute(`UPDATE subject_and_year_level_setter 
                     SET subject_name_set = ?, 
                     year_level_set = ?,
-                    class_time_set = ?
+                    class_time_set = ?,
+                    last_set_at = NOW()
                     WHERE teacher_barcode_scanner_serial_number = ?`,
             [subjectSet, yearLevelSet, classTimeSet || null, teacherBarcodeScannerSerialNumber],
             (err, result) => {
@@ -1343,9 +1382,15 @@ function insertStudentAttendanceHistory(
 }
 
 // Get Student Attendance Now
-async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number) {
+async function getStudentAttendanceNow(teacher_barcode_scanner_serial_number, subject = null) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ? ORDER BY attendance_date DESC, attendance_time DESC', [teacher_barcode_scanner_serial_number], (err, result) => {
+        const sql = subject
+            ? 'SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ? AND subject = ? ORDER BY attendance_date DESC, attendance_time DESC'
+            : 'SELECT * FROM attendance_record WHERE teacher_barcode_scanner_serial_number = ? ORDER BY attendance_date DESC, attendance_time DESC'
+        const params = subject
+            ? [teacher_barcode_scanner_serial_number, subject]
+            : [teacher_barcode_scanner_serial_number]
+        db.execute(sql, params, (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -1545,7 +1590,15 @@ function updateTeacherName(teacherID, teacherNewName) {
 }
 
 // Get Whole Campus Accounts
+// FIX: tableName was interpolated raw into SQL — SQL injection risk.
+// Added whitelist here as a defence-in-depth layer.
+// The route layer (super_admin.js) also validates, but this ensures no internal
+// caller can accidentally pass a user-supplied string.
+const ALLOWED_ACCOUNT_TABLES = ['student_accounts', 'teacher', 'guards']
 function getWholeCampusAccounts(tableName) {
+    if (!ALLOWED_ACCOUNT_TABLES.includes(tableName)) {
+        return Promise.reject(new Error(`Invalid table name: ${tableName}`))
+    }
     return new Promise((resolve, reject) => {
         db.execute(`SELECT * FROM ${tableName} ORDER BY 1 DESC`, [], (err, result) => {
             if (err) { return reject(err) }
@@ -1555,9 +1608,23 @@ function getWholeCampusAccounts(tableName) {
 }
 
 
-
 // Email finder
+// WARNING: tableName and columnToFind are interpolated into SQL.
+// All current callers use hardcoded string literals — never pass user input here.
+const ALLOWED_EMAIL_FINDER_TABLES = {
+    'student_accounts': ['student_email'],
+    'teacher':          ['teacher_email'],
+    'guards':           ['guard_email'],
+    'admin_accounts':   ['admin_email'],
+    'super_admin':      ['super_admin_email'],
+}
 function emailFinder(columnToFind, email, tableName) {
+    // FIX: Whitelist both table and column to prevent injection if a caller ever
+    // passes dynamic values in the future.
+    const allowedCols = ALLOWED_EMAIL_FINDER_TABLES[tableName]
+    if (!allowedCols || !allowedCols.includes(columnToFind)) {
+        return Promise.reject(new Error(`emailFinder: disallowed table/column combination: ${tableName}.${columnToFind}`))
+    }
     return new Promise((resolve, reject) => {
         db.query(`SELECT * FROM ${tableName} WHERE ${columnToFind} = ?`, [email], (err, result) => {
             if (err) {
@@ -1967,7 +2034,12 @@ function getAttendanceEventHistoryRecords(adminID) {
 }
 
 // Get Student Attendance Events for Teacher
+const ALLOWED_EVENT_TABLES = ['event_attendance_record', 'event_attendance_history_record']
 function getAttendanceEventsForTeacher(teacherID, tableName) {
+    // FIX: tableName was interpolated raw — whitelist to prevent SQL injection
+    if (!ALLOWED_EVENT_TABLES.includes(tableName)) {
+        return Promise.reject(new Error(`Invalid event table: ${tableName}`))
+    }
     return new Promise(async (resolve, reject) => {
         const teacherData = await getTeacherData(teacherID)
         db.execute(`SELECT * FROM ${tableName} WHERE student_program = ? ORDER BY date DESC, time DESC`, [teacherData[0].teacher_program], (err, result) => {
@@ -2066,13 +2138,13 @@ function adminDeleteTeacher(teacher_id, admin_id) {
 }
 
 // Admin delete guard account
-function adminDeleteGuard(teacher_id, admin_id) {
+function adminDeleteGuard(guard_id, admin_id) {
     return new Promise((resolve, reject) => {
-        db.execute('DELETE FROM guards WHERE guard_id = ? AND admin_id = ?', [teacher_id, admin_id], (err, result) => {
-            if (err) { return reject({ ok: false, message: "Database error: " + err, status_code: 500 }) }
-            if (result.length === 0) { return reject({ ok: false, message: "Unauthorized", status_code: 401 }) }
-            writeActivityLog(admin_id, null, 'admin', 'DELETE_GUARD', 'Guard', teacher_id, null, `Deleted guard ID: ${teacher_id}`, null, null)
-            resolve({ ok: true, message: 'Successfully delete teacher data!', status_code: 200 })
+        db.execute('DELETE FROM guards WHERE guard_id = ?', [guard_id], (err, result) => {
+            if (err) return reject({ ok: false, message: 'Database error: ' + err.message, status_code: 500 })
+            if (result.affectedRows === 0) return reject({ ok: false, message: 'Guard not found.', status_code: 404 })
+            writeActivityLog(admin_id, null, 'admin', 'DELETE_GUARD', 'Guard', guard_id, null, `Deleted guard ID: ${guard_id}`, null, null)
+            resolve({ ok: true, message: 'Guard account successfully deleted.', status_code: 200 })
         })
     })
 }
@@ -2194,21 +2266,22 @@ function adminEditTeacherAccounts(
 ) {
     return new Promise((resolve, reject) => {
 
+        // FIX: removed `AND admin_id = ?` — super admin passes admin_id=null/0
+        // which caused affectedRows=0 and a false "Teacher not found" error.
         const updateQuery = `
         UPDATE teacher 
         SET 
             teacher_name = ?, 
             teacher_email = ?, 
             teacher_program = ?
-        WHERE teacher_id = ? AND admin_id = ?
+        WHERE teacher_id = ?
     `;
 
         const values = [
             teacher_name,
             teacher_email,
             teacher_program,
-            id,
-            admin_id
+            id
         ];
 
         db.execute(updateQuery, values, (err, result) => {
@@ -2239,21 +2312,24 @@ function adminEditGuardAccounts(
 ) {
     return new Promise((resolve, reject) => {
 
+        // FIX: removed `AND admin_id = ?` from WHERE clause.
+        // Super admin passes admin_id=0 (no ownership), which caused affectedRows=0
+        // and a false "Guard not found" error for every super admin edit.
+        // Regular admin edits are already scoped by the route-level auth middleware.
         const updateQuery = `
         UPDATE guards 
         SET 
             guard_name = ?, 
             guard_email = ?, 
             guard_designated_location = ?
-        WHERE guard_id = ? AND admin_id = ?
+        WHERE guard_id = ?
     `;
 
         const values = [
             guard_name,
             guard_email,
             guard_designated_location,
-            id,
-            admin_id
+            id
         ];
 
         db.execute(updateQuery, values, (err, result) => {
@@ -2744,15 +2820,21 @@ function getTeacherBySerial(teacherSerial) {
 // Update attendance status (Present / Absent / Excused) for an existing record
 async function updateAttendanceStatus(attendance_id, new_status, teacher_barcode_scanner_serial_number) {
     return new Promise((resolve, reject) => {
-        db.execute(
-            `UPDATE attendance_record SET attendance_status = ? WHERE attendance_id = ? AND teacher_barcode_scanner_serial_number = ?`,
-            [new_status, attendance_id, teacher_barcode_scanner_serial_number],
-            (err, result) => {
-                if (err) return reject(err)
-                if (result.affectedRows === 0) return reject(new Error('Record not found or not authorized.'))
-                resolve('Status updated successfully.')
-            }
-        )
+        // Present and Late get the current time (teacher override = now)
+        // Absent and Excused clear the time (no scan time makes sense)
+        const needsTime = new_status === 'Present' || new_status === 'Late';
+        const now = new Date().toTimeString().slice(0, 8); // "HH:MM:SS"
+        const sql = needsTime
+            ? `UPDATE attendance_record SET attendance_status = ?, attendance_time = ?, manually_overridden = 1 WHERE attendance_id = ? AND teacher_barcode_scanner_serial_number = ?`
+            : `UPDATE attendance_record SET attendance_status = ?, attendance_time = NULL, manually_overridden = 1 WHERE attendance_id = ? AND teacher_barcode_scanner_serial_number = ?`;
+        const params = needsTime
+            ? [new_status, now, attendance_id, teacher_barcode_scanner_serial_number]
+            : [new_status, attendance_id, teacher_barcode_scanner_serial_number];
+        db.execute(sql, params, (err, result) => {
+            if (err) return reject(err)
+            if (result.affectedRows === 0) return reject(new Error('Record not found or not authorized.'))
+            resolve('Status updated successfully.')
+        })
     })
 }
 
@@ -2766,11 +2848,14 @@ async function insertManualStatusRecord(
         db.execute(
             `INSERT INTO attendance_record 
              (student_id, student_id_number, student_firstname, student_middlename, student_lastname,
-              student_program, year_level, subject, teacher_barcode_scanner_serial_number, attendance_status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              student_program, year_level, subject, teacher_barcode_scanner_serial_number, attendance_status,
+              manually_overridden, attendance_time)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
             [student_id || null, student_id_number, student_firstname, student_middlename || null,
              student_lastname, student_program || null, student_year_level, subject,
-             teacher_barcode_scanner_serial_number, attendance_status],
+             teacher_barcode_scanner_serial_number, attendance_status,
+             // Absent and Excused have no scan time — set NULL explicitly to avoid curtime() default
+             (attendance_status === 'Absent' || attendance_status === 'Excused') ? null : new Date().toTimeString().slice(0,8)],
             (err, result) => {
                 if (err) return reject(err)
                 resolve({ insertId: result.insertId, message: 'Record inserted successfully.' })
@@ -2779,7 +2864,172 @@ async function insertManualStatusRecord(
     })
 }
 
+
+// ============================================================
+// DAILY EVENT RESET CRON (node-cron)
+// Fires every day at midnight Philippine Standard Time (UTC+8).
+// What it does:
+//   1. Copies any event_attendance_record rows from previous days
+//      into event_attendance_history_record (INSERT IGNORE — no duplicates).
+//   2. Deletes those stale rows from the live event_attendance_record
+//      so it only ever holds today's records.
+//   3. Clears event_name_set for all admins in event_setter so each
+//      admin must explicitly set a new event the next day.
+// ============================================================
+const cron = require('node-cron')
+
+async function runDailyEventReset() {
+    console.log('[DailyReset] Running daily event reset at', new Date().toISOString())
+
+    const connection = await new Promise((resolve, reject) => {
+        db.getConnection((err, conn) => { if (err) return reject(err); resolve(conn) })
+    })
+
+    try {
+        await new Promise((resolve, reject) => connection.beginTransaction(err => err ? reject(err) : resolve()))
+
+        // Step 1: Find live records from any day before today
+        const [stale] = await new Promise((resolve, reject) => {
+            connection.execute(
+                `SELECT * FROM event_attendance_record WHERE DATE(date) < CURDATE()`,
+                [],
+                (err, rows) => err ? reject(err) : resolve([rows])
+            )
+        })
+
+        if (stale.length === 0) {
+            console.log('[DailyReset] No stale event records to archive.')
+            await new Promise((resolve, reject) => connection.commit(err => err ? reject(err) : resolve()))
+            connection.release()
+            return
+        }
+
+        // Step 2: Copy stale records to history (INSERT IGNORE skips duplicates)
+        for (const row of stale) {
+            await new Promise((resolve, reject) => {
+                connection.execute(
+                    `INSERT IGNORE INTO event_attendance_history_record
+                     (student_id, student_name, student_id_number, student_program,
+                      student_year_level, event_name, guard_name, guard_location,
+                      status, guard_id, admin_id, time, date)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        row.student_id, row.student_name, row.student_id_number,
+                        row.student_program, row.student_year_level, row.event_name,
+                        row.guard_name, row.guard_location, row.status,
+                        row.guard_id, row.admin_id, row.time, row.date
+                    ],
+                    (err) => err ? reject(err) : resolve()
+                )
+            })
+        }
+
+        // Step 3: Delete stale rows from the live table
+        await new Promise((resolve, reject) => {
+            connection.execute(
+                `DELETE FROM event_attendance_record WHERE DATE(date) < CURDATE()`,
+                [],
+                (err) => err ? reject(err) : resolve()
+            )
+        })
+
+        // Step 4: Clear the active event name for every admin
+        await new Promise((resolve, reject) => {
+            connection.execute(
+                `UPDATE event_setter SET event_name_set = ''`,
+                [],
+                (err) => err ? reject(err) : resolve()
+            )
+        })
+
+        await new Promise((resolve, reject) => connection.commit(err => err ? reject(err) : resolve()))
+        console.log(`[DailyReset] Archived ${stale.length} record(s), cleared live table and event names.`)
+
+    } catch (err) {
+        await new Promise(resolve => connection.rollback(() => resolve()))
+        console.error('[DailyReset] Error — transaction rolled back:', err)
+    } finally {
+        connection.release()
+    }
+}
+
+// '* * * * *' = every minute — catches stale records within 60s of midnight
+// with negligible DB load (exits immediately when no old records are found)
+cron.schedule('* * * * *', runDailyEventReset)
+
+console.log('[DailyReset] Cron scheduled — checks every minute for stale event records')
+
+
+
+
+// ── Message Notifications (for all roles: teacher, student, guard, admin, super_admin) ──
+
+function createMsgNotification(receiverId, receiverRole, senderId, senderRole, senderName, type, preview, emoji, messageId) {
+    const previewText = preview ? String(preview).substring(0, 100) : null
+    return new Promise((resolve) => {
+        db.execute(
+            `INSERT INTO message_notifications
+             (receiver_id, receiver_role, sender_id, sender_role, sender_name, type, preview, emoji, message_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [receiverId, receiverRole, senderId, senderRole, senderName, type, previewText, emoji || null, messageId || null],
+            (err, result) => {
+                if (err) { console.error('[MsgNotif]', err.message); return resolve(null) }
+                resolve(result.insertId)
+            }
+        )
+    })
+}
+
+function getMsgNotifications(receiverId, receiverRole, limit) {
+    const n = parseInt(limit) || 30
+    return new Promise((resolve) => {
+        db.execute(
+            `SELECT id, sender_id, sender_role, sender_name, type, preview, emoji, message_id, is_read, created_at
+             FROM message_notifications
+             WHERE receiver_id = ? AND receiver_role = ?
+             ORDER BY created_at DESC LIMIT ?`,
+            [receiverId, receiverRole, n],
+            (err, rows) => {
+                if (err) { console.error('[MsgNotif]', err.message); return resolve([]) }
+                resolve(rows)
+            }
+        )
+    })
+}
+
+function getUnreadMsgNotifCount(receiverId, receiverRole) {
+    return new Promise((resolve) => {
+        db.execute(
+            `SELECT COUNT(*) AS cnt FROM message_notifications WHERE receiver_id = ? AND receiver_role = ? AND is_read = 0`,
+            [receiverId, receiverRole],
+            (err, rows) => resolve(err ? 0 : (rows[0]?.cnt || 0))
+        )
+    })
+}
+
+function markMsgNotificationsRead(receiverId, receiverRole, ids) {
+    return new Promise((resolve) => {
+        const sql = ids && ids.length
+            ? `UPDATE message_notifications SET is_read = 1 WHERE receiver_id = ? AND receiver_role = ? AND id IN (${ids.map(() => '?').join(',')})`
+            : `UPDATE message_notifications SET is_read = 1 WHERE receiver_id = ? AND receiver_role = ?`
+        const params = ids && ids.length ? [receiverId, receiverRole, ...ids] : [receiverId, receiverRole]
+        db.execute(sql, params, (err) => {
+            if (err) console.error('[MsgNotif]', err.message)
+            resolve()
+        })
+    })
+}
+
+function cleanOldMsgNotifications() {
+    db.execute(
+        `DELETE FROM message_notifications WHERE created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+        [], (err) => { if (err) console.error('[MsgNotif cleanup]', err.message) }
+    )
+}
+
 module.exports = {
+    blacklistToken,
+    isTokenBlacklisted,
     sendSMS,
     adminEditGuardAccounts,
     adminEditTeacherAccounts,
@@ -2915,7 +3165,13 @@ module.exports = {
     writeLoginLog,
     writeLogoutLog,
     getSystemSetting,
-    setSystemSetting
+    setSystemSetting,
+    reactToMessage,
+    createMsgNotification,
+    getMsgNotifications,
+    getUnreadMsgNotifCount,
+    markMsgNotificationsRead,
+    cleanOldMsgNotifications
 }
 
 function writeLogoutLog(userId, userName, userEmail, role, ip, userAgent) {
@@ -3011,7 +3267,9 @@ function getNotifications(role, limit) {
         db.execute(
             `SELECT id, type, title, message, meta, ${readCol} AS is_read,
                     DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at
-             FROM notifications ORDER BY created_at DESC LIMIT ?`,
+             FROM notifications
+             WHERE type != 'reaction'
+             ORDER BY created_at DESC LIMIT ?`,
             [n],
             (err, rows) => resolve(err ? [] : rows)
         );
@@ -3033,7 +3291,7 @@ function markNotificationsRead(role, ids) {
 function getUnreadCount(role) {
     const col = role === 'super_admin' ? 'is_read_super' : 'is_read_admin';
     return new Promise((resolve) => {
-        db.execute(`SELECT COUNT(*) AS cnt FROM notifications WHERE ${col} = 0`, [],
+        db.execute(`SELECT COUNT(*) AS cnt FROM notifications WHERE ${col} = 0 AND type != 'reaction'`, [],
             (err, rows) => resolve(err ? 0 : (rows[0]?.cnt || 0))
         );
     });
@@ -3080,6 +3338,32 @@ db.query(
 )
 
 // Send a message
+// React to a message — stores per-user reactions in JSON column
+// Returns { reactions, message } where message has sender/receiver info for notifications
+function reactToMessage(messageId, reactorId, reactorRole, emoji) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            'SELECT id, reactions, sender_id, sender_role, sender_name, receiver_id, receiver_role, receiver_name FROM messages WHERE id = ? LIMIT 1',
+            [messageId],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (!rows.length) return reject(new Error('Message not found.'))
+                const msg = rows[0]
+                let reactions = {}
+                try { reactions = JSON.parse(msg.reactions || '{}') } catch(e) { reactions = {} }
+                const key = `${reactorRole}_${reactorId}`
+                if (emoji) reactions[key] = { reactorId, reactorRole, emoji }
+                else        delete reactions[key]
+                const json = Object.keys(reactions).length ? JSON.stringify(reactions) : null
+                db.execute('UPDATE messages SET reactions = ? WHERE id = ?', [json, messageId], (err2) => {
+                    if (err2) return reject(err2)
+                    resolve({ reactions, msg })
+                })
+            }
+        )
+    })
+}
+
 function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content, fileUrl, fileName, fileType, senderPic, receiverPic) {
     return new Promise((resolve, reject) => {
         db.execute(
@@ -3222,23 +3506,24 @@ function editMessage(messageId, senderId, senderRole, newContent) {
 
 // Get all contacts who have exchanged messages with this user + unread count
 function getMessageContacts(userId, userRole) {
-    // Step 1: get distinct contacts
-    const contactsSql = `
-        SELECT DISTINCT
+    // Get distinct contacts — grouped by id+role to avoid duplicate entries
+    // when a user changes their name (old messages have old name stored)
+    const sql = `
+        SELECT
             CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_id   ELSE sender_id   END AS contact_id,
             CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_role ELSE sender_role END AS contact_role,
-            CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_name ELSE sender_name END AS contact_name
+            MAX(CASE WHEN sender_id = ? AND sender_role = ? THEN receiver_name ELSE sender_name END) AS contact_name
         FROM messages
         WHERE (sender_id = ? AND sender_role = ?) OR (receiver_id = ? AND receiver_role = ?)
+        GROUP BY contact_id, contact_role
     `
     return new Promise((resolve) => {
-        db.execute(contactsSql,
+        db.execute(sql,
             [userId, userRole, userId, userRole, userId, userRole, userId, userRole, userId, userRole],
             (err, contacts) => {
                 if (err) { console.error('[getMessageContacts]', err.message); return resolve([]) }
                 if (!contacts.length) return resolve([])
 
-                // Step 2: for each contact get last message + unread count
                 const tasks = contacts.map(c => new Promise(res => {
                     db.execute(
                         `SELECT content, sender_id, sender_role, sender_name, created_at,
@@ -3258,10 +3543,6 @@ function getMessageContacts(userId, userRole) {
                         ],
                         (err2, rows) => {
                             if (err2 || !rows.length) return res({ ...c, last_message: '', last_sender_name: '', unread: 0, last_message_at: null, contact_profile_picture: null })
-                            // The contact's pic is sender_pic if contact is sender, else receiver_pic
-                            // Pick the pic belonging to the CONTACT, not the current user
-                            // If contact is the sender of this last message, use sender_pic
-                            // If contact is the receiver, use receiver_pic
                             const contactIsSender = String(rows[0].sender_id) === String(c.contact_id) &&
                                                     rows[0].sender_role === c.contact_role
                             const contactPic = contactIsSender

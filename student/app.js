@@ -141,21 +141,29 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 // ============================================================
 // INIT
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    checkToken();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Sequential startup: await each async step so Swals don't race/overwrite each other
+    await checkToken();
     tab('generateBarcode');
-    loadProfileData();
-    initialCheckBarcodeExpiration();
-    getAttendanceHistory();
+    await loadProfileData();   // has its own loading Swal — must finish before barcode check
+    getAttendanceHistory();    // no Swal, safe to run concurrently
+    await initialCheckBarcodeExpiration(); // barcode Swal shows last, stays visible
 });
 
 // ============================================================
 // AUTH
 // ============================================================
+// FIX: centralised session cleanup
+function clearSessionAndRedirect() {
+    localStorage.removeItem('student_token');
+    localStorage.removeItem('student_device_info');
+    window.location.href = 'student_login.html';
+}
+
 async function checkToken() {
     if (!TOKEN) {
         await Swal.fire({ icon: 'error', title: 'Please login first!', text: 'Your session is missing or expired.', allowOutsideClick: false });
-        return window.location.href = 'student_login.html';
+        return clearSessionAndRedirect(); // FIX: clear token before redirect
     }
 
     try {
@@ -167,7 +175,7 @@ async function checkToken() {
 
         if (!res.ok) {
             await Swal.fire({ icon: 'error', title: 'Session Expired', text: data.message || 'Please login again.', allowOutsideClick: false });
-            window.location.href = 'student_login.html';
+            clearSessionAndRedirect(); // FIX: clear token before redirect
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong.' });
@@ -191,7 +199,7 @@ function logout() {
         } catch (_) {}
         localStorage.removeItem('student_token');
         localStorage.removeItem('student_device_info');
-        window.location.href = 'student_login.html';
+        clearSessionAndRedirect(); // FIX: clear token before redirect
     });
 }
 
@@ -207,8 +215,11 @@ const TAB_TITLES = {
 function tab(tabName) {
     document.getElementById('title').textContent = TAB_TITLES[tabName] || tabName;
 
+    // Toggle sections
     Object.keys(TAB_TITLES).forEach(t => {
-        document.getElementById(t).classList.toggle('active', t === tabName);
+        document.getElementById(t)?.classList.toggle('active', t === tabName);
+        // Also toggle active on the nav button (prefixed with btn-)
+        document.getElementById('btn-' + t)?.classList.toggle('active', t === tabName);
     });
 
     const isSettings = tabName === 'settings';
@@ -232,7 +243,7 @@ async function loadProfileData() {
         if (!res.ok) {
             Swal.close();
             Swal.fire({ icon: 'error', title: 'Error', text: data.message })
-                .then(() => window.location.href = 'student_login.html');
+                .then(() => clearSessionAndRedirect()); // FIX
             return;
         }
 
@@ -392,8 +403,10 @@ function generateRandomBarcode() {
 }
 
 function isBarcodeExpired(barcode_date_generated) {
+    if (!barcode_date_generated) return true; // never generated → treat as expired
     const now        = new Date();
     const generated  = new Date(barcode_date_generated);
+    if (isNaN(generated.getTime())) return true; // invalid date → treat as expired
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const genStart   = new Date(generated.getFullYear(), generated.getMonth(), generated.getDate());
     return todayStart > genStart;
@@ -420,7 +433,9 @@ async function initialCheckBarcodeExpiration() {
         Swal.close();
         if (!content) return;
 
-        if (isBarcodeExpired(content.barcode_date_generated)) {
+        if (!content.barcode) {
+            Swal.fire({ icon: 'info', title: 'No Code Yet', text: 'Press "Generate today\'s code" to get your first barcode.' });
+        } else if (isBarcodeExpired(content.barcode_date_generated)) {
             Swal.fire({ icon: 'info', title: 'Code Expired', text: 'Your code has expired. Press "Generate today\'s code" to get a new one.' });
         } else {
             renderCode(content.barcode);

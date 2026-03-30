@@ -402,7 +402,7 @@
                                 <th>Time</th>
                                 <th>Status</th>
                                 <th>Event Name</th>
-                                <th>Admin</th>
+                                
                             </tr>
                         </thead>
                         <tbody id="attendanceBody">
@@ -480,7 +480,7 @@
                                 <th>Time</th>
                                 <th>Status</th>
                                 <th>Event Name</th>
-                                <th>Admin</th>
+                                
                             </tr>
                         </thead>
                         <tbody id="attendanceHistory">
@@ -494,20 +494,13 @@
         <!--Admin Settings-->
         <section class="sections" id="adminSettings">
             <div class="profile-section">
-                <div class="avatar-container" onclick="document.getElementById('superAdminProfilePicInput').click()" title="Change profile picture">
-                    <div class="avatar" id="adminAvatar">
+                <div class="avatar-container">
+                    <div class="avatar" id="adminAvatar" onclick="document.getElementById('superAdminProfilePicInput').click()" title="Change profile picture">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                         </svg>
                     </div>
-                    <div class="avatar-hover-overlay">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
-                            <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
-                        </svg>
-                        <span>Change Photo</span>
-                    </div>
-                    <div class="camera-badge" onclick="event.stopPropagation(); document.getElementById('superAdminProfilePicInput').click()">
+                    <div class="camera-badge" onclick="document.getElementById('superAdminProfilePicInput').click()" style="cursor:pointer;">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
@@ -1557,50 +1550,72 @@
                 <div id="classManagementTabs" style="display:none;">
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
                         <button class="class-tab active" onclick="switchClassTab('attendanceNow')">Attendance Now</button>
-                        <button class="class-tab" onclick="switchClassTab('attendanceHistory')">History</button>
                         <button class="class-tab" onclick="switchClassTab('classRoster')">Class Roster</button>
-                        <button class="class-tab" onclick="switchClassTab('manualEntry')">Manual Entry</button>
                         <button class="class-tab" onclick="switchClassTab('subjectSetup')">Subject Setup</button>
                         <button class="class-tab" onclick="switchClassTab('locationSetup')">Location</button>
                     </div>
 
                     <!-- Attendance Now -->
                     <div class="class-tab-panel active" id="tab-attendanceNow">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:0.85rem; color:var(--color-text-secondary);">Real-time attendance for selected teacher's class</span>
-                            <div style="display:flex;gap:6px;">
-                                <button class="export-btn" onclick="exportTableToExcel('classAttendanceNowTable','Class Attendance')">Export</button>
-                                <button class="export-btn" onclick="printSection('classAttendanceNowTable','Class Attendance Now')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
-                                <button class="export-btn" onclick="loadClassAttendanceNow()">↻ Refresh</button>
+                        <!-- Active Class Setup — mirrors what the teacher sees -->
+                        <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; margin-bottom:12px; flex-wrap:wrap;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#3d6b6b" style="flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                            <span style="font-size:0.82rem; font-weight:700; color:#3d6b6b; white-space:nowrap;">Active Class Setup</span>
+                            <select class="filter-select" id="classSubjectFilterNow" style="border-color:#3d6b6b;"><option value="">Select Subject</option></select>
+                            <select class="filter-select" id="classYearFilterNow" style="border-color:#3d6b6b;"><option value="">Select Year Level</option></select>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="#3d6b6b"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm.01 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                                <input type="time" class="filter-select" id="classTimeInputNow" style="border-color:#3d6b6b;cursor:pointer;min-width:110px;">
                             </div>
+                            <button class="set-btn" onclick="setClassSubjectFromNowTab()">Set</button>
+                            <span id="classActiveSubjectDisplayNow" style="font-size:0.82rem; font-weight:700; background:#c8ece5; color:#1a5c4f; padding:4px 10px; border-radius:20px; white-space:nowrap;"></span>
+                        </div>
+                        <!-- Controls row — matches teacher's attendance now -->
+                        <div class="search-row" style="margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
+                                <input type="text" class="search-input" placeholder="Search students..." id="saAttNowSearch" oninput="filterSaAttendanceNow()" style="flex:1;">
+                                <div class="live-badge"><span class="live-dot" id="saLiveDot"></span>LIVE</div>
+                            </div>
+                            <input type="date" class="filter-select" id="saAttNowDateFilter" onchange="loadClassAttendanceNow()" style="cursor:pointer;">
+                            <button class="export-btn" onclick="exportTableToExcel('classAttendanceNowTable','Class Attendance')">
+                                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                                Export Excel
+                            </button>
+                            <button class="export-btn" onclick="printSection('classAttendanceNowTable','Class Attendance Now')" style="background:#1a4545;">
+                                <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print
+                            </button>
+                            <button class="action-btn refresh-btn" onclick="loadClassAttendanceNow()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                Refresh
+                            </button>
+                        </div>
+                        <!-- Status filter pills -->
+                        <div class="status-filter-pills" id="saStatusFilterPills" style="margin-bottom:10px;">
+                            <button class="status-pill active" data-status="all" onclick="saApplyStatusFilter(this)">All</button>
+                            <button class="status-pill present" data-status="Present" onclick="saApplyStatusFilter(this)">✓ Present</button>
+                            <button class="status-pill absent" data-status="Absent" onclick="saApplyStatusFilter(this)">✗ Absent</button>
+                            <button class="status-pill late" data-status="Late" onclick="saApplyStatusFilter(this)">⏱ Late</button>
+                            <button class="status-pill excused" data-status="Excused" onclick="saApplyStatusFilter(this)">⊘ Excused</button>
                         </div>
                         <div class="table-container">
                             <table class="attendance-table" id="classAttendanceNowTable">
-                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Subject</th><th>Year Level</th><th>Program</th><th>Time</th></tr></thead>
+                                <thead><tr>
+                                    <th>ID Number</th>
+                                    <th>Full Name</th>
+                                    <th>Subject</th>
+                                    <th>Year Level</th>
+                                    <th>Time In</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr></thead>
                                 <tbody id="classAttendanceNowBody"></tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- Attendance History -->
-                    <div class="class-tab-panel" id="tab-attendanceHistory">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:0.85rem; color:var(--color-text-secondary);">Full attendance history for selected teacher's class</span>
-                            <div style="display:flex;gap:6px;">
-                                <button class="export-btn" onclick="exportTableToExcel('classAttendanceHistoryTable','Class Attendance History')">Export</button>
-                                <button class="export-btn" onclick="printSection('classAttendanceHistoryTable','Class Attendance History')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
-                                <button class="export-btn" onclick="loadClassAttendanceHistory()">↻ Refresh</button>
-                            </div>
-                        </div>
-                        <div class="table-container">
-                            <table class="attendance-table" id="classAttendanceHistoryTable">
-                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Subject</th><th>Year Level</th><th>Program</th><th>Time</th><th>Date</th></tr></thead>
-                                <tbody id="classAttendanceHistoryBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Class Roster -->
+                    
+                    <!-- Class Roster<!-- Class Roster -->
                     <div class="class-tab-panel" id="tab-classRoster">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                             <span style="font-size:0.85rem; color:var(--color-text-secondary);">Students enrolled in selected teacher's class</span>
@@ -1613,7 +1628,7 @@
                         </div>
                         <div class="table-container">
                             <table class="attendance-table" id="classRosterTable">
-                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Year Level</th><th>Program</th><th>Actions</th></tr></thead>
+                                <thead><tr><th>ID Number</th><th>Firstname</th><th>M.I</th><th>Lastname</th><th>Subject</th><th>Year Level</th><th>Program</th><th>Actions</th></tr></thead>
                                 <tbody id="classRosterBody"></tbody>
                             </table>
                         </div>
@@ -1688,35 +1703,41 @@
                     </div>
 
                     <!-- Manual Entry -->
-                    <div class="class-tab-panel" id="tab-manualEntry">
-                        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
-                            <input type="text" id="classManualSearch" class="search-input" placeholder="Filter by name or ID..." oninput="filterClassManualList()" style="flex:1; min-width:180px;">
-                            <select id="classManualYearFilter" class="filter-select" onchange="filterClassManualList()">
-                                <option value="">All Year Levels</option>
-                            </select>
-                            <button class="export-btn" onclick="loadClassManualEntryList()">↻ Refresh</button>
-                        </div>
-                        <div id="classManualStudentList" style="display:flex; flex-direction:column; gap:6px; max-height:460px; overflow-y:auto;"></div>
-                    </div>
-
-                    <!-- Subject Setup -->
+                    <!-- Subject Setup — same as teacher academic setup -->
                     <div class="class-tab-panel" id="tab-subjectSetup">
-                        <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#eef6f4; border:1.5px solid #b2d8d0; border-radius:10px; margin-bottom:12px; flex-wrap:wrap;">
-                            <span style="font-size:0.82rem; font-weight:700; color:#3d6b6b;">Active Class Setup</span>
-                            <select id="classSubjectFilter" class="filter-select" style="border-color:#3d6b6b;"><option value="">Select Subject</option></select>
-                            <select id="classYearFilter" class="filter-select" style="border-color:#3d6b6b;"><option value="">Select Year Level</option></select>
-                            <button class="set-btn" onclick="setClassSubject()">Set</button>
-                            <span id="classActiveSubjectDisplay" style="font-size:0.82rem; font-weight:700; background:#c8ece5; color:#1a5c4f; padding:4px 10px; border-radius:20px;"></span>
+
+                        <!-- Subject List (like teacher's academic setup) -->
+                        <div class="content-modal" style="padding:0;">
+                            <button class="add-program-btn" onclick="openAddSubjectModal()" style="margin-bottom:12px;">
+                                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                Add Subject
+                            </button>
+                            <div class="programs-list" id="classSubjectList"></div>
+                        </div>
+
+                        <!-- Add Subject Modal -->
+                        <div class="modal" id="addSubjectModal">
+                            <div class="modal-content">
+                                <h2 class="modal-header">Add New Subject</h2>
+                                <div class="form-group">
+                                    <label class="form-label">Subject Name</label>
+                                    <input type="text" class="form-input" id="subjectNameInput" placeholder="Enter subject name">
+                                </div>
+                                <div class="modal-actions">
+                                    <button class="modal-btn cancel-btn" onclick="closeAddSubjectModal()">Cancel</button>
+                                    <button class="modal-btn confirm-btn" onclick="addSubjectForTeacher()">Add</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Location Setup -->
                     <div class="class-tab-panel" id="tab-locationSetup">
                         <div class="map-container" style="position:relative;">
-                            <div style="position:relative; margin-bottom:8px;">
+                            <div style="position:relative; margin-bottom:8px; z-index:100001;">
                                 <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:#3d6b6b;pointer-events:none;" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                                 <input type="text" id="classLocationSearchInput" class="search-input" placeholder="Search for a place..." autocomplete="off" style="padding-left:36px; width:100%; box-sizing:border-box;">
-                                <ul id="classLocationSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ddd; border-radius:8px; list-style:none; margin:4px 0 0; padding:0; z-index:9999; max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></ul>
+                                <ul id="classLocationSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ddd; border-radius:8px; list-style:none; margin:4px 0 0; padding:0; z-index:100000; max-height:200px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.18);"></ul>
                             </div>
                             <div id="classMap" style="width:100%; height:380px; border-radius:10px; border:1px solid #ddd;"></div>
                             <div style="margin-top:12px;">
@@ -1740,6 +1761,121 @@
     </main>
 
     <style>
+
+
+
+    /* ── Attendance Now — teacher-style controls ── */
+    .live-badge { display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; color:#15803d; }
+    .live-dot   { width:8px; height:8px; border-radius:50%; background:#22c55e; display:inline-block; animation:livePulse 1.2s infinite; }
+    @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .status-filter-pills { display:flex; gap:6px; flex-wrap:wrap; }
+    .status-pill { padding:5px 14px; border-radius:20px; border:1.5px solid #ddd; background:#fff; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all .2s; color:#555; }
+    .status-pill.active, .status-pill:hover { border-color:#3d6b6b; background:#3d6b6b; color:#fff; }
+    .status-pill.present.active  { background:#16a34a; border-color:#16a34a; }
+    .status-pill.absent.active   { background:#dc2626; border-color:#dc2626; }
+    .status-pill.late.active     { background:#7c3aed; border-color:#7c3aed; }
+    .status-pill.excused.active  { background:#d97706; border-color:#d97706; }
+
+    .attendance-action-btns { display:flex; gap:4px; flex-wrap:wrap; }
+    .refresh-btn { background:#1a4545; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background .2s; }
+    .refresh-btn:hover { background:#2c5a5a; }
+
+    .row-absent { background:rgba(239,68,68,0.04); }
+    /* ── Subject Setup tab — override academic setup constraints ── */
+    #tab-subjectSetup .content-modal {
+        max-width: 100%;
+        padding: 0;
+        max-height: none;
+        margin: 0;
+    }
+    #tab-subjectSetup .add-program-btn {
+        margin-bottom: 16px;
+    }
+    #tab-subjectSetup .programs-list {
+        max-height: calc(100vh - 380px);
+        overflow-y: auto;
+    }
+    #tab-subjectSetup .program-card { background: white; }
+    [data-theme="dark"] #tab-subjectSetup .program-card { background: #1e2535; }
+
+/* ── Attendance status action buttons (Present/Late/Absent/Excused) ── */
+.att-action-btn {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    opacity: 0.45;
+    background: #f3f4f6;
+    color: #374151;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.att-action-btn:disabled { cursor: not-allowed; opacity: 0.25; }
+.att-action-btn.active   { opacity: 1; color: #fff; }
+
+.btn-present         { border-color: #22c55e; color: #15803d; }
+.btn-present:hover   { background: #dcfce7; opacity: 1; }
+.btn-present.active  { background: #16a34a; border-color: #16a34a; }
+
+.btn-absent          { border-color: #ef4444; color: #b91c1c; }
+.btn-absent:hover    { background: #fee2e2; opacity: 1; }
+.btn-absent.active   { background: #dc2626; border-color: #dc2626; }
+
+.btn-late            { border-color: #7c3aed; color: #5b21b6; }
+.btn-late:hover      { background: #ede9fe; opacity: 1; }
+.btn-late.active     { background: #7c3aed; border-color: #7c3aed; }
+
+.btn-excused         { border-color: #f59e0b; color: #92400e; }
+.btn-excused:hover   { background: #fef3c7; opacity: 1; }
+.btn-excused.active  { background: #d97706; border-color: #d97706; }
+
+[data-theme="dark"] .att-action-btn        { background: #1f2937; color: #d1d5db; }
+[data-theme="dark"] .btn-present:hover     { background: #14532d; }
+[data-theme="dark"] .btn-present.active    { background: #16a34a; }
+[data-theme="dark"] .btn-absent:hover      { background: #450a0a; }
+[data-theme="dark"] .btn-absent.active     { background: #dc2626; }
+[data-theme="dark"] .btn-late:hover        { background: #2e1065; }
+[data-theme="dark"] .btn-late.active       { background: #7c3aed; }
+[data-theme="dark"] .btn-excused:hover     { background: #422006; }
+[data-theme="dark"] .btn-excused.active    { background: #d97706; }
+
+    /* ── Manage Class button (same as teacher academic setup) ── */
+    .manage-class-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #eaf5f1 0%, #d6ede7 100%);
+        color: #1a5c4f;
+        border: 1.5px solid #a8d5c8;
+        border-radius: 8px;
+        padding: 5px 13px 5px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        letter-spacing: 0.2px;
+        box-shadow: 0 1px 3px rgba(26,92,79,0.1);
+        white-space: nowrap;
+    }
+    .manage-class-btn svg { width:14px; height:14px; fill:#1a7a60; flex-shrink:0; transition:transform 0.2s ease; }
+    .manage-class-btn:hover {
+        background: linear-gradient(135deg, #c8ece5 0%, #b0ddd4 100%);
+        border-color: #3d8b7a;
+        color: #134d42;
+        box-shadow: 0 3px 8px rgba(26,92,79,0.2);
+        transform: translateY(-1px);
+    }
+    .manage-class-btn:hover svg { fill:#134d42; transform:scale(1.15); }
+    .manage-class-btn:active { transform:translateY(0); box-shadow:0 1px 3px rgba(26,92,79,0.15); }
+    [data-theme="dark"] .manage-class-btn {
+        background: #1a2f2a; color: #7ecebe; border-color: #2a5a50;
+    }
+    [data-theme="dark"] .manage-class-btn svg { fill: #7ecebe; }
+    [data-theme="dark"] .manage-class-btn:hover { background: #1e3830; border-color: #3d8b7a; }
     .class-tab { padding:6px 14px; border:1.5px solid #b2d8d0; border-radius:20px; background:#fff; color:#3d6b6b; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all .2s; }
     .class-tab.active { background:#3d6b6b; color:#fff !important; border-color:#3d6b6b; }
     .class-tab-panel { display:none; }
@@ -1777,7 +1913,9 @@
     #classRadiusSlider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#3d6b6b; cursor:pointer; border:none; box-shadow:0 2px 4px rgba(0,0,0,.2); }
 
     #tab-locationSetup .btn { flex:1; }
+    #classLocationSearchResults li { display:flex; align-items:flex-start; gap:8px; }
     #classLocationSearchResults li:hover { background:#f0f7f5; }
+    #classLocationSearchResults .result-pin-icon { width:14px; height:14px; min-width:14px; fill:#3d6b6b; margin-top:2px; flex-shrink:0; }
 
     /* Appearance controls */
     .color-swatch { width:32px;height:32px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:all .2s;flex-shrink:0; }

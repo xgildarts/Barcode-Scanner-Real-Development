@@ -97,6 +97,7 @@ teacher.get('/get_students_total_count', async (req, res) => {
     try {  
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.teacherGetAllStudentDataTotalCount(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
@@ -109,7 +110,9 @@ teacher.get('/get_students_total_count', async (req, res) => {
 teacher.get('/search_students', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
-        services.verifyToken(token)
+        // FIX: verifyToken result was discarded — route was completely unauthenticated
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const query = req.query.q || ''
         const result = await services.searchStudentAccounts(query)
         res.json({ ok: true, content: result })
@@ -132,6 +135,7 @@ teacher.post('/add_student', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.teacherAddStudent(
             student_id_number,
             student_firstname,
@@ -156,6 +160,7 @@ teacher.get('/get_student_registered', async (req, res) => {
     try {  
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.teacherGetStudentRegistered(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
@@ -168,6 +173,7 @@ teacher.get('/get_total_attendance_record', async (req, res) => {
     try {  
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.teacherGetTotalAttendanceRecord(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
@@ -181,6 +187,7 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, classTime || null, decodedToken.teacher_barcode_scanner_serial_number)
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', null, subject, `Set subject: ${subject}, year level: ${yearLevel}, class time: ${classTime || 'not set'}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
@@ -189,11 +196,13 @@ teacher.put('/teacher_subject_and_year_level_setter', async (req, res) => {
     }
 })
 
+
 // Get current active subject and year level
 teacher.get('/get_active_subject', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getActiveSubjectAndYearLevel(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, content: result })
     } catch(err) {
@@ -289,6 +298,7 @@ teacher.get('/teacher_attendance_record', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getStudentAttendanceNow(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved attendance!', content: result })
     } catch(err) {
@@ -301,6 +311,7 @@ teacher.get('/teacher_attendance_history_record', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getStudentAttendanceHistory(decodedToken.teacher_barcode_scanner_serial_number)
         res.json({ ok: true, message: 'Successfully retrieved attendance history!', content: result })
     } catch(err) {
@@ -313,6 +324,7 @@ teacher.get('/get_subjects', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getStudentSubjects(decodedToken.teacher_id)
         res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
     } catch(err) {
@@ -326,6 +338,7 @@ teacher.delete('/delete_program/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         // Look up subject name before deleting so the log shows the name not the ID
         let subjectName = `Subject ID: ${subjectID}`
         try {
@@ -347,6 +360,7 @@ teacher.post('/programs/add', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.addSubject(program_name, decodedToken.teacher_id)
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'ADD_SUBJECT', 'Subject', null, program_name, `Added subject: ${program_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
@@ -360,6 +374,7 @@ teacher.get('/get_year_levels', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.teacherGetYearLevel()
         res.json({ ok: true, message: 'Successfully inserted new subject!', content: result })
     } catch(err) {
@@ -372,6 +387,7 @@ teacher.get('/get_programs', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getAllPrograms()
         res.json({ ok: true, message: 'Successfully retrieved subjects!', content: result })
     } catch(err) {
@@ -427,6 +443,7 @@ teacher.delete('/delete_student_record/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         // Look up student name before deleting so the log shows the name not the ID
         let studentName = `Student Record ID: ${id}`
         try {
@@ -447,6 +464,7 @@ teacher.get('/get_teacher_data', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getTeacherData(decodedToken.teacher_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result})
     } catch(err) {
@@ -460,6 +478,7 @@ teacher.put('/change_password', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.updateTeacherPassword(decodedToken.teacher_id, current_password, new_password)
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'CHANGE_PASSWORD', 'Teacher', decodedToken.teacher_id, null, 'Teacher changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Password updated successfully!', content: result})
@@ -474,6 +493,7 @@ teacher.put('/change_teacher_name', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name || newName, 'teacher', 'CHANGE_NAME', 'Teacher', decodedToken.teacher_id, newName, `Changed name to: ${newName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Successfully updated new name!', content: result})
@@ -527,6 +547,7 @@ teacher.put('/update_attendance_status/:attendance_id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const { attendance_id } = req.params
         const { status } = req.body
 
@@ -551,6 +572,7 @@ teacher.post('/insert_manual_status', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const {
             student_id, student_id_number, student_firstname, student_middlename,
             student_lastname, student_program, student_year_level, subject, status
@@ -577,6 +599,7 @@ teacher.get('/get_event_attendance', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getAttendanceEventsForTeacher(decodedToken.teacher_id, 'event_attendance_record')
         res.json({ ok: true, message: 'Successfully retrieved events record!', content: result})
     } catch(err) {
@@ -589,6 +612,7 @@ teacher.get('/get_event_attendance_history', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getAttendanceEventsForTeacher(decodedToken.teacher_id, 'event_attendance_history_record')
         res.json({ ok: true, message: 'Successfully retrieved events record!', content: result})
     } catch(err) {
@@ -604,6 +628,7 @@ teacher.post('/upload_profile_picture', uploadTeacherPic.single('teacher_profile
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const filename = await services.updateTeacherProfilePicture(decodedToken.teacher_id, req.file.filename)
         res.json({ ok: true, message: 'Profile picture updated!', filename })
     } catch (err) {
@@ -620,6 +645,7 @@ teacher.post('/verify_student_location', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.verifyStudentLocation(
             decodedToken.teacher_barcode_scanner_serial_number,
             parseFloat(latitude),
@@ -655,6 +681,7 @@ teacher.post('/set_location', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.setTeacherLocation(decodedToken.teacher_id, latitude, longitude, radius)
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'SET_LOCATION', 'Location', decodedToken.teacher_id, null, `Set location: lat ${latitude}, lng ${longitude}, radius ${radius}m`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
@@ -670,8 +697,9 @@ teacher.post('/logout', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization']);
         const decoded = services.verifyToken(token);
+        // FIX: blacklist the token so it cannot be reused after logout
+        services.blacklistToken(token)
         if (decoded) {
-            // Fetch email from DB since it's not in the token
             const db = require('../configuration/db');
             db.execute('SELECT teacher_email FROM teacher WHERE teacher_id = ? LIMIT 1', [decoded.teacher_id], (err, rows) => {
                 const email = (!err && rows.length) ? rows[0].teacher_email : null;
@@ -731,6 +759,14 @@ teacher.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
         const id = await services.sendMessage(tok.teacher_id, 'teacher', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
         res.json({ ok: true, id })
+        // Notify receiver via bell
+        services.createMsgNotification(
+                parseInt(receiver_id), receiver_role,
+                tok.teacher_id, 'teacher', tok.teacher_name || 'teacher',
+                req.file ? 'file' : 'message',
+                content?.trim() || (req.file ? req.file.originalname : null),
+                null, id
+        ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
@@ -760,6 +796,104 @@ teacher.delete('/messages/unsend/:id', async (req, res) => {
         await services.unsendMessage(parseInt(req.params.id), tok.teacher_id, 'teacher')
         res.json({ ok: true })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+
+
+// GET /messages/notifications
+teacher.get('/messages/notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        services.cleanOldMsgNotifications()
+        const notifs = await services.getMsgNotifications(tok.teacher_id, 'teacher', parseInt(req.query.limit) || 30)
+        const unread = await services.getUnreadMsgNotifCount(tok.teacher_id, 'teacher')
+        res.json({ ok: true, notifications: notifs, unread })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/notifications/read
+teacher.post('/messages/notifications/read', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const ids = req.body.ids || []
+        await services.markMsgNotificationsRead(tok.teacher_id, 'teacher', ids)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// GET /messages/reaction-notifications
+teacher.get('/messages/reaction-notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const after  = parseInt(req.query.after) || 0
+        const isSeed = req.query.seed === '1'
+        const db = require('../configuration/db')
+        // Auto-clean notifications older than 24h to prevent accumulation
+        db.execute(
+            `DELETE FROM notifications WHERE type = 'reaction' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
+            [], () => {}
+        )
+        db.execute(
+            `SELECT id, type, title, message, meta, created_at FROM notifications
+             WHERE type = 'reaction' AND id > ?
+             AND CAST(JSON_EXTRACT(meta, '$.receiver_id') AS CHAR) = CAST(? AS CHAR)
+             AND JSON_EXTRACT(meta, '$.receiver_role') = ?
+             ORDER BY id DESC LIMIT ${isSeed ? 100 : 20}`,
+            [after, tok.teacher_id, 'teacher'],
+            (err, rows) => {
+                if (err) return res.json({ ok: true, notifications: [] })
+                const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
+                res.json({ ok: true, notifications: parsed })
+            }
+        )
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/react/:id
+teacher.post('/messages/react/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false, message: 'Unauthorized.' })
+        const { emoji } = req.body
+        const { reactions, msg } = await services.reactToMessage(
+            parseInt(req.params.id),
+            tok.teacher_id, 'teacher',
+            emoji || null
+        )
+        // Determine the OTHER party (not the reactor)
+        // If reactor is the message sender → notify receiver, else notify sender
+        const receiverId   = String(msg.sender_id) === String(tok.teacher_id) && msg.sender_role === 'teacher'
+            ? msg.receiver_id : msg.sender_id
+        const receiverRole = String(msg.sender_id) === String(tok.teacher_id) && msg.sender_role === 'teacher'
+            ? msg.receiver_role : msg.sender_role
+        // Never notify yourself and never notify super_admin via bell
+        const isSelf       = String(receiverId) === String(tok.teacher_id) && receiverRole === 'teacher'
+        const isSuper      = receiverRole === 'super_admin'
+        // Write a short-lived notification row so receiver's poll sees it
+        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
+        if (emoji && !isSelf && !isSuper) {
+            services.createNotification(
+                'reaction',
+                'New Reaction',
+                `${tok.teacher_name || 'teacher'} reacted ${emoji} to your message`,
+                { reactor_id: tok.teacher_id, reactor_role: 'teacher', message_id: parseInt(req.params.id), receiver_id: receiverId, receiver_role: receiverRole, emoji }
+            ).catch(() => {})
+        }
+        res.json({ ok: true, reactions })
+        // Notify via bell (skip only self)
+        if (emoji && !isSelf) {
+            services.createMsgNotification(
+                receiverId, receiverRole,
+                tok.teacher_id, 'teacher', tok.teacher_name || 'teacher',
+                'reaction', null, emoji, parseInt(req.params.id)
+            ).catch(() => {})
+        }
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message })
+    }
 })
 
 teacher.post('/messages/pin/:id', async (req, res) => {

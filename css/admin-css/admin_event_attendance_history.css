@@ -34,19 +34,11 @@
    controls-section (~120px) + header bar (~60px) = ~180px
    History has extra filter row (~52px)
    ============================================================ */
-#eventAttendanceHistory .table-container {
-    max-height: calc(100vh - 240px);
-    overflow-y: auto;
-    overflow-x: auto;
+/* Event attendance history — scoped table height */
+#eventAttendanceHistory .attendance-table tbody {
+    max-height: calc(100vh - 300px);
 }
 
-#eventAttendanceHistory .attendance-table {
-    table-layout: fixed;
-    width: 100%;
-}
-
-#eventAttendanceHistory .attendance-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 10;
+@media (max-width: 1025px) {
+    #eventAttendanceHistory .attendance-table tbody { max-height: none; }
 }

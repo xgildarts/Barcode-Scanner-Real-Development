@@ -1,4 +1,4 @@
-/* Super Admin version of admin_event_attendance.css — navy/slate palette */
+/* Super Admin version — navy/slate palette */
 /* ============================================================
    EVENT ATTENDANCE — page-specific styles
    ============================================================ */
@@ -18,7 +18,7 @@
 }
 
 .set-event-button:hover {
-    background: linear-gradient(135deg, #2d5282 0%, #2d5282 100%);
+    background: linear-gradient(135deg, #2d6db5 0%, #2d5282 100%);
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
@@ -48,27 +48,19 @@
 }
 
 .event-name-input:focus {
-    outline: 2px solid #2d5282;
-    box-shadow: 0 0 0 4px rgba(45, 82, 130, 0.2);
+    outline: 2px solid #2d6db5;
+    box-shadow: 0 0 0 4px rgba(90, 138, 122, 0.2);
 }
 /* ============================================================
    SCROLLABLE TBODY — header stays fixed, body scrolls
    controls-section (~120px) + header bar (~60px) = ~180px
    Add extra for the set-event filters row (~52px)
    ============================================================ */
-#eventAttendance .table-container {
-    max-height: calc(100vh - 240px);
-    overflow-y: auto;
-    overflow-x: auto;
+/* Event attendance — scoped table height */
+#eventAttendance .attendance-table tbody {
+    max-height: calc(100vh - 300px);
 }
 
-#eventAttendance .attendance-table {
-    table-layout: fixed;
-    width: 100%;
-}
-
-#eventAttendance .attendance-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 10;
+@media (max-width: 1025px) {
+    #eventAttendance .attendance-table tbody { max-height: none; }
 }

@@ -51,6 +51,7 @@ student.get('/student_get_data', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const data = await services.getStudentsData(decodedToken.student_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', contents: data })
     } catch(err) {
@@ -89,6 +90,7 @@ student.put('/student_change_password', async (req, res) => {
         const { currentPassword, newPassword } = req.body
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.updateStudentPassword(currentPassword, newPassword, decodedToken.student_id)
         const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
         services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'CHANGE_PASSWORD', 'Student', null, fullName, 'Student changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
@@ -103,6 +105,7 @@ student.get('/student_barcode', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getStudentBarcode(decodedToken.student_id)
         res.json({ ok: true, message: 'Successfully retrieved barcode',  content: result})
     } catch(err) {
@@ -116,6 +119,7 @@ student.put('/update_student_barcode', async (req, res) => {
         const { barcode, teacher_serial } = req.body  // teacher_serial binds barcode to specific class
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.updateStudentBarcode(decodedToken.student_id, barcode, teacher_serial || null)
         const fullName = `${decodedToken.student_firstname} ${decodedToken.student_lastname}`
         services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'REGENERATE_BARCODE', 'Student', null, fullName, `Regenerated barcode — ID No: ${decodedToken.student_id_number}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
@@ -257,6 +261,7 @@ student.get('/enrolled_teachers', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getStudentEnrolledTeachers(decodedToken.student_id_number)
         res.json({ ok: true, content: result })
     } catch (err) {
@@ -270,7 +275,10 @@ student.post('/logout', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization']);
         const decoded = services.verifyToken(token);
-        if (decoded) services.writeLogoutLog(decoded.student_id, `${decoded.student_firstname} ${decoded.student_lastname}`, decoded.student_email, 'student', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
+        if (!decoded) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        // FIX: blacklist the token so it cannot be reused after logout
+        services.blacklistToken(token)
+        services.writeLogoutLog(decoded.student_id, `${decoded.student_firstname} ${decoded.student_lastname}`, decoded.student_email, 'student', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
         res.json({ ok: true });
     } catch (_) { res.json({ ok: true }); }
 })
@@ -338,6 +346,14 @@ student.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
         const id = await services.sendMessage(tok.student_id, 'student', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
         res.json({ ok: true, id })
+        // Notify receiver via bell
+        services.createMsgNotification(
+                parseInt(receiver_id), receiver_role,
+                tok.student_id, 'student', `${tok.student_firstname} ${tok.student_lastname}`,
+                req.file ? 'file' : 'message',
+                content?.trim() || (req.file ? req.file.originalname : null),
+                null, id
+        ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
@@ -367,6 +383,104 @@ student.delete('/messages/unsend/:id', async (req, res) => {
         await services.unsendMessage(parseInt(req.params.id), tok.student_id, 'student')
         res.json({ ok: true })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+
+
+// GET /messages/notifications
+student.get('/messages/notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        services.cleanOldMsgNotifications()
+        const notifs = await services.getMsgNotifications(tok.student_id, 'student', parseInt(req.query.limit) || 30)
+        const unread = await services.getUnreadMsgNotifCount(tok.student_id, 'student')
+        res.json({ ok: true, notifications: notifs, unread })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/notifications/read
+student.post('/messages/notifications/read', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const ids = req.body.ids || []
+        await services.markMsgNotificationsRead(tok.student_id, 'student', ids)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// GET /messages/reaction-notifications
+student.get('/messages/reaction-notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const after  = parseInt(req.query.after) || 0
+        const isSeed = req.query.seed === '1'
+        const db = require('../configuration/db')
+        // Auto-clean notifications older than 24h to prevent accumulation
+        db.execute(
+            `DELETE FROM notifications WHERE type = 'reaction' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
+            [], () => {}
+        )
+        db.execute(
+            `SELECT id, type, title, message, meta, created_at FROM notifications
+             WHERE type = 'reaction' AND id > ?
+             AND CAST(JSON_EXTRACT(meta, '$.receiver_id') AS CHAR) = CAST(? AS CHAR)
+             AND JSON_EXTRACT(meta, '$.receiver_role') = ?
+             ORDER BY id DESC LIMIT ${isSeed ? 100 : 20}`,
+            [after, tok.student_id, 'student'],
+            (err, rows) => {
+                if (err) return res.json({ ok: true, notifications: [] })
+                const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
+                res.json({ ok: true, notifications: parsed })
+            }
+        )
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/react/:id
+student.post('/messages/react/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false, message: 'Unauthorized.' })
+        const { emoji } = req.body
+        const { reactions, msg } = await services.reactToMessage(
+            parseInt(req.params.id),
+            tok.student_id, 'student',
+            emoji || null
+        )
+        // Determine the OTHER party (not the reactor)
+        // If reactor is the message sender → notify receiver, else notify sender
+        const receiverId   = String(msg.sender_id) === String(tok.student_id) && msg.sender_role === 'student'
+            ? msg.receiver_id : msg.sender_id
+        const receiverRole = String(msg.sender_id) === String(tok.student_id) && msg.sender_role === 'student'
+            ? msg.receiver_role : msg.sender_role
+        // Never notify yourself and never notify super_admin via bell
+        const isSelf       = String(receiverId) === String(tok.student_id) && receiverRole === 'student'
+        const isSuper      = receiverRole === 'super_admin'
+        // Write a short-lived notification row so receiver's poll sees it
+        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
+        if (emoji && !isSelf && !isSuper) {
+            services.createNotification(
+                'reaction',
+                'New Reaction',
+                `${tok.student_firstname || 'student'} reacted ${emoji} to your message`,
+                { reactor_id: tok.student_id, reactor_role: 'student', message_id: parseInt(req.params.id), receiver_id: receiverId, receiver_role: receiverRole, emoji }
+            ).catch(() => {})
+        }
+        res.json({ ok: true, reactions })
+        // Notify via bell (skip only self)
+        if (emoji && !isSelf) {
+            services.createMsgNotification(
+                receiverId, receiverRole,
+                tok.student_id, 'student', `${tok.student_firstname} ${tok.student_lastname}`,
+                'reaction', null, emoji, parseInt(req.params.id)
+            ).catch(() => {})
+        }
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message })
+    }
 })
 
 student.post('/messages/pin/:id', async (req, res) => {
@@ -508,6 +622,23 @@ student.post('/contact/send-file', uploadContactFile.single('file'), async (req,
         res.status(500).json({ ok: false, message: err.message });
     }
 });
+
+// POST /api/v1/students/contact/react/:id  (guest token)
+student.post('/contact/react/:id', async (req, res) => {
+    try {
+        const tok = verifyGuestToken(req)
+        if (!tok) return res.status(401).json({ ok: false, message: 'Unauthorized.' })
+        const { emoji } = req.body
+        const reactions = await services.reactToMessage(
+            parseInt(req.params.id),
+            tok.student_id, 'student',
+            emoji || null
+        )
+        res.json({ ok: true, reactions })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message })
+    }
+})
 
 // PUT /api/v1/students/contact/edit/:id
 student.put('/contact/edit/:id', async (req, res) => {

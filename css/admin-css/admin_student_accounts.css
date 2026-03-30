@@ -204,9 +204,72 @@
 }
 
 /* ============================================================
-   RESPONSIVE
+   CARDS GRID — responsive layout
    ============================================================ */
-@media (max-width: 480px) {
+.students-list,
+.teachers-list,
+.guards-list {
+    padding: 16px 20px 20px;
+    display: grid;
+    /* Default: 1 full-width column — cards stack like a list */
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* Cards fill their grid cell — no margin needed */
+.student-card,
+.teacher-card,
+.guard-card {
+    margin-bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Actions wrap on narrow cards */
+.student-actions,
+.teacher-actions,
+.guard-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    flex-shrink: 0;
+}
+
+/* Meta row wraps cleanly */
+.student-meta,
+.teacher-meta,
+.guard-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+/* ── Large desktop (≥1400px): still 1 column ── */
+@media (min-width: 1400px) {
+    .students-list,
+    .teachers-list,
+    .guards-list {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+/* ── Mobile: single column, no height cap ── */
+@media (max-width: 640px) {
+    .students-list,
+    .teachers-list,
+    .guards-list {
+        grid-template-columns: 1fr;
+        padding: 12px 12px 20px;
+        max-height: none;
+    }
+
     .student-info,
     .teacher-info,
     .guard-info {
@@ -218,17 +281,22 @@
     .teacher-meta,
     .guard-meta {
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
         align-items: flex-start;
     }
-}
-/* ============================================================
-   SCROLLABLE CARDS LIST
-   ============================================================ */
-.students-list {
-    max-height: calc(100vh - 280px);
-    overflow-y: auto;
-    overflow-x: hidden;
+
+    .student-actions,
+    .teacher-actions,
+    .guard-actions {
+        width: 100%;
+    }
+
+    .action-btn {
+        flex: 1 1 calc(50% - 6px);
+        text-align: center;
+        padding: 8px 6px;
+        font-size: 11px;
+    }
 }
 
 /* Notification redirect highlight */

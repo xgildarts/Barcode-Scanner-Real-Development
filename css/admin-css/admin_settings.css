@@ -25,139 +25,139 @@
    PROFILE SECTION
    ============================================================ */
 .profile-section {
-    background: white;
-    padding: 30px 20px;
+    background: linear-gradient(160deg, #3d7070 0%, #2c5f5f 100%);
+    padding: 40px 24px 32px;
     text-align: center;
-    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+    overflow: hidden;
+    border-bottom: none;
+}
+
+/* Decorative rings */
+.profile-section::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    border: 40px solid rgba(255,255,255,0.04);
+    pointer-events: none;
 }
 
 .avatar-container {
     position: relative;
     display: inline-block;
-    margin-bottom: 16px;
-    cursor: pointer;
+    margin-bottom: 18px;
 }
 
 .avatar {
-    width: 80px;
-    height: 80px;
-    background: #a8bfb3;
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
+    background: rgba(255,255,255,0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    overflow: hidden;
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,0.6),
+        0 0 0 7px rgba(255,255,255,0.12),
+        0 8px 24px rgba(0,0,0,0.3);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    cursor: pointer;
+}
+
+.avatar:hover {
+    box-shadow:
+        0 0 0 3px #ffffff,
+        0 0 0 7px rgba(255,255,255,0.25),
+        0 10px 28px rgba(0,0,0,0.4);
+    transform: scale(1.03);
 }
 
 .avatar svg {
-    width: 45px;
-    height: 45px;
-    fill: white;
+    width: 58px;
+    height: 58px;
+    fill: rgba(255,255,255,0.8);
 }
 
-.avatar-hover-overlay {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.48);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-}
-
-.avatar-hover-overlay span {
-    font-size: 9px;
-    font-weight: 700;
-    color: white;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    line-height: 1;
-}
-
-.avatar-container:hover .avatar {
-    transform: scale(1.06);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    filter: brightness(0.8);
-}
-
-.avatar-container:hover .avatar-hover-overlay {
-    opacity: 1;
-}
-
-.avatar-container:hover .camera-badge {
-    transform: scale(1.12);
-    background: #2c5f5f;
-}
-
+/* Camera badge — sits outside .avatar so overflow:hidden doesn't clip it */
 .camera-badge {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    background: #3d6b6b;
-    width: 32px;
-    height: 32px;
+    bottom: 2px;
+    right: 2px;
+    background: #ffffff;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid white;
+    border: 2.5px solid #3d7070;
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.camera-badge:hover {
+    transform: scale(1.12);
+    background: #eaf4f4;
 }
 
 .camera-badge svg {
     width: 16px;
     height: 16px;
-    fill: white;
+    fill: #3d7070;
 }
 
 .profile-name {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
-    color: #1a4545;
+    color: #ffffff;
     margin-bottom: 4px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    letter-spacing: 0.2px;
 }
 
 .profile-email {
     font-size: 13px;
-    color: #666;
-    margin-bottom: 16px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 18px;
+    letter-spacing: 0.2px;
 }
 
 .edit-profile-btn {
-    background: white;
-    border: 1px solid #d0d0d0;
-    padding: 8px 20px;
-    border-radius: 6px;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    padding: 9px 22px;
+    border-radius: 20px;
     font-size: 13px;
     font-weight: 600;
-    color: #333;
+    color: #ffffff;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
 }
 
 .edit-profile-btn:hover {
-    background: #f5f5f5;
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.6);
 }
 
 .edit-profile-btn svg {
-    width: 14px;
-    height: 14px;
-    fill: #666;
+    width: 13px;
+    height: 13px;
+    fill: rgba(255,255,255,0.85);
 }
 
-/* ============================================================
-   INFO CARD
-   ============================================================ */
 .content-section {
     padding: 20px;
 }
@@ -319,3 +319,19 @@
         padding: 16px;
     }
 }
+[data-theme="dark"] .profile-section {
+    background: linear-gradient(160deg, #1a2f2f 0%, #0f1c1c 100%) !important;
+}
+
+[data-theme="dark"] .camera-badge {
+    background: #1e2f3f;
+    border-color: #5a8a8a;
+}
+[data-theme="dark"] .camera-badge svg { fill: #7ecece !important; }
+[data-theme="dark"] .edit-profile-btn {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+}
+[data-theme="dark"] .edit-profile-btn svg { fill: #7ecece !important; }
+[data-theme="dark"] .profile-name  { color: #e0eaf0 !important; }
+[data-theme="dark"] .profile-email { color: rgba(255,255,255,0.5) !important; }

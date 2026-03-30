@@ -125,6 +125,8 @@
 
                 localStorage.setItem('super_admin_token', data.token);
                 localStorage.setItem('super_admin_name',  data.super_admin_name);
+                // FIX: save device_info so apiFetch can include it in POST/PUT bodies
+                localStorage.setItem('sa_device_info', await getDeviceInfo());
 
                 if (rememberMe) {
                     localStorage.setItem('ppu_superadmin_email', email);

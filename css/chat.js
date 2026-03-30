@@ -42,6 +42,38 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     const messagesEl    = document.getElementById('chatMessages')
     const chatInput       = document.getElementById('chatInput')
     let   _pastedFile     = null   // holds clipboard-pasted image
+
+    // ── Reactions (server-side) ───────────────────────────────
+    const REACTIONS = ['❤️','😂','😮','😢','😡','👍']
+
+    // Get current user's own reaction
+    function _getMyReaction(reactionsJson) {
+        if (!reactionsJson) return null
+        try {
+            const r = typeof reactionsJson === 'string' ? JSON.parse(reactionsJson) : reactionsJson
+            return r[`${myRole}_${myId}`]?.emoji || null
+        } catch(e) { return null }
+    }
+
+    // Build grouped reaction bubbles HTML — shows all reactions from everyone
+    function _renderReactions(reactionsJson, msgId) {
+        if (!reactionsJson) return ''
+        let r = {}
+        try { r = typeof reactionsJson === 'string' ? JSON.parse(reactionsJson) : reactionsJson } catch(e) { return '' }
+        const keys = Object.keys(r)
+        if (!keys.length) return ''
+        // Group by emoji
+        const groups = {}
+        keys.forEach(k => {
+            const emoji = r[k].emoji
+            if (!groups[emoji]) groups[emoji] = { emoji, count: 0, mine: false }
+            groups[emoji].count++
+            if (k === `${myRole}_${myId}`) groups[emoji].mine = true
+        })
+        return Object.values(groups).map(g =>
+            `<span class="chat-reaction${g.mine ? ' chat-reaction-mine' : ''}" onclick="showReactionPicker(event,${msgId})" title="${g.count} reaction${g.count>1?'s':''}">${g.emoji}${g.count > 1 ? `<span class="chat-reaction-count">${g.count}</span>` : ''}</span>`
+        ).join('')
+    }
     const pinBar          = document.getElementById('chatPinBar')
     const pinBarText      = document.getElementById('chatPinBarText')
     const pinnedPanel     = document.getElementById('chatPinnedPanel')
@@ -243,6 +275,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                             </div>
                             ${pinned && !unsent ? '<div class="chat-pin-label">📌 Pinned</div>' : ''}
                             <div class="chat-msg-time">${formatTime(m.created_at)}</div>
+                            ${!unsent ? `<div class="chat-reaction-row">${_renderReactions(m.reactions, m.id)}</div>` : ''}
                         </div>
                     </div>
                     ${seenReceipt}
@@ -417,6 +450,59 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     }
 
     // ── 3-dot message menu ───────────────────────────────────
+    // ── Reactions ─────────────────────────────────────────────
+    window.doReact = async function(msgId, emoji) {
+        document.getElementById('chatMsgMenu')?.remove()
+        // Optimistic toggle
+        const myEmoji = _getMyReactionFromDom(msgId)
+        const nextEmoji = myEmoji === emoji ? null : emoji
+        // Persist to server — get back full updated reactions
+        try {
+            const res = await _fetch(`${endpoint}/messages/react/${msgId}`, {
+                method: 'POST',
+                body: JSON.stringify({ emoji: nextEmoji })
+            })
+            if (res.ok) {
+                const msgEl = messagesEl?.querySelector(`[data-id="${msgId}"]`)
+                if (msgEl) _applyReactionDom(msgEl, msgId, res.reactions)
+            }
+        } catch(e) { console.warn('[React]', e) }
+    }
+
+    function _getMyReactionFromDom(msgId) {
+        const el = messagesEl?.querySelector(`[data-id="${msgId}"] .chat-reaction-mine`)
+        return el ? el.textContent.trim().charAt(0) : null
+    }
+
+    function _applyReactionDom(msgEl, msgId, reactionsObj) {
+        // reactionsObj: the updated reactions JSON from server response
+        let rowEl = msgEl.querySelector('.chat-reaction-row')
+        if (!rowEl) {
+            rowEl = document.createElement('div')
+            rowEl.className = 'chat-reaction-row'
+            const timeEl = msgEl.querySelector('.chat-msg-time')
+            if (timeEl) timeEl.after(rowEl)
+            else msgEl.querySelector('.chat-msg-body')?.appendChild(rowEl)
+        }
+        rowEl.innerHTML = _renderReactions(reactionsObj, msgId)
+    }
+
+    window.showReactionPicker = function(e, msgId) {
+        e.stopPropagation()
+        document.getElementById('chatMsgMenu')?.remove()
+        const menu = document.createElement('div')
+        menu.id = 'chatMsgMenu'
+        menu.style.cssText = 'position:fixed;z-index:99999;background:#fff;border:1.5px solid #e0eee9;border-radius:20px;box-shadow:0 6px 24px rgba(0,0,0,0.18);padding:6px 8px;'
+        menu.innerHTML = `<div class="chat-ctx-reaction-row">${REACTIONS.map(r => `<button class="chat-ctx-react-btn" onclick="doReact(${msgId},'${r}')">${r}</button>`).join('')}</div>`
+        const rect = e.currentTarget.getBoundingClientRect()
+        let left = rect.left
+        if (left + 220 > window.innerWidth) left = window.innerWidth - 228
+        menu.style.left = left + 'px'
+        menu.style.top  = (rect.top - 60) + 'px'
+        document.body.appendChild(menu)
+        setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 10)
+    }
+
     window.showMsgMenu = function(e, msgId, isSent, isUnsent) {
         e.stopPropagation()
         closeMsgMenu()
@@ -425,6 +511,15 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         menu.id = 'chatMsgMenu'
 
         let items = ''
+
+        // ── Reaction row (always shown for non-unsent messages) ──
+        if (!isUnsent) {
+            items += `<div class="chat-ctx-reaction-row">`
+            items += REACTIONS.map(r => `<button class="chat-ctx-react-btn" onclick="doReact(${msgId},'${r}')">${r}</button>`).join('')
+            items += `</div>`
+            items += `<div class="chat-ctx-divider"></div>`
+        }
+
         if (!isUnsent) {
             if (isSent) {
                 items += `<div class="chat-ctx-item" onclick="doEdit(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</div>`
@@ -746,13 +841,17 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
 
         picker = document.createElement('div')
         picker.id = 'chatEmojiPicker'
+        // Position relative to the emoji button
+        const btnRect = document.getElementById('chatEmojiBtn')?.getBoundingClientRect()
+        const pickerBottom = btnRect ? (window.innerHeight - btnRect.top + 8) : 80
+        const pickerLeft   = btnRect ? Math.max(4, Math.min(btnRect.left, window.innerWidth - 280)) : 8
         picker.style.cssText = `
-            position:absolute; bottom:60px; left:8px; z-index:9999;
+            position:fixed; bottom:${pickerBottom}px; left:${pickerLeft}px; z-index:99999;
             background:#fff; border:1.5px solid #dde8e6; border-radius:12px;
-            box-shadow:0 4px 20px rgba(0,0,0,0.15);
+            box-shadow:0 4px 20px rgba(0,0,0,0.18);
             padding:10px; width:272px; max-height:220px;
             overflow-y:auto; display:none;
-            display:grid; grid-template-columns:repeat(8,1fr);
+            grid-template-columns:repeat(8,1fr);
             gap:2px;
         `
         EMOJIS.forEach(emoji => {
@@ -766,7 +865,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             `
             btn.addEventListener('mouseenter', () => btn.style.background = '#f0f5f5')
             btn.addEventListener('mouseleave', () => btn.style.background = 'none')
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation()
                 if (chatInput) {
                     const start = chatInput.selectionStart
                     const end   = chatInput.selectionEnd
@@ -776,21 +876,34 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                     chatInput.focus()
                     chatInput.dispatchEvent(new Event('input'))
                 }
+                // Close after inserting
+                picker.style.display = 'none'
+                _emojiOpen = false
             })
             picker.appendChild(btn)
         })
 
-        // Append inside the chat panel so it stays within bounds
-        const convView = document.getElementById('chatConvView')
-        if (convView) convView.appendChild(picker)
-        else document.body.appendChild(picker)
+        // Append to body so it's never clipped by overflow:hidden
+        document.body.appendChild(picker)
         return picker
     }
 
     function toggleEmojiPicker() {
         const picker = buildEmojiPicker()
         _emojiOpen = !_emojiOpen
-        picker.style.display = _emojiOpen ? 'grid' : 'none'
+        if (_emojiOpen) {
+            // Reposition each open so it tracks the button correctly
+            const btnRect = document.getElementById('chatEmojiBtn')?.getBoundingClientRect()
+            if (btnRect) {
+                const bottom = window.innerHeight - btnRect.top + 8
+                const left   = Math.max(4, Math.min(btnRect.left, window.innerWidth - 280))
+                picker.style.bottom = bottom + 'px'
+                picker.style.left   = left + 'px'
+            }
+            picker.style.display = 'grid'
+        } else {
+            picker.style.display = 'none'
+        }
     }
 
     document.getElementById('chatEmojiBtn')?.addEventListener('click', (e) => {
@@ -921,6 +1034,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 }
                 _lastUnreadContacts[key] = currUnread
             })
+            // Also check for reaction notifications
+            _checkReactionNotifications()
         } else {
             // Reset tracking when panel is open (messages are being read)
             const contacts = data.contacts || []
@@ -930,7 +1045,38 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         }
     }, 8000)
 
-    // Initial load — seed _lastUnreadContacts FIRST so we don't toast on page load
+    // Reaction notification tracker
+    let _lastReactionNotifId = 0
+    async function _checkReactionNotifications() {
+        try {
+            const data = await _fetch(`${endpoint}/messages/reaction-notifications?after=${_lastReactionNotifId}`)
+            if (!data.ok || !data.notifications?.length) return
+            data.notifications.forEach(n => {
+                if (n.id > _lastReactionNotifId) _lastReactionNotifId = n.id
+                const meta = n.meta || {}
+                // Only show toast if the reactor is not me
+                if (String(meta.reactor_id) !== String(myId) || meta.reactor_role !== myRole) {
+                    showMessageToast(n.title, meta.reactor_role || 'user', n.message, meta.reactor_id, meta.reactor_role)
+                }
+                // If the conversation is open, refresh messages to show the reaction
+                if (_convContact &&
+                    String(_convContact.id) === String(meta.reactor_id) &&
+                    _convContact.role === meta.reactor_role) {
+                    loadMessages()
+                }
+            })
+        } catch(e) {}
+    }
+
+    // Initial load — seed BOTH _lastUnreadContacts AND _lastReactionNotifId
+    // so we don't toast on page load for old notifications
+    _fetch(`${endpoint}/messages/reaction-notifications?after=0&seed=1`).then(data => {
+        if (data.ok && data.notifications?.length) {
+            // Seed to the highest existing ID — only NEW ones after this will toast
+            _lastReactionNotifId = Math.max(...data.notifications.map(n => n.id))
+        }
+    }).catch(() => {})
+
     _fetch(`${endpoint}/messages/contacts`).then(data => {
         if (data.ok) {
             (data.contacts || []).forEach(c => {

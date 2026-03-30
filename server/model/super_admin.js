@@ -221,6 +221,64 @@ superAdmin.post('/create_admin', requireSuperAdmin, async (req, res) => {
 })
 
 // Edit admin
+// ============================================================
+// SUPER ADMIN REGISTRATION — Teacher, Guard, Student
+// FIX: super admin token has super_admin_id, not admin_id.
+// These routes use the super_admin context and pick a valid
+// admin_id from the DB (or use NULL) so records are properly saved.
+// ============================================================
+
+superAdmin.post('/register_teacher', requireSuperAdmin, async (req, res) => {
+    const { fullName, email, password, department } = req.body
+    if (!fullName || !email || !password || !department)
+        return res.status(400).json({ ok: false, message: 'All fields are required.' })
+    if (password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
+    try {
+        // Use admin_id=null — teacher is created at super admin level, not tied to a specific admin
+        const result = await services.teacherRegistration(fullName, email, password, department, null)
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'CREATE_TEACHER', 'Teacher', null, fullName, `SuperAdmin registered teacher: ${email}, Dept: ${department}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        res.status(201).json({ ok: true, message: result })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+superAdmin.post('/register_guard', requireSuperAdmin, async (req, res) => {
+    const { guard_name, guard_email, guard_password, guard_designated_location } = req.body
+    if (!guard_name || !guard_email || !guard_password || !guard_designated_location)
+        return res.status(400).json({ ok: false, message: 'All fields are required.' })
+    if (guard_password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
+    try {
+        const result = await services.guardRegistration(guard_name, guard_email, guard_password, guard_designated_location, null)
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'CREATE_GUARD', 'Guard', null, guard_name, `SuperAdmin registered guard: ${guard_email}, Location: ${guard_designated_location}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        res.status(201).json({ ok: true, message: result })
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+superAdmin.post('/register_student', requireSuperAdmin, async (req, res) => {
+    const { idNumber, firstName, middleName, lastName, email, password, yearLevel, guardianContact, program } = req.body
+    if (!idNumber || !firstName || !lastName || !email || !password || !yearLevel || !program)
+        return res.status(400).json({ ok: false, message: 'All required fields must be filled.' })
+    if (password.length < 6)
+        return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
+    try {
+        const isDuplicate = await services.checkStudentAccountDuplication(email, idNumber)
+        if (isDuplicate)
+            return res.json({ ok: false, message: 'Email or ID number already registered.' })
+        const hashedPassword = await services.hashPassword(password)
+        const barcode = services.generateBarcode()
+        await services.studentRegistration(idNumber, firstName, middleName || '', lastName, email, hashedPassword, yearLevel, guardianContact || '', program, '', barcode, '')
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'CREATE_STUDENT', 'Student', null, `${firstName} ${lastName}`, `SuperAdmin registered student: ${email}, Program: ${program}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        res.status(201).json({ ok: true, message: 'Student registered successfully!' })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
 superAdmin.put('/edit_admin/:id', requireSuperAdmin, async (req, res) => {
     const id = req.params.id
     const { admin_name, admin_email } = req.body
@@ -351,6 +409,12 @@ superAdmin.put('/maintenance_toggle', requireSuperAdmin, async (req, res) => {
 
 // Get campus accounts (students, teachers, guards)
 superAdmin.get('/get_whole_campus_accounts_count/:table', requireSuperAdmin, async (req, res) => {
+    // FIX: req.params.table was injected raw into SQL — any table name could be read.
+    // Whitelist the only three tables this route is supposed to serve.
+    const ALLOWED_TABLES = ['student_accounts', 'teacher', 'guards']
+    if (!ALLOWED_TABLES.includes(req.params.table)) {
+        return res.status(400).json({ ok: false, message: 'Invalid table name.' })
+    }
     try {
         const result = await services.getWholeCampusAccounts(req.params.table)
         res.json({ ok: true, message: 'Successfully retrieved data!', contents: result })
@@ -554,6 +618,7 @@ superAdmin.put('/reset_guard_password/:id', requireSuperAdmin, async (req, res) 
 // Teacher account management
 superAdmin.delete('/delete_teacher_account/:id', requireSuperAdmin, async (req, res) => {
     const id = req.params.id
+    const db = require('../configuration/db')
     try {
         let teacherName = `Teacher ID: ${id}`
         try {
@@ -561,28 +626,68 @@ superAdmin.delete('/delete_teacher_account/:id', requireSuperAdmin, async (req, 
             const found = all.find(t => String(t.teacher_id) === String(id))
             if (found) teacherName = found.teacher_name
         } catch (_) {}
-        const result = await services.adminDeleteTeacher(id, 0)
+        // FIX: super admin bypasses admin_id restriction — delete by teacher_id only
+        await new Promise((resolve, reject) => {
+            db.execute('DELETE FROM teacher WHERE teacher_id = ?', [id], (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Teacher not found.'))
+                resolve(result)
+            })
+        })
         services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'DELETE_TEACHER', 'Teacher', null, teacherName, `Deleted teacher: ${teacherName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
-        res.json(result)
+        res.json({ ok: true, message: 'Teacher deleted successfully.' })
     } catch (err) {
-        res.status(err.status_code || 500).json(err)
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
 superAdmin.put('/edit_teacher_account/:id', requireSuperAdmin, async (req, res) => {
     const { teacher_name, teacher_email, teacher_program } = req.body
+    const teacherId = req.params.id
+    const db = require('../configuration/db')
     try {
-        const result = await services.adminEditTeacherAccounts(req.params.id, teacher_name, teacher_email, teacher_program, 0)
-        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'EDIT_TEACHER', 'Teacher', null, teacher_name, `Edited teacher: ${teacher_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
-        res.json(result)
+        // FIX: super admin bypasses admin_id ownership check — update by teacher_id only
+        await new Promise((resolve, reject) => {
+            db.execute(
+                'UPDATE teacher SET teacher_name = ?, teacher_email = ?, teacher_program = ? WHERE teacher_id = ?',
+                [teacher_name, teacher_email, teacher_program, teacherId],
+                (err, result) => {
+                    if (err) return reject(err)
+                    if (result.affectedRows === 0) return reject(new Error('Teacher not found.'))
+                    resolve(result)
+                }
+            )
+        })
+
+        // FIX: cascade program change to student_records_regular_class
+        // so class management stays in sync when teacher program is changed
+        await new Promise((resolve, reject) => {
+            db.execute(
+                `SELECT teacher_barcode_scanner_serial_number FROM teacher WHERE teacher_id = ?`,
+                [teacherId],
+                (err, rows) => {
+                    if (err || !rows.length) return resolve() // non-fatal
+                    const serial = rows[0].teacher_barcode_scanner_serial_number
+                    db.execute(
+                        'UPDATE student_records_regular_class SET student_program = ? WHERE teacher_barcode_scanner_serial_number = ?',
+                        [teacher_program, serial],
+                        (err2) => { if (err2) console.error('[CascadeProgram]', err2); resolve() }
+                    )
+                }
+            )
+        })
+
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'EDIT_TEACHER', 'Teacher', teacherId, teacher_name, `Edited teacher: ${teacher_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        res.json({ ok: true, message: 'Teacher account updated successfully!' })
     } catch (err) {
-        res.status(err.status_code || 500).json(err)
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
 // Guard account management
 superAdmin.delete('/delete_guard_account/:id', requireSuperAdmin, async (req, res) => {
     const id = req.params.id
+    const db = require('../configuration/db')
     try {
         let guardName = `Guard ID: ${id}`
         try {
@@ -590,11 +695,18 @@ superAdmin.delete('/delete_guard_account/:id', requireSuperAdmin, async (req, re
             const found = all.find(g => String(g.guard_id) === String(id))
             if (found) guardName = found.guard_name
         } catch (_) {}
-        const result = await services.adminDeleteGuard(id, 0)
+        // FIX: super admin bypasses admin_id restriction — delete by guard_id only
+        await new Promise((resolve, reject) => {
+            db.execute('DELETE FROM guards WHERE guard_id = ?', [id], (err, result) => {
+                if (err) return reject(err)
+                if (result.affectedRows === 0) return reject(new Error('Guard not found.'))
+                resolve(result)
+            })
+        })
         services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'DELETE_GUARD', 'Guard', null, guardName, `Deleted guard: ${guardName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
-        res.json(result)
+        res.json({ ok: true, message: 'Guard deleted successfully.' })
     } catch (err) {
-        res.status(err.status_code || 500).json(err)
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -695,7 +807,8 @@ superAdmin.get('/class/get_teachers', requireSuperAdmin, async (req, res) => {
 superAdmin.get('/class/attendance_now/:teacher_id', requireSuperAdmin, async (req, res) => {
     try {
         const teacher = await getTeacherSerial(req.params.teacher_id)
-        const result = await services.getStudentAttendanceNow(teacher.teacher_barcode_scanner_serial_number)
+        const subject = req.query.subject || null  // optional subject filter
+        const result = await services.getStudentAttendanceNow(teacher.teacher_barcode_scanner_serial_number, subject)
         res.json({ ok: true, content: result })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || err })
@@ -784,10 +897,10 @@ superAdmin.get('/class/active_subject/:teacher_id', requireSuperAdmin, async (re
 
 // Set subject and year level for a teacher
 superAdmin.put('/class/set_subject/:teacher_id', requireSuperAdmin, async (req, res) => {
-    const { subject, yearLevel } = req.body
+    const { subject, yearLevel, classTime } = req.body
     try {
         const teacher = await getTeacherSerial(req.params.teacher_id)
-        const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, teacher.teacher_barcode_scanner_serial_number)
+        const result = await services.teacherSubjectAndYearLevelSetter(subject, yearLevel, classTime || null, teacher.teacher_barcode_scanner_serial_number)
         services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', teacher.teacher_id, subject, `SuperAdmin set subject: ${subject}, year level: ${yearLevel} for teacher: ${teacher.teacher_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch (err) {
@@ -885,6 +998,39 @@ superAdmin.delete('/class/subject_class_list/remove/:id', requireSuperAdmin, asy
     }
 })
 
+
+// Update attendance status for a student (super admin proxy)
+superAdmin.put('/class/update_attendance_status/:attendance_id', requireSuperAdmin, async (req, res) => {
+    try {
+        const { attendance_id } = req.params
+        const { status, teacher_id } = req.body
+        const allowedStatuses = ['Present', 'Absent', 'Late', 'Excused']
+        if (!allowedStatuses.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status.' })
+        const teacher = await getTeacherSerial(teacher_id)
+        const result = await services.updateAttendanceStatus(attendance_id, status, teacher.teacher_barcode_scanner_serial_number)
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'UPDATE_ATTENDANCE_STATUS', 'Attendance', attendance_id, status, `SuperAdmin updated attendance ID ${attendance_id} to ${status}`, req.ip, req.headers['user-agent'])
+        res.json({ ok: true, message: result })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message || err }) }
+})
+
+// Insert manual status record for a student with no existing attendance (super admin proxy)
+superAdmin.post('/class/insert_manual_status', requireSuperAdmin, async (req, res) => {
+    try {
+        const { teacher_id, student_id, student_id_number, student_firstname, student_middlename,
+                student_lastname, student_program, student_year_level, subject, status } = req.body
+        const allowedStatuses = ['Present', 'Absent', 'Late', 'Excused']
+        if (!allowedStatuses.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status.' })
+        const teacher = await getTeacherSerial(teacher_id)
+        const result = await services.insertManualStatusRecord(
+            student_id, student_id_number, student_firstname, student_middlename,
+            student_lastname, student_program, student_year_level, subject,
+            teacher.teacher_barcode_scanner_serial_number, status
+        )
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'INSERT_MANUAL_STATUS', 'Attendance', student_id, status, `SuperAdmin manually set ${student_firstname} ${student_lastname} to ${status}`, req.ip, req.headers['user-agent'])
+        res.json({ ok: true, message: result.message, insertId: result.insertId })
+    } catch (err) { res.status(500).json({ ok: false, message: err.message || err }) }
+})
+
 // Manual attendance entry for a teacher's class
 superAdmin.post('/class/manual_attendance/:teacher_id', requireSuperAdmin, async (req, res) => {
     const {
@@ -923,6 +1069,9 @@ superAdmin.get('/class/search_students', requireSuperAdmin, async (req, res) => 
 // ============================================================
 superAdmin.post('/logout', requireSuperAdmin, (req, res) => {
     const { super_admin_id, super_admin_name, super_admin_email } = req.superAdmin;
+    // FIX: blacklist the token so it cannot be reused after logout
+    const token = services.removeBearer(req.headers['authorization'])
+    services.blacklistToken(token)
     services.writeLogoutLog(super_admin_id, super_admin_name, super_admin_email, 'super_admin', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
     res.json({ ok: true, message: 'Logged out.' });
 })
@@ -992,6 +1141,14 @@ superAdmin.post('/messages/send', uploadMsgFile.single('file'), async (req, res)
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
         const id = await services.sendMessage(tok.super_admin_id, 'super_admin', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
         res.json({ ok: true, id })
+        // Notify receiver via bell
+        services.createMsgNotification(
+                parseInt(receiver_id), receiver_role,
+                tok.super_admin_id, 'super_admin', tok.super_admin_name || 'super_admin',
+                req.file ? 'file' : 'message',
+                content?.trim() || (req.file ? req.file.originalname : null),
+                null, id
+        ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
@@ -1021,6 +1178,81 @@ superAdmin.delete('/messages/unsend/:id', async (req, res) => {
         await services.unsendMessage(parseInt(req.params.id), tok.super_admin_id, 'super_admin')
         res.json({ ok: true })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+
+
+// GET /messages/notifications
+superAdmin.get('/messages/notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        services.cleanOldMsgNotifications()
+        const notifs = await services.getMsgNotifications(tok.super_admin_id, 'super_admin', parseInt(req.query.limit) || 30)
+        const unread = await services.getUnreadMsgNotifCount(tok.super_admin_id, 'super_admin')
+        res.json({ ok: true, notifications: notifs, unread })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/notifications/read
+superAdmin.post('/messages/notifications/read', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const ids = req.body.ids || []
+        await services.markMsgNotificationsRead(tok.super_admin_id, 'super_admin', ids)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// GET /messages/reaction-notifications
+// Super admin uses the bell (message_notifications) system instead — always return empty
+superAdmin.get('/messages/reaction-notifications', async (req, res) => {
+    res.json({ ok: true, notifications: [] })
+})
+
+// POST /messages/react/:id
+superAdmin.post('/messages/react/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false, message: 'Unauthorized.' })
+        const { emoji } = req.body
+        const { reactions, msg } = await services.reactToMessage(
+            parseInt(req.params.id),
+            tok.super_admin_id, 'super_admin',
+            emoji || null
+        )
+        // Determine the OTHER party (not the reactor)
+        // If reactor is the message sender → notify receiver, else notify sender
+        const receiverId   = String(msg.sender_id) === String(tok.super_admin_id) && msg.sender_role === 'super_admin'
+            ? msg.receiver_id : msg.sender_id
+        const receiverRole = String(msg.sender_id) === String(tok.super_admin_id) && msg.sender_role === 'super_admin'
+            ? msg.receiver_role : msg.sender_role
+        // Never notify yourself and never notify super_admin via bell
+        const isSelf       = String(receiverId) === String(tok.super_admin_id) && receiverRole === 'super_admin'
+        const isSuper      = receiverRole === 'super_admin'
+        // Write a short-lived notification row so receiver's poll sees it
+        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
+        if (emoji && !isSelf && !isSuper) {
+            services.createNotification(
+                'reaction',
+                'New Reaction',
+                `${tok.super_admin_name || 'super_admin'} reacted ${emoji} to your message`,
+                { reactor_id: tok.super_admin_id, reactor_role: 'super_admin', message_id: parseInt(req.params.id), receiver_id: receiverId, receiver_role: receiverRole, emoji }
+            ).catch(() => {})
+        }
+        res.json({ ok: true, reactions })
+        // Notify via bell (skip only self)
+        if (emoji && !isSelf) {
+            services.createMsgNotification(
+                receiverId, receiverRole,
+                tok.super_admin_id, 'super_admin', tok.super_admin_name || 'super_admin',
+                'reaction', null, emoji, parseInt(req.params.id)
+            ).catch(() => {})
+        }
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message })
+    }
 })
 
 superAdmin.post('/messages/pin/:id', async (req, res) => {

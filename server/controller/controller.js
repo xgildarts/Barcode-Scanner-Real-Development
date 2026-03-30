@@ -9,6 +9,25 @@ const admin = require('../model/admin');
 const guard = require('../model/guard');
 const superAdmin = require('../model/super_admin');
 require('dotenv').config();
+// ── Global error guards — prevent ECONNRESET crashing the process ──
+process.on('uncaughtException', (err) => {
+    if (
+        err.code === 'ECONNRESET' ||
+        err.code === 'PROTOCOL_CONNECTION_LOST' ||
+        err.code === 'ETIMEDOUT' ||
+        err.code === 'ENOTFOUND'
+    ) {
+        console.warn('[Server] Non-fatal connection error suppressed:', err.code);
+        return;
+    }
+    console.error('[Server] Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.warn('[Server] Unhandled promise rejection:', reason);
+});
+
+
 
 const app = express();
 const PORT = process.env.PORT;

@@ -155,6 +155,14 @@ async function startScan() {
     scanLoop();
 }
 
+// FIX: centralised session cleanup
+function clearSessionAndRedirect() {
+    localStorage.removeItem('guard_token');
+    localStorage.removeItem('guard_device_info');
+    localStorage.removeItem('guard_user');
+    window.location.href = 'guard_login.html';
+}
+
 async function checkToken() {
     try {
         // No token at all
@@ -167,7 +175,7 @@ async function checkToken() {
                 allowOutsideClick: false
             });
 
-            window.location.href = 'guard_login.html';
+            clearSessionAndRedirect(); // FIX: clear token before redirect
             return;
         }
 
@@ -191,7 +199,7 @@ async function checkToken() {
                 allowOutsideClick: false
             });
 
-            window.location.href = 'guard_login.html';
+            clearSessionAndRedirect(); // FIX: clear token before redirect
         }
 
     } catch (err) {
@@ -318,16 +326,100 @@ function logout() {
                 showConfirmButton: false,
                 allowOutsideClick: false
             }).then(() => {
-                window.location.href = 'guard_login.html';
+                clearSessionAndRedirect(); // FIX: clear token before redirect
             });
         }
     });
+}
+
+// ============================================================
+// PROFILE PICTURE
+// ============================================================
+function _setGuardAvatar(src) {
+    const wrap = document.getElementById('guardAvatarWrap');
+    if (!wrap) return;
+    wrap.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+}
+
+async function loadGuardProfile() {
+    try {
+        const res  = await fetch(`${URL_BASED}/guard/get_data`, {
+            headers: { 'Authorization': 'Bearer ' + TOKEN }
+        });
+        const data = await res.json();
+        if (!data.ok) return;
+        const pic = data.content.guard_profile_picture;
+        if (pic) {
+            _setGuardAvatar(`${URL_BASED.replace('/api/v1','')}/api/v1/uploads/profile_pictures/${pic}`);
+        }
+    } catch (_) {}
+}
+
+async function _uploadGuardPic(blob) {
+    const croppedFile = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+    const fd = new FormData();
+    fd.append('guard_profile_picture', croppedFile);
+    Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        const res  = await fetch(`${URL_BASED}/guard/upload_profile_picture`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + TOKEN },
+            body: fd
+        });
+        const data = await res.json();
+        Swal.close();
+        if (data.ok) {
+            const url = `${URL_BASED.replace('/api/v1','')}/api/v1/uploads/profile_pictures/${data.picture}`;
+            _setGuardAvatar(url);
+            Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
+            loadGuardProfile(); // revert to server version
+        }
+    } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message });
+        loadGuardProfile();
+    }
+}
+
+function changeGuardPicture() {
+    const input = document.getElementById('guardPicInput');
+    // Use crop modal if available, otherwise fallback to direct upload
+    if (typeof initImageCrop === 'function') {
+        // Detach previous listener to avoid duplicates, then re-init
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+        initImageCrop(newInput, async (blob, dataUrl) => {
+            // Instant preview
+            _setGuardAvatar(dataUrl);
+            await _uploadGuardPic(blob);
+        });
+        newInput.click();
+    } else {
+        // Fallback — no crop
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                return Swal.fire({ icon: 'error', title: 'File too large', text: 'Max 5MB.' });
+            }
+            const reader = new FileReader();
+            reader.onload = ev => _setGuardAvatar(ev.target.result);
+            reader.readAsDataURL(file);
+            const arrayBuf = await file.arrayBuffer();
+            await _uploadGuardPic(new Blob([arrayBuf], { type: file.type }));
+            input.value = '';
+        };
+        input.click();
+    }
 }
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     startCamera();
+    loadGuardProfile();
 })
 // ============================================================
 // MAINTENANCE MODE POLLING

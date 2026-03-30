@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 27, 2026 at 08:25 AM
+-- Generation Time: Mar 29, 2026 at 01:08 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -41,8 +41,9 @@ CREATE TABLE `admin_accounts` (
 --
 
 INSERT INTO `admin_accounts` (`admin_id`, `admin_name`, `admin_email`, `admin_profile_picture`, `admin_password`, `date_account_created`) VALUES
-(1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin-1774291107115-669.jpg', '$2b$10$WLX3Xkyz5en54kOO/5ZpouaRVWh2a9COy/rskR8Z/sqwBLYYB30ra', '2026-02-09 00:02:44'),
-(2, 'Steven John A. Agustin', 'steven.agustin.admin@panpacificu.edu.ph', NULL, '$2b$10$mDndtidBYe2/oHD.7lxoIuJlt.x6rBHFOTSuo1NPJk.tUA9TRSLay', '2026-03-22 02:29:34');
+(1, 'CSS Admin Chariz', 'admin@panpacificu.edu.ph', 'admin-1774705701340-338856.jpg', '$2b$10$WLX3Xkyz5en54kOO/5ZpouaRVWh2a9COy/rskR8Z/sqwBLYYB30ra', '2026-02-09 00:02:44'),
+(2, 'Steven John A. Agustin', 'steven.agustin.admin@panpacificu.edu.ph', NULL, '$2b$10$mDndtidBYe2/oHD.7lxoIuJlt.x6rBHFOTSuo1NPJk.tUA9TRSLay', '2026-03-22 02:29:34'),
+(3, 'Gabriel C. Castillo', 'gabriel@panpacificu.edu.ph', NULL, '$2b$10$U3SDnx3gh0huVLGY5q2BP.5J6bMo3R5HuDtU42yZPQAgExOwbqKne', '2026-03-28 15:33:17');
 
 -- --------------------------------------------------------
 
@@ -113,10 +114,11 @@ CREATE TABLE `attendance_history_record` (
 --
 
 INSERT INTO `attendance_history_record` (`attendance_id`, `student_id_number`, `student_middlename`, `student_lastname`, `student_firstname`, `student_program`, `attendance_time`, `attendance_date`, `year_level`, `subject`, `location_generated`, `device_id`, `student_id`, `teacher_barcode_scanner_serial_number`) VALUES
-(125, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '01:31:27', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441'),
-(126, '1231231231231', 'B', 'Dragneel', 'Natsu', 'BS in Information Technology', '01:35:48', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 35, 'TSN17698767256291441'),
-(127, '12312312312', 'A', 'Gallarde (ECoAST)', 'Marfel Gem', 'BS in Computer Engineering', '01:40:13', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 33, 'TSN17698767256291441'),
-(128, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '11:55:19', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441');
+(131, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '13:21:01', '2026-03-30', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441'),
+(132, '1231231231231', 'B', 'Dragneel', 'Natsu', 'BS in Information Technology', '13:21:29', '2026-03-30', '3rd Year', 'Integrative Programming', NULL, NULL, 35, 'TSN17698767256291441'),
+(133, '1231231231231', 'B', 'Dragneel', 'Natsu', 'BS in Information Technology', '13:37:31', '2026-03-31', '3rd Year', 'Integrative Programming', NULL, NULL, 35, 'TSN17698767256291441'),
+(134, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '22:20:56', '2026-04-01', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441'),
+(135, '1231231231231', 'B', 'Dragneel', 'Natsu', 'BS in Information Technology', '22:22:37', '2026-04-01', '3rd Year', 'Integrative Programming', NULL, NULL, 35, 'TSN17698767256291441');
 
 -- --------------------------------------------------------
 
@@ -139,32 +141,68 @@ CREATE TABLE `attendance_record` (
   `device_id` varchar(255) DEFAULT NULL,
   `student_id` int(11) DEFAULT NULL,
   `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL,
-  `attendance_status` enum('Present','Late','Absent','Excused') NOT NULL DEFAULT 'Present'
+  `attendance_status` enum('Present','Late','Absent','Excused') NOT NULL DEFAULT 'Present',
+  `manually_overridden` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = teacher manually set this status, auto-late detection is skipped'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `attendance_record`
 --
 
-INSERT INTO `attendance_record` (`attendance_id`, `student_id_number`, `student_middlename`, `student_lastname`, `student_firstname`, `student_program`, `attendance_time`, `attendance_date`, `year_level`, `subject`, `location_generated`, `device_id`, `student_id`, `teacher_barcode_scanner_serial_number`, `attendance_status`) VALUES
-(173, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '01:30:51', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
-(174, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '01:31:27', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441', 'Absent'),
-(175, '1231231231231', 'B', 'Dragneel', 'Natsu', 'BS in Information Technology', '01:35:48', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 35, 'TSN17698767256291441', 'Present'),
-(176, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '01:37:08', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
-(177, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '01:37:09', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
-(178, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '01:37:49', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
-(179, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '01:37:49', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
-(180, '12312312312', 'A', 'Gallarde (ECoAST)', 'Marfel Gem', 'BS in Computer Engineering', '01:40:13', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 33, 'TSN17698767256291441', 'Present'),
-(181, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '01:47:09', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
-(182, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '01:47:13', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', ''),
-(183, '897', 'A', 'Lachica', 'Andrea', NULL, '01:47:20', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', ''),
-(184, '1231392', 'Agmata', 'Aquino', 'Jan Ray', NULL, '11:43:27', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
-(185, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '11:45:18', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
-(186, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '11:47:19', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused'),
-(187, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '11:49:55', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present'),
-(188, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '11:55:19', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441', 'Present'),
-(189, '897', 'A', 'Lachica', 'Andrea', NULL, '11:59:28', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Late'),
-(190, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '11:59:29', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Late');
+INSERT INTO `attendance_record` (`attendance_id`, `student_id_number`, `student_middlename`, `student_lastname`, `student_firstname`, `student_program`, `attendance_time`, `attendance_date`, `year_level`, `subject`, `location_generated`, `device_id`, `student_id`, `teacher_barcode_scanner_serial_number`, `attendance_status`, `manually_overridden`) VALUES
+(173, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '01:30:51', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 0),
+(174, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '01:31:27', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441', 'Absent', 0),
+(175, '1231231231231', 'B', 'Dragneel', 'Natsu', 'BS in Information Technology', '01:35:48', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 35, 'TSN17698767256291441', 'Present', 0),
+(176, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '01:37:08', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(177, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '01:37:09', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(178, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '01:37:49', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(179, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '01:37:49', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(180, '12312312312', 'A', 'Gallarde (ECoAST)', 'Marfel Gem', 'BS in Computer Engineering', '01:40:13', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, 33, 'TSN17698767256291441', 'Present', 0),
+(181, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '01:47:09', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 0),
+(182, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '01:47:13', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', '', 0),
+(183, '897', 'A', 'Lachica', 'Andrea', NULL, '01:47:20', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', '', 0),
+(184, '1231392', 'Agmata', 'Aquino', 'Jan Ray', NULL, '11:43:27', '2026-03-26', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(185, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '11:45:18', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 0),
+(186, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '11:47:19', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 0),
+(187, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '11:49:55', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(188, '1231333', 'A', 'Heartfilla', 'Lucy', 'BS in Information Technology', '11:55:19', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, 23, 'TSN17698767256291441', 'Present', 0),
+(189, '897', 'A', 'Lachica', 'Andrea', NULL, '11:59:28', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Late', 0),
+(190, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '11:59:29', '2026-03-27', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Late', 0),
+(191, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '11:56:14', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(192, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '11:56:14', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(193, '1231392', 'Agmata', 'Aquino', 'Jan Ray', NULL, '11:56:15', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(194, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '11:56:15', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(195, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '11:56:16', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(196, '12312312312', 'A', 'Gallarde (ECoAST)', 'Marfel Gem', NULL, '11:56:16', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(197, '1231333', 'A', 'Heartfilla', 'Lucy', NULL, '11:56:18', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(198, '897', 'A', 'Lachica', 'Andrea', NULL, '11:56:28', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(199, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '11:58:20', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(200, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '11:58:20', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 0),
+(201, '1231426', 'M', 'Selga', 'Charimea', NULL, '12:41:52', '2026-03-28', '3rd Year', 'Integrative Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 0),
+(231, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '12:34:23', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(232, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '12:34:24', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(233, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '12:34:24', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(234, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '12:34:25', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(235, '1231333', 'A', 'Heartfilla', 'Lucy', NULL, '12:34:25', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(236, '848484', 'A', 'Kyoshi', 'Ace-cin', NULL, '12:34:26', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(237, '897', 'A', 'Lachica', 'Andrea', NULL, '12:34:26', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Late', 1),
+(238, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '12:34:27', '2026-03-28', '3rd Year', 'Programming', NULL, NULL, NULL, 'TSN17698767256291441', 'Late', 1),
+(239, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '16:46:31', '2026-03-28', '3rd Year', 'Database Lec', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(240, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '16:46:33', '2026-03-28', '3rd Year', 'Database Lec', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(241, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '16:46:36', '2026-03-28', '3rd Year', 'Database Lec', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(242, '1231426', 'M', 'Selga', 'Charimea', NULL, '22:06:11', '2026-03-28', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(243, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '22:07:10', '2026-03-28', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 1),
+(244, '1231392', 'Agmata', 'Aquino', 'Jan Ray', NULL, '22:20:50', '2026-03-28', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(245, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '22:25:22', '2026-03-28', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(246, '737773', 'A', 'Agustin', 'Zaiejan', NULL, '11:43:36', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(247, '1231377', 'A', 'Agustin (CoAST)', 'Steven John', NULL, '11:43:38', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(248, '1231392', 'Agmata', 'Aquino', 'Jan Ray', NULL, '11:43:39', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(249, '123123123', 'A', 'Cabote (ECoAST)', 'Angel Mageri', NULL, '11:43:40', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Present', 1),
+(250, '1231231231231', 'A', 'Dragneel', 'Natsu', NULL, '11:43:48', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Late', 1),
+(251, '1231333', 'A', 'Heartfilla', 'Lucy', NULL, '11:43:49', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Late', 1),
+(252, '12310922', 'A', 'Lachica', 'Andrea', NULL, '11:43:51', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 1),
+(253, '12313598', 'O', 'Obillo (ECoAST)', 'Princess', NULL, '11:43:51', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 1),
+(254, '1231422', 'M', 'Selga', 'Charimea', NULL, '11:43:52', '2026-03-29', '3rd Year', 'Big Data', NULL, NULL, NULL, 'TSN17698767256291441', 'Excused', 1);
 
 -- --------------------------------------------------------
 
@@ -236,7 +274,8 @@ INSERT INTO `event_attendance_history_record` (`event_id`, `student_id`, `studen
 (41, 49, 'Andrea A. Lachica', '897', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '13:13:12', '2026-03-23', 'TIME IN', 5, 1),
 (42, 51, 'Ace-cin A. Kyoshi', '848484', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '12:54:57', '2026-03-24', 'TIME IN', 5, 1),
 (43, 51, 'Ace-cin A. Kyoshi', '848484', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '12:55:16', '2026-03-24', 'TIME OUT', 5, 1),
-(44, 26, 'Luna M. Toka', '123123', 'BS in Criminology', '2nd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '14:09:41', '2026-03-24', 'TIME IN', 5, 1);
+(44, 26, 'Luna M. Toka', '123123', 'BS in Criminology', '2nd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '14:09:41', '2026-03-24', 'TIME IN', 5, 1),
+(45, 46, 'Steven John A. Agustin (CoAST)', '1231377', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '22:47:36', '2026-04-01', 'TIME IN', 5, 1);
 
 -- --------------------------------------------------------
 
@@ -261,6 +300,13 @@ CREATE TABLE `event_attendance_record` (
   `admin_id` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `event_attendance_record`
+--
+
+INSERT INTO `event_attendance_record` (`event_id`, `student_id`, `student_name`, `student_id_number`, `student_program`, `student_year_level`, `event_name`, `guard_name`, `guard_location`, `time`, `date`, `status`, `guard_id`, `admin_id`) VALUES
+(49, 46, 'Steven John A. Agustin (CoAST)', '1231377', 'BS in Information Technology', '3rd Year', 'Sample', 'Gray Fullbusters', 'Main Gate', '22:47:36', '2026-04-01', 'TIME IN', 5, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -279,7 +325,7 @@ CREATE TABLE `event_setter` (
 --
 
 INSERT INTO `event_setter` (`event_setter_id`, `event_name_set`, `event_date_created`, `admin_id`) VALUES
-(1, 'Sample', '2026-02-08 23:50:53', 1);
+(1, 'Sail', '2026-02-08 23:50:53', 1);
 
 -- --------------------------------------------------------
 
@@ -293,18 +339,19 @@ CREATE TABLE `guards` (
   `guard_email` varchar(255) NOT NULL,
   `guard_password` varchar(255) NOT NULL,
   `guard_designated_location` varchar(255) DEFAULT NULL,
-  `admin_id` int(11) NOT NULL
+  `admin_id` int(11) DEFAULT NULL,
+  `guard_profile_picture` varchar(500) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `guards`
 --
 
-INSERT INTO `guards` (`guard_id`, `guard_name`, `guard_email`, `guard_password`, `guard_designated_location`, `admin_id`) VALUES
-(5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', '$2b$10$NGqhdmtbZyNS91U8YY4Deu6/.9MO.i7qy.rHRQG68OXmqDoCj1w5e', 'Main Gate', 1),
-(6, 'Metalman', 'metal@panpacificu.edu.ph', '$2b$10$1T70awsl2.pNGdvZflKI6.fBURIm1foeww1VA.HMojcCatgOvrPVi', 'Parking Area', 1),
-(9, 'Kirito Kirigaya (Guard)', 'kirito@panpacificu.edu.ph', '$2b$10$.32vBAdFxi8CK.a8KDB8Hete8XiZ.KyJsWSDQ3DWdGXwDh4MtJlIu', 'Main Gate', 1),
-(10, 'Chari Segla (Guard)', 'chari@guard.panpacificu.edu.ph', '$2b$10$A4U6PKfPr0b9eqH3KmOhM.HXsh.Ek.schyFyVNPsw0vyCm/PsmZg.', 'Main Gate', 1);
+INSERT INTO `guards` (`guard_id`, `guard_name`, `guard_email`, `guard_password`, `guard_designated_location`, `admin_id`, `guard_profile_picture`) VALUES
+(5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', '$2b$10$NGqhdmtbZyNS91U8YY4Deu6/.9MO.i7qy.rHRQG68OXmqDoCj1w5e', 'Main Gate', 1, 'guard-1774706082744-315190.jpg'),
+(9, 'Kirito Kirigaya (Guard)', 'kirito@panpacificu.edu.ph', '$2b$10$.32vBAdFxi8CK.a8KDB8Hete8XiZ.KyJsWSDQ3DWdGXwDh4MtJlIu', 'Main Gate', 1, NULL),
+(11, 'Asuna Kirigaya', 'asuna@panpacificu.edu.ph', '$2b$10$5lE8e/CYQmxB4gV5shqO/O3Em85c9.wjezPnxQ0nX.Xf87xdwPwAS', 'Parking Area', NULL, NULL),
+(12, 'Anton', 'anton@gmail.com', '$2b$10$8fL5eTy4agQHg77CPJxP3OiqW8zNPs8N5P26yhW2IB2RcqqEGeSpa', 'Main Gate', 1, NULL);
 
 -- --------------------------------------------------------
 
@@ -332,6 +379,7 @@ CREATE TABLE `messages` (
   `deleted_for_sender` tinyint(1) NOT NULL DEFAULT 0,
   `deleted_for_receiver` tinyint(1) NOT NULL DEFAULT 0,
   `is_pinned` tinyint(1) NOT NULL DEFAULT 0,
+  `reactions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`reactions`)),
   `forwarded_from_id` int(11) DEFAULT NULL,
   `sender_profile_picture` varchar(500) DEFAULT NULL,
   `receiver_profile_picture` varchar(500) DEFAULT NULL,
@@ -342,96 +390,247 @@ CREATE TABLE `messages` (
 -- Dumping data for table `messages`
 --
 
-INSERT INTO `messages` (`id`, `sender_id`, `sender_role`, `sender_name`, `receiver_id`, `receiver_role`, `receiver_name`, `content`, `file_url`, `file_name`, `file_type`, `is_read`, `read_at`, `is_unsent`, `is_edited`, `edited_at`, `deleted_for_sender`, `deleted_for_receiver`, `is_pinned`, `forwarded_from_id`, `sender_profile_picture`, `receiver_profile_picture`, `created_at`) VALUES
-(1, 1, 'admin', 'Administrator', 1, 'super_admin', 'Super Administrator', 'Hello', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 01:46:47'),
-(2, 41, 'student', 'Angel Mageri', 18, 'teacher', 'Mark Zuckerberg', 'Hello sir I am absent for now, because I have Illness', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 01:48:14'),
-(3, 41, 'student', 'Angel Mageri', 18, 'teacher', 'Mark Zuckerberg', 'Hello sir', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 02:01:49'),
-(4, 41, 'student', 'Angel Mageri', 18, 'teacher', 'Mark Zuckerberg', 'Hello world', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 02:07:28'),
-(5, 1, 'super_admin', 'Super Administrator', 1, 'admin', 'Administrator', 'What is your need?', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 02:10:01'),
-(6, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'Administrator', 'I can\'t sir', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 02:16:51'),
-(7, 1, 'admin', 'Administrator', 5, 'guard', 'Gray Fullbusters', 'Okay I\'ll fix it', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 02:24:50'),
-(8, 1, 'admin', 'Administrator', 2, 'admin', 'Steven John A. Agustin', NULL, '/api/v1/uploads/message_files/msg_1774207090680_02.png', '02.png', 'image/png', 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 03:18:10'),
-(9, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Adda bagtit mo chari', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 1, NULL, NULL, NULL, '2026-03-23 08:56:21'),
-(10, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, NULL, 1, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2026-03-23 09:02:47'),
-(11, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Hello', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 1, 0, 0, NULL, NULL, NULL, '2026-03-23 09:09:46'),
-(12, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'hello nigga', NULL, NULL, NULL, 1, '2026-03-23 09:38:37', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:38:25'),
-(13, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'This is me', NULL, NULL, NULL, 1, '2026-03-23 09:38:37', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:38:30'),
-(14, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Sir I have a requests for you, because I can\'t attend now, because I am sick, Thank you sir for your consideration', NULL, NULL, NULL, 1, '2026-03-23 09:39:50', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:39:47'),
-(15, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Sir?', NULL, NULL, NULL, 1, '2026-03-23 09:40:15', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:40:02'),
-(16, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Ops whats wrong?', NULL, NULL, NULL, 1, '2026-03-23 09:43:24', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:43:21'),
-(17, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 09:43:29', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:43:28'),
-(18, 1, 'admin', 'Administrator', 2, 'admin', 'Steven John A. Agustin', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', NULL, '2026-03-23 09:46:13'),
-(19, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'hello', NULL, NULL, NULL, 1, '2026-03-23 09:54:21', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:46:35'),
-(20, 1, 'admin', 'Administrator', 2, 'admin', 'Steven John A. Agustin', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', NULL, '2026-03-23 09:49:30'),
-(21, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'what?', NULL, NULL, NULL, 1, '2026-03-23 09:54:33', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:54:26'),
-(22, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'hello', NULL, NULL, NULL, 1, '2026-03-23 09:54:33', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:54:29'),
-(23, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Come on', NULL, NULL, NULL, 1, '2026-03-23 09:56:42', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:56:21'),
-(24, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', '😂😂', NULL, NULL, NULL, 1, '2026-03-23 09:56:42', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:56:25'),
-(25, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'hello', NULL, NULL, NULL, 1, '2026-03-23 09:58:27', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:58:21'),
-(26, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'Mam what\'s going on?', NULL, NULL, NULL, 1, '2026-03-23 09:59:13', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:59:11'),
-(27, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Nothing haha', NULL, NULL, NULL, 1, '2026-03-23 09:59:25', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:59:24'),
-(28, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 10:00:33', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:00:31'),
-(29, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'ahahaha', NULL, NULL, NULL, 1, '2026-03-23 10:00:43', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:00:41'),
-(30, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'What\'s', NULL, NULL, NULL, 1, '2026-03-23 10:01:21', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:01:19'),
-(31, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Hello!', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:02'),
-(32, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'This is the new feature I put in to our System', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:19'),
-(33, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'It is great?', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:23'),
-(34, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 10:06:42', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:22'),
-(35, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'What?', NULL, NULL, NULL, 1, '2026-03-23 10:06:42', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:31'),
-(36, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'It\'s working?', NULL, NULL, NULL, 1, '2026-03-23 10:06:55', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:51'),
-(37, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'No mam', NULL, NULL, NULL, 1, '2026-03-23 10:07:14', 0, 1, '2026-03-23 19:50:34', 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:07:11'),
-(38, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', '😂😂', NULL, NULL, NULL, 1, '2026-03-23 10:07:26', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:07:24'),
-(39, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', NULL, '/api/v1/uploads/message_files/msg_1774231944611_376289072_6734967113212830_5626171689343155846_n.jpg', '376289072_6734967113212830_5626171689343155846_n.jpg', 'image/jpeg', 1, '2026-03-23 10:12:26', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:12:24'),
-(40, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-23 11:21:00', 1, 0, NULL, 0, 0, 0, NULL, 'teacher-1774205291067-113602.png', 'admin-1773474482355-324628.png', '2026-03-23 11:20:49'),
-(41, 49, 'student', 'Andrea', 1, 'super_admin', 'Super Administrator', NULL, NULL, NULL, NULL, 1, '2026-03-23 12:32:17', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'superadmin-1774076347437-483598.jpg', '2026-03-23 12:32:03'),
-(42, 1, 'super_admin', 'Super Administrator', 49, 'student', 'Andrea', 'Is this your lastname?', '/api/v1/uploads/message_files/msg_1774240559970_Untitled.png', 'Untitled.png', 'image/png', 1, '2026-03-23 12:36:46', 0, 0, NULL, 0, 0, 0, NULL, 'superadmin-1774076347437-483598.jpg', NULL, '2026-03-23 12:36:00'),
-(43, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-23 12:59:57', 1, 0, NULL, 0, 0, 0, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 12:42:26'),
-(44, 1, 'super_admin', 'Super Administrator', 1, 'admin', 'CSS Admin', 'Hello World', NULL, NULL, NULL, 1, '2026-03-23 13:01:02', 0, 0, NULL, 0, 0, 0, NULL, 'superadmin-1774076347437-483598.jpg', 'admin-1773474482355-324628.png', '2026-03-23 12:59:46'),
-(45, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', NULL, NULL, NULL, NULL, 1, '2026-03-23 13:00:34', 1, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:00:31'),
-(46, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-23 13:01:23', 1, 0, NULL, 0, 0, 0, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:00:45'),
-(47, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Good day Admin! can I request another account?', NULL, NULL, NULL, 1, '2026-03-23 13:02:56', 0, 0, NULL, 0, 0, 1, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:02:54'),
-(48, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', 'yes sure, account for you or a student ?', NULL, NULL, NULL, 1, '2026-03-23 13:04:15', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:04:13'),
-(49, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Good day admin!, I have problem with my account', NULL, NULL, NULL, 1, '2026-03-23 13:06:33', 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:06:30'),
-(50, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', 'Good day! Super admin, Can I see my login logs?', NULL, NULL, NULL, 1, '2026-03-23 13:20:54', 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774240930680-701646.png', 'superadmin-1774242535609-552779.png', '2026-03-23 13:08:57'),
-(51, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', 'what is problem?', NULL, NULL, NULL, 1, '2026-03-24 01:18:15', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:09:45'),
-(52, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'I can\'t upload profile mam', NULL, NULL, NULL, 1, '2026-03-23 20:12:43', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 20:12:32'),
-(53, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', '↪️ yes sure, account for you or a student ?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774286273203-115898.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 01:26:16'),
-(54, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Test mo crop image', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:04'),
-(55, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'nu agbalen', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:08'),
-(56, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', '😂😂', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:15'),
-(57, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Bleeeee', NULL, NULL, NULL, 1, '2026-03-24 10:27:12', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774180359937-849543.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:27:08'),
-(58, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Edit message', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:28'),
-(59, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'test mo', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:30'),
-(60, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'haha', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:31'),
-(61, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Bleeee', NULL, NULL, NULL, 1, '2026-03-24 10:28:52', 0, 1, '2026-03-24 10:29:00', 0, 0, 0, NULL, 'student-1774319257454-911589.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:28:52'),
-(62, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'edit mo', NULL, NULL, NULL, 1, '2026-03-24 10:29:00', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:58'),
-(63, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'test mo haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:02', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:00'),
-(64, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Balinen', NULL, NULL, NULL, 1, '2026-03-24 10:29:08', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774319257454-911589.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:29:05'),
-(65, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Nice haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:14', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:13'),
-(66, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'inaramid nga chat box haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:22', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:19'),
-(67, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', '??', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:25'),
-(68, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'any follow up?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:30'),
-(69, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'student?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:31'),
-(70, 42, 'student', 'Zaiejan', 49, 'student', 'Andrea Lachica', 'Hello hamste🤣', NULL, NULL, NULL, 1, '2026-03-24 15:21:38', 0, 1, '2026-03-24 15:21:57', 0, 0, 1, NULL, 'student-1774336806254-514881.jpg', 'student-1774336848701-75789.jpg', '2026-03-24 15:21:20'),
-(71, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', '↪️ Hello hamste🤣 (edited)', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:22:28'),
-(72, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774336989582_Panpacific-University-North-Philippines.jpg', 'Panpacific-University-North-Philippines.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:23:09'),
-(73, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', 'uurje', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:27:30'),
-(74, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774337265049_IMG_20260324_152540_866.jpg', 'IMG_20260324_152540_866.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:27:45'),
-(75, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774337285402_IMG_20260324_152540_866.jpg', 'IMG_20260324_152540_866.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:28:05'),
-(76, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', '😎', NULL, NULL, NULL, 1, '2026-03-24 22:56:21', 0, 0, NULL, 0, 0, 0, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-24 22:43:08'),
-(77, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364467541_e4fe201a-02d2-4f18-86db-5ba51fb76fe5.jpg', 'e4fe201a-02d2-4f18-86db-5ba51fb76fe5.jpg', 'image/jpeg', 1, '2026-03-24 23:01:19', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:07'),
-(78, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364472134_IMG_20260324_100235_526.jpg', 'IMG_20260324_100235_526.jpg', 'image/jpeg', 1, '2026-03-24 23:01:19', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:12'),
-(79, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364519814_81a14f46-e4a1-4425-b287-10583c982900__1_.jpg', '81a14f46-e4a1-4425-b287-10583c982900 (1).jpg', 'image/jpeg', 1, '2026-03-24 23:02:02', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:59'),
-(80, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', 'hello', NULL, NULL, NULL, 1, '2026-03-25 00:56:59', 0, 0, NULL, 0, 0, 0, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-25 00:56:56'),
-(81, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'This is the list of the class Mam', '/api/v1/uploads/message_files/msg_1774374886612_Admin_Appointment_History.xlsx', 'Admin Appointment History.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 1, '2026-03-25 01:55:00', 0, 0, NULL, 0, 0, 1, NULL, 'student-1774291218077-659300.jpg', 'admin-1774291107115-669.jpg', '2026-03-25 01:54:46'),
-(82, 35, 'student', 'Natsu', 43, 'student', 'Jan Ray Aquino', NULL, NULL, NULL, NULL, 1, '2026-03-25 19:41:10', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774291218077-659300.jpg', NULL, '2026-03-25 19:40:55'),
-(83, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 19:41:19', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', '2026-03-25 19:41:17'),
-(84, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:07:40', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:05'),
-(85, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:07:40', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:25'),
-(86, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:08:40', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:49'),
-(87, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:15:56', 1, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:15:53'),
-(88, 43, 'student', 'Jan Ray', 1, 'super_admin', 'Super Administrator', 'Can I Request to reset my Device Binding', NULL, NULL, NULL, 1, '2026-03-25 20:16:41', 0, 0, NULL, 0, 0, 0, NULL, 'student-1774440304501-238054.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-25 20:16:37'),
-(89, 1, 'super_admin', 'Super Administrator', 43, 'student', 'Jan Ray Aquino', 'Yes!!', NULL, NULL, NULL, 1, '2026-03-25 20:16:58', 0, 0, NULL, 0, 0, 0, NULL, 'superadmin-1774318366514-851420.jpg', 'student-1774440304501-238054.jpg', '2026-03-25 20:16:58');
+INSERT INTO `messages` (`id`, `sender_id`, `sender_role`, `sender_name`, `receiver_id`, `receiver_role`, `receiver_name`, `content`, `file_url`, `file_name`, `file_type`, `is_read`, `read_at`, `is_unsent`, `is_edited`, `edited_at`, `deleted_for_sender`, `deleted_for_receiver`, `is_pinned`, `reactions`, `forwarded_from_id`, `sender_profile_picture`, `receiver_profile_picture`, `created_at`) VALUES
+(1, 1, 'admin', 'Administrator', 1, 'super_admin', 'Super Administrator', 'Hello', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 01:46:47'),
+(2, 41, 'student', 'Angel Mageri', 18, 'teacher', 'Mark Zuckerberg', 'Hello sir I am absent for now, because I have Illness', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 01:48:14'),
+(3, 41, 'student', 'Angel Mageri', 18, 'teacher', 'Mark Zuckerberg', 'Hello sir', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 02:01:49'),
+(4, 41, 'student', 'Angel Mageri', 18, 'teacher', 'Mark Zuckerberg', 'Hello world', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 02:07:28'),
+(5, 1, 'super_admin', 'Super Administrator', 1, 'admin', 'Administrator', 'What is your need?', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 02:10:01'),
+(6, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'Administrator', 'I can\'t sir', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 02:16:51'),
+(7, 1, 'admin', 'Administrator', 5, 'guard', 'Gray Fullbusters', 'Okay I\'ll fix it', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 02:24:50'),
+(8, 1, 'admin', 'Administrator', 2, 'admin', 'Steven John A. Agustin', NULL, '/api/v1/uploads/message_files/msg_1774207090680_02.png', '02.png', 'image/png', 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 03:18:10'),
+(9, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Adda bagtit mo chari', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 08:56:21'),
+(10, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, NULL, 1, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 09:02:47'),
+(11, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Hello', NULL, NULL, NULL, 1, NULL, 0, 0, NULL, 1, 0, 0, NULL, NULL, NULL, NULL, '2026-03-23 09:09:46'),
+(12, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'hello nigga', NULL, NULL, NULL, 1, '2026-03-23 09:38:37', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:38:25'),
+(13, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'This is me', NULL, NULL, NULL, 1, '2026-03-23 09:38:37', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:38:30'),
+(14, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Sir I have a requests for you, because I can\'t attend now, because I am sick, Thank you sir for your consideration', NULL, NULL, NULL, 1, '2026-03-23 09:39:50', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:39:47'),
+(15, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'Sir?', NULL, NULL, NULL, 1, '2026-03-23 09:40:15', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:40:02'),
+(16, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Ops whats wrong?', NULL, NULL, NULL, 1, '2026-03-23 09:43:24', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:43:21'),
+(17, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 09:43:29', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:43:28'),
+(18, 1, 'admin', 'Administrator', 2, 'admin', 'Steven John A. Agustin', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', NULL, '2026-03-23 09:46:13'),
+(19, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'hello', NULL, NULL, NULL, 1, '2026-03-23 09:54:21', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:46:35'),
+(20, 1, 'admin', 'Administrator', 2, 'admin', 'Steven John A. Agustin', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', NULL, '2026-03-23 09:49:30'),
+(21, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'what?', NULL, NULL, NULL, 1, '2026-03-23 09:54:33', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:54:26'),
+(22, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'hello', NULL, NULL, NULL, 1, '2026-03-23 09:54:33', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:54:29'),
+(23, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Come on', NULL, NULL, NULL, 1, '2026-03-23 09:56:42', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:56:21'),
+(24, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', '😂😂', NULL, NULL, NULL, 1, '2026-03-23 09:56:42', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:56:25'),
+(25, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'hello', NULL, NULL, NULL, 1, '2026-03-23 09:58:27', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:58:21'),
+(26, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'Mam what\'s going on?', NULL, NULL, NULL, 1, '2026-03-23 09:59:13', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 09:59:11'),
+(27, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', 'Nothing haha', NULL, NULL, NULL, 1, '2026-03-23 09:59:25', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 09:59:24'),
+(28, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 10:00:33', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:00:31'),
+(29, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'ahahaha', NULL, NULL, NULL, 1, '2026-03-23 10:00:43', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:00:41'),
+(30, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'What\'s', NULL, NULL, NULL, 1, '2026-03-23 10:01:21', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:01:19'),
+(31, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Hello!', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:02'),
+(32, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'This is the new feature I put in to our System', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:19'),
+(33, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'It is great?', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'student-1774180359937-849543.jpg', '2026-03-23 10:05:23'),
+(34, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'Hello', NULL, NULL, NULL, 1, '2026-03-23 10:06:42', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:22'),
+(35, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'What?', NULL, NULL, NULL, 1, '2026-03-23 10:06:42', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:31'),
+(36, 1, 'admin', 'Administrator', 35, 'student', 'Natsu Dragneel', 'It\'s working?', NULL, NULL, NULL, 1, '2026-03-23 10:06:55', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:06:51'),
+(37, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'No mam', NULL, NULL, NULL, 1, '2026-03-23 10:07:14', 0, 1, '2026-03-23 19:50:34', 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 10:07:11'),
+(38, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', '😂😂', NULL, NULL, NULL, 1, '2026-03-23 10:07:26', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:07:24'),
+(39, 1, 'admin', 'Administrator', 35, 'student', 'Natsu', NULL, '/api/v1/uploads/message_files/msg_1774231944611_376289072_6734967113212830_5626171689343155846_n.jpg', '376289072_6734967113212830_5626171689343155846_n.jpg', 'image/jpeg', 1, '2026-03-23 10:12:26', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'student-1774204990603-169913.png', '2026-03-23 10:12:24'),
+(40, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-23 11:21:00', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774205291067-113602.png', 'admin-1773474482355-324628.png', '2026-03-23 11:20:49'),
+(41, 49, 'student', 'Andrea', 1, 'super_admin', 'Super Administrator', NULL, NULL, NULL, NULL, 1, '2026-03-23 12:32:17', 1, 0, NULL, 0, 0, 0, NULL, NULL, NULL, 'superadmin-1774076347437-483598.jpg', '2026-03-23 12:32:03'),
+(42, 1, 'super_admin', 'Super Administrator', 49, 'student', 'Andrea', 'Is this your lastname?', '/api/v1/uploads/message_files/msg_1774240559970_Untitled.png', 'Untitled.png', 'image/png', 1, '2026-03-23 12:36:46', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'superadmin-1774076347437-483598.jpg', NULL, '2026-03-23 12:36:00'),
+(43, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-23 12:59:57', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 12:42:26'),
+(44, 1, 'super_admin', 'Super Administrator', 1, 'admin', 'CSS Admin', 'Hello World', NULL, NULL, NULL, 1, '2026-03-23 13:01:02', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'superadmin-1774076347437-483598.jpg', 'admin-1773474482355-324628.png', '2026-03-23 12:59:46'),
+(45, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', NULL, NULL, NULL, NULL, 1, '2026-03-23 13:00:34', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:00:31'),
+(46, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-23 13:01:23', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:00:45'),
+(47, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Good day Admin! can I request another account?', NULL, NULL, NULL, 1, '2026-03-23 13:02:56', 0, 0, NULL, 0, 0, 1, NULL, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:02:54'),
+(48, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', 'yes sure, account for you or a student ?', NULL, NULL, NULL, 1, '2026-03-23 13:04:15', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:04:13'),
+(49, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Good day admin!, I have problem with my account', NULL, NULL, NULL, 1, '2026-03-23 13:06:33', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774240930680-701646.png', 'admin-1773474482355-324628.png', '2026-03-23 13:06:30'),
+(50, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', 'Good day! Super admin, Can I see my login logs?', NULL, NULL, NULL, 1, '2026-03-23 13:20:54', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774240930680-701646.png', 'superadmin-1774242535609-552779.png', '2026-03-23 13:08:57'),
+(51, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', 'what is problem?', NULL, NULL, NULL, 1, '2026-03-24 01:18:15', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'admin-1773474482355-324628.png', 'teacher-1774240930680-701646.png', '2026-03-23 13:09:45'),
+(52, 35, 'student', 'Natsu', 1, 'admin', 'Administrator', 'I can\'t upload profile mam', NULL, NULL, NULL, 1, '2026-03-23 20:12:43', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774204990603-169913.png', 'admin-1773474482355-324628.png', '2026-03-23 20:12:32'),
+(53, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', '↪️ yes sure, account for you or a student ?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774286273203-115898.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 01:26:16'),
+(54, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Test mo crop image', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:04'),
+(55, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'nu agbalen', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:08'),
+(56, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', '😂😂', NULL, NULL, NULL, 1, '2026-03-24 10:27:04', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774180359937-849543.jpg', '2026-03-24 10:16:15'),
+(57, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Bleeeee', NULL, NULL, NULL, 1, '2026-03-24 10:27:12', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774180359937-849543.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:27:08'),
+(58, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Edit message', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:28'),
+(59, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'test mo', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:30'),
+(60, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'haha', NULL, NULL, NULL, 1, '2026-03-24 10:28:46', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:31'),
+(61, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Bleeee', NULL, NULL, NULL, 1, '2026-03-24 10:28:52', 0, 1, '2026-03-24 10:29:00', 0, 0, 0, NULL, NULL, 'student-1774319257454-911589.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:28:52'),
+(62, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'edit mo', NULL, NULL, NULL, 1, '2026-03-24 10:29:00', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:28:58'),
+(63, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'test mo haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:02', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:00'),
+(64, 19, 'student', 'Charimea', 35, 'student', 'Natsu', 'Balinen', NULL, NULL, NULL, 1, '2026-03-24 10:29:08', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774319257454-911589.jpg', 'student-1774291218077-659300.jpg', '2026-03-24 10:29:05'),
+(65, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'Nice haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:14', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:13'),
+(66, 35, 'student', 'Natsu', 19, 'student', 'Charimea Selga', 'inaramid nga chat box haha', NULL, NULL, NULL, 1, '2026-03-24 10:29:22', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 10:29:19'),
+(67, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', '??', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:25'),
+(68, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'any follow up?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:30'),
+(69, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'student?', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-24 12:58:31'),
+(70, 42, 'student', 'Zaiejan', 49, 'student', 'Andrea Lachica', 'Hello hamste🤣', NULL, NULL, NULL, 1, '2026-03-24 15:21:38', 0, 1, '2026-03-24 15:21:57', 0, 0, 1, NULL, NULL, 'student-1774336806254-514881.jpg', 'student-1774336848701-75789.jpg', '2026-03-24 15:21:20'),
+(71, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', '↪️ Hello hamste🤣 (edited)', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:22:28'),
+(72, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774336989582_Panpacific-University-North-Philippines.jpg', 'Panpacific-University-North-Philippines.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:23:09'),
+(73, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', 'uurje', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:27:30'),
+(74, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774337265049_IMG_20260324_152540_866.jpg', 'IMG_20260324_152540_866.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:27:45'),
+(75, 42, 'student', 'Zaiejan', 19, 'student', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774337285402_IMG_20260324_152540_866.jpg', 'IMG_20260324_152540_866.jpg', 'image/jpeg', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774336806254-514881.jpg', 'student-1774319257454-911589.jpg', '2026-03-24 15:28:05'),
+(76, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', '😎', NULL, NULL, NULL, 1, '2026-03-24 22:56:21', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-24 22:43:08'),
+(77, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364467541_e4fe201a-02d2-4f18-86db-5ba51fb76fe5.jpg', 'e4fe201a-02d2-4f18-86db-5ba51fb76fe5.jpg', 'image/jpeg', 1, '2026-03-24 23:01:19', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:07'),
+(78, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364472134_IMG_20260324_100235_526.jpg', 'IMG_20260324_100235_526.jpg', 'image/jpeg', 1, '2026-03-24 23:01:19', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:12'),
+(79, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', NULL, '/api/v1/uploads/message_files/msg_1774364519814_81a14f46-e4a1-4425-b287-10583c982900__1_.jpg', '81a14f46-e4a1-4425-b287-10583c982900 (1).jpg', 'image/jpeg', 1, '2026-03-24 23:02:02', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-24 23:01:59'),
+(80, 1, 'admin', 'CSS Admin', 52, 'student', 'Maxene Franco', 'hello', NULL, NULL, NULL, 1, '2026-03-25 00:56:59', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-25 00:56:56'),
+(81, 35, 'student', 'Natsu', 1, 'admin', 'CSS Admin', 'This is the list of the class Mam', '/api/v1/uploads/message_files/msg_1774374886612_Admin_Appointment_History.xlsx', 'Admin Appointment History.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 1, '2026-03-25 01:55:00', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', 'admin-1774291107115-669.jpg', '2026-03-25 01:54:46'),
+(82, 35, 'student', 'Natsu', 43, 'student', 'Jan Ray Aquino', NULL, NULL, NULL, NULL, 1, '2026-03-25 19:41:10', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774291218077-659300.jpg', NULL, '2026-03-25 19:40:55'),
+(83, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 19:41:19', 1, 0, NULL, 0, 0, 0, NULL, NULL, NULL, 'student-1774291218077-659300.jpg', '2026-03-25 19:41:17'),
+(84, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:07:40', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:05'),
+(85, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:07:40', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:25'),
+(86, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:08:40', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:07:49'),
+(87, 43, 'student', 'Jan Ray', 35, 'student', 'Natsu', NULL, NULL, NULL, NULL, 1, '2026-03-25 20:15:56', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774440304501-238054.jpg', 'student-1774291218077-659300.jpg', '2026-03-25 20:15:53'),
+(88, 43, 'student', 'Jan Ray', 1, 'super_admin', 'Super Administrator', 'Can I Request to reset my Device Binding', NULL, NULL, NULL, 1, '2026-03-25 20:16:41', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774440304501-238054.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-25 20:16:37'),
+(89, 1, 'super_admin', 'Super Administrator', 43, 'student', 'Jan Ray Aquino', 'Yes!!', NULL, NULL, NULL, 1, '2026-03-25 20:16:58', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'superadmin-1774318366514-851420.jpg', 'student-1774440304501-238054.jpg', '2026-03-25 20:16:58'),
+(90, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'hello', NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-27 16:20:08'),
+(91, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-27 16:37:35'),
+(92, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-27 16:41:41'),
+(93, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-27 16:45:18'),
+(94, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-27 16:46:55'),
+(95, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-27 16:46:59'),
+(96, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', NULL, NULL, NULL, NULL, 1, '2026-03-28 02:23:16', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-27 16:48:11'),
+(97, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', NULL, NULL, NULL, NULL, 1, '2026-03-28 02:23:16', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-27 16:52:05'),
+(98, 35, 'student', 'Natsu Dragneel', 1, 'super_admin', 'Super Administrator', 'Mam can I request to reset my device binding so I can login to my new device, because my previous device is destroyed, Thanks for your cooperation mam', NULL, NULL, NULL, 1, '2026-03-27 17:07:11', 0, 1, '2026-03-27 17:20:58', 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-27 17:06:59'),
+(99, 23, 'student', 'Lucy', 7, 'teacher', 'Steven John A. Agustin', 'hello po sir pa excused po sir', NULL, NULL, NULL, 1, '2026-03-28 12:15:22', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'student-1774159341046-561222.png', 'teacher-1774291178630-987411.jpg', '2026-03-28 12:15:12'),
+(100, 7, 'teacher', 'Steven John A. Agustin', 23, 'student', 'Lucy', 'pakita pirma ng magulang', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774159341046-561222.png', '2026-04-01 22:23:36'),
+(101, 7, 'teacher', 'Steven John A. Agustin', 23, 'student', 'Lucy', NULL, NULL, NULL, NULL, 0, NULL, 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774159341046-561222.png', '2026-04-01 22:29:20'),
+(102, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-28 18:14:12'),
+(103, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-28 18:14:19'),
+(104, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-28 18:14:19'),
+(105, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-28 18:14:19'),
+(106, 7, 'teacher', 'Steven John A. Agustin', 41, 'student', 'Angel Mageri Cabote (ECoAST)', 'hello', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'student-1774204811919-842386.jpg', '2026-03-28 18:14:20'),
+(107, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', '😂😂', NULL, NULL, NULL, 1, '2026-03-28 23:00:46', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-28 18:28:11'),
+(108, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', '😂', NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 18:32:56'),
+(109, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:39:20', 1, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 18:34:06'),
+(110, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Hello Mam, I have a request', NULL, NULL, NULL, 1, '2026-03-28 18:40:52', 0, 1, '2026-03-28 18:41:30', 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 18:40:40'),
+(111, 1, 'admin', 'CSS Admin', 7, 'teacher', 'Steven John A. Agustin', 'What is it?', NULL, NULL, NULL, 1, '2026-03-28 18:41:02', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"❤️\"}}', NULL, 'admin-1774291107115-669.jpg', 'teacher-1774291178630-987411.jpg', '2026-03-28 18:41:00'),
+(112, 35, 'student', 'Natsu Dragneel', 1, 'admin', 'CSS Admin', 'Hello mam', NULL, NULL, NULL, 1, '2026-03-28 18:44:33', 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-28 18:44:25'),
+(113, 1, 'admin', 'CSS Admin', 35, 'student', 'Natsu', 'Why?', NULL, NULL, NULL, 1, '2026-03-28 18:44:40', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774291107115-669.jpg', 'student-1774291218077-659300.jpg', '2026-03-28 18:44:37'),
+(114, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'Nothing mam', NULL, NULL, NULL, 1, '2026-03-28 18:45:17', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 18:45:17'),
+(115, 35, 'student', 'Natsu Dragneel', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:46:07', 1, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-28 18:45:41'),
+(116, 35, 'student', 'Natsu Dragneel', 1, 'admin', 'CSS Admin', NULL, NULL, NULL, NULL, 1, '2026-03-28 18:46:07', 1, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-28 18:45:48'),
+(117, 1, 'admin', 'CSS Admin', 49, 'student', 'Andrea Lachica', 'Hello Hamster!!', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774291107115-669.jpg', 'student-1774336848701-75789.jpg', '2026-03-28 18:46:43'),
+(118, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin', 'll', NULL, NULL, NULL, 1, '2026-03-28 18:55:31', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 18:55:18'),
+(119, 1, 'admin', 'CSS Admin', 2, 'admin', 'Steven John A. Agustin', 'hawak mo ang beaaaaaaaaaat!!!!', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'admin-1774291107115-669.jpg', NULL, '2026-03-28 21:12:36'),
+(120, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Cha', 'Adda bagtit mo', NULL, NULL, NULL, 1, '2026-03-28 21:41:15', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 21:40:38'),
+(121, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Cha', 'Adda in add ko mabalin ka ag react', NULL, NULL, NULL, 1, '2026-03-28 21:41:15', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😡\"},\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 21:40:55'),
+(122, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Cha', NULL, '/api/v1/uploads/message_files/msg_1774705440120_image.png', 'image.png', 'image/png', 1, '2026-03-28 21:44:59', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774291178630-987411.jpg', 'admin-1774291107115-669.jpg', '2026-03-28 21:44:00'),
+(123, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'Administrator', 'Hi sir', NULL, NULL, NULL, 1, '2026-03-28 23:40:17', 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, 'admin-1774705701340-338856.jpg', '2026-03-28 21:54:07'),
+(124, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'Administrator', '😊', NULL, NULL, NULL, 1, '2026-03-28 23:40:17', 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, 'admin-1774705701340-338856.jpg', '2026-03-28 21:54:14'),
+(125, 5, 'guard', 'Gray Fullbusters', 20, 'teacher', 'Charimea Selga', 'Hello World', NULL, NULL, NULL, 1, '2026-03-28 21:55:06', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'guard-1774706082744-315190.jpg', NULL, '2026-03-28 21:54:54'),
+(126, 20, 'teacher', 'Charimea Selga', 5, 'guard', 'Gray Fullbusters', 'whu yu?', NULL, NULL, NULL, 1, '2026-03-28 21:55:19', 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, '2026-03-28 21:55:16'),
+(127, 5, 'guard', 'Gray Fullbusters', 20, 'teacher', 'Charimea Selga', NULL, '/api/v1/uploads/message_files/msg_1774706122703_image.png', 'image.png', 'image/png', 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'guard-1774706082744-315190.jpg', NULL, '2026-03-28 21:55:22'),
+(128, 7, 'teacher', 'Steven John A. Agustin', 5, 'guard', 'Gray Fullbusters', 'atoy re', NULL, NULL, NULL, 1, '2026-03-28 22:31:15', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774706233728-467958.jpg', NULL, '2026-03-28 22:00:05'),
+(129, 7, 'teacher', 'Steven John A. Agustin', 5, 'guard', 'Gray Fullbusters', 'react mo man pre', NULL, NULL, NULL, 1, '2026-03-28 22:31:15', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😮\"}}', NULL, 'teacher-1774706233728-467958.jpg', NULL, '2026-03-28 22:00:09'),
+(130, 5, 'guard', 'Gray Fullbusters', 7, 'teacher', 'Steven John A. Agustin', 'Hi', NULL, NULL, NULL, 1, '2026-03-28 22:31:44', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'teacher-1774706233728-467958.jpg', '2026-03-28 22:31:33'),
+(131, 5, 'guard', 'Gray Fullbusters', 7, 'teacher', 'Steven John A. Agustin', 'Allgoods', NULL, NULL, NULL, 1, '2026-03-28 22:31:44', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"❤️\"}}', NULL, 'guard-1774706082744-315190.jpg', 'teacher-1774706233728-467958.jpg', '2026-03-28 22:31:36'),
+(132, 5, 'guard', 'Gray Fullbusters', 7, 'teacher', 'Steven John A. Agustin', 'Labyou pre', NULL, NULL, NULL, 1, '2026-03-28 22:32:17', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'teacher-1774706233728-467958.jpg', '2026-03-28 22:32:16'),
+(133, 7, 'teacher', 'Steven John A. Agustin', 5, 'guard', 'Gray Fullbusters', 'Nc', NULL, NULL, NULL, 1, '2026-03-28 22:32:19', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774706233728-467958.jpg', NULL, '2026-03-28 22:32:17'),
+(134, 5, 'guard', 'Gray Fullbusters', 7, 'teacher', 'Steven John A. Agustin', 'HAHAHAHA', NULL, NULL, NULL, 1, '2026-03-28 22:32:20', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'teacher-1774706233728-467958.jpg', '2026-03-28 22:32:18'),
+(135, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Chariz', 'You changed name?', NULL, NULL, NULL, 1, '2026-03-29 02:09:28', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774712389017-326359.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 02:09:25'),
+(136, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Chariz', 'Hello? haha', NULL, NULL, NULL, 1, '2026-03-29 02:25:49', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774712389017-326359.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 02:25:43'),
+(137, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Chariz', 'Why mam?', NULL, NULL, NULL, 1, '2026-03-29 02:26:50', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774712389017-326359.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 02:26:48'),
+(138, 1, 'admin', 'CSS Admin Cha', 7, 'teacher', 'Steven John A. Agustin', 'Nothing', NULL, NULL, NULL, 1, '2026-03-29 02:26:59', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'admin-1774705701340-338856.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 02:26:56'),
+(139, 46, 'student', 'Steven John', 1, 'admin', 'CSS Admin Chariz', 'Hello mam, I can\'t attend class right now, because I have urgent to go mam.', NULL, NULL, NULL, 1, '2026-03-29 02:29:04', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"❤️\"}}', NULL, NULL, 'admin-1774705701340-338856.jpg', '2026-03-29 02:28:51'),
+(140, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Chariz', 'Mam the System bug is fixed?', NULL, NULL, NULL, 1, '2026-03-29 02:36:15', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774712389017-326359.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 02:36:05'),
+(141, 1, 'admin', 'CSS Admin Cha', 7, 'teacher', 'Steven John A. Agustin', 'Idk haha', NULL, NULL, NULL, 1, '2026-03-29 02:36:23', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'admin-1774705701340-338856.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 02:36:22'),
+(142, 5, 'guard', 'Gray Fullbusters', 7, 'teacher', 'Steven John A. Agustin', 'Hello sir', NULL, NULL, NULL, 1, '2026-03-29 02:40:47', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"👍\"}}', NULL, 'guard-1774706082744-315190.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 02:40:17'),
+(143, 7, 'teacher', 'Steven John A. Agustin', 1, 'admin', 'CSS Admin Chariz', 'hello?', NULL, NULL, NULL, 1, '2026-03-29 02:43:30', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"👍\"}}', NULL, 'teacher-1774712389017-326359.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 02:43:20'),
+(144, 1, 'admin', 'CSS Admin Cha', 2, 'admin', 'Steven John A. Agustin', 'Hawak nga haha', NULL, NULL, NULL, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774705701340-338856.jpg', NULL, '2026-03-29 02:51:13'),
+(145, 1, 'admin', 'CSS Admin Cha', 7, 'teacher', 'Steven John A. Agustin', 'Hawak mo ang beeeeat', NULL, NULL, NULL, 1, '2026-03-29 02:52:19', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'admin-1774705701340-338856.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 02:52:07'),
+(146, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'Administrator', 'Hello World Mam haha', NULL, NULL, NULL, 1, '2026-03-29 02:55:34', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 02:55:25'),
+(147, 1, 'super_admin', 'Super Administrator', 5, 'guard', 'Gray Fullbusters', 'Hello', NULL, NULL, NULL, 1, '2026-03-29 02:56:43', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'superadmin-1774318366514-851420.jpg', NULL, '2026-03-29 02:56:33'),
+(148, 5, 'guard', 'Gray Fullbusters', 1, 'super_admin', 'Super Administrator', 'Why mam?', NULL, NULL, NULL, 1, '2026-03-29 02:56:50', 0, 0, NULL, 0, 0, 0, '{\"super_admin_1\":{\"reactorId\":1,\"reactorRole\":\"super_admin\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-29 02:56:48'),
+(149, 1, 'super_admin', 'Super Administrator', 5, 'guard', 'Gray Fullbusters', 'Sample text', NULL, NULL, NULL, 1, '2026-03-29 02:57:28', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'superadmin-1774318366514-851420.jpg', NULL, '2026-03-29 02:57:27'),
+(150, 5, 'guard', 'Gray Fullbusters', 7, 'teacher', 'Steven John A. Agustin', 'Hello sir haha', NULL, NULL, NULL, 1, '2026-03-29 03:05:45', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 03:05:36'),
+(151, 1, 'super_admin', 'Super Administrator', 7, 'teacher', 'Steven John A. Agustin', 'Hello sir', NULL, NULL, NULL, 1, '2026-03-29 03:06:38', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'superadmin-1774318366514-851420.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 03:06:32'),
+(152, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', 'Why mam?', NULL, NULL, NULL, 1, '2026-03-29 03:06:45', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'teacher-1774712389017-326359.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-29 03:06:41'),
+(153, 46, 'student', 'Steven John', 1, 'admin', 'CSS Admin Chariz', 'Sample', NULL, NULL, NULL, 1, '2026-03-29 03:10:20', 0, 0, NULL, 0, 0, 0, NULL, NULL, NULL, 'admin-1774705701340-338856.jpg', '2026-03-29 03:10:01'),
+(154, 1, 'admin', 'CSS Admin Cha', 46, 'student', 'Steven John', 'It didn\'t received notification about chat', NULL, NULL, NULL, 1, '2026-03-29 03:10:38', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'admin-1774705701340-338856.jpg', NULL, '2026-03-29 03:10:34'),
+(155, 7, 'teacher', 'Steven John A. Agustin', 5, 'guard', 'Gray Fullbusters', 'Why? haha', NULL, NULL, NULL, 1, '2026-03-29 03:11:17', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774712389017-326359.jpg', NULL, '2026-03-29 03:11:16'),
+(156, 1, 'admin', 'CSS Admin Cha', 5, 'guard', 'Gray Fullbusters', 'you received message?', NULL, NULL, NULL, 1, '2026-03-29 03:11:55', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'admin-1774705701340-338856.jpg', NULL, '2026-03-29 03:11:48'),
+(157, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'CSS Admin Cha', 'Yeah mam', NULL, NULL, NULL, 1, '2026-03-29 03:12:05', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 03:12:04'),
+(158, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'CSS Admin Cha', 'Why mam?', NULL, NULL, NULL, 1, '2026-03-29 03:12:37', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'guard-1774706082744-315190.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 03:12:25'),
+(159, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'CSS Admin Chariz', 'hello', NULL, NULL, NULL, 1, '2026-03-29 03:13:41', 0, 0, NULL, 0, 0, 0, NULL, NULL, 'guard-1774706082744-315190.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 03:13:25'),
+(160, 1, 'super_admin', 'Super Administrator', 7, 'teacher', 'Steven John A. Agustin', 'nothing haha', NULL, NULL, NULL, 1, '2026-03-29 03:14:16', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'superadmin-1774318366514-851420.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 03:14:13'),
+(161, 7, 'teacher', 'Steven John A. Agustin', 1, 'super_admin', 'Super Administrator', 'You received reaction?', NULL, NULL, NULL, 1, '2026-03-29 03:14:53', 0, 0, NULL, 0, 0, 0, '{\"super_admin_1\":{\"reactorId\":1,\"reactorRole\":\"super_admin\",\"emoji\":\"😂\"}}', NULL, 'teacher-1774712389017-326359.jpg', 'superadmin-1774318366514-851420.jpg', '2026-03-29 03:14:43'),
+(162, 1, 'super_admin', 'Super Administrator', 7, 'teacher', 'Steven John A. Agustin', 'Nope', NULL, NULL, NULL, 1, '2026-03-29 03:15:00', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'superadmin-1774318366514-851420.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 03:14:57'),
+(163, 1, 'super_admin', 'Super Administrator', 7, 'teacher', 'Steven John A. Agustin', 'can you try to react', NULL, NULL, NULL, 1, '2026-03-29 03:15:04', 0, 0, NULL, 0, 0, 0, '{\"teacher_7\":{\"reactorId\":7,\"reactorRole\":\"teacher\",\"emoji\":\"😂\"}}', NULL, 'superadmin-1774318366514-851420.jpg', 'teacher-1774712389017-326359.jpg', '2026-03-29 03:15:00'),
+(164, 5, 'guard', 'Gray Fullbusters', 1, 'admin', 'CSS Admin Chariz', 'Mam', NULL, NULL, NULL, 1, '2026-03-29 03:19:22', 0, 0, NULL, 0, 0, 0, '{\"admin_1\":{\"reactorId\":1,\"reactorRole\":\"admin\",\"emoji\":\"😂\"}}', NULL, 'guard-1774706082744-315190.jpg', 'admin-1774705701340-338856.jpg', '2026-03-29 03:19:10'),
+(165, 1, 'admin', 'CSS Admin Cha', 5, 'guard', 'Gray Fullbusters', 'Why?', NULL, NULL, NULL, 1, '2026-03-29 03:19:31', 0, 0, NULL, 0, 0, 0, '{\"guard_5\":{\"reactorId\":5,\"reactorRole\":\"guard\",\"emoji\":\"😂\"}}', NULL, 'admin-1774705701340-338856.jpg', NULL, '2026-03-29 03:19:31');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `message_notifications`
+--
+
+CREATE TABLE `message_notifications` (
+  `id` int(11) NOT NULL,
+  `receiver_id` int(11) NOT NULL,
+  `receiver_role` varchar(20) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `sender_role` varchar(20) NOT NULL,
+  `sender_name` varchar(255) NOT NULL,
+  `type` enum('message','file','reaction') NOT NULL DEFAULT 'message',
+  `emoji` varchar(10) DEFAULT NULL,
+  `message_id` int(11) DEFAULT NULL,
+  `preview` varchar(255) DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `message_notifications`
+--
+
+INSERT INTO `message_notifications` (`id`, `receiver_id`, `receiver_role`, `sender_id`, `sender_role`, `sender_name`, `type`, `emoji`, `message_id`, `preview`, `is_read`, `created_at`) VALUES
+(1, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 136, 'Hello? haha', 1, '2026-03-29 02:25:43'),
+(2, 7, 'teacher', 1, 'admin', 'CSS Admin Cha', 'reaction', '😂', 136, NULL, 1, '2026-03-29 02:25:53'),
+(3, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '😂', 51, NULL, 1, '2026-03-29 02:26:20'),
+(4, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 137, 'Why mam?', 1, '2026-03-29 02:26:48'),
+(5, 7, 'teacher', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 138, 'Nothing', 1, '2026-03-29 02:26:56'),
+(6, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '😂', 138, NULL, 1, '2026-03-29 02:27:04'),
+(7, 1, 'admin', 46, 'student', 'Steven John Agustin (CoAST)', 'message', NULL, 139, 'Hello mam, I can\'t attend class right now, because I have urgent to go mam.', 1, '2026-03-29 02:28:51'),
+(8, 46, 'student', 1, 'admin', 'CSS Admin Cha', 'reaction', '❤️', 139, NULL, 1, '2026-03-29 02:29:09'),
+(9, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 140, 'Mam the System bug is fixed?', 1, '2026-03-29 02:36:05'),
+(10, 7, 'teacher', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 141, 'Idk haha', 1, '2026-03-29 02:36:22'),
+(11, 7, 'teacher', 1, 'admin', 'CSS Admin Cha', 'reaction', '😂', 140, NULL, 1, '2026-03-29 02:36:26'),
+(12, 7, 'teacher', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 142, 'Hello sir', 1, '2026-03-29 02:40:17'),
+(13, 5, 'guard', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '👍', 142, NULL, 1, '2026-03-29 02:40:53'),
+(14, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '😂', 141, NULL, 1, '2026-03-29 02:42:41'),
+(15, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 143, 'hello?', 1, '2026-03-29 02:43:20'),
+(16, 7, 'teacher', 1, 'admin', 'CSS Admin Cha', 'reaction', '👍', 143, NULL, 1, '2026-03-29 02:43:34'),
+(17, 2, 'admin', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 144, 'Hawak nga haha', 0, '2026-03-29 02:51:13'),
+(18, 7, 'teacher', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 145, 'Hawak mo ang beeeeat', 1, '2026-03-29 02:52:07'),
+(19, 1, 'admin', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '😂', 145, NULL, 1, '2026-03-29 02:52:22'),
+(20, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 146, 'Hello World Mam haha', 1, '2026-03-29 02:55:25'),
+(21, 5, 'guard', 1, 'admin', 'CSS Admin Cha', 'reaction', '😂', 146, NULL, 1, '2026-03-29 02:55:38'),
+(22, 5, 'guard', 1, 'super_admin', 'Super Administrator', 'message', NULL, 147, 'Hello', 1, '2026-03-29 02:56:33'),
+(23, 5, 'guard', 1, 'super_admin', 'Super Administrator', 'reaction', '😂', 148, NULL, 1, '2026-03-29 02:57:20'),
+(24, 5, 'guard', 1, 'super_admin', 'Super Administrator', 'message', NULL, 149, 'Sample text', 1, '2026-03-29 02:57:27'),
+(25, 7, 'teacher', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 150, 'Hello sir haha', 1, '2026-03-29 03:05:36'),
+(26, 5, 'guard', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '😂', 150, NULL, 1, '2026-03-29 03:05:49'),
+(27, 7, 'teacher', 1, 'super_admin', 'Super Administrator', 'message', NULL, 151, 'Hello sir', 1, '2026-03-29 03:06:32'),
+(28, 1, 'super_admin', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 152, 'Why mam?', 1, '2026-03-29 03:06:41'),
+(29, 1, 'admin', 46, 'student', 'Steven John Agustin (CoAST)', 'message', NULL, 153, 'Sample', 1, '2026-03-29 03:10:01'),
+(30, 46, 'student', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 154, 'It didn\'t received notification about chat', 1, '2026-03-29 03:10:34'),
+(31, 5, 'guard', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 155, 'Why? haha', 1, '2026-03-29 03:11:16'),
+(32, 7, 'teacher', 5, 'guard', 'Gray Fullbusters', 'reaction', '😂', 155, NULL, 1, '2026-03-29 03:11:24'),
+(33, 5, 'guard', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 156, 'you received message?', 1, '2026-03-29 03:11:48'),
+(34, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'reaction', '😂', 156, NULL, 1, '2026-03-29 03:11:59'),
+(35, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 157, 'Yeah mam', 1, '2026-03-29 03:12:04'),
+(36, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 158, 'Why mam?', 1, '2026-03-29 03:12:25'),
+(37, 5, 'guard', 1, 'admin', 'CSS Admin Cha', 'reaction', '😂', 157, NULL, 1, '2026-03-29 03:12:44'),
+(38, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 159, 'hello', 1, '2026-03-29 03:13:25'),
+(39, 7, 'teacher', 1, 'super_admin', 'Super Administrator', 'message', NULL, 160, 'nothing haha', 1, '2026-03-29 03:14:13'),
+(40, 1, 'super_admin', 7, 'teacher', 'Steven John A. Agustin', 'message', NULL, 161, 'You received reaction?', 1, '2026-03-29 03:14:43'),
+(41, 7, 'teacher', 1, 'super_admin', 'Super Administrator', 'message', NULL, 162, 'Nope', 1, '2026-03-29 03:14:57'),
+(42, 7, 'teacher', 1, 'super_admin', 'Super Administrator', 'message', NULL, 163, 'can you try to react', 1, '2026-03-29 03:15:00'),
+(43, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'message', NULL, 164, 'Mam', 1, '2026-03-29 03:19:10'),
+(44, 5, 'guard', 1, 'admin', 'CSS Admin Cha', 'message', NULL, 165, 'Why?', 0, '2026-03-29 03:19:31'),
+(45, 5, 'guard', 1, 'admin', 'CSS Admin Cha', 'reaction', '😂', 164, NULL, 0, '2026-03-29 03:19:33'),
+(46, 1, 'admin', 5, 'guard', 'Gray Fullbusters', 'reaction', '😂', 165, NULL, 1, '2026-03-29 03:19:45'),
+(47, 7, 'teacher', 1, 'super_admin', 'Super Administrator', 'reaction', '😂', 161, NULL, 1, '2026-03-29 03:20:14'),
+(48, 1, 'super_admin', 7, 'teacher', 'Steven John A. Agustin', 'reaction', '😂', 163, NULL, 1, '2026-03-29 03:20:29');
 
 -- --------------------------------------------------------
 
@@ -459,7 +658,17 @@ INSERT INTO `notifications` (`id`, `type`, `title`, `message`, `meta`, `is_read_
 (2, 'new_student', 'New Student Registered', 'Andrea A. Lachica (897) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"897\",\"name\":\"Andrea Lachica\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"andrea.lachica@panpacificu.edu.ph\"}', 1, 1, '2026-03-23 12:28:44'),
 (3, 'new_student', 'New Student Registered', 'Gabriel Castillo. Castillo (ECoAST) (789789) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"789789\",\"name\":\"Gabriel Castillo (ECoAST)\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"gabriel.castillo.ecoast@panpacificu.edu.ph\"}', 1, 1, '2026-03-24 11:19:41'),
 (4, 'new_student', 'New Student Registered', 'Ace-cin Kyoshi (848484) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"848484\",\"name\":\"Ace-cin Kyoshi\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"kyoshiacecin@gmail.com\"}', 1, 1, '2026-03-24 12:48:42'),
-(5, 'new_student', 'New Student Registered', 'Maxene Franco (12334575) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"12334575\",\"name\":\"Maxene Franco\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"maxenefranco@gmail.com\"}', 1, 1, '2026-03-24 23:00:11');
+(5, 'new_student', 'New Student Registered', 'Maxene Franco (12334575) registered — BS in Information Technology, 3rd Year', '{\"student_id_number\":\"12334575\",\"name\":\"Maxene Franco\",\"program\":\"BS in Information Technology\",\"yearLevel\":\"3rd Year\",\"email\":\"maxenefranco@gmail.com\"}', 1, 1, '2026-03-24 23:00:11'),
+(26, 'reaction', 'New Reaction', 'Steven John A. Agustin reacted 😂 to your message', '{\"reactor_id\":7,\"reactor_role\":\"teacher\",\"message_id\":145,\"receiver_id\":1,\"receiver_role\":\"admin\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 02:52:22'),
+(27, 'reaction', 'New Reaction', 'CSS Admin Cha reacted 😂 to your message', '{\"reactor_id\":1,\"reactor_role\":\"admin\",\"message_id\":146,\"receiver_id\":5,\"receiver_role\":\"guard\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 02:55:38'),
+(28, 'reaction', 'New Reaction', 'Super Administrator reacted 😂 to your message', '{\"reactor_id\":1,\"reactor_role\":\"super_admin\",\"message_id\":148,\"receiver_id\":5,\"receiver_role\":\"guard\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 02:57:20'),
+(29, 'reaction', 'New Reaction', 'Steven John A. Agustin reacted 😂 to your message', '{\"reactor_id\":7,\"reactor_role\":\"teacher\",\"message_id\":150,\"receiver_id\":5,\"receiver_role\":\"guard\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 03:05:49'),
+(30, 'reaction', 'New Reaction', 'Gray Fullbusters reacted 😂 to your message', '{\"reactor_id\":5,\"reactor_role\":\"guard\",\"message_id\":155,\"receiver_id\":7,\"receiver_role\":\"teacher\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 03:11:24'),
+(31, 'reaction', 'New Reaction', 'Gray Fullbusters reacted 😂 to your message', '{\"reactor_id\":5,\"reactor_role\":\"guard\",\"message_id\":156,\"receiver_id\":1,\"receiver_role\":\"admin\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 03:11:59'),
+(32, 'reaction', 'New Reaction', 'CSS Admin Cha reacted 😂 to your message', '{\"reactor_id\":1,\"reactor_role\":\"admin\",\"message_id\":157,\"receiver_id\":5,\"receiver_role\":\"guard\",\"emoji\":\"😂\"}', 1, 1, '2026-03-29 03:12:44'),
+(33, 'reaction', 'New Reaction', 'CSS Admin Cha reacted 😂 to your message', '{\"reactor_id\":1,\"reactor_role\":\"admin\",\"message_id\":164,\"receiver_id\":5,\"receiver_role\":\"guard\",\"emoji\":\"😂\"}', 0, 1, '2026-03-29 03:19:33'),
+(34, 'reaction', 'New Reaction', 'Gray Fullbusters reacted 😂 to your message', '{\"reactor_id\":5,\"reactor_role\":\"guard\",\"message_id\":165,\"receiver_id\":1,\"receiver_role\":\"admin\",\"emoji\":\"😂\"}', 0, 1, '2026-03-29 03:19:45'),
+(35, 'reaction', 'New Reaction', 'Super Administrator reacted 😂 to your message', '{\"reactor_id\":1,\"reactor_role\":\"super_admin\",\"message_id\":161,\"receiver_id\":7,\"receiver_role\":\"teacher\",\"emoji\":\"😂\"}', 0, 1, '2026-03-29 03:20:14');
 
 -- --------------------------------------------------------
 
@@ -484,7 +693,9 @@ INSERT INTO `program` (`program_id`, `program_name`, `program_date_created`) VAL
 (13, 'BS in Criminology', '2026-02-08 20:59:23'),
 (19, 'BS in Computer Engineering', '2026-02-19 00:33:54'),
 (24, 'RPSEA', '2026-03-07 12:16:59'),
-(28, 'BS in Mechanics', '2026-03-16 12:21:00');
+(28, 'BS in Mechanics', '2026-03-16 12:21:00'),
+(34, 'Bs Psychology', '2026-03-28 21:20:49'),
+(35, 'Bs Nursing', '2026-03-28 21:33:55');
 
 -- --------------------------------------------------------
 
@@ -496,18 +707,18 @@ CREATE TABLE `student_accounts` (
   `student_id` int(11) NOT NULL,
   `student_id_number` varchar(255) NOT NULL,
   `student_firstname` varchar(255) NOT NULL,
-  `student_middlename` varchar(255) NOT NULL,
+  `student_middlename` varchar(255) DEFAULT NULL,
   `student_lastname` varchar(255) NOT NULL,
   `student_email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `student_year_level` varchar(255) NOT NULL,
-  `student_guardian_number` varchar(255) NOT NULL,
+  `student_guardian_number` varchar(255) DEFAULT NULL,
   `student_program` varchar(255) NOT NULL,
-  `location_generated` varchar(255) NOT NULL,
-  `barcode` varchar(255) NOT NULL,
+  `location_generated` varchar(255) NOT NULL DEFAULT '',
+  `barcode` varchar(255) NOT NULL DEFAULT '',
   `barcode_date_generated` datetime NOT NULL DEFAULT current_timestamp(),
-  `device_id` varchar(255) NOT NULL,
-  `admin_id` int(11) NOT NULL,
+  `device_id` varchar(255) NOT NULL DEFAULT '',
+  `admin_id` int(11) DEFAULT NULL,
   `barcode_teacher_serial` varchar(100) DEFAULT NULL,
   `student_profile_picture` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -525,18 +736,17 @@ INSERT INTO `student_accounts` (`student_id`, `student_id_number`, `student_firs
 (28, '456', 'Andria', 'A', 'Ramirez', 'andria@gmail.com', '$2b$10$sO26fMQvVakQtiCy4Zoal.Yn09ulCejCe61giWID5iWnna/nuCs0K', '1st Year', '+639615842358', 'BS Education', '', 'BC17731513173571253', '2026-03-10 22:01:57', '', 0, NULL, NULL),
 (32, '12313598', 'Princess', 'O', 'Obillo (ECoAST)', 'princess.obillo.ecoast@panpacificu.edu.ph', '$2b$10$OJRhAThkJPVmRtZKwn3TgumarOGVk/t16kx3llQsT2hn/xSknESa.', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17732896532762650', '2026-03-12 12:27:33', '', 0, NULL, NULL),
 (33, '12312312312', 'Marfel Gem', 'A', 'Gallarde (ECoAST)', 'marfel.gallarde.ecoast@panpacificu.edu.ph', '$2b$10$tKtaOIS4wk/b8R9x/bw9Fee6fVO54mEl2S9jjzGtsOKFMwlRGBJPO', '3rd Year', '+639763891308', 'BS in Computer Engineering', '', 'BC17744603317039728', '2026-03-26 01:38:55', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, 'TSN17698767256291441', NULL),
-(35, '1231231231231', 'Natsu', 'B', 'Dragneel', 'xnatsu25@gmail.com', '$2b$10$z2EKEoHbu6d0TBxeh2BgnezZJCcTCB.6mSjVoYM9nakkmUaeUFMK2', '3rd Year', '+63639763891308', 'BS in Information Technology', '', 'BC17744601416686558', '2026-03-26 01:35:45', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, 'TSN17698767256291441', 'student-1774291218077-659300.jpg'),
+(35, '1231231231231', 'Natsu', 'B', 'Dragneel', 'xnatsu25@gmail.com', '$2b$10$z2EKEoHbu6d0TBxeh2BgnezZJCcTCB.6mSjVoYM9nakkmUaeUFMK2', '3rd Year', '+63639763891308', 'BS in Information Technology', '', 'BC17745872140618757', '2026-03-29 12:53:31', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, 'TSN17698767256291441', 'student-1774291218077-659300.jpg'),
 (41, '123123123', 'Angel Mageri', 'A', 'Cabote (ECoAST)', 'angel.cabote.ecoast@panpacificu.edu.ph', '$2b$10$FUo8ACmR2EdY44cNkkLNvuPknzBlR/EnpRy3nWZ2T2Ou5r1GlVlGe', '3rd Year', '+639763891307', 'BS in Information Technology', '', 'BC17741978321072707', '2026-03-23 00:43:52', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', 'student-1774204811919-842386.jpg'),
 (42, '737773', 'Zaiejan', 'A', 'Agustin', 'zaiejanagustin@gmail.com', '$2b$10$siGOJgd3GAIWr85GZy0p3OcoaXjkulNqVh1.aCfaJVCNyfs.NsUju', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743368484166337', '2026-03-24 15:20:49', '8596927ce8a26ec5db6831cb162f7da752db54b19ec598e9714fb28fcbbdda54', 0, 'TSN17698767256291441', 'student-1774336806254-514881.jpg'),
 (43, '1231392', 'Jan Ray', 'Agmata', 'Aquino', 'janrayaquino9@gmail.com', '$2b$10$ILpPmsYI.iv3Y9BAWj6AK.ht72RhYFkLxP8hd8RfPebBWKqc6khYu', '3rd Year', '+6309661672889', 'BS in Information Technology', '', 'BC17744410522244656', '2026-03-25 20:17:34', 'f13ed5af0fa248d3f4b9934ee6c8590beea01a441cc61bcf2f79b684bcfc6916', 0, 'TSN17698767256291441', 'student-1774440304501-238054.jpg'),
 (44, '1010', 'Jasmin', 'A', 'Pastor', 'jasmin@gmail.com', '$2b$10$H/YJjdnT2pZemnE6pStiSOpXJFwJbrcP./632TD6BR0Zc61ai69Ki', 'SBE', '+63639615842353', 'BS in Mechanics', '', 'BC17739113039904719', '2026-03-19 17:14:11', '', 0, 'TSN17739090200094291', NULL),
-(46, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$9CJD/U5MPDMB/3.f18vYSeklWLX1TT90cl4Q6ls0sow54K3TDY61O', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17741971412966285', '2026-03-23 00:32:21', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', NULL),
+(46, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$9CJD/U5MPDMB/3.f18vYSeklWLX1TT90cl4Q6ls0sow54K3TDY61O', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17750547139027801', '2026-03-28 22:45:13', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, 'TSN17698767256291441', 'student-1774770851525-40101.jpg'),
 (47, '67', 'Yuumi', 'A', 'Kiyomi', 'example@panpacificu.edu.ph', '$2b$10$nyCzO4gK0WKF9Uc0y23nUOuueYCmnqzVZf7r/HgNL4fgYk6IDSl8S', '2nd Year', '+636767676767', 'BS in Mechanics', '', 'BC17741610878194590', '2026-03-22 14:37:38', 'fb311b2397651ca64b39658572971b21aef645f36ba2d6ac45b9ff8683585e05', 0, 'TSN17736807667173940', 'student-1774161481694-153469.jpg'),
-(48, '12313795', 'Albert', 'A', 'Wesker', 'albert@panpacificu.edu.ph', '$2b$10$ma7s87MRnZwc1LNpU/jUj.YKiAeNHoonX3Cx.bdkQSLq4xe6yHZ3C', '3rd Year', '+639481239328', 'BS in Information Technology', '', 'BC17741792669036245', '2026-03-22 19:34:26', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, NULL, NULL),
-(49, '897', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '$2b$10$Bjns138ua26/ukNYd4t8xu.HT1Vzx9NsRMwdv4Bzn60EfW4cHHx6O', '3rd Year', '+63639195366089', 'BS in Information Technology', '', 'BC17743308931349513', '2026-03-24 13:41:33', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, 'TSN17698767256291441', 'student-1774336848701-75789.jpg'),
+(49, '12310922', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '$2b$10$Bjns138ua26/ukNYd4t8xu.HT1Vzx9NsRMwdv4Bzn60EfW4cHHx6O', '3rd Year', '+63639195366089', 'BS in Information Technology', '', 'BC17743308931349513', '2026-03-24 13:41:33', '1f2079e418f7ebd0d36bbd234af6f77ae33b044a2fc69f0a207f50748482897b', 0, 'TSN17698767256291441', 'student-1774336848701-75789.jpg'),
 (50, '789789', 'Gabriel', 'C', 'Castillo (ECoAST)', 'gabriel.castillo.ecoast@panpacificu.edu.ph', '$2b$10$d0beM1nkSogQhpQh7H6FWuku2OuCwZcw5P0YZ5yyEqrZUktnSRQMO', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743223815308001', '2026-03-24 11:19:41', '5fd6d04e115bc91553eef8cc76799725738ec5dca241a58d5c924d3e185c623a', 0, NULL, NULL),
-(51, '848484', 'Ace-cin', 'A', 'Kyoshi', 'kyoshiacecin@gmail.com', '$2b$10$4rt76ulRlULz5z/O0vZ30ejrhRIqOpFD8c2hbyYAIjbYFqsykk9Xu', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743277221125271', '2026-03-24 12:48:42', 'df189a5ca5f4afaa93fdf3ff5d9fdfa596d4bd8f46f7aa75d099005641fb756e', 0, NULL, NULL),
-(52, '12334575', 'Maxene', 'M', 'Franco', 'maxenefranco@gmail.com', '$2b$10$TZMBOWs9jDo4iJm7jxMI0uiwkw6qvtPGl1YsweYA6diR3c86MVehu', '3rd Year', '+639763891308', 'BS in Information Technology', '', 'BC17743644117422361', '2026-03-24 23:00:11', '10a844abe274ce41b81a44eec9506deabd3ecffe9ccdeb2a9bb17b737500cac2', 0, NULL, NULL);
+(52, '12334575', 'Maxene', 'M', 'Franco', 'maxenefranco@gmail.com', '$2b$10$TZMBOWs9jDo4iJm7jxMI0uiwkw6qvtPGl1YsweYA6diR3c86MVehu', '2nd Year', '+639763891308', 'BS in Computer Science', '', 'BC17743644117422361', '2026-03-24 23:00:11', '10a844abe274ce41b81a44eec9506deabd3ecffe9ccdeb2a9bb17b737500cac2', 0, NULL, NULL),
+(53, '1231423432', 'Darren James', 'A', 'Agustin', 'darren@panpacificu.edu.ph', '$2b$10$zjGsBFrK2tNgM/HxJN2zd.W4A84dQZBfrIAX9WzvsdhWUA6mIaXhO', '3rd Year', '09481239328', 'BS in Computer Engineering', '', 'BC17746831616057616', '2026-03-28 15:32:41', '', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -564,7 +774,7 @@ CREATE TABLE `student_records_regular_class` (
 --
 
 INSERT INTO `student_records_regular_class` (`student_id`, `student_id_number`, `student_firstname`, `student_middlename`, `student_lastname`, `student_email`, `student_year_level`, `student_guardian_number`, `student_profile_picture`, `student_program`, `teacher_barcode_scanner_serial_number`, `date_created`) VALUES
-(21, '1231426', 'Charimea', 'M', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '3rd Year', '+639481239328', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-07 22:32:58'),
+(21, '1231422', 'Charimea', 'M', 'Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', '3rd Year', '+639481239328', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-07 22:32:58'),
 (27, '12313598', 'Princess', 'O', 'Obillo (ECoAST)', 'princess.obillo.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-12 15:31:57'),
 (28, '1231231231231', 'Natsu', 'A', 'Dragneel', 'xnatsu25@gmail.com', '3rd Year', '+63639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-12 17:56:50'),
 (34, '1231333', 'Lucy', 'A', 'Heartfilla', 'lucy@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17734603098321716', '2026-03-14 12:58:54'),
@@ -582,9 +792,9 @@ INSERT INTO `student_records_regular_class` (`student_id`, `student_id_number`, 
 (56, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-20 00:57:00'),
 (57, '1231377', 'Steven John', 'A', 'Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17736807667173940', '2026-03-20 00:57:14'),
 (60, '67', 'Yuumi', 'A', 'Kiyomi', 'example@panpacificu.edu.ph', '2nd Year', '+636767676767', NULL, 'BS in Mechanics', 'TSN17736807667173940', '2026-03-22 14:37:32'),
-(61, '848484', 'Ace-cin', 'A', 'Kyoshi', 'kyoshiacecin@gmail.com', '3rd Year', '+639763891308', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-24 12:54:19'),
-(62, '897', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '3rd Year', '+63639195366089', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-24 13:41:06'),
-(64, '1231392', 'Jan Ray', 'Agmata', 'Aquino', 'janrayaquino9@gmail.com', '3rd Year', '+6309661672889', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-25 20:17:32');
+(62, '12310922', 'Andrea', 'A', 'Lachica', 'andrea.lachica@panpacificu.edu.ph', '3rd Year', '+63639195366089', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-24 13:41:06'),
+(66, '67', 'Yuumi', 'A', 'Kiyomi', 'example@panpacificu.edu.ph', '2nd Year', '+636767676767', NULL, 'BS in Mechanics', 'TSN17698767256291441', '2026-03-28 16:22:15'),
+(67, '1231392', 'Jan Ray', 'Agmata', 'Aquino', 'janrayaquino9@gmail.com', '3rd Year', '+6309661672889', NULL, 'BS in Information Technology', 'TSN17698767256291441', '2026-03-28 22:11:50');
 
 -- --------------------------------------------------------
 
@@ -615,7 +825,9 @@ INSERT INTO `subject` (`subject_id`, `subject_name`, `subject_date_created`, `te
 (23, 'Computer Programming', '2026-03-19 12:40:03', 18),
 (24, 'Physics', '2026-03-19 12:40:14', 18),
 (25, 'Math', '2026-03-19 16:33:30', 19),
-(26, 'Mathematics', '2026-03-22 12:41:49', 18);
+(26, 'Mathematics', '2026-03-22 12:41:49', 18),
+(28, 'Cloud Computing', '2026-03-28 22:29:44', 7),
+(29, 'Sample lng to', '2026-03-29 03:25:56', 7);
 
 -- --------------------------------------------------------
 
@@ -636,7 +848,7 @@ CREATE TABLE `subject_and_year_level_setter` (
 --
 
 INSERT INTO `subject_and_year_level_setter` (`id`, `subject_name_set`, `year_level_set`, `teacher_barcode_scanner_serial_number`, `class_time_set`) VALUES
-(2, 'Integrative Programming', '3rd Year', 'TSN17698767256291441', '01:52'),
+(2, 'Big Data', '3rd Year', 'TSN17698767256291441', '22:55'),
 (3, '', '', 'TSN17704826980131949', NULL),
 (4, '', '', 'TSN17704837387017092', NULL),
 (5, '', '', 'TSN17704837433987368', NULL),
@@ -648,7 +860,10 @@ INSERT INTO `subject_and_year_level_setter` (`id`, `subject_name_set`, `year_lev
 (11, '', '', 'TSN17734601215899710', NULL),
 (12, 'App Dev', '3rd Year', 'TSN17734603098321716', NULL),
 (13, 'Mathematics', '2nd Year', 'TSN17736807667173940', NULL),
-(14, 'Math', 'SBE', 'TSN17739090200094291', NULL);
+(14, 'Math', 'SBE', 'TSN17739090200094291', NULL),
+(15, '', '', 'TSN17750552569416047', NULL),
+(16, '', '', 'TSN17746831293607630', NULL),
+(17, '', '', 'TSN17747043778496654', NULL);
 
 -- --------------------------------------------------------
 
@@ -724,7 +939,12 @@ INSERT INTO `subject_class_list` (`id`, `subject_id`, `student_id`, `teacher_bar
 (57, 5, 61, 'TSN17698767256291441'),
 (58, 5, 62, 'TSN17698767256291441'),
 (59, 5, 64, 'TSN17698767256291441'),
-(60, 4, 44, 'TSN17698767256291441');
+(60, 4, 44, 'TSN17698767256291441'),
+(61, 1, 67, 'TSN17698767256291441'),
+(63, 29, 21, 'TSN17698767256291441'),
+(64, 28, 27, 'TSN17698767256291441'),
+(65, 28, 28, 'TSN17698767256291441'),
+(66, 29, 27, 'TSN17698767256291441');
 
 -- --------------------------------------------------------
 
@@ -1110,7 +1330,116 @@ INSERT INTO `system_activity_logs` (`log_id`, `actor_id`, `actor_name`, `actor_r
 (333, 33, 'Marfel Gem A. Gallarde (ECoAST)', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '12312312312', 'Marfel Gem A. Gallarde (ECoAST)', 'Teacher: Steven John A. Agustin | Program: BS in Computer Engineering, Year: 3rd Year', NULL, NULL, '2026-03-26 01:40:13'),
 (334, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 01:52', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-26 01:47:53'),
 (335, 23, 'Lucy Heartfilla', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Lucy Heartfilla', 'Regenerated barcode — ID No: 1231333', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-27 11:51:03'),
-(336, 23, 'Lucy A. Heartfilla', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231333', 'Lucy A. Heartfilla', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-27 11:55:20');
+(336, 23, 'Lucy A. Heartfilla', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231333', 'Lucy A. Heartfilla', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-27 11:55:20'),
+(337, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 11:57', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 11:56:11'),
+(338, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 00:11', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:07:55'),
+(339, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 12:11', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:08:09'),
+(340, 35, 'Natsu Dragneel', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Natsu Dragneel', 'Regenerated barcode — ID No: 1231231231231', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-29 12:53:31'),
+(341, 35, 'Natsu B. Dragneel', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231231231231', 'Natsu B. Dragneel', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-29 12:53:38'),
+(342, 23, 'Lucy A. Heartfilla', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231333', 'Lucy A. Heartfilla', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-29 12:55:27'),
+(343, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 14:51', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-30 13:01:50'),
+(344, 23, 'Lucy A. Heartfilla', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231333', 'Lucy A. Heartfilla', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-30 13:21:01'),
+(345, 35, 'Natsu B. Dragneel', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231231231231', 'Natsu B. Dragneel', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-30 13:21:29'),
+(346, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 11:51', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-30 13:27:00'),
+(347, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 19:51', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-31 13:29:28'),
+(348, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 07:51', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-31 13:36:44'),
+(349, 35, 'Natsu B. Dragneel', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231231231231', 'Natsu B. Dragneel', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-31 13:37:31'),
+(350, 23, 'Lucy A. Heartfilla', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231333', 'Lucy A. Heartfilla', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-04-01 22:20:56'),
+(351, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Integrative Programming', 'Set subject: Integrative Programming, year level: 3rd Year, class time: 22:55', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:21:32'),
+(352, 35, 'Natsu B. Dragneel', 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', '1231231231231', 'Natsu B. Dragneel', 'Teacher: Steven John A. Agustin | Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-04-01 22:22:37'),
+(353, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Digital Marketing', 'Set subject: Digital Marketing, year level: 3rd Year, class time: 22:55', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:24:59'),
+(354, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '12334575', 'Maxene Franco', 'Added by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-04-01 22:35:59'),
+(355, 7, 'Steven John A. Agustin', 'teacher', 'SET_LOCATION', 'Location', '7', NULL, 'Set location: lat 16.0425, lng 120.3407, radius 50m', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:45:07'),
+(356, 46, 'Steven John Agustin (CoAST)', 'student', 'REGENERATE_BARCODE', 'Student', '', 'Steven John Agustin (CoAST)', 'Regenerated barcode — ID No: 1231377', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:45:13'),
+(357, 5, 'Gray Fullbusters', 'guard', 'EVENT_TIME_IN', 'Event Attendance', '1231377', 'Steven John A. Agustin (CoAST)', 'Event: Sample | Location: Main Gate', NULL, NULL, '2026-04-01 22:47:36'),
+(358, 1, NULL, 'admin', 'CREATE_TEACHER', 'Teacher', '20', 'Charimea Selga', 'Registered teacher: charimea.selga.ecoast@panpacificu.edu.ph, Dept: BS in Computer Science', NULL, NULL, '2026-04-01 22:54:16'),
+(359, 1, 'Super Administrator', 'super_admin', 'EDIT_STUDENT', 'Student', '', 'Maxene Franco', 'Edited student: Maxene Franco — BS in Computer Science 3rd Year', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 22:57:37'),
+(360, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_STUDENT_RECORD', 'Student', '', 'Maxene Franco', 'Removed Maxene Franco from class', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 22:57:45'),
+(361, 1, 'Super Administrator', 'super_admin', 'ADD_PROGRAM', 'Program', '', 'kk', 'Added program: kk', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 23:03:32'),
+(362, 1, 'Super Administrator', 'super_admin', 'MAINTENANCE_TOGGLE', 'System', '', 'Maintenance ON', 'Maintenance mode turned ON', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 23:08:14'),
+(363, 1, 'Super Administrator', 'super_admin', 'MAINTENANCE_TOGGLE', 'System', '', 'Maintenance OFF', 'Maintenance mode turned OFF', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 23:08:24'),
+(364, 1, 'CSS Admin', 'admin', 'ADD_YEAR_LEVEL', 'Year Level', '', 'Kinder', 'Added year level: Kinder', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 23:10:28'),
+(365, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Programming', 'Set subject: Programming, year level: 3rd Year, class time: 22:55', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:34:17'),
+(366, NULL, NULL, 'admin', 'CREATE_GUARD', 'Guard', '11', 'Asuna Kirigaya', 'Registered guard: asuna@panpacificu.edu.ph, Location: Parking Area', NULL, NULL, '2026-03-28 15:31:56'),
+(367, 1, 'Super Administrator', 'super_admin', 'CREATE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'SuperAdmin registered guard: asuna@panpacificu.edu.ph, Location: Parking Area', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 15:31:56'),
+(368, NULL, NULL, 'admin', 'CREATE_TEACHER', 'Teacher', '21', 'Bill Gates', 'Registered teacher: bill@panpacificu.edu.ph, Dept: BS in Computer Engineering', NULL, NULL, '2026-03-28 15:32:09'),
+(369, 1, 'Super Administrator', 'super_admin', 'CREATE_TEACHER', 'Teacher', '', 'Bill Gates', 'SuperAdmin registered teacher: bill@panpacificu.edu.ph, Dept: BS in Computer Engineering', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 15:32:09'),
+(370, 1, 'Super Administrator', 'super_admin', 'CREATE_STUDENT', 'Student', '', 'Darren James Agustin', 'SuperAdmin registered student: darren@panpacificu.edu.ph, Program: BS in Computer Engineering', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 15:32:41'),
+(371, NULL, 'Super Admin', 'super_admin', 'CREATE_ADMIN', 'Admin', '3', 'Gabriel C. Castillo', 'Created admin: gabriel@panpacificu.edu.ph', NULL, NULL, '2026-03-28 15:33:17'),
+(372, 1, 'Super Administrator', 'super_admin', 'EDIT_TEACHER', 'Teacher', '21', 'Bill Gate', 'Edited teacher: Bill Gate', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 15:33:33'),
+(373, 1, 'Super Administrator', 'super_admin', 'EDIT_TEACHER', 'Teacher', '21', 'Bill Gates', 'Edited teacher: Bill Gates', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 15:33:37'),
+(374, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '67', 'Yuumi Kiyomi', 'Added by Steven John A. Agustin — Program: BS in Mechanics, Year: 2nd Year', NULL, NULL, '2026-03-28 16:22:15'),
+(375, 1, 'Super Administrator', 'super_admin', 'SET_EVENT', 'Event', '', 'Fun run', 'Set system-wide event: Fun run', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 16:40:53'),
+(376, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Database Lec', 'Set subject: Database Lec, year level: 3rd Year, class time: 22:55', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 16:46:29'),
+(377, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Programming', 'Set subject: Programming, year level: 3rd Year, class time: 22:55', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 16:47:03'),
+(378, 7, 'Steven John A. Agustin', 'teacher', 'SET_LOCATION', 'Location', '7', NULL, 'Set location: lat 16.0425, lng 120.3407, radius 50m', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 17:21:30'),
+(379, 1, 'CSS Admin Cha', 'admin', 'CHANGE_NAME', 'Admin', '1', 'CSS Admin Cha', 'Changed name to: CSS Admin Cha', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:15:13'),
+(380, 1, 'CSS Admin', 'admin', 'EDIT_STUDENT', 'Student', '', 'Andrea Lachica', 'Edited student: Andrea Lachica — BS in Information Technology 3rd Year', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:16:18'),
+(381, NULL, NULL, 'admin', 'DELETE_STUDENT', 'Student', '51', NULL, 'Deleted student ID: 51', NULL, NULL, '2026-03-28 21:16:55'),
+(382, 1, 'CSS Admin', 'admin', 'DELETE_STUDENT', 'Student', '', 'Ace-cin Kyoshi', 'Deleted student: Ace-cin Kyoshi', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:16:55'),
+(383, 1, 'CSS Admin', 'admin', 'ADD_PROGRAM', 'Program', '', 'Bs Psychology', 'Added program: Bs Psychology', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:20:49'),
+(384, 1, 'CSS Admin', 'admin', 'EDIT_TEACHER', 'Teacher', '', 'Bill Gates', 'Edited teacher: Bill Gates — bill@panpacificu.edu.ph', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:23:55'),
+(385, 1, 'CSS Admin', 'admin', 'RESET_TEACHER_PASSWORD', 'Teacher', '21', NULL, 'Reset password for teacher ID: 21', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:24:36'),
+(386, 1, NULL, 'admin', 'CREATE_TEACHER', 'Teacher', '22', 'Rose Chien', 'Registered teacher: rose@gmail.com, Dept: Bs Psychology', NULL, NULL, '2026-03-28 21:26:17'),
+(387, 1, 'CSS Admin', 'admin', 'EDIT_GUARD', 'Guard', '', 'Chari Segla (Guard)', 'Edited guard: Chari Segla (Guard) — location: Parking Area', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:27:02'),
+(388, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:27:13'),
+(389, 1, 'CSS Admin', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:27:13'),
+(390, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:27:33'),
+(391, 1, 'CSS Admin', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:27:33'),
+(392, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:27:52'),
+(393, 1, 'CSS Admin', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:27:52'),
+(394, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:31:16'),
+(395, 1, 'CSS Admin', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:31:16'),
+(396, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:31:49'),
+(397, 1, 'CSS Admin Cha', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 21:31:49'),
+(398, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:31:53'),
+(399, 1, 'CSS Admin Cha', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 21:31:53'),
+(400, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:32:01'),
+(401, 1, 'CSS Admin Cha', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-03-28 21:32:01'),
+(402, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '11', NULL, 'Deleted guard ID: 11', NULL, NULL, '2026-03-28 21:32:04'),
+(403, 1, 'CSS Admin Cha', 'admin', 'DELETE_GUARD', 'Guard', '', 'Asuna Kirigaya', 'Deleted guard: Asuna Kirigaya', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-03-28 21:32:04'),
+(404, 1, 'CSS Admin', 'admin', 'RESET_GUARD_PASSWORD', 'Guard', '10', NULL, 'Reset password for guard ID: 10', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:32:07'),
+(405, 1, NULL, 'admin', 'CREATE_GUARD', 'Guard', '12', 'Anton', 'Registered guard: anton@gmail.com, Location: Main Gate', NULL, NULL, '2026-03-28 21:33:14'),
+(406, 1, 'CSS Admin', 'admin', 'ADD_PROGRAM', 'Program', '', 'Bs Nursing', 'Added program: Bs Nursing', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:33:55'),
+(407, 1, 'CSS Admin', 'admin', 'ADD_YEAR_LEVEL', 'Year Level', '', 'Irregular', 'Added year level: Irregular', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:34:26'),
+(408, 1, 'CSS Admin', 'admin', 'DELETE_YEAR_LEVEL', 'Year Level', '', '2nd Year', 'Deleted year level: 2nd Year', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:34:34'),
+(409, 1, 'CSS Admin', 'admin', 'ADD_YEAR_LEVEL', 'Year Level', '', '2nd Year', 'Added year level: 2nd Year', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:34:47'),
+(410, 1, 'CSS Admin Cha', 'admin', 'DELETE_PROGRAM', 'Program', '', 'kk', 'Deleted program: kk', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 21:35:12'),
+(411, 1, 'CSS Admin', 'admin', 'SET_EVENT', 'Event', '', 'Mass', 'Set event name to: Mass', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:42:01'),
+(412, 1, 'CSS Admin', 'admin', 'SET_EVENT', 'Event', '', 'Sail', 'Set event name to: Sail', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:43:05'),
+(413, NULL, NULL, 'admin', 'DELETE_STUDENT', 'Student', '48', NULL, 'Deleted student ID: 48', NULL, NULL, '2026-03-28 21:51:55'),
+(414, 1, 'CSS Admin Cha', 'admin', 'DELETE_STUDENT', 'Student', '', 'Albert Wesker', 'Deleted student: Albert Wesker', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:51:55'),
+(415, 1, 'CSS Admin Cha', 'admin', 'EDIT_STUDENT', 'Student', '', 'Maxene Franco', 'Edited student: Maxene Franco — BS in Computer Science 2nd Year', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:52:14'),
+(416, 1, NULL, 'admin', 'DELETE_TEACHER', 'Teacher', '22', NULL, 'Deleted teacher ID: 22', NULL, NULL, '2026-03-28 21:52:29'),
+(417, 1, 'CSS Admin Cha', 'admin', 'DELETE_TEACHER', 'Teacher', '', 'Rose Chien', 'Deleted teacher: Rose Chien', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 21:52:29'),
+(418, 20, 'Charimea Selga', 'teacher', 'SET_LOCATION', 'Location', '20', NULL, 'Set location: lat 15.986820340081675, lng 120.70427393430985, radius 50m', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:58:17'),
+(419, 7, 'Steven John A. Agustin', 'teacher', 'SET_LOCATION', 'Location', '7', NULL, 'Set location: lat 15.986909175048254, lng 120.70788145065309, radius 50m', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 22:04:49'),
+(420, 7, 'Steven John A. Agustin', 'teacher', 'EDIT_STUDENT_RECORD', 'Student', '21', 'Charimea Selga', 'Edited class record: 1231422', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 22:10:34'),
+(421, 7, 'Steven John A. Agustin', 'teacher', 'DELETE_STUDENT_RECORD', 'Student', '', 'Jan Ray Aquino', 'Removed Jan Ray Aquino from class', '182.255.40.171', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-28 22:10:54'),
+(422, 7, 'Steven John A. Agustin', 'teacher', 'ADD_STUDENT_TO_CLASS', 'Student', '1231392', 'Jan Ray Aquino', 'Added by Steven John A. Agustin — Program: BS in Information Technology, Year: 3rd Year', NULL, NULL, '2026-03-28 22:11:50'),
+(423, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Big Data', 'Set subject: Big Data, year level: 3rd Year, class time: 22:55', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 22:25:46'),
+(424, 7, 'Steven John A. Agustin', 'teacher', 'ADD_SUBJECT', 'Subject', '', 'Cloud Computing', 'Added subject: Cloud Computing', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 22:29:44'),
+(425, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '6', NULL, 'Deleted guard ID: 6', NULL, NULL, '2026-03-29 01:04:20'),
+(426, 1, 'CSS Admin Cha', 'admin', 'DELETE_GUARD', 'Guard', '', 'Metalman', 'Deleted guard: Metalman', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-29 01:04:20'),
+(427, 1, NULL, 'admin', 'DELETE_GUARD', 'Guard', '10', NULL, 'Deleted guard ID: 10', NULL, NULL, '2026-03-29 01:35:25'),
+(428, 1, 'CSS Admin Cha', 'admin', 'DELETE_GUARD', 'Guard', '', 'Chari Segla (Guard)', 'Deleted guard: Chari Segla (Guard)', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-29 01:35:25'),
+(429, 1, 'CSS Admin Chariz', 'admin', 'CHANGE_NAME', 'Admin', '1', 'CSS Admin Chariz', 'Changed name to: CSS Admin Chariz', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 02:09:05'),
+(430, 7, 'Steven John A. Agustin', 'teacher', 'ADD_SUBJECT', 'Subject', '', 'Sample lng to', 'Added subject: Sample lng to', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 03:25:56'),
+(431, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Digital Marketing', 'SuperAdmin set subject: Digital Marketing, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:39:44'),
+(432, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Sample lng to', 'SuperAdmin set subject: Sample lng to, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:39:49'),
+(433, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Big Data', 'SuperAdmin set subject: Big Data, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:39:53'),
+(434, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Sample lng to', 'SuperAdmin set subject: Sample lng to, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:40:21'),
+(435, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Event-Driven Programming', 'SuperAdmin set subject: Event-Driven Programming, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:40:38'),
+(436, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Integrative Programming', 'SuperAdmin set subject: Integrative Programming, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:40:43'),
+(437, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Programming', 'SuperAdmin set subject: Programming, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:43:47'),
+(438, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Sample lng to', 'SuperAdmin set subject: Sample lng to, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:43:51'),
+(439, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Integrative Programming', 'SuperAdmin set subject: Integrative Programming, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:44:02'),
+(440, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Sample lng to', 'SuperAdmin set subject: Sample lng to, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:44:09'),
+(441, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Sample lng to', 'SuperAdmin set subject: Sample lng to, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:44:26'),
+(442, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Integrative Programming', 'SuperAdmin set subject: Integrative Programming, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:53:13'),
+(443, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Event-Driven Programming', 'SuperAdmin set subject: Event-Driven Programming, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 16:22:50'),
+(444, 1, 'Super Administrator', 'super_admin', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '7', 'Big Data', 'SuperAdmin set subject: Big Data, year level: 3rd Year for teacher: Steven John A. Agustin', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 16:30:56'),
+(445, 7, 'Steven John A. Agustin', 'teacher', 'SET_SUBJECT_YEAR_LEVEL', 'Class Setup', '', 'Big Data', 'Set subject: Big Data, year level: 3rd Year, class time: 22:55', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 16:31:55');
 
 -- --------------------------------------------------------
 
@@ -1537,7 +1866,112 @@ INSERT INTO `system_login_logs` (`log_id`, `user_id`, `user_name`, `user_email`,
 (399, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-27 11:44:26'),
 (400, 23, 'Lucy Heartfilla', 'lucyheart@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-27 11:50:52'),
 (401, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-27 13:45:21'),
-(402, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-27 14:23:44');
+(402, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-27 14:23:44'),
+(403, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-27 17:01:59'),
+(404, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-27 17:02:02'),
+(405, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-27 17:05:41'),
+(406, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-27 17:07:30'),
+(407, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-27 17:07:50'),
+(408, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-27 17:20:19'),
+(409, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-27 23:14:22'),
+(410, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-27 23:14:29'),
+(411, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-27 23:14:36'),
+(412, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-27 23:19:45'),
+(413, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 11:51:15'),
+(414, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 11:51:21'),
+(415, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 11:51:26'),
+(416, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 11:52:15'),
+(417, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 11:52:29'),
+(418, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 11:54:55'),
+(419, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 11:55:18'),
+(420, 23, 'Lucy Heartfilla', 'lucyheart@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-28 12:13:16'),
+(421, 23, 'Lucy Heartfilla', 'lucyheart@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-28 12:15:17'),
+(422, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '2026-03-29 12:53:26'),
+(423, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 12:54:56'),
+(424, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-29 12:55:17'),
+(425, 23, 'Lucy Heartfilla', 'lucyheart@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-29 12:55:20'),
+(426, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-30 13:02:24'),
+(427, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '2026-03-30 13:21:18'),
+(428, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-31 13:28:54'),
+(429, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:12:03'),
+(430, 23, 'Lucy Heartfilla', 'lucyheart@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-04-01 22:19:48'),
+(431, 23, 'Lucy Heartfilla', 'lucyheart@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-04-01 22:22:26'),
+(432, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36', '2026-04-01 22:22:33'),
+(433, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 22:31:59'),
+(434, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:34:40'),
+(435, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 22:34:59'),
+(436, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-01 22:44:45'),
+(437, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-04-01 22:46:11'),
+(438, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '182.255.40.171', 'Edge 146 · Windows 19', '2026-04-01 22:57:18'),
+(439, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-04-01 23:10:36'),
+(440, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:25:10'),
+(441, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:25:14'),
+(442, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:55:41'),
+(443, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 12:56:00'),
+(444, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:56:10'),
+(445, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:56:56'),
+(446, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 12:57:27'),
+(447, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 12:58:06'),
+(448, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 12:58:20'),
+(449, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:58:26'),
+(450, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:58:32'),
+(451, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 12:58:38'),
+(452, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 13:15:47'),
+(453, NULL, NULL, 'superadmin@panpacificu.edu.ph', 'student', 'FAILED', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 13:16:37'),
+(454, NULL, NULL, 'superadmin@panpacificu.edu.ph', 'student', 'FAILED', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 14:11:26'),
+(455, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 14:11:33'),
+(456, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 14:11:46'),
+(457, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-28 16:25:04'),
+(458, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 16:39:53'),
+(459, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 17:38:00'),
+(460, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 18:06:23'),
+(461, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 18:24:02'),
+(462, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 18:33:42'),
+(463, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'FAILED', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 18:39:00'),
+(464, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 19:41:36'),
+(465, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 19:41:42'),
+(466, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'LOGOUT', '136.158.120.56', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-28 19:41:49'),
+(467, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 19:41:55'),
+(468, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 19:41:59'),
+(469, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 19:49:17'),
+(470, 35, 'Natsu Dragneel', 'xnatsu25@gmail.com', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 144 · Android 14 · Infinix X6731B', '2026-03-28 19:50:10'),
+(471, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 20:01:27'),
+(472, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 20:01:35'),
+(473, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 20:16:07'),
+(474, NULL, NULL, 'janrayaquino9@gmail.com', 'guard', 'FAILED', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-28 20:51:54'),
+(475, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-28 20:52:17'),
+(476, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'LOGOUT', '49.150.35.37', 'Chrome 146 · Windows 10', '2026-03-28 20:52:43'),
+(477, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '49.150.35.37', 'Chromium 145 · Android 11 · RMX2061', '2026-03-28 20:53:10'),
+(478, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:11:56'),
+(479, 1, 'CSS Admin Cha', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 21:23:53'),
+(480, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 21:24:29'),
+(481, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 21:40:22'),
+(482, 1, 'CSS Admin', 'admin@panpacificu.edu.ph', 'admin', 'LOGOUT', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:49:48'),
+(483, 1, 'CSS Admin Cha', 'admin@panpacificu.edu.ph', 'admin', 'SUCCESS', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:51:37'),
+(484, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:53:18'),
+(485, NULL, NULL, 'chari@panpacificu.edu.ph', 'teacher', 'FAILED', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:53:26'),
+(486, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 21:53:28'),
+(487, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '49.150.35.37', 'Chromium 145 · Android 11 · RMX2061', '2026-03-28 21:53:48'),
+(488, 20, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'teacher', 'FAILED', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:54:28'),
+(489, 20, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:54:38'),
+(490, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '49.150.35.37', 'Chromium 145 · Android 11 · RMX2061', '2026-03-28 21:54:48'),
+(491, 20, 'Charimea Selga', 'charimea.selga.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:59:09'),
+(492, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'FAILED', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:59:28'),
+(493, NULL, NULL, 'stevenjohn.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'FAILED', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:59:36'),
+(494, NULL, NULL, 'steven.john.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'FAILED', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 21:59:43'),
+(495, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'SUCCESS', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 22:00:43'),
+(496, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '49.150.35.37', 'Chromium 145 · Android 11 · RMX2061', '2026-03-28 22:31:07'),
+(497, 7, 'Steven John A. Agustin', 'steven.agustin.ecoast@panpacificu.edu.ph', 'teacher', 'LOGOUT', '182.255.40.171', 'Edge 146 · Windows 19', '2026-03-28 22:33:47'),
+(498, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-28 22:59:53'),
+(499, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 02:28:06'),
+(500, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 02:40:05'),
+(501, 5, 'Gray Fullbusters', 'gray@panpacificu.edu.ph', 'guard', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 02:43:54'),
+(502, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'LOGOUT', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 11:50:13'),
+(503, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 11:50:23'),
+(504, 46, 'Steven John Agustin (CoAST)', 'steven.agustin.ecoast@panpacificu.edu.ph', 'student', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 15:52:40'),
+(505, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 15:56:27'),
+(506, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 16:01:00'),
+(507, 1, 'Super Administrator', 'superadmin@panpacificu.edu.ph', 'super_admin', 'SUCCESS', '136.158.120.56', 'Chrome 146 · Windows 10', '2026-03-29 19:00:30');
 
 -- --------------------------------------------------------
 
@@ -1557,7 +1991,7 @@ CREATE TABLE `system_settings` (
 --
 
 INSERT INTO `system_settings` (`id`, `setting_key`, `setting_value`, `updated_at`) VALUES
-(1, 'maintenance_mode', '0', '2026-03-24 06:09:03');
+(1, 'maintenance_mode', '0', '2026-04-01 15:08:24');
 
 -- --------------------------------------------------------
 
@@ -1577,7 +2011,7 @@ CREATE TABLE `teacher` (
   `teacher_location_radius` int(11) DEFAULT 50,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `teacher_barcode_scanner_serial_number` varchar(255) NOT NULL,
-  `admin_id` int(11) NOT NULL
+  `admin_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1585,9 +2019,11 @@ CREATE TABLE `teacher` (
 --
 
 INSERT INTO `teacher` (`teacher_id`, `teacher_name`, `teacher_profile_picture`, `teacher_email`, `teacher_password`, `teacher_program`, `teacher_current_subject`, `teacher_location`, `teacher_location_radius`, `created_at`, `teacher_barcode_scanner_serial_number`, `admin_id`) VALUES
-(7, 'Steven John A. Agustin', 'teacher-1774291178630-987411.jpg', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$j5nYLjVE7BGPwRwM3ELoJez2glRdd8LbnvHq8VDj9qxUMBHDpARCq', 'BS in Information Technology', NULL, '{\"latitude\":16.01769377915928,\"longitude\":120.74931085109712}', 100, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
+(7, 'Steven John A. Agustin', 'teacher-1774726925820-608067.jpg', 'steven.agustin.ecoast@panpacificu.edu.ph', '$2b$10$j5nYLjVE7BGPwRwM3ELoJez2glRdd8LbnvHq8VDj9qxUMBHDpARCq', 'BS in Information Technology', NULL, '{\"latitude\":15.986909175048254,\"longitude\":120.70788145065309}', 50, '2026-01-31 16:25:25', 'TSN17698767256291441', 1),
 (18, 'Mark Zuckerberg', 'teacher-1773680898788-757146.webp', 'markzuckerberg@panpacificu.edu.ph', '$2b$10$pgqV81EPWO.u2aOGz51M5O//Dma2hohn5F/t2bY0vWfAJm..dg9PO', 'BS in Information Technology', NULL, '{\"latitude\":16.01788971286583,\"longitude\":120.74942350387575}', 100, '2026-03-16 17:06:06', 'TSN17736807667173940', 1),
-(19, 'Andrea B. Lachica', NULL, 'andrea@panpacificu.edu.ph', '$2b$10$9HmOHucmCL6f7ZseaO0SSuNIBOrs0JaaFgixPTR2AXsAHuLLyZNsu', 'BS in Criminology', NULL, '{\"latitude\":16.026207,\"longitude\":120.7763817}', 50, '2026-03-19 08:30:20', 'TSN17739090200094291', 1);
+(19, 'Andrea B. Lachica', NULL, 'andrea@panpacificu.edu.ph', '$2b$10$9HmOHucmCL6f7ZseaO0SSuNIBOrs0JaaFgixPTR2AXsAHuLLyZNsu', 'BS in Criminology', NULL, '{\"latitude\":16.026207,\"longitude\":120.7763817}', 50, '2026-03-19 08:30:20', 'TSN17739090200094291', 1),
+(20, 'Charimea Selga', 'teacher-1774706182549-241887.jpg', 'charimea.selga.ecoast@panpacificu.edu.ph', '$2b$10$bZkH7sYpiF04eAt1E03a9OYCSARsyxu8rIzy5tuygmDTkWEZTMDSy', 'BS in Computer Science', NULL, '{\"latitude\":15.986820340081675,\"longitude\":120.70427393430985}', 50, '2026-04-01 14:54:16', 'TSN17750552569416047', 1),
+(21, 'Bill Gates', NULL, 'bill@panpacificu.edu.ph', '$2b$10$eZ/UkIDTOXKZ7FGi/pQgnejQ/HVPB2mvTNsz5tSrcYyV2JLp0rGAS', 'BS in Computer Engineering', NULL, NULL, 50, '2026-03-28 07:32:09', 'TSN17746831293607630', NULL);
 
 -- --------------------------------------------------------
 
@@ -1607,10 +2043,12 @@ CREATE TABLE `year_level` (
 
 INSERT INTO `year_level` (`year_level_id`, `year_level_name`, `year_level_created`) VALUES
 (1, '1st Year', '2026-02-02 18:48:13'),
-(2, '2nd Year', '2026-02-02 18:48:13'),
 (3, '3rd Year', '2026-02-02 18:48:45'),
 (4, '4th Year', '2026-02-02 18:48:45'),
-(12, 'SBE', '2026-03-19 16:34:09');
+(12, 'SBE', '2026-03-19 16:34:09'),
+(15, 'Kinder', '2026-04-01 23:10:28'),
+(16, 'Irregular', '2026-03-28 21:34:26'),
+(17, '2nd Year', '2026-03-28 21:34:47');
 
 --
 -- Indexes for dumped tables
@@ -1621,29 +2059,6 @@ INSERT INTO `year_level` (`year_level_id`, `year_level_name`, `year_level_create
 --
 ALTER TABLE `admin_accounts`
   ADD PRIMARY KEY (`admin_id`);
-
---
--- Indexes for table `admin_activity_logs`
---
-ALTER TABLE `admin_activity_logs`
-  ADD PRIMARY KEY (`log_id`),
-  ADD KEY `idx_admin_id` (`admin_id`),
-  ADD KEY `idx_action` (`action`),
-  ADD KEY `idx_performed_at` (`performed_at`);
-
---
--- Indexes for table `admin_login_logs`
---
-ALTER TABLE `admin_login_logs`
-  ADD PRIMARY KEY (`log_id`),
-  ADD KEY `idx_admin_id` (`admin_id`),
-  ADD KEY `idx_login_at` (`login_at`);
-
---
--- Indexes for table `attendance_history_record`
---
-ALTER TABLE `attendance_history_record`
-  ADD PRIMARY KEY (`attendance_id`);
 
 --
 -- Indexes for table `attendance_record`
@@ -1681,6 +2096,14 @@ ALTER TABLE `guards`
 --
 ALTER TABLE `messages`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `message_notifications`
+--
+ALTER TABLE `message_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_receiver` (`receiver_id`,`receiver_role`,`is_read`),
+  ADD KEY `idx_created` (`created_at`);
 
 --
 -- Indexes for table `notifications`
@@ -1778,43 +2201,25 @@ ALTER TABLE `year_level`
 -- AUTO_INCREMENT for table `admin_accounts`
 --
 ALTER TABLE `admin_accounts`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `admin_activity_logs`
---
-ALTER TABLE `admin_activity_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `admin_login_logs`
---
-ALTER TABLE `admin_login_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `attendance_history_record`
---
-ALTER TABLE `attendance_history_record`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `attendance_record`
 --
 ALTER TABLE `attendance_record`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=191;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=255;
 
 --
 -- AUTO_INCREMENT for table `event_attendance_history_record`
 --
 ALTER TABLE `event_attendance_history_record`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT for table `event_attendance_record`
 --
 ALTER TABLE `event_attendance_record`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `event_setter`
@@ -1826,55 +2231,61 @@ ALTER TABLE `event_setter`
 -- AUTO_INCREMENT for table `guards`
 --
 ALTER TABLE `guards`
-  MODIFY `guard_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `guard_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
+
+--
+-- AUTO_INCREMENT for table `message_notifications`
+--
+ALTER TABLE `message_notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `program`
 --
 ALTER TABLE `program`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `student_accounts`
 --
 ALTER TABLE `student_accounts`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- AUTO_INCREMENT for table `student_records_regular_class`
 --
 ALTER TABLE `student_records_regular_class`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `subject`
 --
 ALTER TABLE `subject`
-  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `subject_and_year_level_setter`
 --
 ALTER TABLE `subject_and_year_level_setter`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `subject_class_list`
 --
 ALTER TABLE `subject_class_list`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT for table `super_admin_accounts`
@@ -1886,31 +2297,31 @@ ALTER TABLE `super_admin_accounts`
 -- AUTO_INCREMENT for table `system_activity_logs`
 --
 ALTER TABLE `system_activity_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=337;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=446;
 
 --
 -- AUTO_INCREMENT for table `system_login_logs`
 --
 ALTER TABLE `system_login_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=403;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=508;
 
 --
 -- AUTO_INCREMENT for table `system_settings`
 --
 ALTER TABLE `system_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `teacher`
 --
 ALTER TABLE `teacher`
-  MODIFY `teacher_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `teacher_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `year_level`
 --
 ALTER TABLE `year_level`
-  MODIFY `year_level_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `year_level_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

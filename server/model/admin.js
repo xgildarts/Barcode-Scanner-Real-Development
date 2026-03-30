@@ -124,6 +124,7 @@ admin.post('/set_event', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.setEventName(event_name, decodedToken.admin_id)
         services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'SET_EVENT', 'Event', null, event_name, `Set event name to: ${event_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
@@ -151,6 +152,7 @@ admin.get('/get_events', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getAttendanceEventRecords(decodedToken.admin_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
@@ -163,6 +165,7 @@ admin.get('/get_events_history', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getAttendanceEventHistoryRecords(decodedToken.admin_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
@@ -175,6 +178,7 @@ admin.get('/get_admin_data', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.getAdminData(decodedToken.admin_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
@@ -187,6 +191,7 @@ admin.post('/admin_change_name', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.changeAdminName(newName, decodedToken.admin_id)
         services.writeActivityLog(decodedToken.admin_id, newName, 'admin', 'CHANGE_NAME', 'Admin', decodedToken.admin_id, newName, `Changed name to: ${newName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result.message })
@@ -201,6 +206,7 @@ admin.put('/admin_change_password', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.updateAdminPassword(decodedToken.admin_id, current_password, new_password)
         services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'CHANGE_PASSWORD', 'Admin', decodedToken.admin_id, null, 'Admin changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
@@ -302,6 +308,7 @@ admin.delete('/delete_student_account/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
         // Lookup student name before deleting so the log shows the name not the ID
         let studentName = `Student ID: ${id}`
@@ -330,6 +337,7 @@ admin.delete('/delete_teacher_account/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
         // Lookup teacher name before deleting
         let teacherName = `Teacher ID: ${id}`
@@ -357,6 +365,7 @@ admin.get('/present_program_counts', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
         const result = await services.getPresentPrograms()
         res.json(result)
@@ -377,6 +386,7 @@ admin.delete('/delete_guard_account/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         if(decodedToken === null) { return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }) }
         // Lookup guard name before deleting
         let guardName = `Guard ID: ${id}`
@@ -415,6 +425,7 @@ admin.put('/edit_student_account/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization']);
         const decodedToken = services.verifyToken(token);
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         
         if (decodedToken === null) { 
             return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }); 
@@ -456,6 +467,7 @@ admin.put('/edit_teacher_account/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization']);
         const decodedToken = services.verifyToken(token);
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         
         if (decodedToken === null) { 
             return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }); 
@@ -493,6 +505,7 @@ admin.put('/edit_guard_account/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization']);
         const decodedToken = services.verifyToken(token);
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         
         if (decodedToken === null) { 
             return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' }); 
@@ -612,6 +625,7 @@ admin.post('/upload_profile_picture', uploadAdminPic.single('admin_profile_pictu
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const filename = await services.updateAdminProfilePicture(decodedToken.admin_id, req.file.filename)
         res.json({ ok: true, message: 'Profile picture updated!', filename })
     } catch (err) {
@@ -626,6 +640,7 @@ admin.put('/reset_student_device/:id', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         if (decodedToken === null) return res.status(401).json({ ok: false, message: 'Invalid token or no token provided!' })
 
         // Lookup student name for the activity log
@@ -650,6 +665,8 @@ admin.post('/logout', async (req, res) => {
     try {
         const token = services.removeBearer(req.headers['authorization']);
         const decoded = services.verifyToken(token);
+        // FIX: blacklist the token so it cannot be reused after logout
+        services.blacklistToken(token)
         if (decoded) services.writeLogoutLog(decoded.admin_id, decoded.admin_name, decoded.admin_email, 'admin', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']);
         res.json({ ok: true });
     } catch (_) { res.json({ ok: true }); }
@@ -720,6 +737,14 @@ admin.post('/messages/send', uploadMsgFile.single('file'), async (req, res) => {
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
         const id = await services.sendMessage(tok.admin_id, 'admin', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
         res.json({ ok: true, id })
+        // Notify receiver via bell
+        services.createMsgNotification(
+                parseInt(receiver_id), receiver_role,
+                tok.admin_id, 'admin', tok.admin_name || 'admin',
+                req.file ? 'file' : 'message',
+                content?.trim() || (req.file ? req.file.originalname : null),
+                null, id
+        ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
@@ -749,6 +774,104 @@ admin.delete('/messages/unsend/:id', async (req, res) => {
         await services.unsendMessage(parseInt(req.params.id), tok.admin_id, 'admin')
         res.json({ ok: true })
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+
+
+// GET /messages/notifications
+admin.get('/messages/notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        services.cleanOldMsgNotifications()
+        const notifs = await services.getMsgNotifications(tok.admin_id, 'admin', parseInt(req.query.limit) || 30)
+        const unread = await services.getUnreadMsgNotifCount(tok.admin_id, 'admin')
+        res.json({ ok: true, notifications: notifs, unread })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/notifications/read
+admin.post('/messages/notifications/read', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const ids = req.body.ids || []
+        await services.markMsgNotificationsRead(tok.admin_id, 'admin', ids)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// GET /messages/reaction-notifications
+admin.get('/messages/reaction-notifications', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const after  = parseInt(req.query.after) || 0
+        const isSeed = req.query.seed === '1'
+        const db = require('../configuration/db')
+        // Auto-clean notifications older than 24h to prevent accumulation
+        db.execute(
+            `DELETE FROM notifications WHERE type = 'reaction' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
+            [], () => {}
+        )
+        db.execute(
+            `SELECT id, type, title, message, meta, created_at FROM notifications
+             WHERE type = 'reaction' AND id > ?
+             AND CAST(JSON_EXTRACT(meta, '$.receiver_id') AS CHAR) = CAST(? AS CHAR)
+             AND JSON_EXTRACT(meta, '$.receiver_role') = ?
+             ORDER BY id DESC LIMIT ${isSeed ? 100 : 20}`,
+            [after, tok.admin_id, 'admin'],
+            (err, rows) => {
+                if (err) return res.json({ ok: true, notifications: [] })
+                const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
+                res.json({ ok: true, notifications: parsed })
+            }
+        )
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+// POST /messages/react/:id
+admin.post('/messages/react/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false, message: 'Unauthorized.' })
+        const { emoji } = req.body
+        const { reactions, msg } = await services.reactToMessage(
+            parseInt(req.params.id),
+            tok.admin_id, 'admin',
+            emoji || null
+        )
+        // Determine the OTHER party (not the reactor)
+        // If reactor is the message sender → notify receiver, else notify sender
+        const receiverId   = String(msg.sender_id) === String(tok.admin_id) && msg.sender_role === 'admin'
+            ? msg.receiver_id : msg.sender_id
+        const receiverRole = String(msg.sender_id) === String(tok.admin_id) && msg.sender_role === 'admin'
+            ? msg.receiver_role : msg.sender_role
+        // Never notify yourself and never notify super_admin via bell
+        const isSelf       = String(receiverId) === String(tok.admin_id) && receiverRole === 'admin'
+        const isSuper      = receiverRole === 'super_admin'
+        // Write a short-lived notification row so receiver's poll sees it
+        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
+        if (emoji && !isSelf && !isSuper) {
+            services.createNotification(
+                'reaction',
+                'New Reaction',
+                `${tok.admin_name || 'admin'} reacted ${emoji} to your message`,
+                { reactor_id: tok.admin_id, reactor_role: 'admin', message_id: parseInt(req.params.id), receiver_id: receiverId, receiver_role: receiverRole, emoji }
+            ).catch(() => {})
+        }
+        res.json({ ok: true, reactions })
+        // Notify via bell (skip only self)
+        if (emoji && !isSelf) {
+            services.createMsgNotification(
+                receiverId, receiverRole,
+                tok.admin_id, 'admin', tok.admin_name || 'admin',
+                'reaction', null, emoji, parseInt(req.params.id)
+            ).catch(() => {})
+        }
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message })
+    }
 })
 
 admin.post('/messages/pin/:id', async (req, res) => {

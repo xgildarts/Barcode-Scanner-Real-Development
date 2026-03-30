@@ -277,7 +277,7 @@ async function handleHttpErrors(res, data) {
             title: 'Session Expired',
             text: 'Your session has expired. Please log in again.'
         });
-        window.location.href = 'admin_login.html';
+        clearSessionAndRedirect(); // FIX: clear token before redirect
         return true;
     }
     if (res.status === 403) {
@@ -383,6 +383,12 @@ function navigateTo(page) {
         checkEventReminder();
     }
 
+    // Refresh program dropdown when opening registration
+    if (page === 'registration') {
+        renderPrograms();
+        renderYearLevels();
+    }
+
     // Load settings stats when opening settings
     if (page === 'adminSettings') {
         loadSettingsStats();
@@ -405,6 +411,14 @@ function register() {
 // ============================================================
 // AUTH
 // ============================================================
+// FIX: centralised session cleanup
+function clearSessionAndRedirect() {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_device_info');
+    localStorage.removeItem('admin_user');
+    window.location.href = 'admin_login.html';
+}
+
 async function checkToken() {
     if (!TOKEN) {
         await Swal.fire({
@@ -414,7 +428,7 @@ async function checkToken() {
             confirmButtonColor: '#d33',
             allowOutsideClick: false
         });
-        window.location.href = 'admin_login.html';
+        clearSessionAndRedirect(); // FIX: clear token before redirect
         return;
     }
 
@@ -429,7 +443,7 @@ async function checkToken() {
                 confirmButtonColor: '#d33',
                 allowOutsideClick: false
             });
-            window.location.href = 'admin_login.html';
+            clearSessionAndRedirect(); // FIX: clear token before redirect
         }
     } catch (err) {
         console.error(err);
@@ -451,9 +465,7 @@ function logout() {
         apiFetch('/admin/logout', { method: 'POST', body: JSON.stringify({ device_info: localStorage.getItem('admin_device_info') || '' }) }).catch(() => {});
         Swal.fire({ icon: 'success', title: 'Logged out', text: 'Redirecting to login...', timer: 1500, showConfirmButton: false })
             .then(() => {
-                localStorage.removeItem('admin_token');
-                localStorage.removeItem('admin_user');
-                window.location.href = 'admin_login.html';
+                clearSessionAndRedirect();
             });
     });
 }
@@ -658,14 +670,14 @@ async function renderEventAttendanceRecord() {
 
         DOM.attendanceBody.innerHTML = data.content.map(d => `
             <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_name}</td>
-                <td>${d.student_program}</td>
-                <td>${d.student_year_level}</td>
-                <td>${dateFormat(d.date)}</td>
-                <td>${formatTime(d.time)}</td>
-                <td>${d.status}</td>
-                <td>${d.event_name}</td>
+                <td data-label="ID Number">${d.student_id_number}</td>
+                <td data-label="Student Name">${d.student_name}</td>
+                <td data-label="Program">${d.student_program}</td>
+                <td data-label="Year Level">${d.student_year_level}</td>
+                <td data-label="Date">${dateFormat(d.date)}</td>
+                <td data-label="Time">${formatTime(d.time)}</td>
+                <td data-label="Status">${d.status}</td>
+                <td data-label="Event Name">${d.event_name}</td>
             </tr>
         `).join('');
 
@@ -697,14 +709,14 @@ async function renderEventHistoryAttendanceRecord() {
 
         DOM.attendanceHistory.innerHTML = data.content.map(d => `
             <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_name}</td>
-                <td>${d.student_program}</td>
-                <td>${d.student_year_level}</td>
-                <td>${dateFormat(d.date)}</td>
-                <td>${formatTime(d.time)}</td>
-                <td>${d.status}</td>
-                <td>${d.event_name}</td>
+                <td data-label="ID Number">${d.student_id_number}</td>
+                <td data-label="Student Name">${d.student_name}</td>
+                <td data-label="Program">${d.student_program}</td>
+                <td data-label="Year Level">${d.student_year_level}</td>
+                <td data-label="Date">${dateFormat(d.date)}</td>
+                <td data-label="Time">${formatTime(d.time)}</td>
+                <td data-label="Status">${d.status}</td>
+                <td data-label="Event Name">${d.event_name}</td>
             </tr>
         `).join('');
 
@@ -861,7 +873,7 @@ async function handleSetEvent() {
 
     if (!TOKEN) {
         return Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'You must be logged in.' })
-            .then(() => { window.location.href = 'admin_login.html'; });
+            .then(() => clearSessionAndRedirect());
     }
     if (!eventName) {
         return Swal.fire({ icon: 'warning', title: 'Empty Input', text: 'Please enter an event name.' });
@@ -876,7 +888,7 @@ async function handleSetEvent() {
 
         if (response.status === 401 || response.status === 403) {
             return Swal.fire({ icon: 'error', title: 'Session Expired', text: 'Please login again.' })
-                .then(() => { window.location.href = 'admin_login.html'; });
+                .then(() => clearSessionAndRedirect());
         }
         if (!response.ok) {
             return Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to set event.' });
@@ -948,6 +960,9 @@ async function renderPrograms() {
 
         if (DOM.studentProgram) DOM.studentProgram.innerHTML = optionsHtml;
         if (DOM.teacherProgram) DOM.teacherProgram.innerHTML = optionsHtml;
+        // Also populate the registration form program select (different ID)
+        const stdProgramEl = document.getElementById('std_program');
+        if (stdProgramEl) stdProgramEl.innerHTML = optionsHtml;
 
         // Populate and restore pre-values for all program event filters
         ['eventProgramFilter', 'eventHistoryProgramFilter'].forEach((id, i) => {
@@ -1172,9 +1187,7 @@ async function deleteYearLevel(id, name) {
 /** Fetch a list of accounts from a given table */
 async function fetchAccountCount(tableName) {
     try {
-        const res = await fetch(`${URL_BASED}/admin/get_whole_campus_accounts_count/${tableName}`, {
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-        });
+        const res = await apiFetch(`/admin/get_whole_campus_accounts_count/${tableName}`);
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.message || `Failed to fetch ${tableName}`);
         return data.contents;
@@ -2113,11 +2126,28 @@ const NOTIF_ENDPOINT = '/admin';
 
 async function fetchNotifications() {
     try {
-        const res  = await apiFetch(`${NOTIF_ENDPOINT}/notifications?limit=50`);
-        if (!res || !res.ok) return;
-        const data = await res.json();
-        _notifData = data.content || [];
-        const unread = data.unread || 0;
+        const [sysRes, msgRes] = await Promise.all([
+            apiFetch(`${NOTIF_ENDPOINT}/notifications?limit=30`),
+            apiFetch(`${NOTIF_ENDPOINT}/messages/notifications?limit=30`)
+        ]);
+        const sysData = (sysRes?.ok) ? await sysRes.json() : { content: [], unread: 0 };
+        const msgData = (msgRes?.ok) ? await msgRes.json() : { notifications: [], unread: 0 };
+
+        // Normalise system notifications
+        const sysNormed = (sysData.content || []).map(n => ({
+            id: 'sys_' + n.id, type: n.type,
+            sender_name: 'System',
+            preview: n.message || n.title,
+            emoji: null, is_read: n.is_read,
+            created_at: n.created_at,
+            _sys: true, _sys_id: n.id
+        }));
+
+        const all = [...(msgData.notifications || []), ...sysNormed];
+        all.sort((a, b) => new Date((b.created_at+'').replace(' ','T')) - new Date((a.created_at+'').replace(' ','T')));
+        _notifData = all.slice(0, 50);
+
+        const unread = (sysData.unread || 0) + (msgData.unread || 0);
         const badge  = document.getElementById('notifBadge');
         if (badge) {
             if (unread > 0) {
@@ -2141,14 +2171,25 @@ function renderNotifPanel() {
     list.innerHTML = _notifData.map(n => {
         const unread = !n.is_read;
         const time   = formatNotifTime(n.created_at);
+        let icon, title, preview;
+        if (n._sys) {
+            const sysIconMap = { new_student:'🎓', new_teacher:'👩‍🏫', new_guard:'🛡️', info:'📢' };
+            icon    = sysIconMap[n.type] || '🔔';
+            title   = n.type === 'new_student' ? 'New Student Registered' : 'System';
+            preview = n.preview || '';
+        } else {
+            icon    = n.type === 'reaction' ? (n.emoji || '😀') : n.type === 'file' ? '📎' : '💬';
+            title   = n.sender_name || 'Unknown';
+            preview = n.type === 'reaction'
+                ? `Reacted ${n.emoji || ''} to your message`
+                : (n.preview ? (n.preview.length > 60 ? n.preview.substring(0,60)+'…' : n.preview) : 'Sent a file');
+        }
         return `
-        <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead(${n.id})">
-            <div class="notif-icon">
-                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            </div>
+        <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead('${n.id}')">
+            <div class="notif-icon" style="font-size:20px;background:#e0f2f1;">${icon}</div>
             <div class="notif-body">
-                <div class="notif-title">${escHtml(n.title)}</div>
-                <div class="notif-msg">${escHtml(n.message || '')}</div>
+                <div class="notif-title">${escHtml(title)}</div>
+                <div class="notif-msg">${escHtml(preview)}</div>
                 <div class="notif-time">${time}</div>
             </div>
             ${unread ? '<div class="notif-dot"></div>' : ''}
@@ -2189,11 +2230,14 @@ function closeNotifPanel() {
 }
 
 async function markOneRead(id) {
-    const item = _notifData.find(n => n.id === id);
+    const item = _notifData.find(n => String(n.id) === String(id));
     if (item && !item.is_read) {
         item.is_read = 1;
-        const res = await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [id] }) });
-        if (res) await res.json().catch(() => {});
+        if (item._sys) {
+            await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [item._sys_id] }) }).catch(() => {});
+        } else {
+            await apiFetch(`${NOTIF_ENDPOINT}/messages/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [id] }) }).catch(() => {});
+        }
         fetchNotifications();
     }
 
@@ -2234,8 +2278,10 @@ async function markOneRead(id) {
 }
 
 async function markAllRead() {
-    const res = await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) });
-    if (res) await res.json().catch(() => {});
+    await Promise.all([
+        apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) }),
+        apiFetch(`${NOTIF_ENDPOINT}/messages/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) })
+    ]).catch(() => {});
     _notifData.forEach(n => n.is_read = 1);
     fetchNotifications();
     renderNotifPanel();

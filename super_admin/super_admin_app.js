@@ -1,3 +1,12 @@
+// Returns today's date in YYYY-MM-DD using LOCAL timezone (not UTC)
+// new Date().toISOString() always returns UTC which is wrong for UTC+8 (Philippines)
+function getLocalDateString(date) {
+    const d = date || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+}
 // ============================================================
 // CONSTANTS & CONFIG
 // ============================================================
@@ -32,7 +41,12 @@ async function getDeviceInfo() {
 }
 
 const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
-const TOKEN = localStorage.getItem('super_admin_token');
+// FIX: Read token dynamically on every request instead of once at page load.
+// The old `const TOKEN = localStorage.getItem(...)` captured the value at
+// module-parse time — BEFORE the login page had a chance to write it.
+// Any API call made after a fresh login (without a hard reload) would send
+// the stale null/old value and get a 401 Unauthorized response.
+const getToken = () => localStorage.getItem('super_admin_token');
 
 const PAGES = [
     'dashboard',
@@ -210,6 +224,15 @@ function showLoading(title = 'Processing...') {
 }
 
 /** Reusable API fetch wrapper with Authorization header */
+// FIX: centralised session cleanup — every logout/401 path must call this
+// so the token is always removed regardless of how the session ends.
+function clearSessionAndRedirect() {
+    localStorage.removeItem('super_admin_token');
+    localStorage.removeItem('super_admin_user');
+    localStorage.removeItem('sa_device_info');
+    window.location.href = 'super_admin_login.html';
+}
+
 async function apiFetch(endpoint, options = {}) {
     const deviceInfo = localStorage.getItem('sa_device_info') || '';
     // Auto-inject device_info into POST/PUT bodies
@@ -225,7 +248,7 @@ async function apiFetch(endpoint, options = {}) {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Authorization': `Bearer ${TOKEN}`
+            'Authorization': `Bearer ${getToken()}`
         }
     };
     const config = {
@@ -244,7 +267,7 @@ async function handleHttpErrors(res, data) {
             title: 'Session Expired',
             text: 'Your session has expired. Please log in again.'
         });
-        window.location.href = 'super_admin_login.html';
+        clearSessionAndRedirect(); // FIX: was redirecting without clearing the token
         return true;
     }
     if (res.status === 403) {
@@ -282,7 +305,7 @@ function multiFilterTableRows(tbodyId, filters) {
 
 /** Load and display the currently active event */
 async function loadActiveEvent() {
-    if (!TOKEN || TOKEN === 'null') return renderActiveEvent('');
+    if (!getToken() || getToken() === 'null') return renderActiveEvent('');
     try {
         const res  = await apiFetch('/super_admin/get_active_event');
         const data = await res.json();
@@ -327,6 +350,10 @@ function filterCards(containerSelector, cardSelector, searchText) {
 document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     navigateTo('dashboard');
+    // Pre-set date filters to today
+    const _today = getLocalDateString();
+    const _dateEl = document.getElementById('saAttNowDateFilter');
+    if (_dateEl) _dateEl.value = _today;
     getAdminData();
     loadSystemStats();
     fetchAdminAccounts();
@@ -370,6 +397,30 @@ function navigateTo(page) {
         checkEventReminder();
     }
 
+    // Refresh class management teacher picker when navigating to it
+    if (page === 'classManagement') {
+        loadClassTeacherPicker();
+        loadSubjectTeacherPicker();
+        // Reload active tab data if a teacher is already selected
+        if (_selectedTeacherId) {
+            loadActiveClassTab();
+            loadClassSubjectSetup();
+        }
+    }
+
+    // Refresh academic setup subjects list when navigating to it
+    if (page === 'academicSetup') {
+        loadSubjectTeacherPicker();
+        // Re-render subjects if a teacher was already selected
+        if (_saSubjectTeacherId) renderSubjectsForTeacher();
+    }
+
+    // Refresh programs/year levels when opening registration
+    if (page === 'registration') {
+        renderPrograms();
+        renderYearLevels();
+    }
+
     // Load settings stats when opening settings
     if (page === 'adminSettings') {
         loadSettingsStats();
@@ -394,7 +445,7 @@ function register() {
 // AUTH
 // ============================================================
 async function checkToken() {
-    if (!TOKEN) {
+    if (!getToken()) {
         await Swal.fire({
             icon: 'error',
             title: 'Please login first!',
@@ -402,7 +453,7 @@ async function checkToken() {
             confirmButtonColor: '#d33',
             allowOutsideClick: false
         });
-        window.location.href = 'super_admin_login.html';
+        clearSessionAndRedirect(); // FIX: was redirecting without clearing stale storage
         return;
     }
 
@@ -417,7 +468,7 @@ async function checkToken() {
                 confirmButtonColor: '#d33',
                 allowOutsideClick: false
             });
-            window.location.href = 'super_admin_login.html';
+            clearSessionAndRedirect(); // FIX: was redirecting without clearing the token
         }
     } catch (err) {
         console.error(err);
@@ -439,9 +490,8 @@ function logout() {
         apiFetch('/super_admin/logout', { method: 'POST', body: JSON.stringify({ device_info: localStorage.getItem('sa_device_info') || '' }) }).catch(() => {});
         Swal.fire({ icon: 'success', title: 'Logged out', text: 'Redirecting to login...', timer: 1500, showConfirmButton: false })
             .then(() => {
-                localStorage.removeItem('admin_token');
-                localStorage.removeItem('admin_user');
-                window.location.href = 'super_admin_login.html';
+                // FIX: was removing 'admin_token'/'admin_user' — wrong keys, token was never cleared
+                clearSessionAndRedirect(); // FIX: centralised cleanup
             });
     });
 }
@@ -604,15 +654,14 @@ async function renderEventAttendanceRecord() {
 
         DOM.attendanceBody.innerHTML = data.content.map(d => `
             <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_name}</td>
-                <td>${d.student_program}</td>
-                <td>${d.student_year_level}</td>
-                <td>${dateFormat(d.date)}</td>
-                <td>${formatTime(d.time)}</td>
-                <td>${d.status}</td>
-                <td>${d.event_name}</td>
-                <td>${d.admin_name || '-'}</td>
+                <td data-label="ID Number">${d.student_id_number}</td>
+                <td data-label="Student Name">${d.student_name}</td>
+                <td data-label="Program">${d.student_program}</td>
+                <td data-label="Year Level">${d.student_year_level}</td>
+                <td data-label="Date">${dateFormat(d.date)}</td>
+                <td data-label="Time">${formatTime(d.time)}</td>
+                <td data-label="Status">${d.status}</td>
+                <td data-label="Event Name">${d.event_name}</td>
             </tr>
         `).join('');
 
@@ -643,15 +692,14 @@ async function renderEventHistoryAttendanceRecord() {
 
         DOM.attendanceHistory.innerHTML = data.content.map(d => `
             <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_name}</td>
-                <td>${d.student_program}</td>
-                <td>${d.student_year_level}</td>
-                <td>${dateFormat(d.date)}</td>
-                <td>${formatTime(d.time)}</td>
-                <td>${d.status}</td>
-                <td>${d.event_name}</td>
-                <td>${d.admin_name || '-'}</td>
+                <td data-label="ID Number">${d.student_id_number}</td>
+                <td data-label="Student Name">${d.student_name}</td>
+                <td data-label="Program">${d.student_program}</td>
+                <td data-label="Year Level">${d.student_year_level}</td>
+                <td data-label="Date">${dateFormat(d.date)}</td>
+                <td data-label="Time">${formatTime(d.time)}</td>
+                <td data-label="Status">${d.status}</td>
+                <td data-label="Event Name">${d.event_name}</td>
             </tr>
         `).join('');
 
@@ -732,7 +780,7 @@ function startAdminPolling() {
 
 // Show a once-per-day reminder about the active event when opening Event Attendance
 async function checkEventReminder() {
-    const today     = new Date().toISOString().split('T')[0];
+    const today     = getLocalDateString();
     const lastShown = localStorage.getItem('admin_event_reminder_last_shown');
 
     // Already reminded today — skip
@@ -772,9 +820,9 @@ async function handleSetEvent() {
     const eventInput = document.getElementById('event_name_input');
     const eventName = eventInput.value.trim();
 
-    if (!TOKEN) {
+    if (!getToken()) {
         return Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'You must be logged in.' })
-            .then(() => { window.location.href = 'super_admin_login.html'; });
+            .then(() => { clearSessionAndRedirect(); }); // FIX
     }
     if (!eventName) {
         return Swal.fire({ icon: 'warning', title: 'Empty Input', text: 'Please enter an event name.' });
@@ -789,7 +837,7 @@ async function handleSetEvent() {
 
         if (response.status === 401 || response.status === 403) {
             return Swal.fire({ icon: 'error', title: 'Session Expired', text: 'Please login again.' })
-                .then(() => { window.location.href = 'super_admin_login.html'; });
+                .then(() => { clearSessionAndRedirect(); }); // FIX
         }
         if (!response.ok) {
             return Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to set event.' });
@@ -868,14 +916,23 @@ async function generateProgramSelectionOnTeacher() {
         const data = await res.json();
         if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
 
+        const optionsHtml = data.content.map(({ program_name }) =>
+            `<option value="${program_name}">${program_name}</option>`
+        ).join('');
+
+        // Populate teacher registration form department dropdown
         const teacherDepartment = document.getElementById('teacher_department');
-        teacherDepartment.innerHTML = '<option value="">Select Department</option>';
-        data.content.forEach(({ program_name }) => {
-            const option = document.createElement('option');
-            option.value = program_name;
-            option.textContent = program_name;
-            teacherDepartment.appendChild(option);
-        });
+        if (teacherDepartment) {
+            teacherDepartment.innerHTML = '<option value="">Select Department</option>' + optionsHtml;
+        }
+
+        // FIX: also populate student registration form program dropdown.
+        // renderPrograms() only fills the EDIT modal (id='studentProgram'),
+        // not the registration form (id='std_program') — so it was always empty.
+        const stdProgram = document.getElementById('std_program');
+        if (stdProgram) {
+            stdProgram.innerHTML = '<option value="">Select Program</option>' + optionsHtml;
+        }
     } catch (err) {
         console.error(err);
     }
@@ -914,6 +971,7 @@ async function addProgram() {
         inputField.value = '';
         closeAddModal();
         renderPrograms();
+        generateProgramSelectionOnTeacher(); // FIX: keep registration dropdowns in sync
     } catch (error) {
         console.error(error);
         Swal.fire({ icon: 'error', title: 'Error', text: error.message });
@@ -942,6 +1000,7 @@ async function deleteProgram(id, name) {
 
         await Swal.fire('Deleted!', `"${name}" has been deleted.`, 'success');
         renderPrograms();
+        generateProgramSelectionOnTeacher(); // FIX: keep registration dropdowns in sync
     } catch (error) {
         console.error(error);
         Swal.fire({ icon: 'error', title: 'Error', text: error.message });
@@ -1198,9 +1257,20 @@ async function deleteSaSubject(subjectId, subjectName) {
 let _saManageClassSubjectId   = null;
 let _saManageClassSubjectName = '';
 
+let _saTeacherIdBorrowed = false;
+
 async function openSaManageClassModal(subjectId, subjectName) {
     _saManageClassSubjectId   = subjectId;
     _saManageClassSubjectName = subjectName;
+
+    // Use _selectedTeacherId (Class Management picker) as fallback when
+    // _saSubjectTeacherId (Academic Setup picker) is not set
+    _saTeacherIdBorrowed = false;
+    if (!_saSubjectTeacherId && _selectedTeacherId) {
+        _saSubjectTeacherId   = _selectedTeacherId;
+        _saSubjectTeacherName = _selectedTeacherName || '';
+        _saTeacherIdBorrowed  = true;
+    }
 
     document.getElementById('saManageClassTitle').textContent = `Manage Class — ${subjectName}`;
     document.getElementById('saManageClassModal').style.display = 'flex';
@@ -1212,6 +1282,12 @@ function closeSaManageClassModal() {
     document.getElementById('saManageClassModal').style.display = 'none';
     _saManageClassSubjectId   = null;
     _saManageClassSubjectName = '';
+    // Reset borrowed teacher ID so it doesn't persist into Academic Setup flow
+    if (_saTeacherIdBorrowed) {
+        _saSubjectTeacherId   = null;
+        _saSubjectTeacherName = '';
+        _saTeacherIdBorrowed  = false;
+    }
 }
 
 async function refreshSaManageClassLists() {
@@ -1225,8 +1301,8 @@ async function refreshSaManageClassLists() {
         const rosterData = await rosterRes.json();
         const allData    = await allRes.json();
 
-        const roster      = rosterData?.content  || [];
-        const allStudents = allData?.content      || [];
+        const roster      = rosterData?.content || [];
+        const allStudents = allData?.content    || [];
         const rosterIds   = new Set(roster.map(r => r.student_id));
 
         // ── Enrolled list ──
@@ -1331,7 +1407,7 @@ async function saRemoveFromClassList(id) {
 async function fetchAccountCount(tableName) {
     try {
         const res = await fetch(`${URL_BASED}/super_admin/get_whole_campus_accounts_count/${tableName}`, {
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${TOKEN}` }
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${getToken()}` }
         });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.message || `Failed to fetch ${tableName}`);
@@ -1543,6 +1619,10 @@ DOM.teacherAccountManagementForm.addEventListener('submit', async function(e) {
         DOM.teacherAccountManagementForm.reset();
         closeRecordModal();
         fetchTeacherAccounts();
+        // FIX: reload both class management teacher pickers so the updated
+        // teacher name/program reflects immediately without a page refresh
+        loadClassTeacherPicker();
+        loadSubjectTeacherPicker();
     } catch (error) {
         console.error(error);
         Swal.fire('Error!', 'Failed to connect to the server.', 'error');
@@ -1742,20 +1822,31 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
     if (password !== confirmPassword) {
         return Swal.fire({ icon: 'error', title: 'Error', text: "Passwords don't match!" });
     }
+    if (password.length < 6) {
+        return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    }
 
     const guardData = {
-        guard_name: document.getElementById('guard_fullname').value,
-        guard_email: document.getElementById('guard_email').value,
+        guard_name: document.getElementById('guard_fullname').value.trim(),
+        guard_email: document.getElementById('guard_email').value.trim(),
         guard_password: password,
-        guard_designated_location: document.getElementById('guard_location').value
+        guard_designated_location: document.getElementById('guard_location').value.trim()
     };
+
+    if (!guardData.guard_name || !guardData.guard_email || !guardData.guard_designated_location) {
+        return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
+    }
 
     showLoading();
     try {
-        const res = await apiFetch('/authentication/guard_registration', { method: 'POST', body: JSON.stringify(guardData) });
+        // FIX: use /super_admin/register_guard so the super admin token is used correctly
+        // (the old /authentication/guard_registration decoded admin_id from token which
+        //  doesn't exist in a super admin token — records were saved with null admin_id)
+        const res = await apiFetch('/super_admin/register_guard', { method: 'POST', body: JSON.stringify(guardData) });
         const result = await res.json();
         if (!res.ok) throw new Error(result.message || 'Registration failed');
-        Swal.fire({ icon: 'success', title: 'Success', text: 'Guard registered successfully!' }).then(fetchGuardAccounts);
+        Swal.fire({ icon: 'success', title: 'Success', text: 'Guard registered successfully!' })
+            .then(() => fetchGuardAccounts());
         this.reset();
     } catch (err) {
         console.error(err);
@@ -1771,20 +1862,31 @@ document.getElementById('teacherForm').addEventListener('submit', async function
     if (teacherPassword !== confirmPassword) {
         return Swal.fire({ icon: 'warning', title: 'Password Mismatch', text: 'The password and confirm password do not match.' });
     }
+    if (teacherPassword.length < 6) {
+        return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    }
 
     const teacherData = {
-        fullName: document.getElementById('teacher_fullname').value,
-        email: document.getElementById('teacher_email').value,
+        fullName: document.getElementById('teacher_fullname').value.trim(),
+        email: document.getElementById('teacher_email').value.trim(),
         password: teacherPassword,
         department: document.getElementById('teacher_department').value
     };
 
+    if (!teacherData.fullName || !teacherData.email || !teacherData.department) {
+        return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
+    }
+
     showLoading();
     try {
-        const res = await apiFetch('/authentication/teacher_registration', { method: 'POST', body: JSON.stringify(teacherData) });
+        // FIX: use /super_admin/register_teacher — the old /authentication/teacher_registration
+        // extracted admin_id from the token which is undefined in a super admin token,
+        // causing teachers to be created with null admin_id
+        const res = await apiFetch('/super_admin/register_teacher', { method: 'POST', body: JSON.stringify(teacherData) });
         const data = await res.json();
         if (!res.ok) return Swal.fire({ icon: 'error', title: 'Registration Failed', text: data.message || 'Something went wrong.' });
-        Swal.fire({ icon: 'success', title: 'Success!', text: 'Teacher registered successfully.' }).then(fetchTeacherAccounts);
+        Swal.fire({ icon: 'success', title: 'Success!', text: 'Teacher registered successfully.' })
+            .then(() => fetchTeacherAccounts());
         this.reset();
     } catch (err) {
         console.error(err);
@@ -1800,29 +1902,41 @@ document.getElementById('studentForm').addEventListener('submit', async function
     if (password !== confirmPassword) {
         return Swal.fire({ icon: 'warning', title: 'Password Mismatch', text: 'The password and confirm password do not match.' });
     }
+    if (password.length < 6) {
+        return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    }
 
     const studentData = {
-        firstName: document.getElementById('std_firstname').value,
-        middleName: document.getElementById('std_middlename').value,
-        lastName: document.getElementById('std_lastname').value,
-        email: document.getElementById('std_email').value,
-        idNumber: document.getElementById('std_id_number').value,
+        firstName: document.getElementById('std_firstname').value.trim(),
+        middleName: document.getElementById('std_middlename').value.trim(),
+        lastName: document.getElementById('std_lastname').value.trim(),
+        email: document.getElementById('std_email').value.trim(),
+        idNumber: document.getElementById('std_id_number').value.trim(),
         program: document.getElementById('std_program').value,
         yearLevel: document.getElementById('std_year_level').value,
-        guardianContact: document.getElementById('std_contact').value,
+        guardianContact: document.getElementById('std_contact').value.trim(),
         password
     };
 
+    if (!studentData.firstName || !studentData.lastName || !studentData.email ||
+        !studentData.idNumber || !studentData.program || !studentData.yearLevel) {
+        return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
+    }
+
     showLoading();
     try {
-        const res = await fetch(`${URL_BASED}/authentication/student_registration`, {
+        // FIX: use /super_admin/register_student with apiFetch (authenticated)
+        // The old approach used raw fetch() with no Authorization header to
+        // /authentication/student_registration — it worked, but bypassed the
+        // super admin token entirely and had no activity logging
+        const res = await apiFetch('/super_admin/register_student', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(studentData)
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Registration failed');
-        Swal.fire({ icon: 'success', title: 'Welcome!', text: 'Student account created successfully.' });
+        Swal.fire({ icon: 'success', title: 'Success!', text: 'Student account created successfully.' })
+            .then(() => fetchStudentAccounts());
         this.reset();
     } catch (err) {
         console.error(err);
@@ -1975,7 +2089,7 @@ function exportTableToExcel(tableId, fileName) {
         ];
 
         XLSX.utils.book_append_sheet(wb, ws, fileName.substring(0, 31));
-        XLSX.writeFile(wb, `${fileName}_${now.toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `${fileName}_${getLocalDateString(now)}.xlsx`);
 
         Swal.fire({ icon: 'success', title: 'Exported!', text: `${rows.length} records exported to Excel.`, timer: 1800, showConfirmButton: false });
     } catch (e) {
@@ -2839,6 +2953,11 @@ async function onClassTeacherChange() {
 
     document.getElementById('classManagementTabs').style.display = 'block';
 
+    // Set date filter to today whenever a new teacher is selected
+    const _todayDate = getLocalDateString();
+    const _dateInput = document.getElementById('saAttNowDateFilter');
+    if (_dateInput && !_dateInput.value) _dateInput.value = _todayDate;
+
     // Load data for the active tab
     loadActiveClassTab();
     loadClassSubjectSetup();
@@ -2846,7 +2965,7 @@ async function onClassTeacherChange() {
 
 function switchClassTab(tab) {
     document.querySelectorAll('.class-tab').forEach((btn, i) => {
-        const tabs = ['attendanceNow','attendanceHistory','classRoster','manualEntry','subjectSetup','locationSetup'];
+        const tabs = ['attendanceNow','classRoster','subjectSetup','locationSetup'];
         btn.classList.toggle('active', tabs[i] === tab);
     });
     document.querySelectorAll('.class-tab-panel').forEach(p => p.classList.remove('active'));
@@ -2855,9 +2974,7 @@ function switchClassTab(tab) {
     // Load data for the selected tab
     if (!_selectedTeacherId) return;
     if (tab === 'attendanceNow')     loadClassAttendanceNow();
-    if (tab === 'attendanceHistory') loadClassAttendanceHistory();
     if (tab === 'classRoster')       loadClassRoster();
-    if (tab === 'manualEntry')       loadClassManualEntryList();
     if (tab === 'subjectSetup')      loadClassSubjectSetup();
     if (tab === 'locationSetup')     onClassTabLocationVisible();
 }
@@ -2870,92 +2987,357 @@ function loadActiveClassTab() {
 }
 
 // --- Attendance Now ---
-async function loadClassAttendanceNow() {
-    if (!_selectedTeacherId) return;
-    try {
-        const res  = await apiFetch(`/super_admin/class/attendance_now/${_selectedTeacherId}`);
-        const data = await res.json();
-        const tbody = document.getElementById('classAttendanceNowBody');
-        if (!res.ok || !data.content?.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">No attendance records found</td></tr>';
-            return;
+// ── Attendance Now (mirrors teacher) ──────────────────────────────────────────
+const _saAttRowMap = new Map();
+let _saAttRowCounter = 0;
+let _saAttLiveTimer  = null;
+
+function saStartLivePolling() {
+    if (_saAttLiveTimer) clearInterval(_saAttLiveTimer);
+    const dot = document.getElementById('saLiveDot');
+    if (dot) dot.style.background = '#22c55e';
+    _saAttLiveTimer = setInterval(() => {
+        if (document.getElementById('tab-attendanceNow')?.classList.contains('active')) {
+            loadClassAttendanceNow();
         }
-        tbody.innerHTML = data.content.map(d => `
-            <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_firstname}</td>
-                <td>${d.student_middlename || ''}</td>
-                <td>${d.student_lastname}</td>
-                <td>${d.subject || ''}</td>
-                <td>${d.year_level}</td>
-                <td>${d.student_program}</td>
-                <td>${d.attendance_time || ''}</td>
-            </tr>`).join('');
-    } catch (err) { console.error(err); }
+    }, 30000);
 }
 
-// --- Attendance History ---
-async function loadClassAttendanceHistory() {
+function saStopLivePolling() {
+    if (_saAttLiveTimer) { clearInterval(_saAttLiveTimer); _saAttLiveTimer = null; }
+    const dot = document.getElementById('saLiveDot');
+    if (dot) dot.style.background = '#ccc';
+}
+
+async function loadClassAttendanceNow() {
     if (!_selectedTeacherId) return;
+    const tbody = document.getElementById('classAttendanceNowBody');
     try {
-        const res  = await apiFetch(`/super_admin/class/attendance_history/${_selectedTeacherId}`);
-        const data = await res.json();
-        const tbody = document.getElementById('classAttendanceHistoryBody');
-        if (!res.ok || !data.content?.length) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">No history found</td></tr>';
+        // 1. Fetch active subject/year/time from server (source of truth)
+        const activeRes  = await apiFetch(`/super_admin/class/active_subject/${_selectedTeacherId}`);
+        const activeData = await activeRes.json();
+        const activeSubject = activeData?.content?.subject_name_set || '';
+        const activeYear    = activeData?.content?.year_level_set   || '';
+        const activeTime    = activeData?.content?.class_time_set   || '';
+
+        // Sync UI controls
+        const subSel = document.getElementById('classSubjectFilterNow');
+        if (subSel && activeSubject) subSel.value = activeSubject;
+        const yrSel = document.getElementById('classYearFilterNow');
+        if (yrSel && activeYear) yrSel.value = activeYear;
+        const timeInput = document.getElementById('classTimeInputNow');
+        if (timeInput && activeTime) timeInput.value = activeTime;
+        const badge = document.getElementById('classActiveSubjectDisplayNow');
+        if (badge && activeSubject && activeYear) {
+            badge.textContent = `✓ ${activeSubject} — ${activeYear}`;
+            badge.style.display = '';
+        }
+
+        if (!activeSubject) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">No active subject set. Select a subject and click Set.</td></tr>';
             return;
         }
-        tbody.innerHTML = data.content.map(d => `
-            <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_firstname}</td>
-                <td>${d.student_middlename || ''}</td>
-                <td>${d.student_lastname}</td>
-                <td>${d.subject || ''}</td>
-                <td>${d.year_level}</td>
-                <td>${d.student_program}</td>
-                <td>${d.attendance_time || ''}</td>
-                <td>${d.attendance_date ? d.attendance_date.split('T')[0] : ''}</td>
-            </tr>`).join('');
-    } catch (err) { console.error(err); }
+
+        // 2. Get subject_id for the active subject name
+        const sRes  = await apiFetch(`/super_admin/class/get_subjects/${_selectedTeacherId}`);
+        const sData = await sRes.json();
+        const matchedSubject = (sData?.content || []).find(s => s.subject_name === activeSubject);
+        const subjectId = matchedSubject?.subject_id || null;
+
+        // 3. Fetch class roster for this subject (enrolled students)
+        let roster = [];
+        if (subjectId) {
+            const rRes  = await apiFetch(`/super_admin/class/subject_class_list/${_selectedTeacherId}/${subjectId}`);
+            const rData = await rRes.json();
+            roster = rData?.content || [];
+        }
+
+        // 4. Fetch today's attendance records filtered by active subject
+        const dateFilter = document.getElementById('saAttNowDateFilter')?.value || '';
+        const subjectParam = `?subject=${encodeURIComponent(activeSubject)}`;
+        const attRes  = await apiFetch(`/super_admin/class/attendance_now/${_selectedTeacherId}${subjectParam}`);
+        const attData = await attRes.json();
+        const records = attData?.content || [];
+
+        // 5. Build presentMap: student_id_number → best record for today
+        const presentMap = {};
+        records.forEach(r => {
+            const matchDate = !dateFilter || (r.attendance_date ? r.attendance_date.split('T')[0] : '') === dateFilter;
+            if (matchDate) {
+                // Keep latest record per student
+                if (!presentMap[r.student_id_number] || r.attendance_id > presentMap[r.student_id_number].attendance_id) {
+                    presentMap[r.student_id_number] = r;
+                }
+            }
+        });
+
+        // 6. Source list: enrolled roster OR fall back to record keys if no roster
+        const sourceList = roster.length > 0 ? roster : Object.values(presentMap).map(r => ({
+            student_id_number:  r.student_id_number,
+            student_firstname:  r.student_firstname,
+            student_middlename: r.student_middlename,
+            student_lastname:   r.student_lastname,
+            student_year_level: r.year_level,
+            student_id:         r.student_id,
+            student_program:    r.student_program
+        }));
+
+        if (!sourceList.length && !Object.keys(presentMap).length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">No students in this class list yet. Use Subject Setup → Manage Class to enroll students.</td></tr>';
+            return;
+        }
+
+        // 7. Render rows — every student shows (absent if no record)
+        _saAttRowMap.clear();
+        _saAttRowCounter = 0;
+        const classTime = activeTime || '';
+
+        const rows = sourceList.map(s => {
+            const rec = presentMap[s.student_id_number];
+            let status = rec?.attendance_status || (rec ? 'Present' : 'Absent');
+
+            // Auto late detection (skip if manually overridden)
+            if (rec && status === 'Present' && !rec.manually_overridden && classTime && rec.attendance_time) {
+                if (rec.attendance_time.substring(0, 5) > classTime) status = 'Late';
+            }
+
+            const rowKey = _saAttRowCounter++;
+            _saAttRowMap.set(rowKey, {
+                attendance_id:      rec?.attendance_id || null,
+                student_id:         rec?.student_id || s.student_id || null,
+                student_id_number:  s.student_id_number,
+                student_firstname:  s.student_firstname,
+                student_middlename: s.student_middlename || '',
+                student_lastname:   s.student_lastname,
+                student_program:    s.student_program || rec?.student_program || '',
+                year_level:         s.student_year_level || rec?.year_level || '',
+                subject:            activeSubject,
+                teacher_id:         _selectedTeacherId
+            });
+
+            const fullName = [s.student_firstname, s.student_middlename ? s.student_middlename.charAt(0) + '.' : '', s.student_lastname].filter(Boolean).join(' ');
+            const timeIn   = rec?.attendance_time ? rec.attendance_time : '<span style="color:#aaa;">—</span>';
+            const dateIn   = rec?.attendance_date ? rec.attendance_date.split('T')[0] : '<span style="color:#aaa;">—</span>';
+
+            const rowClass = status === 'Present' ? 'row-present' : status === 'Late' ? 'row-late' : status === 'Excused' ? 'row-excused' : 'row-absent';
+
+            const dot = status === 'Present' ? '#22c55e' : status === 'Late' ? '#7c3aed' : status === 'Excused' ? '#f59e0b' : '#ef4444';
+            const bg  = status === 'Present' ? '#d4f4e7' : status === 'Late' ? '#ede9fe' : status === 'Excused' ? '#fef3c7' : '#fde8e8';
+            const col = status === 'Present' ? '#1a6b3a' : status === 'Late' ? '#5b21b6' : status === 'Excused' ? '#92400e' : '#b91c1c';
+            const statusBadge = `<span style="display:inline-flex;align-items:center;gap:5px;background:${bg};color:${col};padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;"></span>${status}</span>`;
+
+            const isP = status==='Present', isL = status==='Late', isA = status==='Absent', isE = status==='Excused';
+            return `<tr class="${rowClass}" id="sa-att-row-${rowKey}" data-status="${status}">
+                <td data-label="ID">${s.student_id_number}</td>
+                <td data-label="Full Name">${fullName}</td>
+                <td data-label="Subject">${activeSubject}</td>
+                <td data-label="Year">${s.student_year_level || rec?.year_level || '—'}</td>
+                <td data-label="Time In">${timeIn}</td>
+                <td data-label="Date">${dateIn}</td>
+                <td data-label="Status">${statusBadge}</td>
+                <td data-label="Action">
+                    <div class="attendance-action-btns">
+                        <button class="att-action-btn btn-present ${isP?'active':''}" onclick="saSetAttStatus(this,${rowKey},'Present')" title="Mark Present">✓ Present</button>
+                        <button class="att-action-btn btn-late ${isL?'active':''}"    onclick="saSetAttStatus(this,${rowKey},'Late')"    title="Mark Late">⏰ Late</button>
+                        <button class="att-action-btn btn-absent ${isA?'active':''}"  onclick="saSetAttStatus(this,${rowKey},'Absent')"  title="Mark Absent">✗ Absent</button>
+                        <button class="att-action-btn btn-excused ${isE?'active':''}" onclick="saSetAttStatus(this,${rowKey},'Excused')" title="Mark Excused">⊘ Excuse</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = rows.join('');
+
+        // Re-apply active status pill filter
+        const activePill = document.querySelector('#saStatusFilterPills .status-pill.active');
+        if (activePill && activePill.dataset.status !== 'all') {
+            saApplyStatusFilter(activePill);
+        }
+
+        saStartLivePolling();
+    } catch (err) { console.error('[AttNow]', err); }
+}
+
+function saApplyStatusFilter(btn) {
+    document.querySelectorAll('#saStatusFilterPills .status-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const status = btn.dataset.status;
+    document.querySelectorAll('#classAttendanceNowBody tr').forEach(row => {
+        row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+    });
+}
+
+function filterSaAttendanceNow() {
+    const term = document.getElementById('saAttNowSearch')?.value.toLowerCase() || '';
+    document.querySelectorAll('#classAttendanceNowBody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+}
+
+async function saSetAttStatus(btn, rowKey, newStatus) {
+    const d = _saAttRowMap.get(rowKey);
+    if (!d) return;
+    const row = document.getElementById(`sa-att-row-${rowKey}`);
+    const allBtns = row?.querySelectorAll('.att-action-btn');
+    if (allBtns) allBtns.forEach(b => b.disabled = true);
+    try {
+        if (d.attendance_id) {
+            const res = await apiFetch(`/super_admin/class/update_attendance_status/${d.attendance_id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus, teacher_id: d.teacher_id })
+            });
+            if (!res.ok) throw new Error((await res.json()).message);
+        } else {
+            const res = await apiFetch('/super_admin/class/insert_manual_status', {
+                method: 'POST',
+                body: JSON.stringify({
+                    teacher_id:         d.teacher_id,
+                    student_id:         d.student_id,
+                    student_id_number:  d.student_id_number,
+                    student_firstname:  d.student_firstname,
+                    student_middlename: d.student_middlename,
+                    student_lastname:   d.student_lastname,
+                    student_program:    d.student_program,
+                    student_year_level: d.year_level,
+                    subject:            d.subject,
+                    status:             newStatus
+                })
+            });
+            const rd = await res.json();
+            if (!res.ok) throw new Error(rd.message);
+            d.attendance_id = rd.insertId;
+            _saAttRowMap.set(rowKey, d);
+        }
+        // Update row UI without full reload
+        if (row) {
+            row.dataset.status = newStatus;
+            row.className = row.className.replace(/row-present|row-late|row-excused|row-absent/g, '').trim();
+            const cls = { Present:'row-present', Late:'row-late', Excused:'row-excused', Absent:'row-absent' };
+            row.classList.add(cls[newStatus] || 'row-absent');
+
+            // Update Time In cell (cells[4]) — current time for Present/Late, dash for Absent/Excused
+            const timeCell = row.cells[4];
+            if (timeCell) {
+                if (newStatus === 'Present' || newStatus === 'Late') {
+                    const now = new Date();
+                    const hh = String(now.getHours()).padStart(2,'0');
+                    const mm = String(now.getMinutes()).padStart(2,'0');
+                    const ss = String(now.getSeconds()).padStart(2,'0');
+                    timeCell.innerHTML = `${hh}:${mm}:${ss}`;
+                } else {
+                    timeCell.innerHTML = '<span style="color:#aaa;">—</span>';
+                }
+            }
+
+            const dot = { Present:'#22c55e', Late:'#7c3aed', Excused:'#f59e0b', Absent:'#ef4444' }[newStatus];
+            const bg  = { Present:'#d4f4e7', Late:'#ede9fe', Excused:'#fef3c7', Absent:'#fde8e8' }[newStatus];
+            const col = { Present:'#1a6b3a', Late:'#5b21b6', Excused:'#92400e', Absent:'#b91c1c' }[newStatus];
+            row.cells[6].innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;background:${bg};color:${col};padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;"></span>${newStatus}</span>`;
+
+            if (allBtns) { allBtns.forEach(b => { b.classList.remove('active'); b.disabled = false; }); btn.classList.add('active'); }
+        }
+    } catch (err) {
+        if (allBtns) allBtns.forEach(b => b.disabled = false);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
 }
 
 // --- Class Roster ---
+const _saRosterMap = new Map(); // stores row data by student_id for edit modal
+
 async function loadClassRoster() {
     if (!_selectedTeacherId) return;
+    const tbody = document.getElementById('classRosterBody');
     try {
-        const res  = await apiFetch(`/super_admin/class/roster/${_selectedTeacherId}`);
-        const data = await res.json();
-        const tbody = document.getElementById('classRosterBody');
-        if (!res.ok || !data.content?.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">No students enrolled</td></tr>';
+        const sRes  = await apiFetch(`/super_admin/class/get_subjects/${_selectedTeacherId}`);
+        const sData = await sRes.json();
+        const subjects = sData?.content || [];
+
+        if (!subjects.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">No subjects set up for this teacher.</td></tr>';
             return;
         }
+
+        const allRows = await Promise.all(subjects.map(async s => {
+            const r = await apiFetch(`/super_admin/class/subject_class_list/${_selectedTeacherId}/${s.subject_id}`);
+            const d = await r.json();
+            return (d?.content || []).map(student => ({ ...student, _subject: s.subject_name }));
+        }));
+        const students = allRows.flat();
+
+        if (!students.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">No students enrolled in any subject yet.</td></tr>';
+            return;
+        }
+
+        _saRosterMap.clear();
+        students.forEach(d => _saRosterMap.set(d.student_id, d));
+
         const esc = v => (v ?? '').toString().replace(/'/g, "\\'");
-        tbody.innerHTML = data.content.map(d => `
+        tbody.innerHTML = students.map(d => `
             <tr>
-                <td>${d.student_id_number}</td>
-                <td>${d.student_firstname}</td>
-                <td>${d.student_middlename || '-'}</td>
-                <td>${d.student_lastname}</td>
-                <td>${d.student_year_level}</td>
-                <td>${d.student_program}</td>
-                <td>
-                    <div style="display:flex; gap:4px;">
-                        <button class="action-btn edit-btn-account-management" onclick="openClassEditStudentModal(
-                            '${esc(d.student_id)}',
-                            '${esc(d.student_id_number)}',
-                            '${esc(d.student_firstname)}',
-                            '${esc(d.student_middlename || '')}',
-                            '${esc(d.student_lastname)}',
-                            '${esc(d.student_program)}',
-                            '${esc(d.student_year_level)}'
-                        )">Edit</button>
-                        <button class="action-btn delete-btn-account-management" onclick="deleteClassRosterStudent('${esc(d.student_id)}', '${esc(d.student_firstname)} ${esc(d.student_lastname)}')">Delete</button>
+                <td data-label="ID">${d.student_id_number}</td>
+                <td data-label="Firstname">${d.student_firstname}</td>
+                <td data-label="M.I">${d.student_middlename || '-'}</td>
+                <td data-label="Lastname">${d.student_lastname}</td>
+                <td data-label="Subject">${d._subject}</td>
+                <td data-label="Year">${d.student_year_level}</td>
+                <td data-label="Program">${d.student_program}</td>
+                <td data-label="Actions">
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                        <button class="action-btn edit-btn-account-management"
+                            onclick="openSaRosterEditModal(${d.student_id})">
+                            Edit
+                        </button>
+                        <button class="action-btn delete-btn-account-management"
+                            onclick="saRemoveFromClassListById(${d.id}, '${esc(d.student_firstname)} ${esc(d.student_lastname)}')">
+                            Remove
+                        </button>
                     </div>
                 </td>
             </tr>`).join('');
     } catch (err) { console.error(err); }
+}
+
+// Edit student info from class roster — reuses openClassEditStudentModal logic
+function openSaRosterEditModal(studentId) {
+    const d = _saRosterMap.get(studentId) || _saRosterMap.get(String(studentId));
+    if (!d) { console.error('Student not found in roster map:', studentId); return; }
+    // Delegate to existing function which handles dropdown population
+    openClassEditStudentModal(
+        d.student_id,
+        d.student_id_number,
+        d.student_firstname,
+        d.student_middlename || '',
+        d.student_lastname,
+        d.student_program,
+        d.student_year_level
+    );
+}
+
+function closeClassEditStudentModal() {
+    document.getElementById('classEditStudentModal').style.display = 'none';
+}
+
+// Remove a student from a subject class list directly from the roster tab
+async function saRemoveFromClassListById(id, name) {
+    const result = await Swal.fire({
+        title: `Remove ${name}?`,
+        text: 'This will unenroll the student from this subject.',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#d33', confirmButtonText: 'Remove'
+    });
+    if (!result.isConfirmed) return;
+    try {
+        const res = await apiFetch(`/super_admin/class/subject_class_list/remove/${id}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ teacher_id: _selectedTeacherId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Student removed.', showConfirmButton: false, timer: 1200 });
+        loadClassRoster();
+    } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
 }
 
 // ---- Add Student to Roster ----
@@ -3135,64 +3517,94 @@ async function loadClassSubjectSetup() {
         const data = await res.json();
         const activeSubject   = data.ok ? data.content?.subject_name_set : '';
         const activeYearLevel = data.ok ? data.content?.year_level_set   : '';
+        const activeClassTime = data.ok ? data.content?.class_time_set   : '';
+
+        // Pre-fill time input if a class time is stored
+        const timeInput = document.getElementById('classTimeInputNow');
+        if (timeInput && activeClassTime) timeInput.value = activeClassTime;
 
         // Update active display badge
-        const el = document.getElementById('classActiveSubjectDisplay');
-        if (el) {
-            if (activeSubject && activeYearLevel) {
-                el.textContent = `✓ ${activeSubject} — ${activeYearLevel}`;
-                el.style.background = '#c8ece5'; el.style.color = '#1a5c4f';
+
+
+        // Populate subject dropdown in BOTH Subject Setup tab and Attendance Now tab
+        const sRes  = await apiFetch(`/super_admin/class/get_subjects/${_selectedTeacherId}`);
+        const sData = await sRes.json();
+        const subjectOptions = (sRes.ok && sData.content)
+            ? '<option value="">Select Subject</option>' + sData.content.map(s => `<option value="${s.subject_name}">${s.subject_name}</option>`).join('')
+            : '<option value="">Select Subject</option>';
+
+        const subSelNow = document.getElementById('classSubjectFilterNow');
+        if (subSelNow) { subSelNow.innerHTML = subjectOptions; if (activeSubject) subSelNow.value = activeSubject; }
+
+        // Update Attendance Now active badge
+        const badgeNow = document.getElementById('classActiveSubjectDisplayNow');
+        if (badgeNow && activeSubject && activeYearLevel) {
+            badgeNow.textContent = `✓ ${activeSubject} — ${activeYearLevel}`;
+            badgeNow.style.display = '';
+        }
+
+        // Populate year level dropdown in BOTH tabs
+        const yRes  = await apiFetch('/super_admin/get_year_levels');
+        const yData = await yRes.json();
+        const yearOptions = yData.content
+            ? '<option value="">Select Year Level</option>' + yData.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('')
+            : '<option value="">Select Year Level</option>';
+
+        const yrSelNow = document.getElementById('classYearFilterNow');
+        if (yrSelNow) { yrSelNow.innerHTML = yearOptions; if (activeYearLevel) yrSelNow.value = activeYearLevel; }
+
+        // Populate subject cards list (like teacher's academic setup programsList)
+        const listEl = document.getElementById('classSubjectList');
+        if (listEl) {
+            if (!sData?.content?.length) {
+                listEl.innerHTML = '<p style="font-size:13px;color:#888;padding:8px 0;">No subjects yet for this teacher.</p>';
             } else {
-                el.textContent = '⚠ Not set';
-                el.style.background = '#fdecea'; el.style.color = '#b94a3a';
-            }
-        }
-
-        // Populate subject dropdown from THIS teacher's subject list
-        const subSel = document.getElementById('classSubjectFilter');
-        if (subSel) {
-            const sRes  = await apiFetch(`/super_admin/class/get_subjects/${_selectedTeacherId}`);
-            const sData = await sRes.json();
-            if (sRes.ok && sData.content) {
-                subSel.innerHTML = '<option value="">Select Subject</option>' +
-                    sData.content.map(s => `<option value="${s.subject_name}">${s.subject_name}</option>`).join('');
-                if (activeSubject) subSel.value = activeSubject;
-            }
-        }
-
-        // Populate year level dropdown (refreshed per teacher)
-        const yrSel = document.getElementById('classYearFilter');
-        if (yrSel) {
-            const yRes  = await apiFetch('/super_admin/get_year_levels');
-            const yData = await yRes.json();
-            if (yData.content) {
-                yrSel.innerHTML = '<option value="">Select Year Level</option>' +
-                    yData.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('');
-                if (activeYearLevel) yrSel.value = activeYearLevel;
+                listEl.innerHTML = sData.content.map(s => `
+                    <div class="program-card">
+                        <div class="program-name">${s.subject_name}</div>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <button class="manage-class-btn"
+                                onclick="openSaManageClassModal(${s.subject_id}, '${s.subject_name.replace(/'/g, "\'")}')">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                </svg>
+                                Manage Class
+                            </button>
+                            <button class="delete-btn" onclick="deleteSaSubject(${s.subject_id}, '${s.subject_name.replace(/'/g, "\'")}')">
+                                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                    </div>`).join('');
             }
         }
     } catch (err) { console.error(err); }
 }
 
-async function setClassSubject() {
-    if (!_selectedTeacherId) return;
-    const subject   = document.getElementById('classSubjectFilter').value;
-    const yearLevel = document.getElementById('classYearFilter').value;
-    if (!subject || !yearLevel) {
-        return Swal.fire({ icon:'warning', title:'Incomplete', text:'Please select both a subject and a year level.' });
-    }
+
+
+// Set active subject from the Attendance Now tab (mirrors setClassSubject)
+async function setClassSubjectFromNowTab() {
+    const subject   = document.getElementById('classSubjectFilterNow')?.value;
+    const yearLevel = document.getElementById('classYearFilterNow')?.value;
+    const classTime = document.getElementById('classTimeInputNow')?.value || null;
+    if (!_selectedTeacherId) return Swal.fire({ icon: 'warning', title: 'No Teacher Selected', text: 'Please select a teacher first.' });
+    if (!subject || !yearLevel) return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select both a subject and a year level.' });
     try {
         const res  = await apiFetch(`/super_admin/class/set_subject/${_selectedTeacherId}`, {
             method: 'PUT',
-            body: JSON.stringify({ subject, yearLevel })
+            body: JSON.stringify({ subject, yearLevel, classTime })
         });
         const data = await res.json();
-        if (!res.ok) return Swal.fire({ icon:'error', title:'Error', text: data.message });
-        const el = document.getElementById('classActiveSubjectDisplay');
-        if (el) { el.textContent = `✓ ${subject} — ${yearLevel}`; el.style.background='#c8ece5'; el.style.color='#1a5c4f'; }
-        Swal.fire({ icon:'success', title:'Updated!', text:`Subject set to ${subject} — ${yearLevel}`, timer:1800, showConfirmButton:false });
-    } catch (err) { Swal.fire({ icon:'error', title:'Error', text: err.message }); }
+        if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+        // Update active badge
+        const badge = document.getElementById('classActiveSubjectDisplayNow');
+        if (badge) { badge.textContent = `✓ ${subject} — ${yearLevel}`; badge.style.display = ''; }
+        // Reload attendance filtered to the newly set subject
+        await loadClassAttendanceNow();
+        Swal.fire({ icon: 'success', title: 'Updated!', text: `Active class set to ${subject} — ${yearLevel}`, timer: 1800, showConfirmButton: false });
+    } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
 }
+
 
 // --- Location Setup ---
 // --- Location Setup (Leaflet Map) ---
@@ -3448,11 +3860,35 @@ const NOTIF_ENDPOINT = '/super_admin';
 
 async function fetchNotifications() {
     try {
-        const res  = await apiFetch(`${NOTIF_ENDPOINT}/notifications?limit=50`);
-        if (!res || !res.ok) return;
-        const data = await res.json();
-        _notifData = data.content || [];
-        const unread = data.unread || 0;
+        // Fetch both: message notifications (messages/files/reactions from chat)
+        // AND system notifications (new student registrations etc.)
+        const [msgRes, sysRes] = await Promise.all([
+            apiFetch(`${NOTIF_ENDPOINT}/messages/notifications?limit=30`),
+            apiFetch(`${NOTIF_ENDPOINT}/notifications?limit=30`)
+        ]);
+
+        const msgData = (msgRes?.ok) ? await msgRes.json() : { notifications: [], unread: 0 };
+        const sysData = (sysRes?.ok) ? await sysRes.json() : { content: [], unread: 0 };
+
+        // Normalise system notifications to same shape as message notifications
+        const sysNormed = (sysData.content || []).map(n => ({
+            id:          'sys_' + n.id,   // prefix to avoid ID collision
+            type:        n.type,
+            sender_name: 'System',
+            preview:     n.message || n.title,
+            emoji:       null,
+            is_read:     n.is_read,
+            created_at:  n.created_at,
+            _sys:        true,             // flag to use different mark-read endpoint
+            _sys_id:     n.id
+        }))
+
+        // Merge and sort by created_at descending
+        const all = [...(msgData.notifications || []), ...sysNormed]
+        all.sort((a, b) => new Date((b.created_at+'').replace(' ','T')) - new Date((a.created_at+'').replace(' ','T')))
+        _notifData = all.slice(0, 50)
+
+        const unread = (msgData.unread || 0) + (sysData.unread || 0)
         const badge  = document.getElementById('notifBadge');
         if (badge) {
             if (unread > 0) {
@@ -3474,16 +3910,27 @@ function renderNotifPanel() {
         return;
     }
     list.innerHTML = _notifData.map(n => {
-        const unread = !n.is_read;
-        const time   = formatNotifTime(n.created_at);
+        const unread  = !n.is_read;
+        const time    = formatNotifTime(n.created_at);
+        let icon, title, preview;
+        if (n._sys) {
+            // System notification (new student registered, etc.)
+            icon    = n.type === 'new_student' ? '🎓' : '🔔';
+            title   = n.type === 'new_student' ? 'New Student Registered' : 'System';
+            preview = n.preview || '';
+        } else {
+            icon    = n.type === 'reaction' ? (n.emoji || '😀') : n.type === 'file' ? '📎' : '💬';
+            title   = n.sender_name || 'Unknown';
+            preview = n.type === 'reaction'
+                ? `Reacted ${n.emoji || ''} to your message`
+                : (n.preview ? (n.preview.length > 60 ? n.preview.substring(0,60)+'…' : n.preview) : 'Sent a file');
+        }
         return `
-        <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead(${n.id})">
-            <div class="notif-icon">
-                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            </div>
+        <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead('${n.id}')">
+            <div class="notif-icon" style="font-size:18px;background:#e0f2f1;">${icon}</div>
             <div class="notif-body">
-                <div class="notif-title">${escHtml(n.title)}</div>
-                <div class="notif-msg">${escHtml(n.message || '')}</div>
+                <div class="notif-title">${escHtml(title)}</div>
+                <div class="notif-msg">${escHtml(preview)}</div>
                 <div class="notif-time">${time}</div>
             </div>
             ${unread ? '<div class="notif-dot"></div>' : ''}
@@ -3527,8 +3974,13 @@ async function markOneRead(id) {
     const item = _notifData.find(n => n.id === id);
     if (item && !item.is_read) {
         item.is_read = 1;
-        const res = await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [id] }) });
-        if (res) await res.json().catch(() => {});
+        if (item._sys) {
+            // System notification — use old endpoint with numeric id
+            await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [item._sys_id] }) }).catch(() => {});
+        } else {
+            const res = await apiFetch(`${NOTIF_ENDPOINT}/messages/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [id] }) });
+            if (res) await res.json().catch(() => {});
+        }
         fetchNotifications();
     }
 
@@ -3569,8 +4021,10 @@ async function markOneRead(id) {
 }
 
 async function markAllRead() {
-    const res = await apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) });
-    if (res) await res.json().catch(() => {});
+    await Promise.all([
+        apiFetch(`${NOTIF_ENDPOINT}/messages/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) }),
+        apiFetch(`${NOTIF_ENDPOINT}/notifications/read`, { method: 'POST', body: JSON.stringify({ ids: [] }) })
+    ]).catch(() => {});
     _notifData.forEach(n => n.is_read = 1);
     fetchNotifications();
     renderNotifPanel();

@@ -1,4 +1,4 @@
-/* Super Admin version of admin_dashboard.css — navy/slate palette */
+/* Super Admin version — navy/slate palette */
 /* ============================================================
    LAYOUT
    ============================================================ */
@@ -11,11 +11,12 @@
    ============================================================ */
 .top-bar {
     background: #e8edf5;
-    padding: 16px 20px;
+    padding: 14px 20px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-width: 0;
 }
 
 .menu-btn {
@@ -31,15 +32,17 @@
 .menu-btn span {
     width: 24px;
     height: 3px;
-    background: #1a2f4a;
+    background: #1a4545;
     border-radius: 2px;
     display: none;
 }
 
 .top-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     align-items: center;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .settings-btn {
@@ -58,13 +61,13 @@
 .settings-btn svg {
     width: 20px;
     height: 20px;
-    fill: #1a2f4a;
+    fill: #1a4545;
 }
 
 .profile-btn {
     width: 36px;
     height: 36px;
-    background: #4d6a8a;
+    background: #8fa89f;
     border: none;
     border-radius: 50%;
     display: flex;
@@ -86,7 +89,7 @@
 .welcome-text {
     font-size: 24px;
     font-weight: 700;
-    color: #1a2f4a;
+    color: #1a4545;
     margin-bottom: 20px;
 }
 
@@ -108,13 +111,13 @@
 .stats-label {
     font-size: 14px;
     font-weight: 600;
-    color: #1a2f4a;
+    color: #1a4545;
 }
 
 .stats-value {
     font-size: 32px;
     font-weight: 700;
-    color: #1a2f4a;
+    color: #1a4545;
 }
 
 /* ============================================================
@@ -127,7 +130,7 @@
 .section-title {
     font-size: 16px;
     font-weight: 700;
-    color: #1a2f4a;
+    color: #1a4545;
     margin-bottom: 16px;
 }
 
@@ -155,7 +158,7 @@
 .legend-box {
     width: 12px;
     height: 12px;
-    background: #2d5282;
+    background: #2d6db5;
     border-radius: 2px;
 }
 
@@ -170,7 +173,7 @@
 
 .chart-bar {
     flex: 1;
-    background: linear-gradient(180deg, #2d5282 0%, #1e3a5f 100%);
+    background: linear-gradient(180deg, #2d6db5 0%, #4a7a6a 100%);
     border-radius: 6px 6px 0 0;
     position: relative;
     transition: opacity 0.3s;
@@ -201,7 +204,7 @@
 }
 
 .account-card {
-    background: linear-gradient(135deg, #2d5282 0%, #3b6cb7 100%);
+    background: linear-gradient(135deg, #2d6db5 0%, #6a9a8a 100%);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 12px;
@@ -219,11 +222,11 @@
 }
 
 .account-card.teacher {
-    background: linear-gradient(135deg, #1a6b6b 0%, #2a7b7b 100%);
+    background: linear-gradient(135deg, #4a8aaa 0%, #5a9aba 100%);
 }
 
 .account-card.guard {
-    background: linear-gradient(135deg, #3d5a7a 0%, #4d6a8a 100%);
+    background: linear-gradient(135deg, #3d6096 0%, #8aaa9a 100%);
 }
 
 .account-info {
@@ -313,7 +316,7 @@
 }
 
 .modal-header-account-management {
-    background-color: #1e3a5f;
+    background-color: #3f6864;
     color: white;
     padding: 15px 20px;
     display: flex;
@@ -372,7 +375,7 @@
 
 .modal-footer .save-btn {
     padding: 8px 16px;
-    background: #2d5282;
+    background: #2d6db5;
     color: white;
     border: none;
     border-radius: 4px;
@@ -381,7 +384,7 @@
 }
 
 .modal-footer .save-btn:hover {
-    background: #1e3a5f;
+    background: #4a7a6a;
 }
 
 .modal-footer .cancel-btn {

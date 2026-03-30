@@ -1,3 +1,12 @@
+// Returns today's date in YYYY-MM-DD using LOCAL timezone (not UTC)
+// new Date().toISOString() always returns UTC which is wrong for UTC+8 (Philippines)
+function getLocalDateString(date) {
+    const d = date || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+}
 // ============================================================
 // CONFIG
 // ============================================================
@@ -112,11 +121,13 @@ let _attendanceRowDataCounter = 0;
 let state = {
     totalPresent: 0,
     totalStudentRegistered: 0,
+    subjectRosterCount: null,   // count of students in the selected subject's class list (null = use global)
     attendanceStatus: {},
     manualStudents: [],
     allRegisteredStudents: [],
     allAttendanceRecords: [],
     allSubjects: [],
+    subjectLastSetAt:  null,
     activeSubjectId:   null,
     activeSubjectName: '',
     activeYearLevel:   '',
@@ -233,8 +244,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Date filter for Attendance Now — auto-set to today and re-render on change
     const _dateFilterEl = document.getElementById('attendanceNowDateFilter');
     if (_dateFilterEl) {
-        _dateFilterEl.value = new Date().toISOString().split('T')[0];
-        _dateFilterEl.addEventListener('change', () => renderAttendanceNowMerged());
+        _dateFilterEl.value = getLocalDateString();
+        _dateFilterEl.addEventListener('change', () => {
+            const todayStr = getLocalDateString();
+            // If teacher picks today's date, clear the manual flag so midnight auto-advance resumes
+            _dateFilterManuallyChanged = _dateFilterEl.value !== todayStr;
+            renderAttendanceNowMerged();
+        });
     }
 
     // Status filter pills
@@ -267,10 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (picInput) {
         if (typeof initImageCrop === 'function') {
             initImageCrop(picInput, async (blob, dataUrl) => {
-                // Preview
-                document.querySelectorAll('.avatar').forEach(el => {
-                    el.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
-                });
+                // Instant preview — update ALL avatar locations (settings + sidebar)
+                setTeacherAvatar(dataUrl);
                 const token = localStorage.getItem('teacher_token');
                 const croppedFile = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
                 const formData = new FormData();
@@ -284,9 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     Swal.close();
                     if (res.ok && data.ok) {
                         const url = `${BASE_URL}/uploads/profile_pictures/${data.filename}`;
-                        document.querySelectorAll('.avatar').forEach(el => {
-                            el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
-                        });
+                        setTeacherAvatar(url); // update with final server URL
                         Swal.fire({ icon: 'success', title: 'Profile picture updated!', timer: 1500, showConfirmButton: false });
                     } else {
                         Swal.fire({ icon: 'error', title: 'Upload failed', text: data.message || 'Please try again.' });
@@ -351,10 +363,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 // AUTH
 // ============================================================
+// FIX: centralised session cleanup
+function clearSessionAndRedirect() {
+    localStorage.removeItem('teacher_token');
+    localStorage.removeItem('teacher_device_info');
+    localStorage.removeItem('teacher_user');
+    window.location.href = 'teacher_login.html';
+}
+
 async function checkToken() {
     if (!TOKEN) {
         await Swal.fire({ icon: 'error', title: 'Please login first!' });
-        return window.location.href = 'teacher_login.html';
+        return clearSessionAndRedirect(); // FIX: clear stale storage before redirect
     }
 
     try {
@@ -371,7 +391,7 @@ async function checkToken() {
 
         if (!res.ok) {
             await Swal.fire({ icon: 'error', title: data.message });
-            window.location.href = 'teacher_login.html';
+            clearSessionAndRedirect(); // FIX: clear token on session expiry
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Authentication error', text: err.message });
@@ -450,6 +470,7 @@ const NAV_TITLES = {
     studentRegistered: 'Student Records',
     eventAttendance:   'Event Attendance',
     eventHistory:      'Event Attendance History',
+    analytics:         'Analytics',
     academicSetup:     'Academic Setup',
     settings:          'Settings'
 };
@@ -483,6 +504,12 @@ function navigateTo(navName) {
         btn.classList.toggle('active-page', onclick.includes(`'${navName}'`));
     });
 
+    // Load analytics charts when opening analytics tab
+    if (navName === 'analytics') {
+        populateAnalyticsSubjectFilter();
+        updateAnalyticsCharts();
+    }
+
     // Load settings when opening settings tab
     if (navName === 'settings') {
         loadSettingsPage();
@@ -511,10 +538,34 @@ DOM.sidebarOverlay.addEventListener('click', () => {
 let _dashboardChart = null;
 
 function updateDashboardChart() {
-    const total = state.totalStudentRegistered;
+    // Use subject class list count when a subject is selected, else use global count
+    const total = (state.subjectRosterCount !== null && state.subjectRosterCount !== undefined)
+        ? state.subjectRosterCount
+        : state.totalStudentRegistered;
+
+    // Sync donut subject filter to courseFilter value (so both stay in sync)
+    const donutSel2 = document.getElementById('donutSubjectFilter');
+    if (donutSel2 && donutSel2.value !== (document.getElementById('courseFilter')?.value || '')) {
+        // courseFilter was changed externally — sync donut picker
+        const cf = document.getElementById('courseFilter');
+        if (cf && donutSel2.querySelector(`option[value="${cf.value}"]`)) {
+            donutSel2.value = cf.value;
+        }
+    }
 
     // Count each status from attendance records filtered by active subject/date
-    const subjectName = document.getElementById('courseFilter')?.value || state.activeSubjectName || '';
+    const subjectName = document.getElementById('donutSubjectFilter')?.value
+                     || document.getElementById('courseFilter')?.value
+                     || state.activeSubjectName || '';
+    // If no subject selected, reset roster count so global total is used
+    if (!subjectName) state.subjectRosterCount = null;
+
+    // Update donut sub-label
+    const donutDateLabel = document.getElementById('donutDateLabel');
+    if (donutDateLabel) {
+        const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        donutDateLabel.textContent = subjectName ? `${subjectName} · ${today}` : today;
+    }
     const dateFilter  = document.getElementById('attendanceNowDateFilter')?.value || '';
     const classTime   = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
 
@@ -527,8 +578,8 @@ function updateDashboardChart() {
         if (matchSubject && matchDate && !seenIds.has(r.student_id_number)) {
             seenIds.add(r.student_id_number);
             let status = r.attendance_status || 'Present';
-            // Auto-detect Late
-            if (status === 'Present' && classTime && r.attendance_time) {
+            // Auto-detect Late — skip if teacher manually overrode this status
+            if (status === 'Present' && !r.manually_overridden && classTime && r.attendance_time) {
                 const scanTime = r.attendance_time.substring(0, 5);
                 if (scanTime > classTime) status = 'Late';
             }
@@ -550,6 +601,14 @@ function updateDashboardChart() {
     document.getElementById('bottomTotalExcused').textContent    = 'Excused ' + countExcused;
     document.getElementById('bottomTotalAbsent').textContent     = 'Absent ' + countAbsent;
     document.getElementById('centerTotalStudents').textContent   = total;
+
+    // Update rate badges
+    const _pct = (n) => total > 0 ? Math.round(n / total * 100) + '% rate' : '0% rate';
+    const _setBadge = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    _setBadge('badgePresent', _pct(countPresent));
+    _setBadge('badgeLate',    _pct(countLate));
+    _setBadge('badgeExcused', _pct(countExcused));
+    _setBadge('badgeAbsent',  _pct(countAbsent));
 
     const canvas = document.getElementById('donutChart');
     if (!canvas) return;
@@ -590,6 +649,520 @@ function updateDashboardChart() {
             }
         }
     });
+}
+
+// ============================================================
+// EXTRA DASHBOARD CHARTS
+// ============================================================
+
+let _weeklyChart      = null;
+let _studentRateChart = null;
+let _overTimeChart    = null;
+let _subjectChart     = null;
+let _yearLevelChart   = null;
+
+/* ── helpers ── */
+function _isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+function _gridColor()  { return _isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'; }
+function _tickColor()  { return _isDark() ? '#8aaabb' : '#666'; }
+
+function _resolveRecordStatus(r, classTime) {
+    let status = r.attendance_status || 'Present';
+    if (status === 'Present' && !r.manually_overridden && classTime && r.attendance_time) {
+        if (r.attendance_time.substring(0, 5) > classTime) status = 'Late';
+    }
+    return status;
+}
+
+/* ── 1. Weekly Attendance Trend ── */
+function updateWeeklyTrendChart(records) {
+    const canvas = document.getElementById('weeklyTrendChart');
+    if (!canvas) return;
+    records = records || state.allAttendanceRecords;
+
+    const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+    const days = ['Mon','Tue','Wed','Thu','Fri'];
+    const counts = { Mon:{p:0,l:0,a:0,e:0}, Tue:{p:0,l:0,a:0,e:0}, Wed:{p:0,l:0,a:0,e:0}, Thu:{p:0,l:0,a:0,e:0}, Fri:{p:0,l:0,a:0,e:0} };
+
+    records.forEach(r => {
+        if (!r.attendance_date) return;
+        const d = new Date(r.attendance_date);
+        const key = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+        if (!counts[key]) return;
+        const st = _resolveRecordStatus(r, classTime);
+        if (st === 'Present')      counts[key].p++;
+        else if (st === 'Late')    counts[key].l++;
+        else if (st === 'Excused') counts[key].e++;
+        else                       counts[key].a++;
+    });
+
+    const data = {
+        labels: days,
+        datasets: [
+            { label:'Present', data: days.map(d=>counts[d].p), backgroundColor:'#22c55e', borderRadius:4 },
+            { label:'Late',    data: days.map(d=>counts[d].l), backgroundColor:'#7c3aed', borderRadius:4 },
+            { label:'Excused', data: days.map(d=>counts[d].e), backgroundColor:'#f59e0b', borderRadius:4 },
+            { label:'Absent',  data: days.map(d=>counts[d].a), backgroundColor:'#ef4444', borderRadius:4 }
+        ]
+    };
+
+    if (_weeklyChart) {
+        _weeklyChart.data = data;
+        _weeklyChart.options.scales.x.grid.color = _gridColor();
+        _weeklyChart.options.scales.y.grid.color = _gridColor();
+        _weeklyChart.options.scales.x.ticks.color = _tickColor();
+        _weeklyChart.options.scales.y.ticks.color = _tickColor();
+        _weeklyChart.update(); return;
+    }
+    _weeklyChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data,
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: _gridColor() }, ticks: { color: _tickColor() } },
+                y: { beginAtZero: true, grid: { color: _gridColor() }, ticks: { color: _tickColor(), precision:0 } }
+            }
+        }
+    });
+}
+
+/* ── 2. Attendance Rate per Student ── */
+function updateStudentRateChart(records) {
+    const canvas = document.getElementById('studentRateChart');
+    if (!canvas) return;
+    records = records || state.allAttendanceRecords;
+
+    const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+    const studentTotals = {};
+
+    records.forEach(r => {
+        const id = r.student_id_number;
+        if (!id) return;
+        if (!studentTotals[id]) {
+            const fn = [r.student_firstname, r.student_lastname].filter(Boolean).join(' ');
+            studentTotals[id] = { name: fn || id, present:0, total:0 };
+        }
+        studentTotals[id].total++;
+        const st = _resolveRecordStatus(r, classTime);
+        if (st === 'Present' || st === 'Late') studentTotals[id].present++;
+    });
+
+    let entries = Object.values(studentTotals)
+        .map(s => ({ name: s.name, rate: s.total ? Math.round(s.present / s.total * 100) : 0 }))
+        .sort((a, b) => b.rate - a.rate);
+
+    const labels = entries.map(e => e.name.split(' ').map((w,i)=>i===0?w:w[0]+'.').join(' '));
+    const values = entries.map(e => e.rate);
+    const colors = values.map(v => v >= 80 ? '#22c55e' : v >= 60 ? '#f59e0b' : '#ef4444');
+
+    const data = { labels, datasets: [{ label:'Attendance %', data:values, backgroundColor:colors, borderRadius:4 }] };
+
+    if (_studentRateChart) {
+        _studentRateChart.data = data;
+        _studentRateChart.options.scales.x.grid.color = _gridColor();
+        _studentRateChart.options.scales.y.grid.color = _gridColor();
+        _studentRateChart.options.scales.x.ticks.color = _tickColor();
+        _studentRateChart.options.scales.y.ticks.color = _tickColor();
+        _studentRateChart.update(); return;
+    }
+    _studentRateChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data,
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero:true, max:100, grid:{ color:_gridColor() }, ticks:{ color:_tickColor(), callback: v=>v+'%' } },
+                y: { grid:{ display:false }, ticks:{ color:_tickColor(), font:{ size:11 } } }
+            }
+        }
+    });
+}
+
+/* ── 3. Class Attendance Over Time ── */
+function updateAttendanceOverTimeChart(records) {
+    const canvas = document.getElementById('attendanceOverTimeChart');
+    if (!canvas) return;
+    records = records || state.allAttendanceRecords;
+
+    const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+    const byDate = {};
+
+    records.forEach(r => {
+        if (!r.attendance_date) return;
+        const d = r.attendance_date.split('T')[0];
+        if (!byDate[d]) byDate[d] = { present:0, total:0 };
+        byDate[d].total++;
+        const st = _resolveRecordStatus(r, classTime);
+        if (st === 'Present' || st === 'Late') byDate[d].present++;
+    });
+
+    const sorted = Object.keys(byDate).sort();
+    const labels = sorted.map(d => {
+        const dt = new Date(d + 'T00:00:00');
+        return dt.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    });
+    const rates = sorted.map(d => byDate[d].total ? Math.round(byDate[d].present / byDate[d].total * 100) : 0);
+
+    const data = {
+        labels,
+        datasets: [{
+            label:'Attendance rate %',
+            data: rates,
+            borderColor:'#3b82f6',
+            backgroundColor:'rgba(59,130,246,0.12)',
+            pointBackgroundColor:'#3b82f6',
+            tension: 0.35,
+            fill: true,
+            pointRadius: 4
+        }]
+    };
+
+    if (_overTimeChart) {
+        _overTimeChart.data = data;
+        _overTimeChart.options.scales.x.grid.color = _gridColor();
+        _overTimeChart.options.scales.y.grid.color = _gridColor();
+        _overTimeChart.options.scales.x.ticks.color = _tickColor();
+        _overTimeChart.options.scales.y.ticks.color = _tickColor();
+        _overTimeChart.update(); return;
+    }
+    _overTimeChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data,
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{ display:false } },
+            scales:{
+                x:{ grid:{ color:_gridColor() }, ticks:{ color:_tickColor(), maxRotation:40, font:{ size:10 } } },
+                y:{ beginAtZero:false, min:0, max:100, grid:{ color:_gridColor() }, ticks:{ color:_tickColor(), callback:v=>v+'%' } }
+            }
+        }
+    });
+}
+
+/* ── 4. Attendance by Subject ── */
+function updateSubjectChart(records) {
+    const canvas = document.getElementById('subjectChart');
+    if (!canvas) return;
+    records = records || state.allAttendanceRecords;
+
+    const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+    const subjects = {};
+
+    records.forEach(r => {
+        const sub = r.subject || 'Unknown';
+        if (!subjects[sub]) subjects[sub] = { present:0, late:0, excused:0, absent:0 };
+        const st = _resolveRecordStatus(r, classTime);
+        if (st === 'Present')      subjects[sub].present++;
+        else if (st === 'Late')    subjects[sub].late++;
+        else if (st === 'Excused') subjects[sub].excused++;
+        else                       subjects[sub].absent++;
+    });
+
+    const labels = Object.keys(subjects);
+    const data = {
+        labels,
+        datasets: [
+            { label:'Present', data:labels.map(l=>subjects[l].present), backgroundColor:'#22c55e', borderRadius:3 },
+            { label:'Late',    data:labels.map(l=>subjects[l].late),    backgroundColor:'#7c3aed', borderRadius:3 },
+            { label:'Excused', data:labels.map(l=>subjects[l].excused), backgroundColor:'#f59e0b', borderRadius:3 },
+            { label:'Absent',  data:labels.map(l=>subjects[l].absent),  backgroundColor:'#ef4444', borderRadius:3 }
+        ]
+    };
+
+    if (_subjectChart) {
+        _subjectChart.data = data;
+        _subjectChart.options.scales.x.grid.color = _gridColor();
+        _subjectChart.options.scales.y.grid.color = _gridColor();
+        _subjectChart.options.scales.x.ticks.color = _tickColor();
+        _subjectChart.options.scales.y.ticks.color = _tickColor();
+        _subjectChart.update(); return;
+    }
+    _subjectChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data,
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{ display:false } },
+            scales:{
+                x:{ stacked:true, grid:{ color:_gridColor() }, ticks:{ color:_tickColor(), font:{ size:10 }, maxRotation:30 } },
+                y:{ stacked:true, beginAtZero:true, grid:{ color:_gridColor() }, ticks:{ color:_tickColor(), precision:0 } }
+            }
+        }
+    });
+}
+
+/* ── 5. Students by Year Level ── */
+function updateYearLevelChart(records) {
+    const canvas = document.getElementById('yearLevelChart');
+    if (!canvas) return;
+
+    // If a subject is filtered, derive year levels from filtered records
+    // Otherwise fall back to the full registered student list
+    const subFilter = document.getElementById('analyticsSubjectFilter')?.value || '';
+    const byYear = {};
+    if (subFilter && records?.length) {
+        records.forEach(r => {
+            const y = r.year_level || 'Unknown';
+            byYear[y] = (byYear[y] || 0) + 1;
+        });
+    } else {
+        (state.allStudents || []).forEach(s => {
+            const y = s.year_level || s.student_year_level || 'Unknown';
+            byYear[y] = (byYear[y] || 0) + 1;
+        });
+    }
+
+    const labels = Object.keys(byYear);
+    const values = labels.map(l => byYear[l]);
+    const COLORS = ['#3b82f6','#22c55e','#f59e0b','#7c3aed','#ef4444','#06b6d4'];
+
+    const data = {
+        labels,
+        datasets: [{ data:values, backgroundColor: COLORS.slice(0, labels.length), borderWidth:0 }]
+    };
+
+    if (_yearLevelChart) {
+        _yearLevelChart.data = data;
+        _yearLevelChart.update(); return;
+    }
+    _yearLevelChart = new Chart(canvas.getContext('2d'), {
+        type: 'pie',
+        data,
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{
+                legend:{ position:'bottom', labels:{ color:_tickColor(), font:{ size:11 }, padding:10 } }
+            }
+        }
+    });
+}
+
+/* ── Donut subject picker ── */
+async function onDonutSubjectChange() {
+    // Mirror the selection to courseFilter so updateDashboardChart picks it up
+    const donutSel  = document.getElementById('donutSubjectFilter');
+    const courseSel = document.getElementById('courseFilter');
+    const subjectName = donutSel?.value || '';
+    if (courseSel) courseSel.value = subjectName;
+
+    // Resolve subject_id and fetch roster count for the selected subject
+    if (subjectName) {
+        const matched = state.allSubjects?.find(s => s.subject_name === subjectName);
+        const subjectId = matched?.subject_id || state.activeSubjectId || null;
+        if (subjectId) {
+            try {
+                const rosterData = await apiCall(`/teacher/subject-class-list/${subjectId}`, 'GET');
+                state.subjectRosterCount = (rosterData?.content || []).length;
+            } catch(e) {
+                state.subjectRosterCount = null;
+            }
+        } else {
+            state.subjectRosterCount = null;
+        }
+    } else {
+        state.subjectRosterCount = null; // no subject selected — use global total
+    }
+
+    updateDashboardChart();
+}
+
+
+/* ── 6. At-Risk Students Table ── */
+function updateAtRiskTable(records) {
+    const tbody = document.getElementById('atRiskTableBody');
+    if (!tbody) return;
+    records = records || state.allAttendanceRecords;
+
+    const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+    const AT_RISK_THRESHOLD = 75;
+
+    // Aggregate per student
+    const map = {};
+    records.forEach(r => {
+        const id = r.student_id_number;
+        if (!id) return;
+        if (!map[id]) {
+            const fn = [r.student_firstname, r.student_middlename ? r.student_middlename.charAt(0)+'.' : '', r.student_lastname].filter(Boolean).join(' ');
+            map[id] = { name: fn || id, present:0, absent:0, excused:0, late:0, total:0 };
+        }
+        map[id].total++;
+        const st = _resolveRecordStatus(r, classTime);
+        if (st === 'Present')      map[id].present++;
+        else if (st === 'Late')  { map[id].late++; map[id].present++; } // late counts as present for rate
+        else if (st === 'Excused') map[id].excused++;
+        else                       map[id].absent++;
+    });
+
+    const atRisk = Object.values(map)
+        .map(s => ({ ...s, rate: s.total ? Math.round(s.present / s.total * 100) : 0 }))
+        .filter(s => s.rate < AT_RISK_THRESHOLD)
+        .sort((a, b) => a.rate - b.rate);
+
+    if (!atRisk.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--color-text-secondary);">✅ No at-risk students — everyone is above ${AT_RISK_THRESHOLD}%</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = atRisk.map(s => {
+        const rateColor = s.rate < 50 ? '#ef4444' : s.rate < 65 ? '#f59e0b' : '#d97706';
+        return `<tr style="border-bottom:1px solid var(--color-border-primary);">
+            <td style="padding:8px 10px;font-weight:600;">${s.name}</td>
+            <td style="padding:8px 10px;text-align:center;">${s.present}</td>
+            <td style="padding:8px 10px;text-align:center;">${s.total}</td>
+            <td style="padding:8px 10px;text-align:center;">
+                <span style="background:${rateColor};color:#fff;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">${s.rate}%</span>
+            </td>
+            <td style="padding:8px 10px;text-align:center;color:#ef4444;font-weight:700;">${s.absent}</td>
+        </tr>`;
+    }).join('');
+}
+
+/* ── Dashboard: only the donut ── */
+function updateAllDashboardCharts() {
+    updateDashboardChart();
+    populateAnalyticsSubjectFilter();
+    // Analytics charts update separately when analytics tab is visited
+    // or when data refreshes and analytics is already open
+    const analyticsSection = document.getElementById('analytics');
+    if (analyticsSection && analyticsSection.classList.contains('active')) {
+        updateAnalyticsCharts(); // async — not awaited intentionally
+    }
+}
+
+/* ── Analytics section: all charts + KPIs ── */
+async function updateAnalyticsCharts() {
+    const subFilter = document.getElementById('analyticsSubjectFilter')?.value || '';
+    const records   = await buildCompleteAttendanceRecords(subFilter);
+
+    updateWeeklyTrendChart(records);
+    updateStudentRateChart(records);
+    updateAttendanceOverTimeChart(records);
+    updateSubjectChart(records);
+    updateYearLevelChart(records);
+    updateAtRiskTable(records);
+}
+
+/**
+ * Builds a complete attendance dataset by merging real records with
+ * computed absences — no DB writes, pure read-time computation.
+ *
+ * For each subject:
+ *   1. Get enrolled roster from subject_class_list (already in state via API)
+ *   2. Find all unique dates that subject has ANY attendance record
+ *      (= days class was actually held)
+ *   3. For each class day × each enrolled student, if no record exists
+ *      → synthesise a virtual Absent row (never written to DB)
+ *
+ * This means:
+ *   - No phantom absents on weekends / holidays / non-class days
+ *   - No timing issues with Set button
+ *   - No duplicate records
+ *   - Analytics is always accurate
+ */
+async function buildCompleteAttendanceRecords(subjectFilter) {
+    try {
+        const classTime = document.getElementById('classTimeInput')?.value || state.activeSubjectTime || '';
+
+        // Which subjects to process
+        const subjects = subjectFilter
+            ? (state.allSubjects || []).filter(s => s.subject_name === subjectFilter)
+            : (state.allSubjects || []);
+
+        if (!subjects.length) {
+            return subjectFilter
+                ? state.allAttendanceRecords.filter(r => (r.subject || '') === subjectFilter)
+                : [...state.allAttendanceRecords];
+        }
+
+        // Base records (real DB records)
+        const baseRecords = subjectFilter
+            ? state.allAttendanceRecords.filter(r => (r.subject || '') === subjectFilter)
+            : [...state.allAttendanceRecords];
+
+        // Fetch rosters for each subject in parallel
+        const rosterMap = {}; // subject_name → student array
+        await Promise.all(subjects.map(async s => {
+            try {
+                const d = await apiCall(`/teacher/subject-class-list/${s.subject_id}`, 'GET');
+                rosterMap[s.subject_name] = d?.content || [];
+            } catch { rosterMap[s.subject_name] = []; }
+        }));
+
+        // Find all unique class dates per subject (days with ANY record = class was held)
+        const datesBySubject = {}; // subject_name → Set<dateString>
+        baseRecords.forEach(r => {
+            const sub  = r.subject || '';
+            const date = r.attendance_date ? r.attendance_date.split('T')[0] : '';
+            if (!sub || !date) return;
+            if (!datesBySubject[sub]) datesBySubject[sub] = new Set();
+            datesBySubject[sub].add(date);
+        });
+
+        // Build lookup of existing records: "subject|idNumber|date"
+        const existingKeys = new Set();
+        baseRecords.forEach(r => {
+            const date = r.attendance_date ? r.attendance_date.split('T')[0] : '';
+            existingKeys.add(`${r.subject || ''}|${r.student_id_number}|${date}`);
+        });
+
+        // Synthesise virtual Absent rows — never written to DB
+        const virtualAbsents = [];
+        subjects.forEach(s => {
+            const roster = rosterMap[s.subject_name] || [];
+            const dates  = [...(datesBySubject[s.subject_name] || [])];
+            if (!dates.length) return; // no class held for this subject yet
+
+            roster.forEach(student => {
+                dates.forEach(date => {
+                    const key = `${s.subject_name}|${student.student_id_number}|${date}`;
+                    if (!existingKeys.has(key)) {
+                        virtualAbsents.push({
+                            attendance_id:       null,
+                            student_id:          student.student_id,
+                            student_id_number:   student.student_id_number,
+                            student_firstname:   student.student_firstname,
+                            student_middlename:  student.student_middlename || '',
+                            student_lastname:    student.student_lastname,
+                            student_program:     student.student_program || '',
+                            year_level:          student.student_year_level || '',
+                            subject:             s.subject_name,
+                            attendance_date:     date,
+                            attendance_time:     null,
+                            attendance_status:   'Absent',
+                            manually_overridden: 0,
+                            _virtual:            true  // flag — never update these
+                        });
+                    }
+                });
+            });
+        });
+
+        console.log(`[Analytics] Real records: ${baseRecords.length} | Virtual absents: ${virtualAbsents.length}`);
+        return [...baseRecords, ...virtualAbsents];
+
+    } catch (err) {
+        console.error('[Analytics] buildCompleteAttendanceRecords error:', err);
+        return subjectFilter
+            ? state.allAttendanceRecords.filter(r => (r.subject || '') === subjectFilter)
+            : [...state.allAttendanceRecords];
+    }
+}
+
+/* ── populate subject filter dropdown ── */
+function populateAnalyticsSubjectFilter() {
+    const sel = document.getElementById('analyticsSubjectFilter');
+    if (!sel) return;
+    // Merge subjects from attendance records AND from the teacher's full subject list
+    const fromRecords  = state.allAttendanceRecords.map(r => r.subject).filter(Boolean);
+    const fromSubjects = (state.allSubjects || []).map(s => s.subject_name).filter(Boolean);
+    const subjects = [...new Set([...fromRecords, ...fromSubjects])].sort();
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">All Subjects</option>' +
+        subjects.map(s => `<option value="${s}"${s===prev?' selected':''}>${s}</option>`).join('');
 }
 
 // ============================================================
@@ -676,7 +1249,8 @@ async function getStudentAttendanceRecords() {
     state.totalPresent = data.content.length;
     state.allAttendanceRecords = data.content;
     _lastAttendanceCount = data.content.length;
-    if (state.totalStudentRegistered > 0) updateDashboardChart();
+    _lastAttendanceHash  = _hashContent(data.content);
+    if (state.totalStudentRegistered > 0) updateAllDashboardCharts();
 
     renderAttendanceNowMerged();
 }
@@ -685,10 +1259,12 @@ async function getStudentAttendanceRecords() {
 // REALTIME ATTENDANCE POLLING
 // ============================================================
 let _lastAttendanceCount      = -1;
+let _lastAttendanceHash       = '';
 let _teacherPollInterval      = null;
 let _lastEventHash            = '';
 let _lastEventHistoryHash     = '';
 let _eventPollInterval        = null;
+let _dateFilterManuallyChanged = false;
 
 function _hashContent(arr) {
     return JSON.stringify(arr);
@@ -768,6 +1344,18 @@ function startEventPolling() {
 
 async function pollAttendanceSilently() {
     try {
+        // Auto-advance the date filter if midnight has passed and the filter still
+        // shows yesterday's date — but only if the teacher hasn't manually picked a date
+        const _dateFilterEl = document.getElementById('attendanceNowDateFilter');
+        if (_dateFilterEl && !_dateFilterManuallyChanged) {
+            const todayStr = getLocalDateString();
+            if (_dateFilterEl.value && _dateFilterEl.value < todayStr) {
+                _dateFilterEl.value  = todayStr;
+                _lastAttendanceHash  = ''; // force re-render with new date
+                renderAttendanceNowMerged();
+            }
+        }
+
         // Do NOT auto-reset date filter — user may have selected a past date intentionally.
         // Only auto-update if the user has NOT manually changed the filter away from today.
 
@@ -778,13 +1366,16 @@ async function pollAttendanceSilently() {
         const data = await res.json();
         if (!data.ok || !data.content) return;
 
-        // Only re-render if count changed
-        if (_lastAttendanceCount !== -1 && data.content.length === _lastAttendanceCount) return;
+        // Use full content hash so status changes (e.g. Present → Late) also trigger re-render,
+        // not just count changes
+        const newHash = _hashContent(data.content);
+        if (_lastAttendanceHash !== '' && newHash === _lastAttendanceHash) return;
 
-        _lastAttendanceCount      = data.content.length;
-        state.totalPresent        = data.content.length;
+        _lastAttendanceHash        = newHash;
+        _lastAttendanceCount       = data.content.length;
+        state.totalPresent         = data.content.length;
         state.allAttendanceRecords = data.content;
-        if (state.totalStudentRegistered > 0) updateDashboardChart();
+        if (state.totalStudentRegistered > 0) updateAllDashboardCharts();
 
         renderAttendanceNowMerged();
         // Flash live indicator if it exists
@@ -964,9 +1555,12 @@ async function renderAttendanceNowMerged() {
     if (subjectId) {
         const rosterData = await apiCall(`/teacher/subject-class-list/${subjectId}`, 'GET');
         roster = rosterData?.content || [];
+        // Store roster count so the donut chart uses the correct total for this subject
+        state.subjectRosterCount = roster.length;
     } else {
         // No active subject set — fall back to all registered students
         roster = state.allRegisteredStudents || [];
+        state.subjectRosterCount = null; // use global count
     }
 
     // Build attendance lookup: student_id_number → record
@@ -1004,9 +1598,10 @@ async function renderAttendanceNowMerged() {
         const rec       = presentMap[s.student_id_number];
         const isPresent = !!rec;
 
-        // Auto-detect Late: student scanned in but after the set class start time
+        // Auto-detect Late: student scanned in but after the set class start time.
+        // Skip if the teacher has manually overridden this student's status.
         let recStatus = rec?.attendance_status || (isPresent ? 'Present' : 'Absent');
-        if (isPresent && recStatus === 'Present' && classTime && rec.attendance_time) {
+        if (isPresent && recStatus === 'Present' && !rec.manually_overridden && classTime && rec.attendance_time) {
             // attendance_time may be "HH:MM:SS" or "HH:MM" — take first 5 chars for "HH:MM"
             const scanTime = rec.attendance_time.substring(0, 5);
             if (scanTime > classTime) recStatus = 'Late';
@@ -1087,7 +1682,21 @@ async function setAttendanceStatus(btn, rowKey, newStatus) {
         else if (newStatus === 'Excused') row.classList.add('row-excused');
         else                              row.classList.add('row-absent');
 
-        // Update status badge
+        // Update Time In cell (cells[4]) — current time for Present/Late, dash for Absent/Excused
+        const timeCell = row.cells[4];
+        if (timeCell) {
+            if (newStatus === 'Present' || newStatus === 'Late') {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2,'0');
+                const mm = String(now.getMinutes()).padStart(2,'0');
+                const ss = String(now.getSeconds()).padStart(2,'0');
+                timeCell.innerHTML = `${hh}:${mm}:${ss}`;
+            } else {
+                timeCell.innerHTML = '<span style="color:#aaa;">—</span>';
+            }
+        }
+
+        // Update status badge (cells[6])
         const statusCell = row.cells[6];
         if (newStatus === 'Present') {
             statusCell.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;background:#d4f4e7;color:#1a6b3a;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>Present</span>`;
@@ -1109,24 +1718,32 @@ async function setAttendanceStatus(btn, rowKey, newStatus) {
         // Update local state so polling doesn't override the change
         const idx = state.allAttendanceRecords.findIndex(r => r.student_id_number === d.student_id_number);
         if (idx !== -1) {
-            state.allAttendanceRecords[idx].attendance_status = newStatus;
+            state.allAttendanceRecords[idx].attendance_status  = newStatus;
+            state.allAttendanceRecords[idx].manually_overridden = 1;
             if (d.attendance_id) state.allAttendanceRecords[idx].attendance_id = d.attendance_id;
         } else if (newStatus !== 'Absent') {
             // Newly inserted record — push to state so polling knows about it
             state.allAttendanceRecords.push({
-                attendance_id:      d.attendance_id,
-                student_id_number:  d.student_id_number,
-                student_firstname:  d.student_firstname,
-                student_middlename: d.student_middlename,
-                student_lastname:   d.student_lastname,
-                student_program:    d.student_program,
-                year_level:         d.year_level,
-                subject:            d.subject,
-                attendance_time:    null,
-                attendance_date:    new Date().toISOString().split('T')[0],
-                attendance_status:  newStatus
+                attendance_id:       d.attendance_id,
+                student_id_number:   d.student_id_number,
+                student_firstname:   d.student_firstname,
+                student_middlename:  d.student_middlename,
+                student_lastname:    d.student_lastname,
+                student_program:     d.student_program,
+                year_level:          d.year_level,
+                subject:             d.subject,
+                attendance_time:     null,
+                attendance_date:     getLocalDateString(),
+                attendance_status:   newStatus,
+                manually_overridden: 1
             });
         }
+
+        // Recalculate stat cards and chart immediately after the manual change
+        if (state.totalStudentRegistered > 0) updateAllDashboardCharts();
+
+        // Also update the polling hash so the next poll doesn't trigger a full re-render
+        _lastAttendanceHash = _hashContent(state.allAttendanceRecords);
 
         Swal.fire({ icon: 'success', title: `Marked ${newStatus}`, timer: 1200, showConfirmButton: false, toast: true, position: 'top-end' });
 
@@ -1221,8 +1838,9 @@ async function loadStudentsRegistered() {
 
     state.totalStudentRegistered = data.content.length;
     state.allRegisteredStudents  = data.content;  // store for Present/Absent merge
+    state.allStudents            = data.content;  // used by year-level pie chart
     document.getElementById('totalStudents').textContent = state.totalStudentRegistered;
-    updateDashboardChart();
+    updateAllDashboardCharts();
 
     document.getElementById('studentsBody').innerHTML = data.content.map(s => {
         const mid  = s.student_middlename || '';
@@ -1651,8 +2269,11 @@ async function subjectAndYearLevelSetter() {
             state.activeSubjectName = subject;
             state.activeYearLevel   = yearLevel;
             state.activeSubjectTime = classTime;
+            state.subjectLastSetAt  = new Date().toISOString();
             renderActiveSubject(subject, yearLevel, classTime);
             renderAttendanceNowMerged();
+            updateSubjectBanner(); // hide the warning banner immediately
+
             Swal.fire('Updated!', res.message, 'success');
         }
     }
@@ -1669,12 +2290,19 @@ async function loadActiveSubject() {
     state.activeSubjectName = subject_name_set || '';
     state.activeYearLevel   = year_level_set   || '';
     state.activeSubjectTime = class_time_set   || '';
+    state.subjectLastSetAt  = data.content?.last_set_at || null;
+    updateSubjectBanner(); // update banner state after loading active subject
 
     // Pre-select dropdowns to match the currently active values
     const courseFilter  = document.getElementById('courseFilter');
     const yearFilter    = document.getElementById('yearFilter');
     const classTimeInput = document.getElementById('classTimeInput');
     if (courseFilter   && subject_name_set) courseFilter.value   = subject_name_set;
+    // Sync donut subject filter too
+    const donutSelSync = document.getElementById('donutSubjectFilter');
+    if (donutSelSync && subject_name_set && donutSelSync.querySelector(`option[value="${subject_name_set}"]`)) {
+        donutSelSync.value = subject_name_set;
+    }
     if (yearFilter     && year_level_set)   yearFilter.value     = year_level_set;
     if (classTimeInput && class_time_set)   classTimeInput.value = class_time_set;
 
@@ -1707,6 +2335,8 @@ async function renderSubjects() {
 
     // Store subjects in state so renderAttendanceNowMerged can look up subject_id by name
     state.allSubjects = data.content;
+    // Refresh analytics subject filter to include all subjects even without records
+    populateAnalyticsSubjectFilter();
 
     document.getElementById('programsList').innerHTML = data.content.map(d => `
         <div class="program-card">
@@ -1724,7 +2354,15 @@ async function renderSubjects() {
     `).join('');
 
     const optionsHtml = data.content.map(d => `<option value="${d.subject_name}">${d.subject_name}</option>`).join('');
-    document.getElementById('courseFilter').innerHTML                   = `<option value="">Select Subject</option>` + optionsHtml;
+    document.getElementById('courseFilter').innerHTML = `<option value="">Select Subject</option>` + optionsHtml;
+
+    // Sync donut subject filter on dashboard
+    const donutSel = document.getElementById('donutSubjectFilter');
+    if (donutSel) {
+        const prev = donutSel.value;
+        donutSel.innerHTML = `<option value="">All Subjects</option>` + optionsHtml;
+        if (prev) donutSel.value = prev; // restore previous selection
+    }
 }
 
 async function addSubject() {
@@ -1921,29 +2559,118 @@ function setTeacherAvatar(url) {
 }
 
 // Show a once-per-day reminder to set a subject before taking attendance
+// Scroll to the Active Class Setup bar and highlight it briefly
+function scrollToClassSetup() {
+    const setupBar = document.querySelector('.active-class-setup');
+    if (setupBar) {
+        setupBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setupBar.style.transition = 'border 0.3s, box-shadow 0.3s';
+        setupBar.style.border = '2px solid #ef4444';
+        setupBar.style.boxShadow = '0 0 0 4px rgba(239,68,68,0.2)';
+        setTimeout(() => {
+            setupBar.style.border = '';
+            setupBar.style.boxShadow = '';
+        }, 3000);
+    }
+    // Focus the subject dropdown
+    const courseFilter = document.getElementById('courseFilter');
+    if (courseFilter) setTimeout(() => courseFilter.focus(), 400);
+}
+
 async function checkSubjectReminder() {
-    const today     = new Date().toISOString().split('T')[0];
-    const lastShown = localStorage.getItem('subject_reminder_last_shown');
+    // Always update the banner state whenever attendance now is opened
+    updateSubjectBanner();
 
-    // Already reminded today — skip
-    if (lastShown === today) return;
+    const today     = getLocalDateString();
+    const subject   = state.activeSubjectName || '';
+    const yearLevel = state.activeYearLevel   || '';
 
-    const data = await apiCall('/teacher/get_teacher_data', 'GET');
-    if (!data) return;
+    // Check if last_set_at is from a previous day
+    const lastSetAt   = state.subjectLastSetAt ? new Date(state.subjectLastSetAt) : null;
+    const lastSetDate = lastSetAt ? getLocalDateString(lastSetAt) : null;
+    const setToday    = lastSetDate === today;
 
-    const subject = data.content[0]?.teacher_current_subject;
+    // ── Case 1: No subject set at all ──
+    if (!subject || !yearLevel) {
+        const lastShown = localStorage.getItem('reminder_no_subject');
+        if (lastShown === today) return;
+        localStorage.setItem('reminder_no_subject', today);
 
+        const result = await Swal.fire({
+            iconHtml: `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>`,
+            customClass: { icon: 'swal-no-border' },
+            title: '<span style="font-size:1.1rem;font-weight:700;color:#92400e;">No Active Subject Set</span>',
+            html: `<div style="font-size:0.9rem;color:#555;line-height:1.6;">
+                       You haven't set a subject for today yet.<br>
+                       Students who scan will <strong style="color:#c0392b;">not be recorded</strong> until you set one.<br><br>
+                       Use the <strong>Subject</strong> and <strong>Year Level</strong> dropdowns above, then press <strong>Set</strong>.
+                   </div>`,
+            confirmButtonText: 'Set Subject Now',
+            confirmButtonColor: '#e67e22',
+            showCancelButton: true,
+            cancelButtonText: 'Later',
+            cancelButtonColor: '#95a5a6'
+        });
+        if (result.isConfirmed) scrollToClassSetup();
+        return;
+    }
+
+    // ── Case 2: Subject was set on a PREVIOUS day — might be stale ──
+    if (!setToday) {
+        const lastShown = localStorage.getItem('reminder_stale_subject');
+        if (lastShown === today) return;
+        localStorage.setItem('reminder_stale_subject', today);
+
+        const setOnDay = lastSetDate || 'a previous day';
+        const result = await Swal.fire({
+            iconHtml: `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#3d6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4l3 3"/>
+            </svg>`,
+            customClass: { icon: 'swal-no-border' },
+            title: '<span style="font-size:1.1rem;font-weight:700;color:#1a4545;">Confirm Today&#39;s Subject</span>',
+            html: `<div style="font-size:0.9rem;color:#555;line-height:1.6;">
+                       Your active subject is still<br>
+                       <strong style="font-size:1rem;color:#1a4545;">${subject} — ${yearLevel}</strong><br>
+                       <span style="font-size:0.8rem;color:#999;display:block;margin-top:4px;">Last set on ${setOnDay}</span><br>
+                       Is this correct for today, or do you need to change it?
+                   </div>`,
+            confirmButtonText: 'Yes, keep it',
+            confirmButtonColor: '#3d6b6b',
+            showDenyButton: true,
+            denyButtonText: 'Change Subject',
+            denyButtonColor: '#e67e22'
+        });
+        if (result.isDenied) scrollToClassSetup();
+        return;
+    }
+
+    // ── Case 3: Subject was set today — show quiet toast ──
     Swal.fire({
-        icon: 'info',
-        title: '📋 Set Today\'s Subject',
-        html: subject && subject.trim() !== ''
-            ? `Current subject is set to <strong>${subject}</strong>.<br>Make sure this is correct for today's attendance.`
-            : `No subject is set yet for today.<br><br>Use the <strong>Subject</strong> and <strong>Year Level</strong> dropdowns above, then press <strong>Set</strong>.`,
-        confirmButtonText: 'Got it',
-        confirmButtonColor: '#3d6b6b'
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `Active: ${subject} — ${yearLevel}`,
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true
     });
+}
 
-    localStorage.setItem('subject_reminder_last_shown', today);
+// Persistent banner shown inside Attendance Now when no subject is set
+function updateSubjectBanner() {
+    const banner  = document.getElementById('subjectNotSetBanner');
+    if (!banner) return;
+    const subject   = state.activeSubjectName || '';
+    const yearLevel = state.activeYearLevel   || '';
+    if (!subject || !yearLevel) {
+        banner.style.display = 'flex';
+    } else {
+        banner.style.display = 'none';
+    }
 }
 
 async function updatePassword() {
@@ -2067,7 +2794,7 @@ function exportTableToExcel(tableId, fileName) {
         ];
 
         XLSX.utils.book_append_sheet(wb, ws, fileName.substring(0, 31));
-        XLSX.writeFile(wb, `${fileName}_${now.toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `${fileName}_${getLocalDateString(now)}.xlsx`);
 
         Swal.fire({ icon: 'success', title: 'Exported!', text: `${rows.length} records exported to Excel.`, timer: 1800, showConfirmButton: false });
     } catch (e) {

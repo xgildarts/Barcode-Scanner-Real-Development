@@ -7,13 +7,14 @@
     <link rel="stylesheet" href="../css/student-css/student_global.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-body { display:flex; flex-direction:column; align-items:center; padding:24px 16px 40px; }
+body { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; min-height:100vh; box-sizing:border-box; background:linear-gradient(160deg,#d5e8df 0%,#c5d8cf 100%); }
 
 .page-card {
     background:#fff; border-radius:20px;
     box-shadow:0 8px 32px rgba(0,0,0,0.25);
     width:100%; max-width:480px; overflow:hidden;
-    display:flex; flex-direction:column; min-height:85vh;
+    display:flex; flex-direction:column;
+    height:92vh; max-height:780px;
 }
 
 /* Header */
@@ -41,8 +42,8 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 
 /* Step: verify */
 #stepVerify {
-    flex:1; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; padding:32px 28px; gap:14px;
+    flex:1 1 0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:32px 28px; gap:14px; min-height:0;
 }
 .verify-icon  { font-size:46px; }
 .verify-title { font-size:17px; font-weight:700; color:#1a4545; text-align:center; }
@@ -62,7 +63,7 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 .verify-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
 
 /* Step: contacts */
-#stepContacts { display:none; flex:1; flex-direction:column; }
+#stepContacts { display:none; flex:1 1 0; flex-direction:column; overflow-y:auto; }
 .contacts-label { padding:12px 16px 6px; font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.5px; }
 .contact-item { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s; }
 .contact-item:hover { background:#f7fafa; }
@@ -77,9 +78,10 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 .contact-role-badge.role-super_admin { background:#fff3e0; color:#e65100; }
 .contact-arrow { color:#bbb; font-size:18px; }
 .contacts-empty { text-align:center; padding:40px 20px; color:#aaa; font-size:14px; }
+.contacts-list { flex:1 1 0; overflow-y:auto; min-height:0; }
 
 /* Step: chat */
-#stepChat { display:none; flex:1; flex-direction:column; min-height:0; }
+#stepChat { display:none; flex:1 1 0; flex-direction:column; min-height:0; overflow:visible; }
 
 .chat-conv-header { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid #eef4f2; flex-shrink:0; }
 .chat-back-btn { background:none; border:none; cursor:pointer; color:#5a8a7a; font-size:20px; padding:2px 6px 2px 0; transition:color 0.2s; }
@@ -125,7 +127,7 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 .chat-file-preview-thumb { width:36px; height:36px; object-fit:cover; border-radius:5px; flex-shrink:0; border:1px solid #b2d8d0; }
 
 /* Messages */
-.chat-messages { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; background:#f5f8f8; min-height:0; }
+.chat-messages { flex:1 1 0; overflow-y:auto; overflow-x:hidden; padding:12px; display:flex; flex-direction:column; gap:8px; background:#f5f8f8; min-height:0; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; }
 .chat-messages::-webkit-scrollbar { width:4px; }
 .chat-messages::-webkit-scrollbar-thumb { background:#c8ddd9; border-radius:4px; }
 
@@ -197,6 +199,18 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 
 /* Context menu */
 .chat-ctx-item { padding:10px 16px; font-size:13px; cursor:pointer; border-radius:8px; transition:background 0.15s; display:flex; align-items:center; gap:10px; font-weight:600; color:#1a4545; }
+
+/* Reactions */
+.chat-ctx-reaction-row { display:flex; align-items:center; gap:4px; padding:6px 8px 4px; justify-content:center; }
+.chat-ctx-react-btn { background:none; border:none; cursor:pointer; font-size:22px; padding:4px 5px; border-radius:50%; line-height:1; transition:background 0.15s,transform 0.12s; }
+.chat-ctx-react-btn:hover { background:#f0f8f5; transform:scale(1.25); }
+.chat-reaction-row { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.chat-msg.sent .chat-reaction-row { justify-content:flex-end; }
+.chat-msg.recv .chat-reaction-row { justify-content:flex-start; }
+.chat-reaction { display:inline-flex; align-items:center; gap:3px; font-size:15px; line-height:1; background:#fff; border:1.5px solid #e0eeec; border-radius:20px; padding:2px 7px; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.10); transition:transform 0.12s; user-select:none; }
+.chat-reaction:hover { transform:scale(1.15); }
+.chat-reaction-mine { border-color:#5a8a7a; background:#eef8f5; }
+.chat-reaction-count { font-size:11px; font-weight:700; color:#5a8a7a; }
 .chat-ctx-item svg { width:16px; height:16px; flex-shrink:0; stroke:currentColor; }
 .chat-ctx-item:hover { background:#f0f8f5; }
 .chat-ctx-danger { color:#e53935; }
@@ -204,7 +218,7 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 .chat-ctx-divider { height:1px; background:#eef4f2; margin:4px 8px; }
 
 /* Input row */
-.chat-input-row { display:flex; gap:6px; padding:10px 12px; border-top:1px solid #eef4f2; flex-shrink:0; align-items:flex-end; background:#fff; position:relative; }
+.chat-input-row { display:flex; gap:6px; padding:10px 12px; border-top:1px solid #eef4f2; flex-shrink:0; align-items:flex-end; background:#fff; position:sticky; bottom:0; z-index:10; }
 .chat-emoji-btn { width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:#f0f5f5; border:1.5px solid #dde8e6; border-radius:50%; font-size:18px; line-height:1; transition:background 0.2s,transform 0.15s; padding:0; }
 .chat-emoji-btn:hover { background:#ddeee9; border-color:#5a8a7a; transform:scale(1.1); }
 .chat-attach-btn { width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:#f0f5f5; border:1.5px solid #dde8e6; border-radius:50%; transition:background 0.2s; }
@@ -224,7 +238,7 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 .chat-paste-menu-item:hover { background:#f0f8f5; }
 
 /* Emoji picker */
-#chatEmojiPicker { position:absolute; bottom:58px; left:6px; z-index:9999; background:#fff; border:1.5px solid #dde8e6; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15); padding:10px; width:268px; max-height:210px; overflow-y:auto; display:none; grid-template-columns:repeat(8,1fr); gap:2px; }
+#chatEmojiPicker { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:9999; background:#fff; border:1.5px solid #dde8e6; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15); padding:10px; width:min(268px, 90vw); max-height:210px; overflow-y:auto; display:none; grid-template-columns:repeat(8,1fr); gap:2px; }
 #chatEmojiPicker::-webkit-scrollbar { width:4px; }
 #chatEmojiPicker::-webkit-scrollbar-thumb { background:#c8ddd9; border-radius:4px; }
 
@@ -307,10 +321,10 @@ body { display:flex; flex-direction:column; align-items:center; padding:24px 16p
 
         <div class="chat-input-row">
             <button class="chat-emoji-btn" id="chatEmojiBtn" title="Emoji">😊</button>
-            <label class="chat-attach-btn" title="Attach file">
-                <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H9v9.5a3.5 3.5 0 0 0 7 0V5c0-2.76-2.24-5-5-5S6 2.24 6 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"/></svg>
-                <input type="file" id="chatFileInput" style="display:none;" accept="*/*">
-            </label>
+            <button class="chat-attach-btn" title="Attach file" type="button" onclick="document.getElementById('chatFileInput').click()">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H9v9.5a3.5 3.5 0 0 0 7 0V5c0-2.76-2.24-5-5-5S6 2.24 6 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"/></svg>
+            </button>
+
             <textarea class="chat-input" id="chatInput" placeholder="Type a message…" rows="1"></textarea>
             <button class="chat-send-btn" id="chatSendBtn" title="Send">
                 <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -337,6 +351,76 @@ let _editingMsgId = null;
 let _pastedFile   = null;
 let _pinnedOpen   = false;
 let _emojiOpen    = false;
+
+// ── Reactions (server-side) ───────────────────────────────
+const REACTIONS = ['❤️','😂','😮','😢','😡','👍'];
+
+function _getMyReaction(reactionsJson) {
+    if (!reactionsJson) return null;
+    try {
+        const r = typeof reactionsJson === 'string' ? JSON.parse(reactionsJson) : reactionsJson;
+        return r['student_' + myStudentId]?.emoji || null;
+    } catch(e) { return null; }
+}
+
+function _renderReactions(reactionsJson, msgId) {
+    if (!reactionsJson) return '';
+    let r = {};
+    try { r = typeof reactionsJson === 'string' ? JSON.parse(reactionsJson) : reactionsJson; } catch(e) { return ''; }
+    const keys = Object.keys(r);
+    if (!keys.length) return '';
+    const groups = {};
+    keys.forEach(k => {
+        const emoji = r[k].emoji;
+        if (!groups[emoji]) groups[emoji] = { emoji, count:0, mine:false };
+        groups[emoji].count++;
+        if (k === 'student_' + myStudentId) groups[emoji].mine = true;
+    });
+    return Object.values(groups).map(g =>
+        `<span class="chat-reaction${g.mine?' chat-reaction-mine':''}" onclick="openReactionPicker(event,${msgId})" title="${g.count} reaction${g.count>1?'s':''}">${g.emoji}${g.count>1?`<span class="chat-reaction-count">${g.count}</span>`:''}</span>`
+    ).join('');
+}
+
+async function doReact(msgId, emoji) {
+    closeMsgMenu();
+    const msgEl = document.querySelector(`#chatMessages [data-id="${msgId}"]`);
+    const mineEl = msgEl?.querySelector('.chat-reaction-mine');
+    const curEmoji = mineEl ? mineEl.textContent.trim().charAt(0) : null;
+    const nextEmoji = curEmoji === emoji ? null : emoji;
+    try {
+        const res = await _fetch(`${BASE_URL}/students/contact/react/${msgId}`, {
+            method: 'POST',
+            body: JSON.stringify({ emoji: nextEmoji })
+        });
+        if (res.ok && msgEl) _applyReactionDom(msgEl, msgId, res.reactions);
+    } catch(e) { console.warn('[React]', e); }
+}
+
+function _applyReactionDom(msgEl, msgId, reactionsObj) {
+    let rowEl = msgEl.querySelector('.chat-reaction-row');
+    if (!rowEl) {
+        rowEl = document.createElement('div');
+        rowEl.className = 'chat-reaction-row';
+        const timeEl = msgEl.querySelector('.chat-msg-time');
+        if (timeEl) timeEl.after(rowEl);
+        else msgEl.querySelector('.chat-msg-body')?.appendChild(rowEl);
+    }
+    rowEl.innerHTML = _renderReactions(reactionsObj, msgId);
+}
+function openReactionPicker(e, msgId) {
+    e.stopPropagation(); closeMsgMenu();
+    const menu = document.createElement('div');
+    menu.id = 'chatMsgMenu';
+    menu.style.cssText = 'position:fixed;z-index:99999;background:#fff;border:1.5px solid #e0eee9;border-radius:20px;box-shadow:0 6px 24px rgba(0,0,0,0.18);padding:6px 8px;';
+    menu.innerHTML = `<div class="chat-ctx-reaction-row">${REACTIONS.map(r=>`<button class="chat-ctx-react-btn" onclick="doReact(${msgId},'${r}')">${r}</button>`).join('')}</div>`;
+    const rect = e.currentTarget.getBoundingClientRect();
+    let left = rect.left;
+    if (left + 220 > window.innerWidth) left = window.innerWidth - 228;
+    menu.style.left = left + 'px';
+    menu.style.top  = (rect.top - 60) + 'px';
+    document.body.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once:true }), 10);
+}
 
 // ── Auth fetch ─────────────────────────────────────────────
 const _fetch = async (path, opts = {}) => {
@@ -461,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('chatEmojiBtn').addEventListener('click', e => { e.stopPropagation(); toggleEmojiPicker(); });
     document.addEventListener('click', e => {
         if (_emojiOpen && !e.target.closest('#chatEmojiPicker') && !e.target.closest('#chatEmojiBtn')) {
-            const p = document.getElementById('chatEmojiPicker'); if(p) p.style.display='none'; _emojiOpen=false;
+            closeEmojiPicker();
         }
     });
 
@@ -581,6 +665,7 @@ async function loadMessages() {
                             </div>
                             ${pinned&&!unsent?'<div class="chat-pin-label">📌 Pinned</div>':''}
                             <div class="chat-msg-time">${formatTime(m.created_at)}</div>
+                            ${!unsent ? `<div class="chat-reaction-row">${_renderReactions(m.reactions, m.id)}</div>` : ''}
                         </div>
                     </div>
                     ${seenReceipt}
@@ -636,39 +721,55 @@ async function sendMessage() {
     if (fileEl) fileEl.value=''; _pastedFile=null;
     document.getElementById('chatFilePreview').innerHTML='';
 
-    const fd = new FormData();
-    fd.append('receiver_id',   _convContact.id);
-    fd.append('receiver_role', _convContact.role);
-    fd.append('receiver_name', _convContact.name);
-    if (content) fd.append('content', content);
-    if (file)    fd.append('file', file);
-
     const msgList = document.getElementById('chatMessages');
     const bubble  = document.createElement('div');
     bubble.id = 'chatSendingBubble'; bubble.className = 'chat-msg sent';
 
-    if (file && file.type.startsWith('image/')) {
-        const objUrl = URL.createObjectURL(file);
-        bubble.innerHTML = `<div class="chat-bubble chat-sending-bubble chat-sending-img-bubble">
-            ${content?`<div class="chat-sending-caption">${esc(content)}</div>`:''}
-            <div class="chat-sending-img-wrap">
-                <img src="${objUrl}" class="chat-sending-img" alt="img">
-                <div class="chat-sending-img-overlay"><div class="chat-sending-spinner"></div></div>
-            </div>
-            <div class="chat-sending-status"><div class="chat-sending-dots"><span></span><span></span><span></span></div><span class="chat-sending-label">Sending…</span></div>
-        </div>`;
-        msgList.appendChild(bubble); msgList.scrollTop=msgList.scrollHeight;
-        await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
-        await fetch(`${BASE_URL}/students/contact/send`,{method:'POST',headers:{'Authorization':'Bearer '+guestToken},body:fd});
-        URL.revokeObjectURL(objUrl);
+    if (file) {
+        // ── File send → /contact/send-file (multipart, multer mounted) ──
+        const fd = new FormData();
+        fd.append('receiver_id',   _convContact.id);
+        fd.append('receiver_role', _convContact.role);
+        fd.append('receiver_name', _convContact.name);
+        if (content) fd.append('content', content);
+        fd.append('file', file);
+
+        if (file.type.startsWith('image/')) {
+            const objUrl = URL.createObjectURL(file);
+            bubble.innerHTML = `<div class="chat-bubble chat-sending-bubble chat-sending-img-bubble">
+                ${content ? `<div class="chat-sending-caption">${esc(content)}</div>` : ''}
+                <div class="chat-sending-img-wrap">
+                    <img src="${objUrl}" class="chat-sending-img" alt="img">
+                    <div class="chat-sending-img-overlay"><div class="chat-sending-spinner"></div></div>
+                </div>
+                <div class="chat-sending-status"><div class="chat-sending-dots"><span></span><span></span><span></span></div><span class="chat-sending-label">Sending…</span></div>
+            </div>`;
+            msgList.appendChild(bubble); msgList.scrollTop = msgList.scrollHeight;
+            await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+            await fetch(`${BASE_URL}/students/contact/send-file`, { method:'POST', headers:{'Authorization':'Bearer '+guestToken}, body:fd });
+            URL.revokeObjectURL(objUrl);
+        } else {
+            const fileRow = `<div class="chat-sending-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span>${esc(file.name)}</span></div>`;
+            bubble.innerHTML = `<div class="chat-bubble chat-sending-bubble">${fileRow}<div class="chat-sending-status"><div class="chat-sending-dots"><span></span><span></span><span></span></div><span class="chat-sending-label">Sending…</span></div></div>`;
+            msgList.appendChild(bubble); msgList.scrollTop = msgList.scrollHeight;
+            await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+            await fetch(`${BASE_URL}/students/contact/send-file`, { method:'POST', headers:{'Authorization':'Bearer '+guestToken}, body:fd });
+        }
     } else {
-        const fileRow = file
-            ? `<div class="chat-sending-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span>${esc(file.name)}</span></div>`
-            : `<span>${esc(content)}</span>`;
-        bubble.innerHTML = `<div class="chat-bubble chat-sending-bubble">${fileRow}<div class="chat-sending-status"><div class="chat-sending-dots"><span></span><span></span><span></span></div><span class="chat-sending-label">Sending…</span></div></div>`;
-        msgList.appendChild(bubble); msgList.scrollTop=msgList.scrollHeight;
-        await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
-        await fetch(`${BASE_URL}/students/contact/send`,{method:'POST',headers:{'Authorization':'Bearer '+guestToken},body:fd});
+        // ── Text-only send → /contact/send (JSON body) ──
+        bubble.innerHTML = `<div class="chat-bubble chat-sending-bubble"><span>${esc(content)}</span><div class="chat-sending-status"><div class="chat-sending-dots"><span></span><span></span><span></span></div><span class="chat-sending-label">Sending…</span></div></div>`;
+        msgList.appendChild(bubble); msgList.scrollTop = msgList.scrollHeight;
+        await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+        await fetch(`${BASE_URL}/students/contact/send`, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+guestToken },
+            body: JSON.stringify({
+                receiver_id:   _convContact.id,
+                receiver_role: _convContact.role,
+                receiver_name: _convContact.name,
+                content:       content
+            })
+        });
     }
     bubble.remove();
     await loadMessages();
@@ -700,6 +801,9 @@ function showMsgMenu(e, msgId, isSent, isUnsent) {
     menu.style.cssText = 'position:fixed;z-index:99999;background:#fff;border:1.5px solid #e0eee9;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.18);padding:6px;min-width:200px;overflow:hidden;';
     let items = '';
     if (!isUnsent) {
+        // Reaction row at top
+        items += `<div class="chat-ctx-reaction-row">${REACTIONS.map(r=>`<button class="chat-ctx-react-btn" onclick="doReact(${msgId},'${r}')">${r}</button>`).join('')}</div>`;
+        items += `<div class="chat-ctx-divider"></div>`;
         if (isSent) items += `<div class="chat-ctx-item" onclick="doEdit(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</div>`;
         items += `<div class="chat-ctx-item" onclick="doPin(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg> Pin</div>`;
         items += `<div class="chat-ctx-item" onclick="doForward(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg> Forward</div>`;
@@ -761,24 +865,63 @@ const EMOJIS=['😀','😁','😂','🤣','😃','😄','😅','😆','😊','�
 function buildEmojiPicker() {
     let p = document.getElementById('chatEmojiPicker');
     if (p) return p;
-    p = document.createElement('div'); p.id='chatEmojiPicker';
+    p = document.createElement('div');
+    p.id = 'chatEmojiPicker';
+    // Explicit inline styles so the picker works regardless of stylesheet load order
+    p.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:99999;' +
+        'background:#fff;border:1.5px solid #dde8e6;border-radius:12px;' +
+        'box-shadow:0 4px 20px rgba(0,0,0,0.18);padding:10px;' +
+        'width:min(272px,90vw);max-height:220px;overflow-y:auto;' +
+        'display:none;grid-template-columns:repeat(8,1fr);gap:2px;';
     EMOJIS.forEach(emoji=>{
         const btn=document.createElement('button'); btn.textContent=emoji; btn.type='button';
         btn.style.cssText='background:none;border:none;cursor:pointer;font-size:22px;padding:4px;border-radius:6px;transition:background 0.15s;line-height:1;';
         btn.addEventListener('mouseenter',()=>btn.style.background='#f0f5f5');
         btn.addEventListener('mouseleave',()=>btn.style.background='none');
-        btn.addEventListener('click',()=>{
-            const inp=document.getElementById('chatInput');
-            if(inp){const s=inp.selectionStart,e=inp.selectionEnd,v=inp.value;inp.value=v.slice(0,s)+emoji+v.slice(e);inp.selectionStart=inp.selectionEnd=s+emoji.length;inp.focus();inp.dispatchEvent(new Event('input'));}
+        btn.addEventListener('click', (ev) => {
+            ev.stopPropagation(); // prevent global click handler from firing
+            const inp = document.getElementById('chatInput');
+            if (inp) {
+                const s = inp.selectionStart, e = inp.selectionEnd, v = inp.value;
+                inp.value = v.slice(0, s) + emoji + v.slice(e);
+                inp.selectionStart = inp.selectionEnd = s + emoji.length;
+                inp.focus();
+                inp.dispatchEvent(new Event('input'));
+            }
+            closeEmojiPicker(); // close after inserting
         });
         p.appendChild(btn);
     });
-    document.getElementById('chat-input-row-anchor')?.appendChild(p) || document.getElementById('stepChat').appendChild(p);
+    document.body.appendChild(p);
     return p;
 }
+function closeEmojiPicker() {
+    const p = document.getElementById('chatEmojiPicker');
+    if (p) p.style.display = 'none';
+    _emojiOpen = false;
+}
 function toggleEmojiPicker() {
-    const p=buildEmojiPicker(); _emojiOpen=!_emojiOpen; p.style.display=_emojiOpen?'grid':'none';
+    const p = buildEmojiPicker();
+    _emojiOpen = !_emojiOpen;
+    if (_emojiOpen) {
+        // Position above the emoji button
+        const btn = document.getElementById('chatEmojiBtn');
+        if (btn) {
+            const r = btn.getBoundingClientRect();
+            const pickerW = Math.min(272, window.innerWidth - 8);
+            let left = r.left;
+            if (left + pickerW > window.innerWidth - 4) left = window.innerWidth - pickerW - 4;
+            if (left < 4) left = 4;
+            p.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+            p.style.left = left + 'px';
+            p.style.transform = 'none';
+        }
+        p.style.display = 'grid';
+    } else {
+        p.style.display = 'none';
+    }
 }
 </script>
+<input type="file" id="chatFileInput" style="position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;" accept="*/*">
 </body>
 </html>
