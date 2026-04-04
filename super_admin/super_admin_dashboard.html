@@ -251,7 +251,6 @@
                                     <div class="legend-box"></div>
                                     <span>Attendees</span>
                                 </div>
-                                <button onclick="updateChart()" style="background:#eef6f4; border:1.5px solid #b2d8d0; color:#3d6b6b; border-radius:8px; padding:5px 10px; font-size:0.78rem; font-weight:700; cursor:pointer;">&#8635; Refresh</button>
                             </div>
                         </div>
 
@@ -837,18 +836,6 @@
 
                 <div class="programs-list" id="yearLevelsList">
                     <!-- Year levels will be dynamically added here -->
-                </div>
-
-                <!-- ── SUBJECTS PER TEACHER ── -->
-                <p class="setup-section-label" style="margin-top:24px;">Subjects</p>
-
-                <!-- Teacher picker -->
-                <div style="margin-bottom:14px;">
-                    <label style="font-size:12px;font-weight:700;color:#1a2f4a;display:block;margin-bottom:6px;">Select Teacher</label>
-                    <select id="subjectTeacherPicker" onchange="onSubjectTeacherChange()"
-                        style="width:100%;padding:10px 12px;border:none;border-radius:8px;font-size:13px;color:#333;background:white;box-shadow:0 2px 4px rgba(0,0,0,0.1);cursor:pointer;">
-                        <option value="">— Choose a teacher —</option>
-                    </select>
                 </div>
 
                 <!-- Add Subject button (hidden until teacher selected) -->
@@ -1615,7 +1602,7 @@
                     </div>
 
                     
-                    <!-- Class Roster<!-- Class Roster -->
+                    <!-- Class Roster -->
                     <div class="class-tab-panel" id="tab-classRoster">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                             <span style="font-size:0.85rem; color:var(--color-text-secondary);">Students enrolled in selected teacher's class</span>
@@ -1708,7 +1695,7 @@
 
                         <!-- Subject List (like teacher's academic setup) -->
                         <div class="content-modal" style="padding:0;">
-                            <button class="add-program-btn" onclick="openAddSubjectModal()" style="margin-bottom:12px;">
+                            <button class="add-program-btn" onclick="openClassAddSubjectModal()" style="margin-bottom:12px;">
                                 <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                                 Add Subject
                             </button>
@@ -1716,16 +1703,16 @@
                         </div>
 
                         <!-- Add Subject Modal -->
-                        <div class="modal" id="addSubjectModal">
+                        <div class="modal" id="classAddSubjectModal">
                             <div class="modal-content">
                                 <h2 class="modal-header">Add New Subject</h2>
                                 <div class="form-group">
                                     <label class="form-label">Subject Name</label>
-                                    <input type="text" class="form-input" id="subjectNameInput" placeholder="Enter subject name">
+                                    <input type="text" class="form-input" id="classSubjectNameInput" placeholder="Enter subject name">
                                 </div>
                                 <div class="modal-actions">
-                                    <button class="modal-btn cancel-btn" onclick="closeAddSubjectModal()">Cancel</button>
-                                    <button class="modal-btn confirm-btn" onclick="addSubjectForTeacher()">Add</button>
+                                    <button class="modal-btn cancel-btn" onclick="closeClassAddSubjectModal()">Cancel</button>
+                                    <button class="modal-btn confirm-btn" onclick="classAddSubjectForTeacher()">Add</button>
                                 </div>
                             </div>
                         </div>

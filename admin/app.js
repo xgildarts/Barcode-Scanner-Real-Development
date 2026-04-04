@@ -2241,6 +2241,21 @@ async function markOneRead(id) {
         fetchNotifications();
     }
 
+    // Message notification — open chat and jump to the sender's conversation
+    if (item && !item._sys && item.sender_id) {
+        closeNotifPanel();
+        const panel = document.getElementById('chatPanel');
+        if (panel && !panel.classList.contains('open')) {
+            if (typeof toggleChat === 'function') toggleChat();
+        }
+        setTimeout(() => {
+            if (typeof window._chatOpenConv === 'function') {
+                window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
+            }
+        }, 80);
+        return;
+    }
+
     // Redirect to Student Accounts and highlight the registered student
     if (item && item.type === 'new_student') {
         closeNotifPanel();

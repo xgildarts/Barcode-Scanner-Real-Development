@@ -1205,14 +1205,17 @@ function closeAddSubjectModal() {
 }
 
 async function addSubjectForTeacher() {
-    if (!_saSubjectTeacherId) return;
+    // Fall back to _selectedTeacherId when coming from Class Management
+    const teacherId = _saSubjectTeacherId || _selectedTeacherId;
+    if (!teacherId) return;
+
     const input = document.getElementById('subjectNameInput');
     const subjectName = input.value.trim();
     if (!subjectName) return Swal.fire({ icon: 'warning', title: 'Missing Input', text: 'Please enter a subject name.' });
 
     showLoading();
     try {
-        const res  = await apiFetch(`/super_admin/class/add_subject/${_saSubjectTeacherId}`, {
+        const res  = await apiFetch(`/super_admin/class/add_subject/${teacherId}`, {
             method: 'POST',
             body: JSON.stringify({ subject_name: subjectName })
         });
@@ -1221,12 +1224,48 @@ async function addSubjectForTeacher() {
         input.value = '';
         closeAddSubjectModal();
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Subject Added', showConfirmButton: false, timer: 1500 });
-        renderSubjectsForTeacher();
+        // Refresh the correct section depending on where the call came from
+        if (_selectedTeacherId && !_saSubjectTeacherId) {
+            loadClassSubjectSetup();    // came from Class Management
+        } else {
+            renderSubjectsForTeacher(); // came from Academic Setup
+        }
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error', text: err.message });
     }
 }
 
+
+// CLASS MANAGEMENT — dedicated subject modal functions (separate IDs to avoid conflict with Academic Setup)
+function openClassAddSubjectModal() {
+    document.getElementById("classAddSubjectModal").classList.add("active");
+    const input = document.getElementById("classSubjectNameInput");
+    input.value = "";
+    input.focus();
+}
+
+function closeClassAddSubjectModal() {
+    document.getElementById("classAddSubjectModal").classList.remove("active");
+}
+
+async function classAddSubjectForTeacher() {
+    if (!_selectedTeacherId) return Swal.fire({ icon: "warning", title: "No Teacher Selected", text: "Please select a teacher first." });
+    const input = document.getElementById("classSubjectNameInput");
+    const subjectName = input.value.trim();
+    if (!subjectName) return Swal.fire({ icon: "warning", title: "Missing Input", text: "Please enter a subject name." });
+    showLoading();
+    try {
+        const res  = await apiFetch(`/super_admin/class/add_subject/${_selectedTeacherId}`, { method: "POST", body: JSON.stringify({ subject_name: subjectName }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to add subject.");
+        input.value = "";
+        closeClassAddSubjectModal();
+        Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Subject Added", showConfirmButton: false, timer: 1500 });
+        loadClassSubjectSetup();
+    } catch (err) {
+        Swal.fire({ icon: "error", title: "Error", text: err.message });
+    }
+}
 async function deleteSaSubject(subjectId, subjectName) {
     const result = await Swal.fire({
         title: 'Delete Subject?',
@@ -3971,7 +4010,7 @@ function closeNotifPanel() {
 }
 
 async function markOneRead(id) {
-    const item = _notifData.find(n => n.id === id);
+    const item = _notifData.find(n => String(n.id) === String(id));
     if (item && !item.is_read) {
         item.is_read = 1;
         if (item._sys) {
@@ -3982,6 +4021,21 @@ async function markOneRead(id) {
             if (res) await res.json().catch(() => {});
         }
         fetchNotifications();
+    }
+
+    // Message notification — open chat and jump to the sender's conversation
+    if (item && !item._sys && item.sender_id) {
+        closeNotifPanel();
+        const panel = document.getElementById('chatPanel');
+        if (panel && !panel.classList.contains('open')) {
+            if (typeof toggleChat === 'function') toggleChat();
+        }
+        setTimeout(() => {
+            if (typeof window._chatOpenConv === 'function') {
+                window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
+            }
+        }, 80);
+        return;
     }
 
     // Redirect to Student Accounts and highlight the registered student

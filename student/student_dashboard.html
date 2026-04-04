@@ -541,7 +541,7 @@
     }
 
     async function markMsgNotifRead(id) {
-        const n = _msgNotifData.find(x => x.id === id);
+        const n = _msgNotifData.find(x => String(x.id) === String(id));
         if (n && !n.is_read) {
             n.is_read = 1;
             fetch(`${BASE_URL}/students/messages/notifications/read`, {
@@ -552,7 +552,17 @@
             fetchMsgNotifications();
         }
         closeMsgNotifPanel();
-        if (typeof toggleChat === 'function') toggleChat();
+        if (n && n.sender_id && typeof window._chatOpenConv === 'function') {
+            const panel = document.getElementById('chatPanel');
+            if (panel && !panel.classList.contains('open')) {
+                if (typeof toggleChat === 'function') toggleChat();
+            }
+            setTimeout(() => {
+                window._chatOpenConv(n.sender_id, n.sender_role || 'teacher', n.sender_name || 'User', n.sender_picture || null);
+            }, 80);
+        } else if (typeof toggleChat === 'function') {
+            toggleChat();
+        }
     }
     window.markMsgNotifRead = markMsgNotifRead;
 
