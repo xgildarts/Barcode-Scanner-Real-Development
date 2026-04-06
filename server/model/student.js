@@ -55,7 +55,7 @@ student.get('/student_get_data', async (req, res) => {
         const data = await services.getStudentsData(decodedToken.student_id)
         res.json({ ok: true, message: 'Successfully retrieved data!', contents: data })
     } catch(err) {
-        res.status(401).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -96,7 +96,7 @@ student.put('/student_change_password', async (req, res) => {
         services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'CHANGE_PASSWORD', 'Student', null, fullName, 'Student changed their password', req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch(err) {
-        res.status(401).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -109,7 +109,7 @@ student.get('/student_barcode', async (req, res) => {
         const result = await services.getStudentBarcode(decodedToken.student_id)
         res.json({ ok: true, message: 'Successfully retrieved barcode',  content: result})
     } catch(err) {
-        res.status(401).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -125,7 +125,7 @@ student.put('/update_student_barcode', async (req, res) => {
         services.writeActivityLog(decodedToken.student_id, fullName, 'student', 'REGENERATE_BARCODE', 'Student', null, fullName, `Regenerated barcode — ID No: ${decodedToken.student_id_number}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: result })
     } catch(err) {
-        res.status(500).json({ ok: false, message: err })
+        res.status(500).json({ ok: false, message: err.message || String(err) })
     }
 })
 
@@ -297,7 +297,6 @@ student.post('/upload_profile_picture', uploadStudentPic.single('student_profile
     }
 })
 
-module.exports = student
 // ── Messaging ──────────────────────────────────────────────
 student.get('/messages/contacts', async (req, res) => {
     try {
@@ -335,13 +334,13 @@ student.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
             const picMap = { student:'student_profile_picture FROM student_accounts WHERE student_id', teacher:'teacher_profile_picture FROM teacher WHERE teacher_id', admin:'admin_profile_picture FROM admin_accounts WHERE admin_id', super_admin:'super_admin_profile_picture FROM super_admin_accounts WHERE super_admin_id', guard:null }
             const col = picMap['student']
             if (!col) return r(null)
-            require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [tok.student_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
+            require('../configuration/db').execute(`SELECT ${col} WHERE student_id = ? LIMIT 1`, [tok.student_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
         })
         const getReceiverPic = () => new Promise(r => {
             const picCols = { student:'student_profile_picture FROM student_accounts WHERE student_id', teacher:'teacher_profile_picture FROM teacher WHERE teacher_id', admin:'admin_profile_picture FROM admin_accounts WHERE admin_id', super_admin:'super_admin_profile_picture FROM super_admin_accounts WHERE super_admin_id', guard:null }
             const col = picCols[receiver_role]
             if (!col) return r(null)
-            require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
+            require('../configuration/db').execute(`SELECT ${col} WHERE id = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
         })
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
         const id = await services.sendMessage(tok.student_id, 'student', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
@@ -680,3 +679,4 @@ student.post('/contact/pin/:id', async (req, res) => {
         res.json({ ok: true, message: msg });
     } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
 });
+module.exports = student

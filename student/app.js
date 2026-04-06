@@ -535,19 +535,23 @@ async function getAttendanceHistory() {
         if (!res.ok) { Swal.close(); return Swal.fire({ icon: 'error', title: 'Error', text: data.message }); }
 
         if (!data.content || data.content.length === 0) {
-            body.innerHTML = '<tr><td colspan="5" style="text-align:center">No attendance records found.</td></tr>';
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center">No attendance records found.</td></tr>';
             return;
         }
 
-        body.innerHTML = data.content.map(d => `
+        body.innerHTML = data.content.map(d => {
+            const status = d.attendance_status || 'Present';
+            const statusColor = { Present: '#27ae60', Late: '#e67e22', Absent: '#e74c3c', Excused: '#8e44ad' }[status] || '#555';
+            return `
             <tr>
                 <td>${d.attendance_date ? String(d.attendance_date).split('T')[0] : '—'}</td>
                 <td>${formatTime(d.attendance_time)}</td>
                 <td>${d.subject || 'N/A'}</td>
                 <td>${d.student_firstname || ''}${d.student_middlename ? ' ' + d.student_middlename.charAt(0).toUpperCase() + '.' : ''} ${d.student_lastname || ''}</td>
                 <td>${d.student_id_number || '—'}</td>
-            </tr>
-        `).join('');
+                <td><span style="color:${statusColor};font-weight:600">${status}</span></td>
+            </tr>`;
+        }).join('');
 
     } catch (err) {
         Swal.close();

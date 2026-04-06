@@ -166,7 +166,7 @@ admin.get('/get_events_history', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
-        const result = await services.getAttendanceEventHistoryRecords(decodedToken.admin_id)
+        const result = await services.getAttendanceEventHistoryRecords()
         res.json({ ok: true, message: 'Successfully retrieved data!', content: result })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })

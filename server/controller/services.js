@@ -653,8 +653,8 @@ function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
                 sa.student_firstname, sa.student_middlename, sa.student_lastname,
                 h.year_level, h.subject, h.student_program,
                 h.teacher_barcode_scanner_serial_number,
-                h.attendance_date, h.attendance_time
-            FROM attendance_history_record h
+                h.attendance_date, h.attendance_time, h.attendance_status
+            FROM attendance_record h
             LEFT JOIN student_accounts sa
                 ON sa.student_id = h.student_id
             WHERE ${studentID ? 'h.student_id = ?' : 'h.student_id_number = ?'}
@@ -671,8 +671,8 @@ function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
                         sa.student_firstname, sa.student_middlename, sa.student_lastname,
                         h.year_level, h.subject, h.student_program,
                         h.teacher_barcode_scanner_serial_number,
-                        h.attendance_date, h.attendance_time
-                    FROM attendance_history_record h
+                        h.attendance_date, h.attendance_time, h.attendance_status
+                    FROM attendance_record h
                     LEFT JOIN student_accounts sa
                         ON sa.student_id = h.student_id
                     WHERE h.student_id_number = ?
@@ -1880,7 +1880,7 @@ async function studentCheckEventIfExists(studentIDNumber, status) {
 async function getEventSet() {
     return new Promise((resolve, reject) => {
         // We order by ID DESC to get the latest event set by Admin
-        const query = "SELECT event_name_set FROM event_setter;";
+        const query = "SELECT event_name_set, admin_id FROM event_setter ORDER BY event_setter_id DESC LIMIT 1;";
 
         db.execute(query, [], (err, result) => {
             if (err) { return reject(err) }
@@ -1907,10 +1907,11 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                 return reject('No active event found. Please contact Admin.');
             }
             const activeEventName = eventData.event_name_set;
+            const activeAdminId = eventData.admin_id;
             const insertQuery = `
                 INSERT INTO event_attendance_record 
-                (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id, admin_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const fullName = `${student.student_firstname} ${student.student_middlename}. ${student.student_lastname}`;
             const values = [
@@ -1923,7 +1924,8 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                 guardName || 'Guard',
                 guardLocation,
                 status,
-                guardID
+                guardID,
+                activeAdminId
             ];
             db.execute(insertQuery, values, async (err, result) => {
                 if (err) { return reject(err); }
@@ -1955,8 +1957,8 @@ async function guardInsertAttendanceHistoryRecord(values) {
         try {
             const insertQuery = `
                 INSERT INTO event_attendance_history_record 
-                (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id, admin_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             db.execute(insertQuery, values, (err, result) => {
@@ -2024,9 +2026,9 @@ function getAttendanceEventRecords(adminID) {
 }
 
 // Get Events History
-function getAttendanceEventHistoryRecords(adminID) {
+function getAttendanceEventHistoryRecords() {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM event_attendance_history_record WHERE admin_id = ? ORDER BY date DESC, time DESC', [adminID], (err, result) => {
+        db.execute('SELECT * FROM event_attendance_history_record ORDER BY date DESC, time DESC', [], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })

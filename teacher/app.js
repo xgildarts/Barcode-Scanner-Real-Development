@@ -1438,6 +1438,12 @@ async function renderEventAttendanceRecord() {
     populateEventFilterOptions(data.content, 'eventAttendanceProgramFilter',   d => d.student_program, 'All Programs');
     populateEventFilterOptions(data.content, 'eventAttendanceEventNameFilter', d => d.event_name,      'All Events');
     populateEventFilterOptions(data.content, 'eventAttendanceYearLevelFilter', d => d.student_year_level, 'All Year Levels');
+
+    // Auto-apply today's date filter on initial load
+    if (DOM.eventAttendanceDateFilter && !DOM.eventAttendanceDateFilter.value) {
+        DOM.eventAttendanceDateFilter.value = getLocalDateString();
+    }
+    applyEventFilters(DOM.eventAttendanceBody, getEventFilters());
 }
 
 async function renderEventAttendanceHistoryRecord() {
@@ -1462,6 +1468,8 @@ async function renderEventAttendanceHistoryRecord() {
     populateEventFilterOptions(data.content, 'eventAttendanceHistoryProgramFilter',   d => d.student_program,    'All Programs');
     populateEventFilterOptions(data.content, 'eventAttendanceHistoryEventNameFilter', d => d.event_name,         'All Events');
     populateEventFilterOptions(data.content, 'eventAttendanceHistoryYearLevelFilter', d => d.student_year_level, 'All Year Levels');
+    // No date pre-fill for history — it archives past events so today would return nothing.
+    // All records are shown by default; teacher can filter by date manually.
 }
 
 // ============================================================
@@ -1828,9 +1836,11 @@ DOM.searchFilterEventHistory.addEventListener('input', function () {
 });
 
 if (DOM.eventAttendanceDateFilter) {
+    DOM.eventAttendanceDateFilter.value = getLocalDateString();
     DOM.eventAttendanceDateFilter.addEventListener('change', () => applyEventFilters(DOM.eventAttendanceBody, getEventFilters()));
 }
 if (DOM.eventAttendanceHistoryDateFilter) {
+    // No pre-fill — history contains past-day archives; showing all by default is correct
     DOM.eventAttendanceHistoryDateFilter.addEventListener('change', () => applyEventFilters(DOM.eventAttendanceHistoryBody, getEventHistoryFilters()));
 }
 
