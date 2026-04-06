@@ -631,6 +631,7 @@ async function updatePassword() {
 let _adminPollInterval      = null;
 let _lastEventCount         = -1;
 let _lastEventHistCount     = -1;
+let _lastStudentCount       = -1;
 
 function showAdminLiveIndicator(dotId) {
     const dot = document.getElementById(dotId);
@@ -768,9 +769,133 @@ async function pollAdminSilently() {
                 showAdminLiveIndicator('adminLiveDotEventHist');
             }
         }
+        // Poll new student registrations
+        const r3 = await apiFetch('/super_admin/get_whole_campus_accounts_count/student_accounts');
+        if (r3.ok) {
+            const d3 = await r3.json();
+            if (d3.ok && _lastStudentCount !== -1 && d3.contents.length > _lastStudentCount) {
+                const newCount = d3.contents.length - _lastStudentCount;
+                _lastStudentCount = d3.contents.length;
+                // Refresh the student accounts list live
+                fetchStudentAccounts();
+                // Show live toast
+                showStudentLiveToast(newCount, d3.contents[d3.contents.length - 1]);
+            } else if (d3.ok && _lastStudentCount === -1) {
+                _lastStudentCount = d3.contents.length;
+            }
+        }
+
     } catch (err) {
         console.error('[Poll]', err);
     }
+}
+
+// ============================================================
+// LIVE STUDENT REGISTRATION TOAST
+// ============================================================
+(function injectStudentToastStyles() {
+    if (document.getElementById('sa-student-toast-style')) return;
+    const style = document.createElement('style');
+    style.id = 'sa-student-toast-style';
+    style.textContent = `
+        #saStudentToast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #1a3a2a;
+            color: #fff;
+            border-left: 5px solid #2ecc71;
+            border-radius: 10px;
+            padding: 14px 20px;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+            font-size: 14px;
+            transform: translateX(120%);
+            transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #saStudentToast.show {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #saStudentToast .toast-icon { font-size: 26px; flex-shrink: 0; }
+        #saStudentToast .toast-body { flex: 1; }
+        #saStudentToast .toast-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; color: #2ecc71; }
+        #saStudentToast .toast-msg { font-size: 12px; color: #ccc; }
+        #saStudentToast .toast-view {
+            background: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        #saStudentToast .toast-view:hover { background: #27ae60; }
+        #saStudentToast .toast-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 0 0 6px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.id = 'saStudentToast';
+    toast.innerHTML = `
+        <div class="toast-icon">🎓</div>
+        <div class="toast-body">
+            <div class="toast-title" id="saStudentToastTitle">New Student Registered</div>
+            <div class="toast-msg" id="saStudentToastMsg"></div>
+        </div>
+        <button class="toast-view" id="saStudentToastBtn" onclick="navigateTo('studentAccountManagement')">View</button>
+        <button class="toast-close" onclick="hideStudentToast()">×</button>
+    `;
+    document.body.appendChild(toast);
+})();
+
+let _studentToastTimer = null;
+
+function showStudentLiveToast(newCount, latestStudent) {
+    const toast = document.getElementById('saStudentToast');
+    const title = document.getElementById('saStudentToastTitle');
+    const msg   = document.getElementById('saStudentToastMsg');
+    if (!toast) return;
+
+    title.textContent = newCount === 1 ? 'New Student Registered!' : `${newCount} New Students Registered!`;
+    if (latestStudent) {
+        const name = `${latestStudent.student_firstname} ${latestStudent.student_lastname}`;
+        msg.textContent = newCount === 1
+            ? `${name} — ${latestStudent.student_program || latestStudent.student_year_level}`
+            : `Latest: ${name}`;
+    } else {
+        msg.textContent = 'Student Accounts has been updated.';
+    }
+
+    toast.classList.add('show');
+    clearTimeout(_studentToastTimer);
+    _studentToastTimer = setTimeout(hideStudentToast, 7000);
+}
+
+function hideStudentToast() {
+    const toast = document.getElementById('saStudentToast');
+    if (toast) toast.classList.remove('show');
 }
 
 function startAdminPolling() {
@@ -1461,8 +1586,9 @@ async function fetchStudentAccounts() {
     const result = await fetchAccountCount('student_accounts');
     if (!result) return;
     DOM.studentAccountCounts.textContent = `${result.length} Accounts`;
+    _lastStudentCount = result.length;
     DOM.studentsList.innerHTML = result.map(d => `
-        <div class="student-card">
+        <div class="student-card" data-student-id="${d.student_id}" data-id-number="${d.student_id_number}" data-name="${d.student_firstname} ${d.student_lastname}">
             <div class="student-header">
                 <div class="student-name">${d.student_firstname} ${d.student_middlename}. ${d.student_lastname}</div>
             </div>
@@ -3155,7 +3281,7 @@ async function loadClassAttendanceNow() {
             });
 
             const fullName = [s.student_firstname, s.student_middlename ? s.student_middlename.charAt(0) + '.' : '', s.student_lastname].filter(Boolean).join(' ');
-            const timeIn   = rec?.attendance_time ? rec.attendance_time : '<span style="color:#aaa;">—</span>';
+            const timeIn   = rec?.attendance_time ? formatTime(rec.attendance_time) : '<span style="color:#aaa;">—</span>';
             const dateIn   = rec?.attendance_date ? rec.attendance_date.split('T')[0] : '<span style="color:#aaa;">—</span>';
 
             const rowClass = status === 'Present' ? 'row-present' : status === 'Late' ? 'row-late' : status === 'Excused' ? 'row-excused' : 'row-absent';
@@ -3262,7 +3388,7 @@ async function saSetAttStatus(btn, rowKey, newStatus) {
                     const hh = String(now.getHours()).padStart(2,'0');
                     const mm = String(now.getMinutes()).padStart(2,'0');
                     const ss = String(now.getSeconds()).padStart(2,'0');
-                    timeCell.innerHTML = `${hh}:${mm}:${ss}`;
+                    timeCell.innerHTML = formatTime(`${hh}:${mm}:${ss}`);
                 } else {
                     timeCell.innerHTML = '<span style="color:#aaa;">—</span>';
                 }
@@ -3287,55 +3413,86 @@ const _saRosterMap = new Map(); // stores row data by student_id for edit modal
 async function loadClassRoster() {
     if (!_selectedTeacherId) return;
     const tbody = document.getElementById('classRosterBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">Loading...</td></tr>';
     try {
-        const sRes  = await apiFetch(`/super_admin/class/get_subjects/${_selectedTeacherId}`);
-        const sData = await sRes.json();
-        const subjects = sData?.content || [];
+        const res  = await apiFetch(`/super_admin/class/roster/${_selectedTeacherId}`);
+        const data = await res.json();
+        const students = data?.content || [];
 
-        if (!subjects.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">No subjects set up for this teacher.</td></tr>';
-            return;
-        }
-
-        const allRows = await Promise.all(subjects.map(async s => {
-            const r = await apiFetch(`/super_admin/class/subject_class_list/${_selectedTeacherId}/${s.subject_id}`);
-            const d = await r.json();
-            return (d?.content || []).map(student => ({ ...student, _subject: s.subject_name }));
-        }));
-        const students = allRows.flat();
-
-        if (!students.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">No students enrolled in any subject yet.</td></tr>';
-            return;
+        // Populate year level filter
+        const yearFilter = document.getElementById('saRosterYearFilter');
+        if (yearFilter) {
+            const years = [...new Set(students.map(s => s.student_year_level).filter(Boolean))].sort();
+            yearFilter.innerHTML = '<option value="">All Year Levels</option>' +
+                years.map(y => `<option value="${y}">${y}</option>`).join('');
         }
 
         _saRosterMap.clear();
         students.forEach(d => _saRosterMap.set(d.student_id, d));
 
-        const esc = v => (v ?? '').toString().replace(/'/g, "\\'");
-        tbody.innerHTML = students.map(d => `
+        renderSaRosterTable(students);
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c00;padding:20px;">Failed to load roster.</td></tr>';
+    }
+}
+
+function renderSaRosterTable(students) {
+    const tbody = document.getElementById('classRosterBody');
+    if (!students.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">No students in this class roster yet.</td></tr>';
+        return;
+    }
+    const esc = v => (v ?? '').toString().replace(/'/g, "\'");
+    tbody.innerHTML = students.map(d => {
+        const mid  = d.student_middlename || '-';
+        const date = (d.date_created || '').split('T')[0];
+        return `
             <tr>
-                <td data-label="ID">${d.student_id_number}</td>
-                <td data-label="Firstname">${d.student_firstname}</td>
-                <td data-label="M.I">${d.student_middlename || '-'}</td>
-                <td data-label="Lastname">${d.student_lastname}</td>
-                <td data-label="Subject">${d._subject}</td>
-                <td data-label="Year">${d.student_year_level}</td>
-                <td data-label="Program">${d.student_program}</td>
-                <td data-label="Actions">
-                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                        <button class="action-btn edit-btn-account-management"
-                            onclick="openSaRosterEditModal(${d.student_id})">
-                            Edit
-                        </button>
-                        <button class="action-btn delete-btn-account-management"
-                            onclick="saRemoveFromClassListById(${d.id}, '${esc(d.student_firstname)} ${esc(d.student_lastname)}')">
-                            Remove
-                        </button>
+                <td data-label="ID No.">${d.student_id_number}</td>
+                <td data-label="First Name">${d.student_firstname}</td>
+                <td data-label="M.I.">${mid}</td>
+                <td data-label="Last Name">${d.student_lastname}</td>
+                <td data-label="Program">${d.student_program || '-'}</td>
+                <td data-label="Year Level">${d.student_year_level || '-'}</td>
+                <td data-label="Date">${date}</td>
+                <td data-label="Action">
+                    <div class="action-btns">
+                        <button class="edit-btn" onclick="openSaRosterEditModal(${d.student_id})">Edit</button>
+                        <button class="delete-btn-student-registered" onclick="saDeleteRosterStudent(${d.student_id}, '${esc(d.student_firstname)} ${esc(d.student_lastname)}')">Delete</button>
                     </div>
                 </td>
-            </tr>`).join('');
-    } catch (err) { console.error(err); }
+            </tr>`;
+    }).join('');
+}
+
+function filterSaRoster() {
+    const search    = (document.getElementById('saRosterSearchInput')?.value || '').toLowerCase();
+    const yearVal   = document.getElementById('saRosterYearFilter')?.value || '';
+    const allCards  = _saRosterMap ? [..._saRosterMap.values()] : [];
+    const filtered  = allCards.filter(s => {
+        const name = `${s.student_firstname} ${s.student_lastname} ${s.student_id_number}`.toLowerCase();
+        const yearOk = !yearVal || s.student_year_level === yearVal;
+        return name.includes(search) && yearOk;
+    });
+    renderSaRosterTable(filtered);
+}
+
+async function saDeleteRosterStudent(studentId, name) {
+    const result = await Swal.fire({
+        title: `Delete ${name}?`,
+        text: 'This will remove the student from this class roster.',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+    try {
+        const res  = await apiFetch(`/super_admin/class/delete_student/${studentId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Student deleted.', showConfirmButton: false, timer: 1500 });
+        loadClassRoster();
+    } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
 }
 
 // Edit student info from class roster — reuses openClassEditStudentModal logic
@@ -4044,33 +4201,45 @@ async function markOneRead(id) {
         navigateTo('studentAccountManagement');
         const meta = item.meta;
         const metaObj = typeof meta === 'string' ? JSON.parse(meta) : meta;
+        const idNumber = metaObj?.student_id_number || '';
         const fullName = metaObj?.name || '';
         const firstName = fullName.split(' ')[0];
-        if (firstName) {
-            setTimeout(() => {
-                const searchInput = document.getElementById('searchFilterStudentsAccounts');
-                if (searchInput) {
-                    searchInput.value = firstName;
-                    filterCards('#studentsList', '.student-card', firstName);
-                }
-                // Highlight all visible cards after filter (filterCards already matched by name)
+
+        const doHighlight = () => {
+            // Clear any active search filter first so all cards are visible
+            const searchInput = document.getElementById('searchFilterStudentsAccounts');
+            if (searchInput) {
+                searchInput.value = '';
+                filterCards('#studentsList', '.student-card', '');
+            }
+
+            // Find the exact card by id_number, fallback to name match
+            const allCards = Array.from(document.querySelectorAll('#studentsList .student-card'));
+            let target = allCards.find(c => c.dataset.idNumber === String(idNumber));
+            if (!target && firstName) {
+                target = allCards.find(c => (c.dataset.name || '').toLowerCase().includes(firstName.toLowerCase()));
+            }
+
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Pulse highlight animation
+                target.style.transition = 'box-shadow 0.3s, border-color 0.3s';
+                target.style.boxShadow = '0 0 0 4px #3b82f6, 0 4px 16px rgba(59,130,246,0.35)';
+                target.style.borderColor = '#3b82f6';
+                target.style.borderWidth = '2px';
+                target.style.borderStyle = 'solid';
+                // Fade out after 3.5s
                 setTimeout(() => {
-                    const visible = Array.from(document.querySelectorAll('#studentsList .student-card'))
-                        .filter(card => card.style.display !== 'none');
-                    if (visible.length > 0) {
-                        visible[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    visible.forEach(card => {
-                        card.style.boxShadow = '0 0 0 3px #3b82f6, 0 2px 6px rgba(0,0,0,0.1)';
-                        card.style.border = '1.5px solid #3b82f6';
-                        setTimeout(() => {
-                            card.style.boxShadow = '';
-                            card.style.border = '';
-                        }, 3000);
-                    });
-                }, 150);
-            }, 300);
-        }
+                    target.style.boxShadow = '';
+                    target.style.borderColor = '';
+                    target.style.borderWidth = '';
+                    target.style.borderStyle = '';
+                }, 3500);
+            }
+        };
+
+        // Wait for navigateTo + fetchStudentAccounts to finish rendering
+        setTimeout(doHighlight, 600);
     }
 }
 

@@ -647,6 +647,7 @@ async function updatePassword() {
 let _adminPollInterval      = null;
 let _lastEventCount         = -1;
 let _lastEventHistCount     = -1;
+let _lastStudentCount       = -1;
 
 function showAdminLiveIndicator(dotId) {
     const dot = document.getElementById(dotId);
@@ -787,9 +788,130 @@ async function pollAdminSilently() {
                 showAdminLiveIndicator('adminLiveDotEventHist');
             }
         }
+        // Poll new student registrations
+        const r3 = await apiFetch('/admin/get_whole_campus_accounts_count/student_accounts');
+        if (r3.ok) {
+            const d3 = await r3.json();
+            if (d3.ok && _lastStudentCount !== -1 && d3.contents.length > _lastStudentCount) {
+                const newCount = d3.contents.length - _lastStudentCount;
+                _lastStudentCount = d3.contents.length;
+                fetchStudentAccounts();
+                showStudentLiveToast(newCount, d3.contents[d3.contents.length - 1]);
+            } else if (d3.ok && _lastStudentCount === -1) {
+                _lastStudentCount = d3.contents.length;
+            }
+        }
+
     } catch (err) {
         console.error('[Poll]', err);
     }
+}
+
+// ============================================================
+// LIVE STUDENT REGISTRATION TOAST
+// ============================================================
+(function injectStudentToastStyles() {
+    if (document.getElementById('sa-student-toast-style')) return;
+    const style = document.createElement('style');
+    style.id = 'sa-student-toast-style';
+    style.textContent = `
+        #saStudentToast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #1a3a2a;
+            color: #fff;
+            border-left: 5px solid #2ecc71;
+            border-radius: 10px;
+            padding: 14px 20px;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+            font-size: 14px;
+            transform: translateX(120%);
+            transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #saStudentToast.show {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #saStudentToast .toast-icon { font-size: 26px; flex-shrink: 0; }
+        #saStudentToast .toast-body { flex: 1; }
+        #saStudentToast .toast-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; color: #2ecc71; }
+        #saStudentToast .toast-msg { font-size: 12px; color: #ccc; }
+        #saStudentToast .toast-view {
+            background: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        #saStudentToast .toast-view:hover { background: #27ae60; }
+        #saStudentToast .toast-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 0 0 6px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const toast = document.createElement('div');
+    toast.id = 'saStudentToast';
+    toast.innerHTML = `
+        <div class="toast-icon">🎓</div>
+        <div class="toast-body">
+            <div class="toast-title" id="saStudentToastTitle">New Student Registered</div>
+            <div class="toast-msg" id="saStudentToastMsg"></div>
+        </div>
+        <button class="toast-view" id="saStudentToastBtn" onclick="navigateTo('studentAccountManagement')">View</button>
+        <button class="toast-close" onclick="hideStudentToast()">×</button>
+    `;
+    document.body.appendChild(toast);
+})();
+
+let _studentToastTimer = null;
+
+function showStudentLiveToast(newCount, latestStudent) {
+    const toast = document.getElementById('saStudentToast');
+    const title = document.getElementById('saStudentToastTitle');
+    const msg   = document.getElementById('saStudentToastMsg');
+    if (!toast) return;
+
+    title.textContent = newCount === 1 ? 'New Student Registered!' : `${newCount} New Students Registered!`;
+    if (latestStudent) {
+        const name = `${latestStudent.student_firstname} ${latestStudent.student_lastname}`;
+        msg.textContent = newCount === 1
+            ? `${name} — ${latestStudent.student_program || latestStudent.student_year_level}`
+            : `Latest: ${name}`;
+    } else {
+        msg.textContent = 'Student Accounts has been updated.';
+    }
+
+    toast.classList.add('show');
+    clearTimeout(_studentToastTimer);
+    _studentToastTimer = setTimeout(hideStudentToast, 7000);
+}
+
+function hideStudentToast() {
+    const toast = document.getElementById('saStudentToast');
+    if (toast) toast.classList.remove('show');
 }
 
 function startAdminPolling() {
@@ -1201,8 +1323,9 @@ async function fetchStudentAccounts() {
     const result = await fetchAccountCount('student_accounts');
     if (!result) return;
     DOM.studentAccountCounts.textContent = `${result.length} Accounts`;
+    _lastStudentCount = result.length;
     DOM.studentsList.innerHTML = result.map(d => `
-        <div class="student-card">
+        <div class="student-card" data-student-id="${d.student_id}" data-id-number="${d.student_id_number}" data-name="${d.student_firstname} ${d.student_lastname}">
             <div class="student-header">
                 <div class="student-name">${d.student_firstname} ${d.student_middlename}. ${d.student_lastname}</div>
             </div>
@@ -2262,33 +2385,42 @@ async function markOneRead(id) {
         navigateTo('studentAccountManagement');
         const meta = item.meta;
         const metaObj = typeof meta === 'string' ? JSON.parse(meta) : meta;
+        const idNumber = metaObj?.student_id_number || '';
         const fullName = metaObj?.name || '';
         const firstName = fullName.split(' ')[0];
-        if (firstName) {
-            setTimeout(() => {
-                const searchInput = document.getElementById('searchFilterStudentsAccounts');
-                if (searchInput) {
-                    searchInput.value = firstName;
-                    filterCards('#studentsList', '.student-card', firstName);
-                }
-                // Highlight all visible cards after filter (filterCards already matched by name)
+
+        const doHighlight = () => {
+            // Clear any active search filter so all cards are visible
+            const searchInput = document.getElementById('searchFilterStudentsAccounts');
+            if (searchInput) {
+                searchInput.value = '';
+                filterCards('#studentsList', '.student-card', '');
+            }
+
+            // Find the exact card by id_number, fallback to name match
+            const allCards = Array.from(document.querySelectorAll('#studentsList .student-card'));
+            let target = allCards.find(c => c.dataset.idNumber === String(idNumber));
+            if (!target && firstName) {
+                target = allCards.find(c => (c.dataset.name || '').toLowerCase().includes(firstName.toLowerCase()));
+            }
+
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.style.transition = 'box-shadow 0.3s, border-color 0.3s';
+                target.style.boxShadow = '0 0 0 4px #3b82f6, 0 4px 16px rgba(59,130,246,0.35)';
+                target.style.borderColor = '#3b82f6';
+                target.style.borderWidth = '2px';
+                target.style.borderStyle = 'solid';
                 setTimeout(() => {
-                    const visible = Array.from(document.querySelectorAll('#studentsList .student-card'))
-                        .filter(card => card.style.display !== 'none');
-                    if (visible.length > 0) {
-                        visible[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    visible.forEach(card => {
-                        card.style.boxShadow = '0 0 0 3px #3b82f6, 0 2px 6px rgba(0,0,0,0.1)';
-                        card.style.border = '1.5px solid #3b82f6';
-                        setTimeout(() => {
-                            card.style.boxShadow = '';
-                            card.style.border = '';
-                        }, 3000);
-                    });
-                }, 150);
-            }, 300);
-        }
+                    target.style.boxShadow = '';
+                    target.style.borderColor = '';
+                    target.style.borderWidth = '';
+                    target.style.borderStyle = '';
+                }, 3500);
+            }
+        };
+
+        setTimeout(doHighlight, 600);
     }
 }
 

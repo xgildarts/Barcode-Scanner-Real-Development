@@ -97,6 +97,8 @@ const DOM = {
     eventAttendanceHistoryBody:                     document.getElementById('attendanceHistoryBody'),
     searchFilterEventHistory:                       document.getElementById('searchFilterEventHistory'),
     searchFilterEvent:                              document.getElementById('searchFilterEvent'),
+    eventAttendanceDateFilter:                      document.getElementById('eventAttendanceDateFilter'),
+    eventAttendanceHistoryDateFilter:               document.getElementById('eventAttendanceHistoryDateFilter'),
     eventAttendanceYearLevelFilter:                 document.getElementById('eventAttendanceYearLevelFilter'),
     eventAttendanceHistoryYearLevelFilter:          document.getElementById('eventAttendanceHistoryYearLevelFilter'),
     eventAttendanceProgramFilter:                   document.getElementById('eventAttendanceProgramFilter'),
@@ -1782,10 +1784,16 @@ function filterTableRows(tbody, term) {
 // Multi-filter for event attendance tables
 function applyEventFilters(tbody, filters) {
     Array.from(tbody.getElementsByTagName('tr')).forEach(row => {
-        const match = filters.every(({ value, colIndex }) => {
+        const match = filters.every(({ value, colIndex, isDate }) => {
             if (!value) return true;
             const cell = row.cells[colIndex];
-            return cell && cell.textContent.trim().toLowerCase() === value.toLowerCase();
+            if (!cell) return true;
+            const cellText = cell.textContent.trim();
+            if (isDate) {
+                // Cell shows formatted date like "2025-01-15"; compare to YYYY-MM-DD picker value
+                return cellText === value || cellText.startsWith(value);
+            }
+            return cellText.toLowerCase() === value.toLowerCase();
         });
         row.style.display = match ? '' : 'none';
     });
@@ -1793,19 +1801,21 @@ function applyEventFilters(tbody, filters) {
 
 function getEventFilters() {
     return [
-        { value: DOM.eventAttendanceYearLevelFilter.value,   colIndex: 3 },
-        { value: DOM.eventAttendanceProgramFilter.value,     colIndex: 2 },
-        { value: DOM.eventAttendanceEventNameFilter.value,   colIndex: 6 },
-        { value: DOM.eventAttendanceStatusFilter.value,      colIndex: 7 },
+        { value: DOM.eventAttendanceDateFilter?.value || '',         colIndex: 4, isDate: true },
+        { value: DOM.eventAttendanceYearLevelFilter.value,           colIndex: 3 },
+        { value: DOM.eventAttendanceProgramFilter.value,             colIndex: 2 },
+        { value: DOM.eventAttendanceEventNameFilter.value,           colIndex: 6 },
+        { value: DOM.eventAttendanceStatusFilter.value,              colIndex: 7 },
     ];
 }
 
 function getEventHistoryFilters() {
     return [
-        { value: DOM.eventAttendanceHistoryYearLevelFilter.value,   colIndex: 3 },
-        { value: DOM.eventAttendanceHistoryProgramFilter.value,     colIndex: 2 },
-        { value: DOM.eventAttendanceHistoryEventNameFilter.value,   colIndex: 6 },
-        { value: DOM.eventAttendanceHistoryStatusFilter.value,      colIndex: 7 },
+        { value: DOM.eventAttendanceHistoryDateFilter?.value || '',  colIndex: 4, isDate: true },
+        { value: DOM.eventAttendanceHistoryYearLevelFilter.value,    colIndex: 3 },
+        { value: DOM.eventAttendanceHistoryProgramFilter.value,      colIndex: 2 },
+        { value: DOM.eventAttendanceHistoryEventNameFilter.value,    colIndex: 6 },
+        { value: DOM.eventAttendanceHistoryStatusFilter.value,       colIndex: 7 },
     ];
 }
 
@@ -1816,6 +1826,13 @@ DOM.searchFilterEvent.addEventListener('input', function () {
 DOM.searchFilterEventHistory.addEventListener('input', function () {
     filterTableRows(DOM.eventAttendanceHistoryBody, this.value);
 });
+
+if (DOM.eventAttendanceDateFilter) {
+    DOM.eventAttendanceDateFilter.addEventListener('change', () => applyEventFilters(DOM.eventAttendanceBody, getEventFilters()));
+}
+if (DOM.eventAttendanceHistoryDateFilter) {
+    DOM.eventAttendanceHistoryDateFilter.addEventListener('change', () => applyEventFilters(DOM.eventAttendanceHistoryBody, getEventHistoryFilters()));
+}
 
 DOM.eventAttendanceYearLevelFilter.addEventListener('change',        () => applyEventFilters(DOM.eventAttendanceBody,        getEventFilters()));
 DOM.eventAttendanceProgramFilter.addEventListener('change',          () => applyEventFilters(DOM.eventAttendanceBody,        getEventFilters()));

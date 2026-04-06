@@ -273,6 +273,12 @@ superAdmin.post('/register_student', requireSuperAdmin, async (req, res) => {
         const barcode = services.generateBarcode()
         await services.studentRegistration(idNumber, firstName, middleName || '', lastName, email, hashedPassword, yearLevel, guardianContact || '', program, '', barcode, '')
         services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'CREATE_STUDENT', 'Student', null, `${firstName} ${lastName}`, `SuperAdmin registered student: ${email}, Program: ${program}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        services.createNotification(
+            'new_student',
+            'New Student Registered',
+            `${firstName} ${middleName ? middleName + '. ' : ''}${lastName} (${idNumber}) registered by Super Admin — ${program}, ${yearLevel}`,
+            { student_id_number: idNumber, name: `${firstName} ${lastName}`, program, yearLevel, email }
+        ).catch(err => console.error('[Notification]', err))
         res.status(201).json({ ok: true, message: 'Student registered successfully!' })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
