@@ -645,18 +645,21 @@ async function studentGoogleLogin(email, device_id, ip, userAgent) {
 // Get Student Attendance
 function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
     return new Promise((resolve, reject) => {
-        // Always JOIN student_accounts so name columns reflect the current account data,
-        // not whatever was snapshotted at insert time (prevents stale/wrong name display).
+        // JOIN student_accounts for current student name data and
+        // JOIN teacher on serial number to show teacher full name instead of student name.
         const sql = `
             SELECT
                 h.attendance_id AS id, h.student_id, h.student_id_number,
                 sa.student_firstname, sa.student_middlename, sa.student_lastname,
                 h.year_level, h.subject, h.student_program,
                 h.teacher_barcode_scanner_serial_number,
+                t.teacher_name,
                 h.attendance_date, h.attendance_time, h.attendance_status
             FROM attendance_record h
             LEFT JOIN student_accounts sa
                 ON sa.student_id = h.student_id
+            LEFT JOIN teacher t
+                ON t.teacher_barcode_scanner_serial_number = h.teacher_barcode_scanner_serial_number
             WHERE ${studentID ? 'h.student_id = ?' : 'h.student_id_number = ?'}
             ORDER BY h.attendance_date DESC, h.attendance_time DESC
         `;
@@ -671,10 +674,13 @@ function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
                         sa.student_firstname, sa.student_middlename, sa.student_lastname,
                         h.year_level, h.subject, h.student_program,
                         h.teacher_barcode_scanner_serial_number,
+                        t.teacher_name,
                         h.attendance_date, h.attendance_time, h.attendance_status
                     FROM attendance_record h
                     LEFT JOIN student_accounts sa
                         ON sa.student_id = h.student_id
+                    LEFT JOIN teacher t
+                        ON t.teacher_barcode_scanner_serial_number = h.teacher_barcode_scanner_serial_number
                     WHERE h.student_id_number = ?
                     ORDER BY h.attendance_date DESC, h.attendance_time DESC
                 `;
@@ -1518,7 +1524,8 @@ function getTeacherData(teacherID) {
                             teacher_location,
                             teacher_location_radius,
                             teacher_barcode_scanner_serial_number,
-                            teacher_profile_picture
+                            teacher_profile_picture,
+                            admin_id
                        FROM teacher 
                        WHERE teacher_id = ?`
 
@@ -1856,18 +1863,19 @@ async function studentBarcodeFinder(studentBarcode) {
 }
 
 // Find if student is already in attendance
-async function studentCheckEventIfExists(studentIDNumber, status) {
+async function studentCheckEventIfExists(studentIDNumber, status, eventName) {
     return new Promise((resolve, reject) => {
-        // No date check needed because the table is wiped daily
+        // Check duplicate only within the same event — different events allow re-entry
         const sql = `
             SELECT student_id_number 
             FROM event_attendance_record 
             WHERE student_id_number = ? 
             AND status = ? 
+            AND event_name = ?
             LIMIT 1
         `;
 
-        db.execute(sql, [studentIDNumber, status], (err, result) => {
+        db.execute(sql, [studentIDNumber, status, eventName], (err, result) => {
             if (err) { return reject(err); }
 
             // Returns TRUE if record exists, FALSE if not
@@ -1898,13 +1906,13 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
             if (!student) {
                 return reject('Student does not exist in records!');
             }
-            const alreadyScanned = await studentCheckEventIfExists(student.student_id_number, status);
-            if (alreadyScanned) {
-                return reject(`Student has already scanned for ${status}!`);
-            }
             const eventData = await getEventSet();
             if (!eventData || !eventData.event_name_set) {
                 return reject('No active event found. Please contact Admin.');
+            }
+            const alreadyScanned = await studentCheckEventIfExists(student.student_id_number, status, eventData.event_name_set);
+            if (alreadyScanned) {
+                return reject(`Student has already scanned for ${status} in this event!`);
             }
             const activeEventName = eventData.event_name_set;
             const activeAdminId = eventData.admin_id;
@@ -2043,11 +2051,27 @@ function getAttendanceEventsForTeacher(teacherID, tableName) {
         return Promise.reject(new Error(`Invalid event table: ${tableName}`))
     }
     return new Promise(async (resolve, reject) => {
-        const teacherData = await getTeacherData(teacherID)
-        db.execute(`SELECT * FROM ${tableName} WHERE student_program = ? ORDER BY date DESC, time DESC`, [teacherData[0].teacher_program], (err, result) => {
-            if (err) { return reject(err) }
-            resolve(result)
-        })
+        try {
+            const teacherData = await getTeacherData(teacherID)
+            if (!teacherData || teacherData.length === 0) {
+                return reject(new Error('Teacher not found'))
+            }
+            const teacherSerial = teacherData[0].teacher_barcode_scanner_serial_number
+            // Only return event attendance records for students the teacher added to their class list
+            const query = `
+                SELECT e.* FROM ${tableName} e
+                INNER JOIN student_records_regular_class s
+                    ON e.student_id_number = s.student_id_number
+                WHERE s.teacher_barcode_scanner_serial_number = ?
+                ORDER BY e.date DESC, e.time DESC
+            `
+            db.execute(query, [teacherSerial], (err, result) => {
+                if (err) { return reject(err) }
+                resolve(result)
+            })
+        } catch (err) {
+            reject(err)
+        }
     })
 }
 
@@ -3036,6 +3060,7 @@ module.exports = {
     adminEditGuardAccounts,
     adminEditTeacherAccounts,
     adminEditStudentAccounts,
+    editClassRosterStudent,
     getPresentPrograms,
     adminDeleteGuard,
     adminDeleteTeacher,
@@ -3654,5 +3679,36 @@ function searchUsersForMessaging(query, excludeId, excludeRole) {
             users = users.concat(rows.filter(u => !(u.id === excludeId && u.role === excludeRole)))
         })
         return users.slice(0, 15)
+    })
+}
+// Edit a student directly in student_records_regular_class (class roster only, no student_accounts dependency)
+function editClassRosterStudent(studentId, id_number, firstname, middlename, lastname, program, year_level) {
+    return new Promise((resolve, reject) => {
+        // Check if the new id_number is already used by a DIFFERENT student in the roster
+        db.execute(
+            `SELECT student_id FROM student_records_regular_class WHERE student_id_number = ? AND student_id != ?`,
+            [id_number, studentId],
+            (err, rows) => {
+                if (err) return reject(err)
+                if (rows.length > 0) return resolve({ ok: false, message: `ID number "${id_number}" is already assigned to another student in this roster.` })
+
+                db.execute(
+                    `UPDATE student_records_regular_class SET
+                        student_id_number = ?,
+                        student_firstname = ?,
+                        student_middlename = ?,
+                        student_lastname = ?,
+                        student_program = ?,
+                        student_year_level = ?
+                    WHERE student_id = ?`,
+                    [id_number, firstname, middlename || '', lastname, program, year_level, studentId],
+                    (err, result) => {
+                        if (err) return reject(err)
+                        if (result.affectedRows === 0) return reject(new Error('Student not found in roster.'))
+                        resolve({ ok: true, message: 'Student record updated successfully!' })
+                    }
+                )
+            }
+        )
     })
 }

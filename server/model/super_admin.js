@@ -524,7 +524,7 @@ superAdmin.delete('/delete_student_account/:id', requireSuperAdmin, async (req, 
 superAdmin.put('/edit_student_account/:id', requireSuperAdmin, async (req, res) => {
     const { id_number, firstname, middlename, lastname, program, year_level, email } = req.body
     try {
-        const result = await services.adminEditStudentAccounts(req.params.id, id_number, firstname, middlename, lastname, program, year_level, email)
+        const result = await services.adminEditStudentAccounts(parseInt(req.params.id, 10), id_number, firstname, middlename, lastname, program, year_level, email)
         if (result.ok !== false) services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch (err) {
@@ -853,8 +853,9 @@ superAdmin.post('/class/add_student/:teacher_id', requireSuperAdmin, async (req,
 // Edit a student record in teacher's class roster
 superAdmin.put('/class/edit_student/:student_id', requireSuperAdmin, async (req, res) => {
     const { id_number, firstname, middlename, lastname, program, year_level } = req.body
+    const studentId = parseInt(req.params.student_id, 10)
     try {
-        const result = await services.adminEditStudentAccounts(req.params.student_id, id_number, firstname, middlename, lastname, program, year_level)
+        const result = await services.editClassRosterStudent(studentId, id_number, firstname, middlename, lastname, program, year_level)
         services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'EDIT_STUDENT_RECORD', 'Student', null, `${firstname} ${lastname}`, `Edited class roster student: ${firstname} ${lastname}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch (err) {

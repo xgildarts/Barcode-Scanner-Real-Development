@@ -41,6 +41,14 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     const convAvatarEl  = document.getElementById('chatConvAvatar')
     const messagesEl    = document.getElementById('chatMessages')
     const chatInput       = document.getElementById('chatInput')
+
+    // Clear unread header highlight when user scrolls to bottom of messages
+    if (messagesEl) {
+        messagesEl.addEventListener('scroll', () => {
+            const atBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 60
+            if (atBottom) _setHeaderUnread(false)
+        })
+    }
     let   _pastedFile     = null   // holds clipboard-pasted image
 
     // ── Reactions (server-side) ───────────────────────────────
@@ -122,11 +130,42 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     }
 
+    // ── Image preview modal ──────────────────────────────────
+    function _openImgPreview(url, name) {
+        let overlay = document.getElementById('chatImgPreviewOverlay')
+        if (!overlay) {
+            overlay = document.createElement('div')
+            overlay.id = 'chatImgPreviewOverlay'
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;'
+            overlay.innerHTML = `
+                <button id="chatImgPreviewClose" style="position:absolute;top:16px;right:20px;background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:22px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+                <img id="chatImgPreviewImg" src="" alt="" style="max-width:90vw;max-height:80vh;border-radius:10px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+                <div id="chatImgPreviewName" style="color:rgba(255,255,255,0.7);font-size:12px;max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+                <a id="chatImgPreviewDownload" href="" download="" style="color:#9FE1CB;font-size:12px;text-decoration:none;padding:6px 14px;border:1px solid rgba(159,225,203,0.4);border-radius:20px;">Download</a>
+            `
+            document.body.appendChild(overlay)
+            document.getElementById('chatImgPreviewClose').onclick = _closeImgPreview
+            overlay.addEventListener('click', e => { if (e.target === overlay) _closeImgPreview() })
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeImgPreview() })
+        }
+        document.getElementById('chatImgPreviewImg').src         = url
+        document.getElementById('chatImgPreviewImg').alt         = name || ''
+        document.getElementById('chatImgPreviewName').textContent = name || ''
+        document.getElementById('chatImgPreviewDownload').href    = url
+        document.getElementById('chatImgPreviewDownload').download = name || 'image'
+        overlay.style.display = 'flex'
+    }
+    function _closeImgPreview() {
+        const overlay = document.getElementById('chatImgPreviewOverlay')
+        if (overlay) overlay.style.display = 'none'
+    }
+    window._openChatImgPreview = _openImgPreview
+
     function renderFileBubble(url, name, type) {
         const safeName = escHtml(name || 'file')
         const safeUrl  = escHtml(url)
         if (type && type.startsWith('image/')) {
-            return `<div class="chat-file-img"><img src="${safeUrl}" alt="${safeName}" onclick="window.open('${safeUrl}','_blank')" style="max-width:200px;max-height:180px;border-radius:8px;cursor:pointer;display:block;margin-top:4px;"></div>`
+            return `<div class="chat-file-img"><img src="${safeUrl}" alt="${safeName}" onclick="window._openChatImgPreview('${safeUrl}','${safeName}')" style="max-width:200px;max-height:180px;border-radius:8px;cursor:pointer;display:block;margin-top:4px;"></div>`
         }
         const icon = getFileIcon(type)
         return `<a class="chat-file-attach" href="${safeUrl}" target="_blank" download="${safeName}">
@@ -203,6 +242,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     // ── Conversation ─────────────────────────────────────────
     window._chatOpenConv = async function(contactId, contactRole, contactName, profilePicture) {
         _convContact = { id: contactId, role: contactRole, name: contactName, profilePicture: profilePicture || null }
+        _lastIncomingMsgId = 0   // reset so we don't sound on history when opening a conversation
+        _setHeaderUnread(false)  // clear highlight when opening a new conversation
 
         if (convNameEl)   convNameEl.textContent   = contactName
         if (convRoleEl)   convRoleEl.textContent   = roleLabel(contactRole)
@@ -222,6 +263,15 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         _convPollInterval = setInterval(loadMessages, 4000)
     }
 
+    let _lastIncomingMsgId = 0   // tracks last received msg id for in-conv sound
+
+    function _setHeaderUnread(hasUnread) {
+        const header = document.querySelector('.chat-panel-header')
+        if (!header) return
+        if (hasUnread) header.classList.add('has-unread')
+        else header.classList.remove('has-unread')
+    }
+
     async function loadMessages() {
         if (!_convContact || !messagesEl) return
         try {
@@ -235,6 +285,19 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             }
             const msgs = data.messages || []
             const wasAtBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 60
+
+            // Play sound when a new message arrives from the other person while conv is open
+            const incomingMsgs = msgs.filter(m => !(String(m.sender_id) === String(myId) && m.sender_role === myRole) && !m.is_unsent)
+            if (incomingMsgs.length > 0) {
+                const latestIncoming = incomingMsgs[incomingMsgs.length - 1]
+                if (_lastIncomingMsgId !== 0 && latestIncoming.id > _lastIncomingMsgId) {
+                    playChatSound('message')
+                    // Highlight panel header on new incoming message
+                    _setHeaderUnread(true)
+                }
+                _lastIncomingMsgId = latestIncoming.id
+            }
+
             // Find last sent message index for seen receipt
             let lastSentIdx = -1
             let contactPicFromMsg = _convContact.profilePicture
@@ -287,6 +350,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
 
             if (wasAtBottom || msgs.length === 0) {
                 messagesEl.scrollTop = messagesEl.scrollHeight
+                _setHeaderUnread(false)   // user is at bottom — they can see the messages
             }
 
             // Update pin bar
@@ -539,15 +603,32 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             background:#fff; border:1.5px solid #e0eee9;
             border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,0.18);
             padding:6px; min-width:200px; overflow:hidden;
+            visibility:hidden;
         `
-        const rect = e.currentTarget.getBoundingClientRect()
-        let top  = rect.bottom + 4
-        let left = rect.left - 160
-        if (left < 8) left = 8
-        if (top + 220 > window.innerHeight) top = rect.top - 220
+        document.body.appendChild(menu)
+
+        // Measure actual menu size after it's in the DOM
+        const menuW = menu.offsetWidth  || 210
+        const menuH = menu.offsetHeight || 280
+        const rect  = e.currentTarget.getBoundingClientRect()
+        const vw    = window.innerWidth
+        const vh    = window.innerHeight
+        const MARGIN = 8
+
+        // Horizontal: prefer left-aligned to button, clamp within viewport
+        let left = rect.right - menuW
+        if (left < MARGIN)        left = MARGIN
+        if (left + menuW > vw - MARGIN) left = vw - menuW - MARGIN
+
+        // Vertical: prefer below button, flip above if not enough room
+        let top = rect.bottom + 4
+        if (top + menuH > vh - MARGIN) top = rect.top - menuH - 4
+        if (top < MARGIN) top = MARGIN
+
         menu.style.top  = top + 'px'
         menu.style.left = left + 'px'
-        document.body.appendChild(menu)
+        menu.style.visibility = 'visible'
+
         setTimeout(() => document.addEventListener('click', closeMsgMenu, { once: true }), 10)
     }
 
@@ -652,6 +733,84 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     }
 
     // ── Panel toggle — assigned immediately so onclick works ─
+    // ── Drag to reposition chat panel ────────────────────────
+    ;(function _initDrag() {
+        const header = document.querySelector('.chat-panel-header')
+        if (!panel || !header) return
+
+        let _dragging = false
+        let _startX = 0, _startY = 0
+        let _startLeft = 0, _startTop = 0
+
+        function _getRect() { return panel.getBoundingClientRect() }
+
+        header.addEventListener('mousedown', e => {
+            if (e.target.closest('.chat-close-btn')) return
+            _dragging = true
+            const rect = _getRect()
+            // Convert current position to top/left if still using bottom/right
+            panel.style.bottom = 'auto'
+            panel.style.right  = 'auto'
+            panel.style.left   = rect.left + 'px'
+            panel.style.top    = rect.top  + 'px'
+            panel.classList.add('dragging')
+            _startX    = e.clientX
+            _startY    = e.clientY
+            _startLeft = rect.left
+            _startTop  = rect.top
+            e.preventDefault()
+        })
+
+        document.addEventListener('mousemove', e => {
+            if (!_dragging) return
+            const dx = e.clientX - _startX
+            const dy = e.clientY - _startY
+            const newLeft = Math.max(0, Math.min(window.innerWidth  - panel.offsetWidth,  _startLeft + dx))
+            const newTop  = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, _startTop  + dy))
+            panel.style.left = newLeft + 'px'
+            panel.style.top  = newTop  + 'px'
+        })
+
+        document.addEventListener('mouseup', () => {
+            if (!_dragging) return
+            _dragging = false
+            panel.classList.remove('dragging')
+        })
+
+        // Touch support
+        header.addEventListener('touchstart', e => {
+            if (e.target.closest('.chat-close-btn')) return
+            const t = e.touches[0]
+            const rect = _getRect()
+            panel.style.bottom = 'auto'
+            panel.style.right  = 'auto'
+            panel.style.left   = rect.left + 'px'
+            panel.style.top    = rect.top  + 'px'
+            panel.classList.add('dragging')
+            _dragging  = true
+            _startX    = t.clientX
+            _startY    = t.clientY
+            _startLeft = rect.left
+            _startTop  = rect.top
+        }, { passive: true })
+
+        document.addEventListener('touchmove', e => {
+            if (!_dragging) return
+            const t = e.touches[0]
+            const dx = t.clientX - _startX
+            const dy = t.clientY - _startY
+            const newLeft = Math.max(0, Math.min(window.innerWidth  - panel.offsetWidth,  _startLeft + dx))
+            const newTop  = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, _startTop  + dy))
+            panel.style.left = newLeft + 'px'
+            panel.style.top  = newTop  + 'px'
+        }, { passive: true })
+
+        document.addEventListener('touchend', () => {
+            _dragging = false
+            panel.classList.remove('dragging')
+        })
+    })()
+
     window.toggleChat = function() {
         _isOpen = !_isOpen
         panel?.classList.toggle('open', _isOpen)
@@ -943,9 +1102,90 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             </div>`
     })
 
+    // ── Notification sound (Web Audio API — no external files needed) ───
+    let _audioCtx = null
+    function _getAudioCtx() {
+        if (!_audioCtx) {
+            try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)() } catch(e) {}
+        }
+        return _audioCtx
+    }
+
+    window.playChatSound = playChatSound
+    function playChatSound(type = 'message') {
+        try {
+            const ctx = _getAudioCtx()
+            if (!ctx) return
+
+            // Resume if suspended (mobile autoplay policy) — wait for resume before playing
+            const _play = () => {
+                const now = ctx.currentTime
+                _playChatTone(ctx, type, now)
+            }
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(_play).catch(() => {})
+                return
+            }
+
+            const now = ctx.currentTime
+            _playChatTone(ctx, type, now)
+        } catch(e) { /* sound is non-critical */ }
+    }
+
+    function _playChatTone(ctx, type, now) {
+        if (type === 'message') {
+            const notes = [
+                { freq: 880, start: 0,    dur: 0.12, gain: 0.28 },
+                { freq: 1100, start: 0.13, dur: 0.12, gain: 0.22 }
+            ]
+            notes.forEach(({ freq, start, dur, gain }) => {
+                const osc = ctx.createOscillator()
+                const vol = ctx.createGain()
+                osc.type      = 'sine'
+                osc.frequency.setValueAtTime(freq, now + start)
+                vol.gain.setValueAtTime(0, now + start)
+                vol.gain.linearRampToValueAtTime(gain, now + start + 0.015)
+                vol.gain.exponentialRampToValueAtTime(0.001, now + start + dur)
+                osc.connect(vol)
+                vol.connect(ctx.destination)
+                osc.start(now + start)
+                osc.stop(now + start + dur + 0.02)
+            })
+        } else if (type === 'reaction') {
+            const osc = ctx.createOscillator()
+            const vol = ctx.createGain()
+            osc.type = 'sine'
+            osc.frequency.setValueAtTime(1320, now)
+            osc.frequency.exponentialRampToValueAtTime(990, now + 0.18)
+            vol.gain.setValueAtTime(0, now)
+            vol.gain.linearRampToValueAtTime(0.2, now + 0.012)
+            vol.gain.exponentialRampToValueAtTime(0.001, now + 0.22)
+            osc.connect(vol)
+            vol.connect(ctx.destination)
+            osc.start(now)
+            osc.stop(now + 0.25)
+        }
+    }
+
+    // Unlock AudioContext on first user interaction (required by browsers)
+    ;(function _unlockAudio() {
+        const unlock = () => {
+            const ctx = _getAudioCtx()
+            if (ctx && ctx.state === 'suspended') ctx.resume()
+            document.removeEventListener('click',      unlock)
+            document.removeEventListener('keydown',    unlock)
+            document.removeEventListener('touchstart', unlock)
+            document.removeEventListener('touchend',   unlock)
+        }
+        document.addEventListener('click',      unlock, { once: true, passive: true })
+        document.addEventListener('keydown',    unlock, { once: true })
+        document.addEventListener('touchstart', unlock, { once: true, passive: true })
+        document.addEventListener('touchend',   unlock, { once: true, passive: true })
+    })()
+
     // ── Toast notification ───────────────────────────────────
     let _toastTimeout = null
-    function showMessageToast(name, role, message, contactId, contactRole) {
+    function showMessageToast(name, role, message, contactId, contactRole, soundType = 'message') {
         let toast = document.getElementById('chatToast')
         if (!toast) {
             toast = document.createElement('div')
@@ -962,6 +1202,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             `
             document.body.appendChild(toast)
         }
+        toast.dataset.soundType = soundType
         const roleColors = { admin:'#4caf50', super_admin:'#ff9800', teacher:'#2196f3', student:'#9c27b0', guard:'#00bcd4' }
         const roleLabels = { admin:'Admin', super_admin:'Super Admin', teacher:'Teacher', student:'Student', guard:'Guard' }
         const initial   = (name || '?').charAt(0).toUpperCase()
@@ -977,17 +1218,26 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 <div style="font-size:11px;opacity:0.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">${roleLabel}</div>
                 <div style="font-size:12px;opacity:0.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(message)}</div>
             </div>
-            <div style="font-size:18px;opacity:0.6;line-height:1;flex-shrink:0;">×</div>
+            <div data-toast-close="1" style="font-size:18px;opacity:0.6;line-height:1;flex-shrink:0;padding:4px;">×</div>
         `
         toast.onclick = (e) => {
-            if (e.target.closest('div:last-child')) {
+            // If clicked the × close button, just hide
+            if (e.target.closest('[data-toast-close]')) {
                 hideToast(toast)
                 return
             }
             hideToast(toast)
-            if (!_isOpen) window.toggleChat()
-            setTimeout(() => window._chatOpenConv(contactId, contactRole, name), 100)
+            // Open chat panel then navigate to the conversation
+            if (!_isOpen) {
+                window.toggleChat()
+                setTimeout(() => window._chatOpenConv(contactId, contactRole, name), 350)
+            } else {
+                window._chatOpenConv(contactId, contactRole, name)
+            }
         }
+
+        // Play sound
+        playChatSound(toast.dataset.soundType || 'message')
 
         // Animate in
         requestAnimationFrame(() => {
@@ -1037,10 +1287,20 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             // Also check for reaction notifications
             _checkReactionNotifications()
         } else {
-            // Reset tracking when panel is open (messages are being read)
+            // Panel is open — update tracking but still sound for OTHER conversations
             const contacts = data.contacts || []
             contacts.forEach(c => {
-                _lastUnreadContacts[`${c.contact_id}:${c.contact_role}`] = parseInt(c.unread) || 0
+                const key        = `${c.contact_id}:${c.contact_role}`
+                const prevUnread = _lastUnreadContacts[key] || 0
+                const currUnread = parseInt(c.unread) || 0
+                // Only play sound if the new message is NOT from the currently open conversation
+                const isActiveConv = _convContact &&
+                    String(_convContact.id)   === String(c.contact_id) &&
+                    _convContact.role         === c.contact_role
+                if (currUnread > prevUnread && currUnread > 0 && !isActiveConv) {
+                    playChatSound('message')
+                }
+                _lastUnreadContacts[key] = currUnread
             })
         }
     }, 8000)
@@ -1056,7 +1316,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 const meta = n.meta || {}
                 // Only show toast if the reactor is not me
                 if (String(meta.reactor_id) !== String(myId) || meta.reactor_role !== myRole) {
-                    showMessageToast(n.title, meta.reactor_role || 'user', n.message, meta.reactor_id, meta.reactor_role)
+                    showMessageToast(n.title, meta.reactor_role || 'user', n.message, meta.reactor_id, meta.reactor_role, 'reaction')
                 }
                 // If the conversation is open, refresh messages to show the reaction
                 if (_convContact &&

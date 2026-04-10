@@ -58,6 +58,13 @@
     overflow: hidden;
     border: 1px solid #e0eeec;
     border-bottom: none;
+    transition: box-shadow 0.15s;
+}
+.chat-panel.dragging {
+    box-shadow: 0 8px 40px rgba(0,0,0,0.28);
+    border-radius: 16px;
+    border-bottom: 1px solid #e0eeec;
+    user-select: none;
 }
 .chat-panel.open { display: flex; }
 
@@ -66,7 +73,9 @@
     padding: 14px 16px;
     background: linear-gradient(135deg, #1a4545 0%, #2c5f5f 100%);
     color: white; flex-shrink: 0;
+    cursor: grab;
 }
+.chat-panel-header:active { cursor: grabbing; }
 .chat-panel-title {
     font-size: 14px; font-weight: 700;
     display: flex; align-items: center; gap: 8px;
@@ -173,6 +182,31 @@
 }
 .chat-back-btn:hover { color: #1a4545; }
 .chat-conv-name { font-size: 14px; font-weight: 700; color: #1a4545; }
+
+/* ── Unread highlight on panel header (like Messenger) ── */
+@keyframes chatPanelHeaderPulse {
+    0%   { background: linear-gradient(135deg, #1a4545 0%, #2c5f5f 100%); }
+    40%  { background: linear-gradient(135deg, #1f6b3a 0%, #2a7a50 100%); }
+    70%  { background: linear-gradient(135deg, #1a4545 0%, #2c5f5f 100%); }
+    85%  { background: linear-gradient(135deg, #1f6b3a 0%, #2a7a50 100%); }
+    100% { background: linear-gradient(135deg, #1a4545 0%, #2c5f5f 100%); }
+}
+.chat-panel-header.has-unread {
+    animation: chatPanelHeaderPulse 1.8s ease-in-out infinite;
+    box-shadow: 0 2px 12px rgba(31, 107, 58, 0.45);
+}
+.chat-panel-header.has-unread .chat-panel-title::after {
+    content: "● New";
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.22);
+    color: #fff;
+    border-radius: 20px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    letter-spacing: 0.3px;
+    animation: chatPanelHeaderPulse 1.8s ease-in-out infinite;
+}
 .chat-conv-role { font-size: 11px; color: #7aadaa; font-weight: 600; text-transform: uppercase; }
 
 .chat-messages {

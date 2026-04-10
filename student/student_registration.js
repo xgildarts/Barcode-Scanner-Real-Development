@@ -308,6 +308,9 @@ async function handleSubmit(e) {
     if (password !== confirmPassword)
         return Swal.fire({ icon: 'error', title: 'Password Mismatch', text: 'Passwords do not match.' });
 
+    if (!email.endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
+
     Swal.fire({ title: 'Creating account...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     const device_id = await getFingerprint();
@@ -321,9 +324,8 @@ async function handleSubmit(e) {
         const data = await res.json();
 
         if (res.ok && data.ok) {
-            Swal.fire({ icon: 'success', title: data.message, text: `Welcome, ${firstName}!`, confirmButtonColor: '#3085d6' });
-            document.getElementById('registrationForm').reset();
-            document.getElementById('yearLevel').innerHTML = '<option value="">Select Year</option>';
+            await Swal.fire({ icon: 'success', title: data.message, text: `Welcome, ${firstName}!`, confirmButtonColor: '#3085d6' });
+            window.location.href = 'student_login.html';
         } else {
             Swal.fire({ icon: 'error', title: 'Registration Failed', text: data.message || 'Unknown error occurred.' });
         }

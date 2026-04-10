@@ -131,7 +131,7 @@ async function forgotPassword() {
         confirmButtonText: 'Send OTP',
         confirmButtonColor: '#2c5f5f',
         showCancelButton: true,
-        inputValidator: v => !v ? 'Email is required.' : undefined
+        inputValidator: v => !v ? 'Email is required.' : !v.endsWith('@panpacificu.edu.ph') ? 'Email must end with @panpacificu.edu.ph.' : undefined
     });
     if (!email) return;
 
@@ -216,11 +216,16 @@ async function forgotPassword() {
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    Swal.fire({ title: 'Logging in...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
     const email     = document.getElementById('email').value.trim();
     const password  = document.getElementById('password').value;
     const rememberMe = document.getElementById('rememberMe').checked;
+
+    // Enforce PPU domain
+    if (!email.endsWith('@panpacificu.edu.ph')) {
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
+    }
+
+    Swal.fire({ title: 'Logging in...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     const device_id = await getFingerprint();
 
     try {

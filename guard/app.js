@@ -214,10 +214,39 @@ async function checkToken() {
     }
 }
 
+// ── Scanner Sounds ────────────────────────────────────────────────────────
+function playGuardSound(type) {
+    if (type === 'scan') {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            fetch('../sounds/Barcode-scanner-beep-sound.mp3')
+                .then(r => r.arrayBuffer())
+                .then(buf => ctx.decodeAudioData(buf))
+                .then(decoded => {
+                    const src = ctx.createBufferSource();
+                    const gain = ctx.createGain();
+                    gain.gain.value = 3.0;  // 3x volume boost
+                    src.buffer = decoded;
+                    src.connect(gain);
+                    gain.connect(ctx.destination);
+                    src.start(0);
+                })
+                .catch(() => {
+                    // Fallback if fetch fails
+                    const mp3 = new Audio('../sounds/Barcode-scanner-beep-sound.mp3');
+                    mp3.volume = 1.0;
+                    mp3.play();
+                });
+        } catch(e) {
+            new Audio('../sounds/Barcode-scanner-beep-sound.mp3').play();
+        }
+    }
+}
+
 // 3. Modal
 async function showActionModal(scannedCode) {
-    new Audio('../sounds/Barcode scanner beep sound (sound effect).mp3').play();
-    
+    playGuardSound('scan');
+
     const result = await Swal.fire({
         title: 'Barcode Detected!',
         text: `Code: ${scannedCode}`,
@@ -271,7 +300,7 @@ function processAttendance(code, type) {
                 startScan(); 
             });
         } else {
-             Swal.fire("Error", data.message, "error").then(() => {
+            Swal.fire("Error", data.message, "error").then(() => {
                 startScan(); 
             });
         }

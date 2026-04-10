@@ -762,6 +762,9 @@ async function pollAdminSilently() {
                         <td>${d.event_name}</td>
                     </tr>
                 `).join('');
+                populateFilterOptions(d1.content, 'eventNameFilter',    d => d.event_name,         'All Events',      'ef_name');
+                populateFilterOptions(d1.content, 'eventYearFilter',    d => d.student_year_level,  'All Year Levels', 'ef_year');
+                populateFilterOptions(d1.content, 'eventProgramFilter', d => d.student_program,    'All Programs',    'ef_program');
                 showAdminLiveIndicator('adminLiveDotEvent');
                 updateChart();
             }
@@ -785,6 +788,9 @@ async function pollAdminSilently() {
                         <td>${d.event_name}</td>
                     </tr>
                 `).join('');
+                populateFilterOptions(d2.content, 'eventHistoryNameFilter',    d => d.event_name,         'All Events',      'ehf_name');
+                populateFilterOptions(d2.content, 'eventHistoryYearFilter',    d => d.student_year_level,  'All Year Levels', 'ehf_year');
+                populateFilterOptions(d2.content, 'eventHistoryProgramFilter', d => d.student_program,    'All Programs',    'ehf_program');
                 showAdminLiveIndicator('adminLiveDotEventHist');
             }
         }
@@ -792,11 +798,15 @@ async function pollAdminSilently() {
         const r3 = await apiFetch('/admin/get_whole_campus_accounts_count/student_accounts');
         if (r3.ok) {
             const d3 = await r3.json();
-            if (d3.ok && _lastStudentCount !== -1 && d3.contents.length > _lastStudentCount) {
+            if (d3.ok && _lastStudentCount !== -1 && d3.contents.length !== _lastStudentCount) {
                 const newCount = d3.contents.length - _lastStudentCount;
                 _lastStudentCount = d3.contents.length;
+                // Refresh the student accounts list live
                 fetchStudentAccounts();
-                showStudentLiveToast(newCount, d3.contents[d3.contents.length - 1]);
+                // Only show toast on new additions, not deletions
+                if (newCount > 0) {
+                    showStudentLiveToast(newCount, d3.contents[d3.contents.length - 1]);
+                }
             } else if (d3.ok && _lastStudentCount === -1) {
                 _lastStudentCount = d3.contents.length;
             }
@@ -1351,6 +1361,9 @@ async function fetchStudentAccounts() {
             </div>
         </div>
     `).join('');
+    // Re-apply active search filter so live updates don't reset the user's search
+    const _activeSearch = DOM.searchFilterStudentsAccounts?.value || '';
+    if (_activeSearch) filterCards('#studentsList', '.student-card', _activeSearch);
 }
 
 async function fetchTeacherAccounts() {
@@ -1773,7 +1786,24 @@ document.getElementById('studentForm').addEventListener('submit', async function
             body: JSON.stringify(studentData)
         });
         const data = await res.json();
+        Swal.close();
+
+        if (data.duplicate) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'ID Number Already Exists',
+                text: `The ID number "${studentData.idNumber}" is already assigned to another student.`
+            });
+        }
+        if (data.duplicate_email) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Email Already Exists',
+                text: `The email "${studentData.email}" is already used by another student.`
+            });
+        }
         if (!res.ok) throw new Error(data.message || 'Registration failed');
+
         Swal.fire({ icon: 'success', title: 'Welcome!', text: 'Student account created successfully.' });
         this.reset();
     } catch (err) {

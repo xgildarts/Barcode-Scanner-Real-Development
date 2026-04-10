@@ -244,6 +244,8 @@
     let _msgNotifOpen = false;
     let _msgNotifData = [];
 
+    let _prevMsgNotifUnread = null;
+
     async function fetchMsgNotifications() {
         try {
             const res = await fetch(`${URL_BASED}/guard/messages/notifications?limit=30`, {
@@ -258,6 +260,11 @@
                 badge.textContent = unread > 99 ? '99+' : unread;
                 badge.style.display = unread > 0 ? 'flex' : 'none';
             }
+            // Play sound when new unread notifications arrive
+            if (_prevMsgNotifUnread !== null && unread > _prevMsgNotifUnread) {
+                if (typeof playChatSound === 'function') playChatSound('message');
+            }
+            _prevMsgNotifUnread = unread;
             if (_msgNotifOpen) renderMsgNotifPanel();
         } catch(e) {}
     }
@@ -325,12 +332,11 @@
         closeMsgNotifPanel();
         if (n && n.sender_id && typeof window._chatOpenConv === 'function') {
             const panel = document.getElementById('chatPanel');
-            if (panel && !panel.classList.contains('open')) {
-                if (typeof toggleChat === 'function') toggleChat();
-            }
+            const isOpen = panel && panel.classList.contains('open');
+            if (!isOpen && typeof toggleChat === 'function') toggleChat();
             setTimeout(() => {
                 window._chatOpenConv(n.sender_id, n.sender_role || 'teacher', n.sender_name || 'User', n.sender_picture || null);
-            }, 80);
+            }, isOpen ? 0 : 350);
         } else if (typeof toggleChat === 'function') {
             toggleChat();
         }

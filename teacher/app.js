@@ -1298,6 +1298,9 @@ async function pollEventAttendanceSilently() {
                             <td data-label="Status">${d.status}</td>
                         </tr>`).join('')
                         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
+                    populateEventFilterOptions(data1.content, 'eventAttendanceProgramFilter',   d => d.student_program,    'All Programs');
+                    populateEventFilterOptions(data1.content, 'eventAttendanceEventNameFilter', d => d.event_name,         'All Events');
+                    populateEventFilterOptions(data1.content, 'eventAttendanceYearLevelFilter', d => d.student_year_level,  'All Year Levels');
                     const dot1 = document.getElementById('liveDotEvent');
                     if (dot1) { dot1.classList.add('live-blink'); setTimeout(() => dot1.classList.remove('live-blink'), 2000); }
                 }
@@ -1327,6 +1330,9 @@ async function pollEventAttendanceSilently() {
                             <td data-label="Status">${d.status}</td>
                         </tr>`).join('')
                         : '<tr><td colspan="8" style="text-align:center;color:#888;">No records found.</td></tr>';
+                    populateEventFilterOptions(data2.content, 'eventAttendanceHistoryProgramFilter',   d => d.student_program,    'All Programs');
+                    populateEventFilterOptions(data2.content, 'eventAttendanceHistoryEventNameFilter', d => d.event_name,         'All Events');
+                    populateEventFilterOptions(data2.content, 'eventAttendanceHistoryYearLevelFilter', d => d.student_year_level,  'All Year Levels');
                     const dot2 = document.getElementById('liveDotEventHistory');
                     if (dot2) { dot2.classList.add('live-blink'); setTimeout(() => dot2.classList.remove('live-blink'), 2000); }
                 }
@@ -2760,16 +2766,29 @@ function exportTableToExcel(tableId, fileName) {
     try {
         const wb = XLSX.utils.book_new();
 
-        // --- Extract headers ---
+        // --- Extract headers (skip Action column, strip sort arrows) ---
         const headers = [];
-        table.querySelectorAll('thead th').forEach(th => headers.push(th.innerText.trim()));
+        const skipColIndices = new Set();
+        table.querySelectorAll('thead th').forEach((th, i) => {
+            // Clone to safely remove sort-arrow child without mutating the DOM
+            const clone = th.cloneNode(true);
+            clone.querySelectorAll('.sort-arrow').forEach(el => el.remove());
+            const headerText = clone.innerText.trim();
+            if (headerText.toLowerCase() === 'action') {
+                skipColIndices.add(i);
+            } else {
+                headers.push(headerText);
+            }
+        });
 
-        // --- Extract rows ---
+        // --- Extract rows (skip Action columns) ---
         const rows = [];
         table.querySelectorAll('tbody tr').forEach(tr => {
             if (tr.style.display === 'none') return; // skip filtered-out rows
             const row = [];
-            tr.querySelectorAll('td').forEach(td => row.push(td.innerText.trim()));
+            tr.querySelectorAll('td').forEach((td, i) => {
+                if (!skipColIndices.has(i)) row.push(td.innerText.trim());
+            });
             if (row.some(cell => cell !== '')) rows.push(row);
         });
 

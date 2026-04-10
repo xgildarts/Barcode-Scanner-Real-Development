@@ -433,7 +433,7 @@ async function initialCheckBarcodeExpiration() {
         Swal.close();
         if (!content) return;
 
-        if (!content.barcode) {
+        if (!content.barcode || content.barcode.trim() === '') {
             Swal.fire({ icon: 'info', title: 'No Code Yet', text: 'Press "Generate today\'s code" to get your first barcode.' });
         } else if (isBarcodeExpired(content.barcode_date_generated)) {
             Swal.fire({ icon: 'info', title: 'Code Expired', text: 'Your code has expired. Press "Generate today\'s code" to get a new one.' });
@@ -499,7 +499,7 @@ async function checkBarcodeExpiration() {
         Swal.close();
         if (!content) return;
 
-        if (isBarcodeExpired(content.barcode_date_generated)) {
+        if (isBarcodeExpired(content.barcode_date_generated) || !content.barcode || content.barcode.trim() === '') {
             const newBarcode = generateRandomBarcode();
             renderCode(newBarcode);
             await updateStudentBarcode(newBarcode);
@@ -529,25 +529,107 @@ async function getAttendanceHistory() {
     const body = document.getElementById('attendanceBody');
     try {
         Swal.fire({ title: 'Loading attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const { res, data } = await apiCall('/students/get_attendance_history_record');
+
+        // Fetch history and enrolled teachers in parallel
+        const [{ res, data }, teacherRes] = await Promise.all([
+            apiCall('/students/get_attendance_history_record'),
+            apiCall('/students/enrolled_teachers')
+        ]);
         Swal.close();
 
         if (!res.ok) { Swal.close(); return Swal.fire({ icon: 'error', title: 'Error', text: data.message }); }
 
-        if (!data.content || data.content.length === 0) {
+        // Build serial → teacher_name map from the student's own enrolled teachers
+        const teacherMap = {};
+        const enrolledSubjects = new Set(); // subject names this student is enrolled in
+        if (teacherRes.res.ok && teacherRes.data.content) {
+            teacherRes.data.content.forEach(t => {
+                if (t.teacher_barcode_scanner_serial_number) {
+                    teacherMap[t.teacher_barcode_scanner_serial_number] = {
+                        name:    t.teacher_name,
+                        subject: t.subject || ''
+                    };
+                }
+                if (t.subject) enrolledSubjects.add(t.subject);
+            });
+        }
+
+        const realRecords = data.content || [];
+
+        // Derive student_id_number from first real record (all belong to same student)
+        const studentIdNumber = realRecords.length ? realRecords[0].student_id_number : null;
+
+        // Find all unique class dates per subject (days where ANY record exists = class was held)
+        const classDates = {}; // subject → Set<dateString>
+        realRecords.forEach(r => {
+            const subj = r.subject || '';
+            const date = r.attendance_date ? String(r.attendance_date).split('T')[0] : '';
+            if (!subj || !date) return;
+            if (!classDates[subj]) classDates[subj] = new Set();
+            classDates[subj].add(date);
+        });
+
+        // Build lookup of existing records: "subject|date"
+        const existingKeys = new Set();
+        realRecords.forEach(r => {
+            const date = r.attendance_date ? String(r.attendance_date).split('T')[0] : '';
+            existingKeys.add(`${r.subject || ''}|${date}`);
+        });
+
+        // Synthesise virtual Absent rows for each class day with no record for this student
+        const virtualAbsents = [];
+        Object.entries(classDates).forEach(([subj, dates]) => {
+            // Find the teacher serial for this subject
+            const teacherEntry = Object.entries(teacherMap).find(([, v]) => v.subject === subj);
+            const serial = teacherEntry ? teacherEntry[0] : null;
+
+            dates.forEach(date => {
+                const key = `${subj}|${date}`;
+                if (!existingKeys.has(key)) {
+                    virtualAbsents.push({
+                        attendance_date:                   date,
+                        attendance_time:                   null,
+                        subject:                           subj,
+                        teacher_barcode_scanner_serial_number: serial,
+                        teacher_name:                      null,
+                        student_id_number:                 studentIdNumber,
+                        attendance_status:                 'Absent',
+                        _virtual:                          true
+                    });
+                }
+            });
+        });
+
+        const allRecords = [...realRecords, ...virtualAbsents];
+
+        if (allRecords.length === 0) {
             body.innerHTML = '<tr><td colspan="6" style="text-align:center">No attendance records found.</td></tr>';
             return;
         }
 
-        body.innerHTML = data.content.map(d => {
+        // Sort by date descending (most recent first)
+        allRecords.sort((a, b) => {
+            const da = a.attendance_date ? String(a.attendance_date).split('T')[0] : '';
+            const db = b.attendance_date ? String(b.attendance_date).split('T')[0] : '';
+            return db.localeCompare(da);
+        });
+
+        body.innerHTML = allRecords.map(d => {
             const status = d.attendance_status || 'Present';
             const statusColor = { Present: '#27ae60', Late: '#e67e22', Absent: '#e74c3c', Excused: '#8e44ad' }[status] || '#555';
+            // Resolve teacher name from enrolled teachers map using the record's serial number
+            const teacherEntry = d.teacher_barcode_scanner_serial_number
+                ? teacherMap[d.teacher_barcode_scanner_serial_number]
+                : null;
+            const teacherName = teacherEntry
+                ? teacherEntry.name
+                : (d.teacher_name || 'N/A');
             return `
             <tr>
                 <td>${d.attendance_date ? String(d.attendance_date).split('T')[0] : '—'}</td>
-                <td>${formatTime(d.attendance_time)}</td>
+                <td>${d.attendance_time ? formatTime(d.attendance_time) : '—'}</td>
                 <td>${d.subject || 'N/A'}</td>
-                <td>${d.student_firstname || ''}${d.student_middlename ? ' ' + d.student_middlename.charAt(0).toUpperCase() + '.' : ''} ${d.student_lastname || ''}</td>
+                <td>${teacherName}</td>
                 <td>${d.student_id_number || '—'}</td>
                 <td><span style="color:${statusColor};font-weight:600">${status}</span></td>
             </tr>`;

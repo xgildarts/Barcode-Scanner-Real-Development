@@ -51,6 +51,7 @@ app.use('/student',     express.static(path.join(__dirname, '../../student')))
 app.use('/teacher',     express.static(path.join(__dirname, '../../teacher')))
 app.use('/super_admin', express.static(path.join(__dirname, '../../super_admin')))
 app.use('/css',         express.static(path.join(__dirname, '../../css')))
+app.use('/sounds',      express.static(path.join(__dirname, '../../sounds')))
 
 // Root redirect — change to whichever role you want as default
 app.get('/', (req, res) => {

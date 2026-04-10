@@ -104,6 +104,12 @@
             const email = document.getElementById('emailInput').value.trim();
             const password = document.getElementById('passwordInput').value;
             const rememberMe = document.getElementById('rememberMe').checked;
+
+            // Enforce PPU domain
+            if (!email.endsWith('@panpacificu.edu.ph')) {
+                return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
+            }
+
             // Show loading
             Swal.fire({
                     title: 'Logging in...',
@@ -167,7 +173,7 @@
                 showCancelButton: true,
                 confirmButtonText: 'Send OTP',
                 confirmButtonColor: '#3d6b6b',
-                inputValidator: v => !v && 'Please enter your email.'
+                inputValidator: v => !v ? 'Please enter your email.' : !v.endsWith('@panpacificu.edu.ph') ? 'Email must end with @panpacificu.edu.ph.' : undefined
             });
             if (!step1ok || !email) return;
 

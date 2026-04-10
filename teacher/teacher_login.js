@@ -66,15 +66,20 @@ if (rememberedEmail) {
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
+    const email = emailInput.value.trim();
+    const password = document.getElementById('password').value;
+
+    // Enforce PPU domain
+    if (!email.endsWith('@panpacificu.edu.ph')) {
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
+    }
+
     // Show loading
     Swal.fire({
         title: 'Logging in...',
         didOpen: () => Swal.showLoading(),
         allowOutsideClick: false
     });
-
-    const email = emailInput.value.trim();
-    const password = document.getElementById('password').value;
 
     // 👉 Remember Me logic
     if (rememberMeCheckbox.checked) {
@@ -142,7 +147,7 @@ document.querySelector('.forgot-password').addEventListener('click', async funct
         preConfirm: () => {
             const val = document.getElementById('swal-email').value.trim()
             if (!val) { Swal.showValidationMessage('Please enter your email.'); return false }
-            if (!/\S+@\S+\.\S+/.test(val)) { Swal.showValidationMessage('Enter a valid email address.'); return false }
+            if (!val.endsWith('@panpacificu.edu.ph')) { Swal.showValidationMessage('Email must end with @panpacificu.edu.ph.'); return false }
             return val
         }
     })

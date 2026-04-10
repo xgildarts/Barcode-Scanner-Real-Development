@@ -632,6 +632,7 @@ let _adminPollInterval      = null;
 let _lastEventCount         = -1;
 let _lastEventHistCount     = -1;
 let _lastStudentCount       = -1;
+let _cachedStudents         = []; // kept in sync by fetchStudentAccounts()
 
 function showAdminLiveIndicator(dotId) {
     const dot = document.getElementById(dotId);
@@ -743,6 +744,9 @@ async function pollAdminSilently() {
                         <td>${d.event_name}</td>
                     </tr>
                 `).join('');
+                populateFilterOptions(d1.content, 'eventNameFilter',    d => d.event_name,         'All Events',      'ef_name');
+                populateFilterOptions(d1.content, 'eventYearFilter',    d => d.student_year_level,  'All Year Levels', 'ef_year');
+                populateFilterOptions(d1.content, 'eventProgramFilter', d => d.student_program,    'All Programs',    'ef_program');
                 showAdminLiveIndicator('adminLiveDotEvent');
                 updateChart();
             }
@@ -766,6 +770,9 @@ async function pollAdminSilently() {
                         <td>${d.event_name}</td>
                     </tr>
                 `).join('');
+                populateFilterOptions(d2.content, 'eventHistoryNameFilter',    d => d.event_name,         'All Events',      'ehf_name');
+                populateFilterOptions(d2.content, 'eventHistoryYearFilter',    d => d.student_year_level,  'All Year Levels', 'ehf_year');
+                populateFilterOptions(d2.content, 'eventHistoryProgramFilter', d => d.student_program,    'All Programs',    'ehf_program');
                 showAdminLiveIndicator('adminLiveDotEventHist');
             }
         }
@@ -773,13 +780,15 @@ async function pollAdminSilently() {
         const r3 = await apiFetch('/super_admin/get_whole_campus_accounts_count/student_accounts');
         if (r3.ok) {
             const d3 = await r3.json();
-            if (d3.ok && _lastStudentCount !== -1 && d3.contents.length > _lastStudentCount) {
+            if (d3.ok && _lastStudentCount !== -1 && d3.contents.length !== _lastStudentCount) {
                 const newCount = d3.contents.length - _lastStudentCount;
                 _lastStudentCount = d3.contents.length;
                 // Refresh the student accounts list live
                 fetchStudentAccounts();
-                // Show live toast
-                showStudentLiveToast(newCount, d3.contents[d3.contents.length - 1]);
+                // Only show toast on new additions, not deletions
+                if (newCount > 0) {
+                    showStudentLiveToast(newCount, d3.contents[d3.contents.length - 1]);
+                }
             } else if (d3.ok && _lastStudentCount === -1) {
                 _lastStudentCount = d3.contents.length;
             }
@@ -1409,6 +1418,7 @@ async function deleteSaSubject(subjectId, subjectName) {
         if (!res.ok) throw new Error(data.message || 'Failed to delete subject.');
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Subject Deleted', showConfirmButton: false, timer: 1500 });
         renderSubjectsForTeacher();
+        loadClassSubjectSetup();
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error', text: err.message });
     }
@@ -1585,6 +1595,7 @@ async function fetchAccountCount(tableName) {
 async function fetchStudentAccounts() {
     const result = await fetchAccountCount('student_accounts');
     if (!result) return;
+    _cachedStudents = result; // keep cache in sync
     DOM.studentAccountCounts.textContent = `${result.length} Accounts`;
     _lastStudentCount = result.length;
     DOM.studentsList.innerHTML = result.map(d => `
@@ -1614,6 +1625,9 @@ async function fetchStudentAccounts() {
             </div>
         </div>
     `).join('');
+    // Re-apply active search filter so live updates don't reset the user's search
+    const _activeSearch = DOM.searchFilterStudentsAccounts?.value || '';
+    if (_activeSearch) filterCards('#studentsList', '.student-card', _activeSearch);
 }
 
 async function fetchTeacherAccounts() {
@@ -2088,6 +2102,28 @@ document.getElementById('studentForm').addEventListener('submit', async function
         return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
     }
 
+    // Pre-flight duplicate check against cached student list
+    const dupId = _cachedStudents.find(s =>
+        s.student_id_number?.trim().toLowerCase() === studentData.idNumber.toLowerCase()
+    );
+    if (dupId) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'ID Number Already Exists',
+            text: `The ID number "${studentData.idNumber}" is already assigned to another student.`
+        });
+    }
+    const dupEmail = _cachedStudents.find(s =>
+        s.student_email?.trim().toLowerCase() === studentData.email.toLowerCase()
+    );
+    if (dupEmail) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Email Already Exists',
+            text: `The email "${studentData.email}" is already used by another student.`
+        });
+    }
+
     showLoading();
     try {
         // FIX: use /super_admin/register_student with apiFetch (authenticated)
@@ -2099,7 +2135,24 @@ document.getElementById('studentForm').addEventListener('submit', async function
             body: JSON.stringify(studentData)
         });
         const data = await res.json();
+        Swal.close();
+
+        if (data.duplicate) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'ID Number Already Exists',
+                text: `The ID number "${studentData.idNumber}" is already assigned to another student.`
+            });
+        }
+        if (data.duplicate_email) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Email Already Exists',
+                text: `The email "${studentData.email}" is already used by another student.`
+            });
+        }
         if (!res.ok) throw new Error(data.message || 'Registration failed');
+
         Swal.fire({ icon: 'success', title: 'Success!', text: 'Student account created successfully.' })
             .then(() => fetchStudentAccounts());
         this.reset();
@@ -3676,7 +3729,7 @@ async function saveClassEditStudent() {
             body: JSON.stringify({ id_number, firstname, middlename, lastname, program, year_level })
         });
         const data = await res.json();
-        if (!res.ok && data.ok === false) return Swal.fire({ icon:'error', title:'Failed', text: data.message });
+        if (!res.ok || data.ok === false) return Swal.fire({ icon:'error', title:'Failed', text: data.message });
         Swal.fire({ icon:'success', title:'Updated!', timer:1600, showConfirmButton:false });
         closeClassEditStudentModal();
         loadClassRoster();
