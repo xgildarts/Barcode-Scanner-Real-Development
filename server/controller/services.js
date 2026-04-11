@@ -333,8 +333,9 @@ async function manualInsertAttendance(
         student_year_level, subjectData[0].subject_name_set, student_program, teacher_barcode_scanner_serial_number
     )
 
+    const _now = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true })
     await sendSMS(student_guardian_number,
-        `${student_firstname} ${student_middlename}. ${student_lastname} - Your child has attended school today.`)
+        `Pan Pacific University: ${student_firstname} ${student_middlename ? student_middlename.charAt(0) + '.' : ''} ${student_lastname} attended ${subjectData[0].subject_name_set} at ${_now} today.`)
 
     writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`, ip || null, userAgent || null)
     return 'Attendance recorded successfully!'
@@ -346,6 +347,25 @@ const clickSendAPI = 'FA142E33-E8CD-0664-FB80-64EBBE1BAFAC';    // from dashboar
 // // Create SMS message object
 async function sendSMS(phone, message) {
     try {
+        // Normalize Philippine numbers: 09XXXXXXXXX → +639XXXXXXXXX
+        // Normalize Philippine mobile numbers to E.164 (+639XXXXXXXXX)
+        let normalizedPhone = (phone || '').toString().trim().replace(/[\s\-().]/g, '')
+        if (normalizedPhone.startsWith('09') && normalizedPhone.length === 11) {
+            // 09XXXXXXXXX → +639XXXXXXXXX
+            normalizedPhone = '+63' + normalizedPhone.slice(1)
+        } else if (normalizedPhone.startsWith('9') && normalizedPhone.length === 10) {
+            // 9XXXXXXXXX → +639XXXXXXXXX
+            normalizedPhone = '+63' + normalizedPhone
+        } else if (normalizedPhone.startsWith('639') && normalizedPhone.length === 12 && !normalizedPhone.startsWith('+')) {
+            // 639XXXXXXXXX → +639XXXXXXXXX (strict: exactly 12 digits)
+            normalizedPhone = '+' + normalizedPhone
+        } else if (normalizedPhone.startsWith('+639') && normalizedPhone.length === 13) {
+            // Already valid E.164 — no change
+        } else {
+            console.warn('[SMS] Invalid or unrecognized phone format, skipping:', phone)
+            return
+        }
+
         const resp = await fetch('https://rest.clicksend.com/v3/sms/send', {
             method: 'POST',
             headers: {
@@ -357,7 +377,7 @@ async function sendSMS(phone, message) {
                     {
                         source: 'nodejs',
                         body: message,
-                        to: phone
+                        to: normalizedPhone
                     }
                 ]
             })
@@ -1824,9 +1844,10 @@ async function setEventName(eventName, adminID) {
 // Get active event name for an admin
 function getActiveEventName(adminID) {
     return new Promise((resolve, reject) => {
+        // Return the latest event set by any admin — events are school-wide
         db.execute(
-            'SELECT event_name_set FROM event_setter WHERE admin_id = ? LIMIT 1',
-            [adminID],
+            'SELECT event_name_set FROM event_setter ORDER BY event_setter_id DESC LIMIT 1',
+            [],
             (err, result) => {
                 if (err) return reject(err)
                 resolve(result[0] || { event_name_set: '' })
@@ -1942,6 +1963,15 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                     await guardInsertAttendanceHistoryRecord(values);
 
                     writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`, null, null)
+
+                    // Send SMS notification to guardian
+                    const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
+                    if (student.student_guardian_number) {
+                        sendSMS(student.student_guardian_number,
+                            `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
+                        ).catch(() => {})
+                    }
+
                     resolve({
                         ok: true,
                         message: `${status} Recorded Successfully`,
@@ -2026,7 +2056,8 @@ async function guardLogin(email, password, ip, userAgent) {
 // Get Events
 function getAttendanceEventRecords(adminID) {
     return new Promise((resolve, reject) => {
-        db.execute('SELECT * FROM event_attendance_record WHERE admin_id = ? ORDER BY date DESC, time DESC', [adminID], (err, result) => {
+        // Show all event attendance records — events are school-wide and not restricted per admin
+        db.execute('SELECT * FROM event_attendance_record ORDER BY date DESC, time DESC', [], (err, result) => {
             if (err) { return reject(err) }
             resolve(result)
         })
@@ -2814,6 +2845,27 @@ function getStudentEnrolledTeachers(studentIdNumber) {
     })
 }
 
+// Get all distinct class session dates for the student's enrolled teachers.
+// Returns every date where ANY student attended class under a teacher this student
+// is enrolled with — used to detect unrecorded absences on the student dashboard.
+function getStudentClassSessions(studentIdNumber) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT DISTINCT
+                ar.subject,
+                ar.teacher_barcode_scanner_serial_number,
+                DATE(ar.attendance_date) AS class_date
+             FROM attendance_record ar
+             INNER JOIN student_records_regular_class src
+                ON src.teacher_barcode_scanner_serial_number = ar.teacher_barcode_scanner_serial_number
+                AND src.student_id_number = ?
+             ORDER BY class_date DESC`,
+            [studentIdNumber],
+            (err, rows) => { if (err) return reject(err); resolve(rows) }
+        )
+    })
+}
+
 // Reset student device binding — clears device_id so student can re-register from a new device
 function adminResetStudentDevice(studentId) {
     return new Promise((resolve, reject) => {
@@ -3008,6 +3060,13 @@ function createMsgNotification(receiverId, receiverRole, senderId, senderRole, s
 
 function getMsgNotifications(receiverId, receiverRole, limit) {
     const n = parseInt(limit) || 30
+    const picQuery = {
+        student:     { pic: 'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1', name: 'SELECT CONCAT(student_firstname, " ", COALESCE(student_middlename, ""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1' },
+        teacher:     { pic: 'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1', name: 'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1' },
+        admin:       { pic: 'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1', name: 'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1' },
+        super_admin: { pic: 'SELECT super_admin_profile_picture AS pic FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1', name: 'SELECT super_admin_name AS name FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1' },
+        guard:       { pic: 'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1', name: 'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1' }
+    }
     return new Promise((resolve) => {
         db.execute(
             `SELECT id, sender_id, sender_role, sender_name, type, preview, emoji, message_id, is_read, created_at
@@ -3015,10 +3074,69 @@ function getMsgNotifications(receiverId, receiverRole, limit) {
              WHERE receiver_id = ? AND receiver_role = ?
              ORDER BY created_at DESC LIMIT ?`,
             [receiverId, receiverRole, n],
-            (err, rows) => {
+            async (err, rows) => {
                 if (err) { console.error('[MsgNotif]', err.message); return resolve([]) }
-                resolve(rows)
+                // Attach current sender profile picture AND name (live from account table)
+                const withPics = await Promise.all(rows.map(row => new Promise(res => {
+                    const q = picQuery[row.sender_role]
+                    if (!q || !row.sender_id) return res({ ...row, sender_picture: null })
+                    const fetchPic  = new Promise(r => db.execute(q.pic,  [row.sender_id], (e, r2) => r((!e && r2?.length) ? r2[0].pic  : null)))
+                    const fetchName = new Promise(r => db.execute(q.name, [row.sender_id], (e, r2) => r((!e && r2?.length) ? r2[0].name?.trim() : null)))
+                    Promise.all([fetchPic, fetchName]).then(([pic, name]) => {
+                        res({ ...row, sender_picture: pic || null, sender_name: name || row.sender_name })
+                    })
+                })))
+                resolve(withPics)
             }
+        )
+    })
+}
+
+// Update sender/receiver name in messages and notifications when user changes their name
+// Get current name for a user from their account table
+function getCurrentUserName(userId, userRole) {
+    const nameQuery = {
+        student:     'SELECT CONCAT(student_firstname, " ", COALESCE(NULLIF(student_middlename,""),""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1',
+        teacher:     'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1',
+        admin:       'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+        super_admin: 'SELECT super_admin_name AS name FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
+        guard:       'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1'
+    }
+    return new Promise(res => {
+        const q = nameQuery[userRole]
+        if (!q || !userId) return res(null)
+        db.execute(q, [userId], (e, rows) => res((!e && rows?.length) ? rows[0].name?.trim() : null))
+    })
+}
+
+// Enrich reaction notifications with live reactor names
+async function enrichReactionNotifications(notifications) {
+    return Promise.all(notifications.map(async n => {
+        const meta = n.meta || {}
+        if (meta.reactor_id && meta.reactor_role) {
+            const liveName = await getCurrentUserName(meta.reactor_id, meta.reactor_role)
+            if (liveName) return { ...n, title: liveName }
+        }
+        return n
+    }))
+}
+
+function updateMessagesName(userId, userRole, newName) {
+    const db = require('./db')
+    const p = (sql, params) => new Promise(res => db.execute(sql, params, (err) => { if (err) console.error('[updateMessagesName]', err.message); res() }))
+    return Promise.all([
+        p('UPDATE messages SET sender_name = ? WHERE sender_id = ? AND sender_role = ?', [newName, userId, userRole]),
+        p('UPDATE messages SET receiver_name = ? WHERE receiver_id = ? AND receiver_role = ?', [newName, userId, userRole]),
+        p('UPDATE message_notifications SET sender_name = ? WHERE sender_id = ? AND sender_role = ?', [newName, userId, userRole]),
+    ])
+}
+
+function deleteMsgNotification(id, receiverId, receiverRole) {
+    return new Promise((resolve) => {
+        require('./db').execute(
+            'DELETE FROM message_notifications WHERE id = ? AND receiver_id = ? AND receiver_role = ?',
+            [id, receiverId, receiverRole],
+            (err) => { if (err) console.error('[DeleteNotif]', err.message); resolve() }
         )
     })
 }
@@ -3171,6 +3289,7 @@ module.exports = {
     superAdminGetLoginLogs,
     superAdminGetActivityLogs,
     getStudentEnrolledTeachers,
+    getStudentClassSessions,
     writeActivityLog,
     createNotification,
     getNotifications,
@@ -3195,6 +3314,9 @@ module.exports = {
     setSystemSetting,
     reactToMessage,
     createMsgNotification,
+    deleteMsgNotification,
+    updateMessagesName,
+    enrichReactionNotifications,
     getMsgNotifications,
     getUnreadMsgNotifCount,
     markMsgNotificationsRead,
@@ -3408,6 +3530,19 @@ function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole,
 // Get conversation between two users
 function getConversation(userAId, userARole, userBId, userBRole, limit) {
     const n = parseInt(limit) || 50
+    // Always fetch current profile pictures from account tables (not stored in message)
+    const picQuery = {
+        student:     'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1',
+        teacher:     'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1',
+        admin:       'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+        super_admin: 'SELECT super_admin_profile_picture AS pic FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
+        guard:       'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1'
+    }
+    const fetchPic = (role, id) => new Promise(res => {
+        const pq = picQuery[role]
+        if (!pq) return res(null)
+        db.execute(pq, [id], (err, rows) => res((!err && rows?.length) ? rows[0].pic : null))
+    })
     return new Promise((resolve) => {
         db.execute(
             `SELECT * FROM messages
@@ -3422,9 +3557,22 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
              LIMIT ?`,
             [userAId, userARole, userBId, userBRole,
              userBId, userBRole, userAId, userARole, n],
-            (err, rows) => {
+            async (err, rows) => {
                 if (err) { console.error('[getConversation]', err.message); return resolve([]) }
-                resolve(rows.reverse())
+                // Fetch current pics for both parties once
+                const [picA, picB] = await Promise.all([
+                    fetchPic(userARole, userAId),
+                    fetchPic(userBRole, userBId)
+                ])
+                const result = rows.reverse().map(m => {
+                    const senderIsA = String(m.sender_id) === String(userAId) && m.sender_role === userARole
+                    return {
+                        ...m,
+                        sender_profile_picture:   senderIsA ? picA : picB,
+                        receiver_profile_picture: senderIsA ? picB : picA
+                    }
+                })
+                resolve(result)
             }
         )
     })
@@ -3551,10 +3699,27 @@ function getMessageContacts(userId, userRole) {
                 if (err) { console.error('[getMessageContacts]', err.message); return resolve([]) }
                 if (!contacts.length) return resolve([])
 
+                // Profile picture lookup map — always fetch current pic from account table
+                const picQuery = {
+                    student:     'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1',
+                    teacher:     'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1',
+                    admin:       'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+                    super_admin: 'SELECT super_admin_profile_picture AS pic FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
+                    guard:       'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1'
+                }
+
+                // Name lookup map — always use current name from account tables
+                const nameQuery = {
+                    student:     'SELECT CONCAT(student_firstname, " ", COALESCE(student_middlename, ""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1',
+                    teacher:     'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1',
+                    admin:       'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+                    super_admin: 'SELECT super_admin_name AS name FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
+                    guard:       'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1'
+                }
+
                 const tasks = contacts.map(c => new Promise(res => {
                     db.execute(
                         `SELECT content, sender_id, sender_role, sender_name, created_at,
-                                sender_profile_picture, receiver_profile_picture,
                                 (SELECT COUNT(*) FROM messages
                                  WHERE receiver_id = ? AND receiver_role = ?
                                    AND sender_id = ? AND sender_role = ?
@@ -3570,18 +3735,44 @@ function getMessageContacts(userId, userRole) {
                         ],
                         (err2, rows) => {
                             if (err2 || !rows.length) return res({ ...c, last_message: '', last_sender_name: '', unread: 0, last_message_at: null, contact_profile_picture: null })
-                            const contactIsSender = String(rows[0].sender_id) === String(c.contact_id) &&
-                                                    rows[0].sender_role === c.contact_role
-                            const contactPic = contactIsSender
-                                ? rows[0].sender_profile_picture
-                                : rows[0].receiver_profile_picture
-                            res({
-                                ...c,
-                                last_message:            rows[0].content,
-                                last_sender_name:        rows[0].sender_name,
-                                unread:                  rows[0].unread || 0,
-                                last_message_at:         rows[0].created_at,
-                                contact_profile_picture: contactPic || null
+
+                            // Fetch current profile picture from account table (not stored in message)
+                            const pq = picQuery[c.contact_role]
+                            if (!pq) {
+                                return res({
+                                    ...c,
+                                    last_message:            rows[0].content,
+                                    last_sender_name:        rows[0].sender_name,
+                                    unread:                  rows[0].unread || 0,
+                                    last_message_at:         rows[0].created_at,
+                                    contact_profile_picture: null
+                                })
+                            }
+                            db.execute(pq, [c.contact_id], (err3, picRows) => {
+                                const currentPic = (!err3 && picRows?.length) ? picRows[0].pic : null
+                                const nq = nameQuery[c.contact_role]
+                                if (!nq) {
+                                    return res({
+                                        ...c,
+                                        last_message:            rows[0].content,
+                                        last_sender_name:        rows[0].sender_name,
+                                        unread:                  rows[0].unread || 0,
+                                        last_message_at:         rows[0].created_at,
+                                        contact_profile_picture: currentPic || null
+                                    })
+                                }
+                                db.execute(nq, [c.contact_id], (err4, nameRows) => {
+                                    const currentName = (!err4 && nameRows?.length) ? nameRows[0].name?.trim() : c.contact_name
+                                    res({
+                                        ...c,
+                                        contact_name:            currentName || c.contact_name,
+                                        last_message:            rows[0].content,
+                                        last_sender_name:        rows[0].sender_name,
+                                        unread:                  rows[0].unread || 0,
+                                        last_message_at:         rows[0].created_at,
+                                        contact_profile_picture: currentPic || null
+                                    })
+                                })
                             })
                         }
                     )

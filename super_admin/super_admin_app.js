@@ -1,3 +1,54 @@
+// ── Normalize PH number to +639XXXXXXXXX ────────────────────
+function normalizePhilippineNumber(raw) {
+    const n = (raw || '').toString().trim().replace(/[\s\-().]/g, '')
+    if (n.startsWith('09')   && n.length === 11) return '+63' + n.slice(1)
+    if (n.startsWith('9')    && n.length === 10) return '+63' + n
+    if (n.startsWith('639')  && n.length === 12) return '+' + n
+    if (n.startsWith('+639') && n.length === 13) return n
+    return n  // return as-is if already valid or unrecognized
+}
+// ─────────────────────────────────────────────────────────────
+
+// ── Password Strength Checker ───────────────────────────────
+function updatePasswordStrength(val, barId, labelId) {
+    const bar   = document.getElementById(barId)
+    const label = document.getElementById(labelId)
+    if (!bar || !label) return
+
+    const wrap = bar.closest('.pw-strength-wrap')
+    if (val.length === 0) {
+        bar.style.setProperty('--pw-width', '0%')
+        bar.style.setProperty('--pw-color', '#e0e0e0')
+        label.style.color = '#aaa'
+        label.textContent = ''
+        if (wrap) wrap.classList.remove('visible')
+        return
+    }
+    if (wrap) wrap.classList.add('visible')
+
+    let score = 0
+    if (val.length >= 6)            score++
+    if (val.length >= 10)           score++
+    if (/[A-Z]/.test(val))         score++
+    if (/[0-9]/.test(val))         score++
+    if (/[^A-Za-z0-9]/.test(val)) score++
+
+    const levels = [
+        { label: 'Weak',   color: '#e53935', width: '25%'  },
+        { label: 'Fair',   color: '#fb8c00', width: '50%'  },
+        { label: 'Good',   color: '#fdd835', width: '75%'  },
+        { label: 'Strong', color: '#43a047', width: '100%' },
+    ]
+
+    const level = score <= 1 ? levels[0] : score === 2 ? levels[1] : score === 3 ? levels[2] : levels[3]
+
+    bar.style.setProperty('--pw-width', level.width)
+    bar.style.setProperty('--pw-color', level.color)
+    label.style.color = level.color
+    label.textContent = 'Password strength: ' + level.label
+}
+// ─────────────────────────────────────────────────────────────
+
 // Returns today's date in YYYY-MM-DD using LOCAL timezone (not UTC)
 // new Date().toISOString() always returns UTC which is wrong for UTC+8 (Philippines)
 function getLocalDateString(date) {
@@ -1977,6 +2028,9 @@ document.getElementById('adminForm')?.addEventListener('submit', async function(
     const confirmPassword = document.getElementById('reg_admin_confirm_password').value;
     if (password.length < 6) return Swal.fire({ icon:'warning', title:'Weak Password', text:'Password must be at least 6 characters.' });
     if (password !== confirmPassword) return Swal.fire({ icon:'error', title:'Password Mismatch', text:'The passwords do not match.' });
+    const DOMAIN = '@panpacificu.edu.ph'
+    if (!email.toLowerCase().endsWith(DOMAIN))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
     showLoading('Creating admin...');
     try {
         const res  = await apiFetch('/super_admin/create_admin', {
@@ -2015,6 +2069,8 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
     if (!guardData.guard_name || !guardData.guard_email || !guardData.guard_designated_location) {
         return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
     }
+    if (!guardData.guard_email.toLowerCase().endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
 
     showLoading();
     try {
@@ -2055,6 +2111,8 @@ document.getElementById('teacherForm').addEventListener('submit', async function
     if (!teacherData.fullName || !teacherData.email || !teacherData.department) {
         return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
     }
+    if (!teacherData.email.toLowerCase().endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
 
     showLoading();
     try {
@@ -2072,6 +2130,18 @@ document.getElementById('teacherForm').addEventListener('submit', async function
         Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not connect to the server.' });
     }
 });
+
+// ── Philippine mobile number validator ──────────────────────
+function isValidPHNumber(raw) {
+    const cleaned = (raw || '').toString().trim().replace(/[\s\-().]/g, '')
+    return (
+        (cleaned.startsWith('09')  && cleaned.length === 11) ||
+        (cleaned.startsWith('9')   && cleaned.length === 10) ||
+        (cleaned.startsWith('639') && cleaned.length === 12) ||
+        (cleaned.startsWith('+639') && cleaned.length === 13)
+    )
+}
+// ─────────────────────────────────────────────────────────────
 
 document.getElementById('studentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -2093,7 +2163,7 @@ document.getElementById('studentForm').addEventListener('submit', async function
         idNumber: document.getElementById('std_id_number').value.trim(),
         program: document.getElementById('std_program').value,
         yearLevel: document.getElementById('std_year_level').value,
-        guardianContact: document.getElementById('std_contact').value.trim(),
+        guardianContact: normalizePhilippineNumber(document.getElementById('std_contact').value.trim()),
         password
     };
 
@@ -2101,6 +2171,10 @@ document.getElementById('studentForm').addEventListener('submit', async function
         !studentData.idNumber || !studentData.program || !studentData.yearLevel) {
         return Swal.fire({ icon: 'warning', title: 'Missing Fields', text: 'Please fill in all required fields.' });
     }
+    if (!isValidPHNumber(studentData.guardianContact))
+        return Swal.fire({ icon: 'error', title: 'Invalid Contact Number', text: 'Guardian contact must be a valid Philippine mobile number (e.g. 09XXXXXXXXX).' });
+    if (!studentData.email.toLowerCase().endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
 
     // Pre-flight duplicate check against cached student list
     const dupId = _cachedStudents.find(s =>
@@ -2880,7 +2954,7 @@ function renderLoginLogsTable(logs) {
             <td>${l.user_name || '<em style="color:#999">Unknown</em>'}</td>
             <td>${l.user_email || '-'}</td>
             <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${rc.bg};color:${rc.color}">${(l.role||'-').replace('_',' ').toUpperCase()}</span></td>
-            <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${l.status==='SUCCESS'?'#e8f5e9':'#ffebee'};color:${l.status==='SUCCESS'?'#2e7d32':'#c62828'}">${l.status}</span></td>
+            <td><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${l.status==='SUCCESS'?'#e8f5e9':l.status==='LOGOUT'?'#e3f2fd':'#ffebee'};color:${l.status==='SUCCESS'?'#2e7d32':l.status==='LOGOUT'?'#1565c0':'#c62828'}">${l.status}</span></td>
             <td style="font-family:monospace;font-size:12px;">${l.ip_address || '-'}</td>
             <td style="font-size:12px;" title="${l.device_info || ''}">${device}</td>
             <td>${l.login_at}</td>
@@ -4158,33 +4232,58 @@ function renderNotifPanel() {
         list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
         return;
     }
+    const ROLE_C = { admin:'#2e7d32', super_admin:'#f57f17', teacher:'#1565c0', student:'#6a1b9a', guard:'#00695c' };
     list.innerHTML = _notifData.map(n => {
         const unread  = !n.is_read;
         const time    = formatNotifTime(n.created_at);
-        let icon, title, preview;
+        let avatarHtml, title, preview;
         if (n._sys) {
-            // System notification (new student registered, etc.)
-            icon    = n.type === 'new_student' ? '🎓' : '🔔';
+            // System notification — use emoji icon
+            const sysIcon = n.type === 'new_student' ? '🎓' : '🔔';
+            avatarHtml = `<div class="notif-icon" style="font-size:18px;background:#e0f2f1;">${sysIcon}</div>`;
             title   = n.type === 'new_student' ? 'New Student Registered' : 'System';
             preview = n.preview || '';
         } else {
-            icon    = n.type === 'reaction' ? (n.emoji || '😀') : n.type === 'file' ? '📎' : '💬';
-            title   = n.sender_name || 'Unknown';
+            // Message/reaction notification — show sender profile picture
+            const senderName = n.sender_name || 'Unknown';
+            const senderRole = n.sender_role || 'student';
+            const initial    = senderName.charAt(0).toUpperCase();
+            const bgColor    = ROLE_C[senderRole] || '#1a4545';
+            const picFile    = n.sender_picture || null;
+            if (picFile) {
+                avatarHtml = `<div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;overflow:hidden;">
+                    <img src="${URL_BASED}/uploads/profile_pictures/${picFile}"
+                         style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;"
+                         onerror="this.outerHTML='<div style=\'width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;\'>${initial}</div>'">
+                </div>`;
+            } else {
+                avatarHtml = `<div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;">${initial}</div>`;
+            }
+            title   = senderName;
             preview = n.type === 'reaction'
                 ? `Reacted ${n.emoji || ''} to your message`
                 : (n.preview ? (n.preview.length > 60 ? n.preview.substring(0,60)+'…' : n.preview) : 'Sent a file');
         }
         return `
         <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead('${n.id}')">
-            <div class="notif-icon" style="font-size:18px;background:#e0f2f1;">${icon}</div>
+            ${avatarHtml}
             <div class="notif-body">
                 <div class="notif-title">${escHtml(title)}</div>
                 <div class="notif-msg">${escHtml(preview)}</div>
                 <div class="notif-time">${time}</div>
             </div>
             ${unread ? '<div class="notif-dot"></div>' : ''}
+            <button class="notif-delete-btn" onclick="event.stopPropagation();deleteNotif('${n.id}')" title="Delete">×</button>
         </div>`;
     }).join('');
+}
+
+async function deleteNotif(id) {
+    _notifData = _notifData.filter(n => String(n.id) !== String(id));
+    renderNotifPanel();
+    try {
+        await apiFetch(`/super_admin/messages/notifications/${id}`, { method: 'DELETE' });
+    } catch(e) {}
 }
 
 function escHtml(s) {
@@ -4237,14 +4336,24 @@ async function markOneRead(id) {
     if (item && !item._sys && item.sender_id) {
         closeNotifPanel();
         const panel = document.getElementById('chatPanel');
-        if (panel && !panel.classList.contains('open')) {
-            if (typeof toggleChat === 'function') toggleChat();
+        const isMinimized = panel && panel.classList.contains('minimized');
+        const isOpen      = panel && panel.classList.contains('open');
+        if (isMinimized) {
+            // Restore from minimized then open conversation
+            if (typeof window.minimizeChat === 'function') window.minimizeChat();
+            setTimeout(() => {
+                if (typeof window._chatOpenConv === 'function') {
+                    window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
+                }
+            }, 200);
+        } else {
+            if (!isOpen && typeof toggleChat === 'function') toggleChat();
+            setTimeout(() => {
+                if (typeof window._chatOpenConv === 'function') {
+                    window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
+                }
+            }, 80);
         }
-        setTimeout(() => {
-            if (typeof window._chatOpenConv === 'function') {
-                window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
-            }
-        }, 80);
         return;
     }
 

@@ -1082,7 +1082,10 @@
                     <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     Messages
                 </div>
-                <button class="chat-close-btn" onclick="closeChat()">×</button>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button class="chat-minimize-btn" onclick="minimizeChat()" title="Minimize">−</button>
+                    <button class="chat-close-btn" onclick="closeChat()">×</button>
+                </div>
             </div>
             <!-- Contact list view -->
             <div class="chat-view active" id="chatListView">
@@ -1284,7 +1287,11 @@
         [data-theme="dark"] .mcl-remove-btn:hover { background:linear-gradient(135deg,#441e1e,#4e2222);border-color:#ef4444; }
         [data-theme="dark"] .mcl-name { color:#c0d0d8; }
         [data-theme="dark"] .mcl-meta { color:#5a7a8a; }
-    </style>
+    .msg-notif-item { position:relative !important; }
+.notif-delete-btn { position:absolute; top:6px; right:6px; background:none; border:none; color:#aaa; font-size:16px; cursor:pointer; line-height:1; padding:2px 5px; border-radius:4px; opacity:0; transition:opacity 0.15s; }
+.msg-notif-item:hover .notif-delete-btn { opacity:1; }
+.notif-delete-btn:hover { color:#e53935; background:#ffebee; }
+</style>
 
     <div class="msg-notif-panel" id="msgNotifPanel">
     <div class="msg-notif-header">
@@ -1355,9 +1362,9 @@
             list.innerHTML = '<div class="msg-notif-empty">No notifications yet</div>';
             return;
         }
+        const _ROLE_C = { admin:'#2e7d32', super_admin:'#f57f17', teacher:'#1565c0', student:'#6a1b9a', guard:'#00695c' };
         list.innerHTML = _msgNotifData.map(n => {
             const unread  = !n.is_read;
-            const icon    = n.type === 'reaction' ? (n.emoji || '😀') : n.type === 'file' ? '📎' : '💬';
             const preview = n.type === 'reaction'
                 ? `Reacted ${n.emoji || ''} to your message`
                 : (n.preview ? (n.preview.length > 50 ? n.preview.substring(0,50)+'…' : n.preview) : 'Sent a file');
@@ -1366,14 +1373,23 @@
             const time = diff < 60 ? 'Just now' : diff < 3600 ? Math.floor(diff/60)+'m ago'
                        : diff < 86400 ? Math.floor(diff/3600)+'h ago'
                        : d.toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+            const senderName = n.sender_name || 'Unknown';
+            const senderRole = n.sender_role || 'student';
+            const initial    = senderName.charAt(0).toUpperCase();
+            const bgColor    = _ROLE_C[senderRole] || '#1a4545';
+            const picFile    = n.sender_picture || null;
+            const avatarHtml = picFile
+                ? `<img src="${BASE_URL || URL_BASED}/uploads/profile_pictures/${picFile}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;flex-shrink:0;" onerror="this.outerHTML='<div style=\'width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;flex-shrink:0;\'>${initial}</div>'">`
+                : `<div style="width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;flex-shrink:0;">${initial}</div>`;
             return `<div class="msg-notif-item ${unread?'unread':''}" onclick="markMsgNotifRead(${n.id})">
-                <div class="msg-notif-icon">${icon}</div>
+                ${avatarHtml}
                 <div class="msg-notif-body">
-                    <div class="msg-notif-sender">${n.sender_name}</div>
+                    <div class="msg-notif-sender">${senderName}</div>
                     <div class="msg-notif-preview">${preview}</div>
                     <div class="msg-notif-time">${time}</div>
                 </div>
                 ${unread ? '<div class="msg-notif-dot"></div>' : ''}
+                <button class="notif-delete-btn" onclick="event.stopPropagation();deleteNotif(${n.id})" title="Delete">×</button>
             </div>`;
         }).join('');
     }
@@ -1392,15 +1408,33 @@
         closeMsgNotifPanel();
         if (n && n.sender_id && typeof window._chatOpenConv === 'function') {
             const panel = document.getElementById('chatPanel');
-            const isOpen = panel && panel.classList.contains('open');
-            if (!isOpen && typeof toggleChat === 'function') toggleChat();
-            setTimeout(() => {
-                window._chatOpenConv(n.sender_id, n.sender_role || 'student', n.sender_name || 'User', n.sender_picture || null);
-            }, isOpen ? 0 : 350);
+            const isMinimized = panel && panel.classList.contains('minimized');
+            const isOpen      = panel && panel.classList.contains('open');
+            if (isMinimized) {
+                if (typeof window.minimizeChat === 'function') window.minimizeChat();
+                setTimeout(() => {
+                    window._chatOpenConv(n.sender_id, n.sender_role || 'student', n.sender_name || 'User', n.sender_picture || null);
+                }, 200);
+            } else {
+                if (!isOpen && typeof toggleChat === 'function') toggleChat();
+                setTimeout(() => {
+                    window._chatOpenConv(n.sender_id, n.sender_role || 'student', n.sender_name || 'User', n.sender_picture || null);
+                }, isOpen ? 0 : 350);
+            }
         } else if (typeof toggleChat === 'function') {
             toggleChat();
         }
     }
+    async function deleteNotif(id) {
+        _msgNotifData = _msgNotifData.filter(n => String(n.id) !== String(id));
+        renderMsgNotifPanel();
+        fetch(`${BASE_URL || URL_BASED}/teacher/messages/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('teacher_token') || '') }
+        }).catch(() => {});
+    }
+    window.deleteNotif = deleteNotif;
+
     window.markMsgNotifRead = markMsgNotifRead;
 
     async function markAllMsgNotifsRead() {

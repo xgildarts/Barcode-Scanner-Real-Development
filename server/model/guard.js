@@ -283,6 +283,17 @@ guard.get('/messages/notifications', async (req, res) => {
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
+
+// DELETE /messages/notifications/:id
+guard.delete('/messages/notifications/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        await services.deleteMsgNotification(parseInt(req.params.id), tok.guard_id, 'guard')
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
 // POST /messages/notifications/read
 guard.post('/messages/notifications/read', async (req, res) => {
     try {
@@ -317,7 +328,7 @@ guard.get('/messages/reaction-notifications', async (req, res) => {
             (err, rows) => {
                 if (err) return res.json({ ok: true, notifications: [] })
                 const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
-                res.json({ ok: true, notifications: parsed })
+                services.enrichReactionNotifications(parsed).then(enriched => { res.json({ ok: true, notifications: enriched }) }).catch(() => res.json({ ok: true, notifications: parsed }))
             }
         )
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
@@ -339,8 +350,7 @@ guard.post('/messages/react/:id', async (req, res) => {
         const receiverRole = String(msg.sender_id) === String(tok.guard_id) && msg.sender_role === 'guard'
             ? msg.receiver_role : msg.sender_role
         const isSelf  = String(receiverId) === String(tok.guard_id) && receiverRole === 'guard'
-        const isSuper = receiverRole === 'super_admin'
-        if (emoji && !isSelf && !isSuper) {
+        if (emoji && !isSelf) {
             services.createNotification(
                 'reaction',
                 'New Reaction',

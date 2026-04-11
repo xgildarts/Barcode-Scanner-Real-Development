@@ -1,3 +1,49 @@
+// ── Philippine mobile number validator ──────────────────────
+function isValidPHNumber(raw) {
+    const cleaned = (raw || '').toString().trim().replace(/[\s\-().]/g, '')
+    return (
+        (cleaned.startsWith("09")  && cleaned.length === 11) ||
+        (cleaned.startsWith("9")   && cleaned.length === 10) ||
+        (cleaned.startsWith("639") && cleaned.length === 12) ||
+        (cleaned.startsWith("+639") && cleaned.length === 13)
+    )
+}
+// ─────────────────────────────────────────────────────────────
+
+// ── Password Strength Checker ───────────────────────────────
+function updatePasswordStrength(val, barId, labelId) {
+    const bar   = document.getElementById(barId)
+    const label = document.getElementById(labelId)
+    if (!bar || !label) return
+    const wrap = bar.closest('.pw-strength-wrap')
+    if (val.length === 0) {
+        bar.style.setProperty('--pw-width', '0%')
+        bar.style.setProperty('--pw-color', '#e0e0e0')
+        label.textContent = ''
+        if (wrap) wrap.classList.remove('visible')
+        return
+    }
+    if (wrap) wrap.classList.add('visible')
+    let score = 0
+    if (val.length >= 6)            score++
+    if (val.length >= 10)           score++
+    if (/[A-Z]/.test(val))         score++
+    if (/[0-9]/.test(val))         score++
+    if (/[^A-Za-z0-9]/.test(val)) score++
+    const levels = [
+        { label: 'Weak',   color: '#e53935', width: '25%'  },
+        { label: 'Fair',   color: '#fb8c00', width: '50%'  },
+        { label: 'Good',   color: '#fdd835', width: '75%'  },
+        { label: 'Strong', color: '#43a047', width: '100%' },
+    ]
+    const level = score <= 1 ? levels[0] : score === 2 ? levels[1] : score === 3 ? levels[2] : levels[3]
+    bar.style.setProperty('--pw-width', level.width)
+    bar.style.setProperty('--pw-color', level.color)
+    label.style.color = level.color
+    label.textContent = 'Password strength: ' + level.label
+}
+// ─────────────────────────────────────────────────────────────
+
 const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
 const GOOGLE_CLIENT_ID = '778771236440-59j9p3hl8tikvffo6s3983s9sfu79ljg.apps.googleusercontent.com';
 
@@ -177,8 +223,8 @@ async function handleGoogleStep2Submit() {
     if (!program)         return Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select a Program.', customClass: { container: 'swal-on-top' } });
     if (!yearLevel)       return Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select a Year Level.', customClass: { container: 'swal-on-top' } });
     if (!guardianContact) return Swal.fire({ icon: 'warning', title: 'Required', text: 'Please enter Guardian Contact.', customClass: { container: 'swal-on-top' } });
-    if (!guardianContact || guardianContact.length < 8)
-        return Swal.fire({ icon: 'error', title: 'Invalid Number', text: 'Please enter a valid phone number.', customClass: { container: 'swal-on-top' } });
+    if (!isValidPHNumber(guardianContactRaw))
+        return Swal.fire({ icon: 'error', title: 'Invalid Contact Number', text: 'Enter a valid Philippine mobile number (e.g. 09XXXXXXXXX).', customClass: { container: 'swal-on-top' } });
     if (password.length < 8)
         return Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 8 characters.', customClass: { container: 'swal-on-top' } });
     if (password !== confirmPassword)

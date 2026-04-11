@@ -270,6 +270,23 @@ student.get('/enrolled_teachers', async (req, res) => {
 })
 
 
+// Get all distinct class session dates for the student's enrolled teachers.
+// Used by the frontend to synthesize Absent rows for days the student missed
+// even when the teacher did not explicitly mark them absent.
+student.get('/class_sessions', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+
+        const rows = await services.getStudentClassSessions(decodedToken.student_id_number)
+        res.json({ ok: true, content: rows })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+
 // Logout
 student.post('/logout', async (req, res) => {
     try {
@@ -398,6 +415,17 @@ student.get('/messages/notifications', async (req, res) => {
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
+
+// DELETE /messages/notifications/:id
+student.delete('/messages/notifications/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        await services.deleteMsgNotification(parseInt(req.params.id), tok.student_id, 'student')
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
 // POST /messages/notifications/read
 student.post('/messages/notifications/read', async (req, res) => {
     try {
@@ -432,7 +460,7 @@ student.get('/messages/reaction-notifications', async (req, res) => {
             (err, rows) => {
                 if (err) return res.json({ ok: true, notifications: [] })
                 const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
-                res.json({ ok: true, notifications: parsed })
+                services.enrichReactionNotifications(parsed).then(enriched => { res.json({ ok: true, notifications: enriched }) }).catch(() => res.json({ ok: true, notifications: parsed }))
             }
         )
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
@@ -457,10 +485,8 @@ student.post('/messages/react/:id', async (req, res) => {
             ? msg.receiver_role : msg.sender_role
         // Never notify yourself and never notify super_admin via bell
         const isSelf       = String(receiverId) === String(tok.student_id) && receiverRole === 'student'
-        const isSuper      = receiverRole === 'super_admin'
-        // Write a short-lived notification row so receiver's poll sees it
-        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
-        if (emoji && !isSelf && !isSuper) {
+        // Write reaction notification for all roles including super_admin
+        if (emoji && !isSelf) {
             services.createNotification(
                 'reaction',
                 'New Reaction',

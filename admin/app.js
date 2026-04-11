@@ -1,3 +1,61 @@
+// ── Normalize PH number to +639XXXXXXXXX ────────────────────
+function normalizePhilippineNumber(raw) {
+    const n = (raw || '').toString().trim().replace(/[\s\-().]/g, '')
+    if (n.startsWith('09')   && n.length === 11) return '+63' + n.slice(1)
+    if (n.startsWith('9')    && n.length === 10) return '+63' + n
+    if (n.startsWith('639')  && n.length === 12) return '+' + n
+    if (n.startsWith('+639') && n.length === 13) return n
+    return n  // return as-is if already valid or unrecognized
+}
+// ─────────────────────────────────────────────────────────────
+
+// ── Philippine mobile number validator ──────────────────────
+function isValidPHNumber(raw) {
+    const cleaned = (raw || '').toString().trim().replace(/[\s\-().]/g, '')
+    return (
+        (cleaned.startsWith('09')  && cleaned.length === 11) ||
+        (cleaned.startsWith('9')   && cleaned.length === 10) ||
+        (cleaned.startsWith('639') && cleaned.length === 12) ||
+        (cleaned.startsWith('+639') && cleaned.length === 13)
+    )
+}
+// ─────────────────────────────────────────────────────────────
+
+// ── Password Strength Checker ───────────────────────────────
+function updatePasswordStrength(val, barId, labelId) {
+    const bar   = document.getElementById(barId)
+    const label = document.getElementById(labelId)
+    if (!bar || !label) return
+    const wrap = bar.closest('.pw-strength-wrap')
+    if (val.length === 0) {
+        bar.style.setProperty('--pw-width', '0%')
+        bar.style.setProperty('--pw-color', '#e0e0e0')
+        label.style.color = '#aaa'
+        label.textContent = ''
+        if (wrap) wrap.classList.remove('visible')
+        return
+    }
+    if (wrap) wrap.classList.add('visible')
+    let score = 0
+    if (val.length >= 6)            score++
+    if (val.length >= 10)           score++
+    if (/[A-Z]/.test(val))         score++
+    if (/[0-9]/.test(val))         score++
+    if (/[^A-Za-z0-9]/.test(val)) score++
+    const levels = [
+        { label: 'Weak',   color: '#e53935', width: '25%'  },
+        { label: 'Fair',   color: '#fb8c00', width: '50%'  },
+        { label: 'Good',   color: '#fdd835', width: '75%'  },
+        { label: 'Strong', color: '#43a047', width: '100%' },
+    ]
+    const level = score <= 1 ? levels[0] : score === 2 ? levels[1] : score === 3 ? levels[2] : levels[3]
+    bar.style.setProperty('--pw-width', level.width)
+    bar.style.setProperty('--pw-color', level.color)
+    label.style.color = level.color
+    label.textContent = 'Password strength: ' + level.label
+}
+// ─────────────────────────────────────────────────────────────
+
 // ============================================================
 // CONSTANTS & CONFIG
 // ============================================================
@@ -1707,6 +1765,9 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
     if (password !== confirmPassword) {
         return Swal.fire({ icon: 'error', title: 'Error', text: "Passwords don't match!" });
     }
+    if (password.length < 6) {
+        return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    }
 
     const guardData = {
         guard_name: document.getElementById('guard_fullname').value,
@@ -1714,6 +1775,9 @@ document.getElementById('guardForm').addEventListener('submit', async function(e
         guard_password: password,
         guard_designated_location: document.getElementById('guard_location').value
     };
+
+    if (!guardData.guard_email.toLowerCase().endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
 
     showLoading();
     try {
@@ -1736,6 +1800,9 @@ document.getElementById('teacherForm').addEventListener('submit', async function
     if (teacherPassword !== confirmPassword) {
         return Swal.fire({ icon: 'warning', title: 'Password Mismatch', text: 'The password and confirm password do not match.' });
     }
+    if (teacherPassword.length < 6) {
+        return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    }
 
     const teacherData = {
         fullName: document.getElementById('teacher_fullname').value,
@@ -1743,6 +1810,9 @@ document.getElementById('teacherForm').addEventListener('submit', async function
         password: teacherPassword,
         department: document.getElementById('teacher_department').value
     };
+
+    if (!teacherData.email.toLowerCase().endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
 
     showLoading();
     try {
@@ -1765,6 +1835,9 @@ document.getElementById('studentForm').addEventListener('submit', async function
     if (password !== confirmPassword) {
         return Swal.fire({ icon: 'warning', title: 'Password Mismatch', text: 'The password and confirm password do not match.' });
     }
+    if (password.length < 6) {
+        return Swal.fire({ icon: 'warning', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+    }
 
     const studentData = {
         firstName: document.getElementById('std_firstname').value,
@@ -1774,9 +1847,14 @@ document.getElementById('studentForm').addEventListener('submit', async function
         idNumber: document.getElementById('std_id_number').value,
         program: document.getElementById('std_program').value,
         yearLevel: document.getElementById('std_year_level').value,
-        guardianContact: document.getElementById('std_contact').value,
+        guardianContact: normalizePhilippineNumber(document.getElementById('std_contact').value),
         password
     };
+
+    if (!isValidPHNumber(studentData.guardianContact))
+        return Swal.fire({ icon: 'error', title: 'Invalid Contact Number', text: 'Guardian contact must be a valid Philippine mobile number (e.g. 09XXXXXXXXX).' });
+    if (!studentData.email.toLowerCase().endsWith('@panpacificu.edu.ph'))
+        return Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Email must end with @panpacificu.edu.ph.' });
 
     showLoading();
     try {
@@ -1802,10 +1880,11 @@ document.getElementById('studentForm').addEventListener('submit', async function
                 text: `The email "${studentData.email}" is already used by another student.`
             });
         }
-        if (!res.ok) throw new Error(data.message || 'Registration failed');
+        if (!res.ok) return Swal.fire({ icon: 'error', title: 'Registration Failed', text: data.message || 'Something went wrong.' });
 
-        Swal.fire({ icon: 'success', title: 'Welcome!', text: 'Student account created successfully.' });
+        Swal.fire({ icon: 'success', title: 'Student Registered!', text: 'Student account created successfully.' });
         this.reset();
+        fetchStudentAccounts();
     } catch (err) {
         console.error(err);
         Swal.fire({ icon: 'error', title: 'Error', text: err.message });
@@ -2321,33 +2400,57 @@ function renderNotifPanel() {
         list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
         return;
     }
+    const ROLE_C = { admin:'#2e7d32', super_admin:'#f57f17', teacher:'#1565c0', student:'#6a1b9a', guard:'#00695c' };
     list.innerHTML = _notifData.map(n => {
         const unread = !n.is_read;
         const time   = formatNotifTime(n.created_at);
-        let icon, title, preview;
+        let avatarHtml, title, preview;
         if (n._sys) {
             const sysIconMap = { new_student:'🎓', new_teacher:'👩‍🏫', new_guard:'🛡️', info:'📢' };
-            icon    = sysIconMap[n.type] || '🔔';
+            const sysIcon = sysIconMap[n.type] || '🔔';
+            avatarHtml = `<div class="notif-icon" style="font-size:20px;background:#e0f2f1;">${sysIcon}</div>`;
             title   = n.type === 'new_student' ? 'New Student Registered' : 'System';
             preview = n.preview || '';
         } else {
-            icon    = n.type === 'reaction' ? (n.emoji || '😀') : n.type === 'file' ? '📎' : '💬';
-            title   = n.sender_name || 'Unknown';
+            const senderName = n.sender_name || 'Unknown';
+            const senderRole = n.sender_role || 'student';
+            const initial    = senderName.charAt(0).toUpperCase();
+            const bgColor    = ROLE_C[senderRole] || '#1a4545';
+            const picFile    = n.sender_picture || null;
+            if (picFile) {
+                avatarHtml = `<div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;overflow:hidden;">
+                    <img src="${URL_BASED}/uploads/profile_pictures/${picFile}"
+                         style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;"
+                         onerror="this.outerHTML='<div style=\'width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;\'>${initial}</div>'">
+                </div>`;
+            } else {
+                avatarHtml = `<div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;">${initial}</div>`;
+            }
+            title   = senderName;
             preview = n.type === 'reaction'
                 ? `Reacted ${n.emoji || ''} to your message`
                 : (n.preview ? (n.preview.length > 60 ? n.preview.substring(0,60)+'…' : n.preview) : 'Sent a file');
         }
         return `
         <div class="notif-item ${unread ? 'unread' : ''}" onclick="markOneRead('${n.id}')">
-            <div class="notif-icon" style="font-size:20px;background:#e0f2f1;">${icon}</div>
+            ${avatarHtml}
             <div class="notif-body">
                 <div class="notif-title">${escHtml(title)}</div>
                 <div class="notif-msg">${escHtml(preview)}</div>
                 <div class="notif-time">${time}</div>
             </div>
             ${unread ? '<div class="notif-dot"></div>' : ''}
+            <button class="notif-delete-btn" onclick="event.stopPropagation();deleteNotif('${n.id}')" title="Delete">×</button>
         </div>`;
     }).join('');
+}
+
+async function deleteNotif(id) {
+    _notifData = _notifData.filter(n => String(n.id) !== String(id));
+    renderNotifPanel();
+    try {
+        await apiFetch(`/admin/messages/notifications/${id}`, { method: 'DELETE' });
+    } catch(e) {}
 }
 
 function escHtml(s) {
@@ -2398,14 +2501,24 @@ async function markOneRead(id) {
     if (item && !item._sys && item.sender_id) {
         closeNotifPanel();
         const panel = document.getElementById('chatPanel');
-        if (panel && !panel.classList.contains('open')) {
-            if (typeof toggleChat === 'function') toggleChat();
+        const isMinimized = panel && panel.classList.contains('minimized');
+        const isOpen      = panel && panel.classList.contains('open');
+        if (isMinimized) {
+            // Restore from minimized then open conversation
+            if (typeof window.minimizeChat === 'function') window.minimizeChat();
+            setTimeout(() => {
+                if (typeof window._chatOpenConv === 'function') {
+                    window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
+                }
+            }, 200);
+        } else {
+            if (!isOpen && typeof toggleChat === 'function') toggleChat();
+            setTimeout(() => {
+                if (typeof window._chatOpenConv === 'function') {
+                    window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
+                }
+            }, 80);
         }
-        setTimeout(() => {
-            if (typeof window._chatOpenConv === 'function') {
-                window._chatOpenConv(item.sender_id, item.sender_role || 'student', item.sender_name || 'User', item.sender_picture || null);
-            }
-        }, 80);
         return;
     }
 

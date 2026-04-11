@@ -116,6 +116,7 @@ superAdmin.put('/update_name', requireSuperAdmin, async (req, res) => {
     if (!newName) return res.status(400).json({ ok: false, message: 'Name is required.' })
     try {
         const result = await services.updateSuperAdminName(req.superAdmin.super_admin_id, newName)
+        services.updateMessagesName(req.superAdmin.super_admin_id, 'super_admin', newName).catch(() => {})
         res.json({ ok: true, message: result })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || err })
@@ -228,10 +229,17 @@ superAdmin.post('/create_admin', requireSuperAdmin, async (req, res) => {
 // admin_id from the DB (or use NULL) so records are properly saved.
 // ============================================================
 
+const ALLOWED_EMAIL_DOMAIN = '@panpacificu.edu.ph'
+function isValidInstitutionEmail(email) {
+    return typeof email === 'string' && email.trim().toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN)
+}
+
 superAdmin.post('/register_teacher', requireSuperAdmin, async (req, res) => {
     const { fullName, email, password, department } = req.body
     if (!fullName || !email || !password || !department)
         return res.status(400).json({ ok: false, message: 'All fields are required.' })
+    if (!isValidInstitutionEmail(email))
+        return res.status(400).json({ ok: false, message: 'Email must use the @panpacificu.edu.ph domain.' })
     if (password.length < 6)
         return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
     try {
@@ -248,6 +256,8 @@ superAdmin.post('/register_guard', requireSuperAdmin, async (req, res) => {
     const { guard_name, guard_email, guard_password, guard_designated_location } = req.body
     if (!guard_name || !guard_email || !guard_password || !guard_designated_location)
         return res.status(400).json({ ok: false, message: 'All fields are required.' })
+    if (!isValidInstitutionEmail(guard_email))
+        return res.status(400).json({ ok: false, message: 'Email must use the @panpacificu.edu.ph domain.' })
     if (guard_password.length < 6)
         return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
     try {
@@ -263,6 +273,8 @@ superAdmin.post('/register_student', requireSuperAdmin, async (req, res) => {
     const { idNumber, firstName, middleName, lastName, email, password, yearLevel, guardianContact, program } = req.body
     if (!idNumber || !firstName || !lastName || !email || !password || !yearLevel || !program)
         return res.status(400).json({ ok: false, message: 'All required fields must be filled.' })
+    if (!isValidInstitutionEmail(email))
+        return res.status(400).json({ ok: false, message: 'Email must use the @panpacificu.edu.ph domain.' })
     if (password.length < 6)
         return res.status(400).json({ ok: false, message: 'Password must be at least 6 characters.' })
     try {
@@ -1201,6 +1213,17 @@ superAdmin.get('/messages/notifications', async (req, res) => {
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
+
+// DELETE /messages/notifications/:id
+superAdmin.delete('/messages/notifications/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        await services.deleteMsgNotification(parseInt(req.params.id), tok.super_admin_id, 'super_admin')
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
 // POST /messages/notifications/read
 superAdmin.post('/messages/notifications/read', async (req, res) => {
     try {
@@ -1213,9 +1236,33 @@ superAdmin.post('/messages/notifications/read', async (req, res) => {
 })
 
 // GET /messages/reaction-notifications
-// Super admin uses the bell (message_notifications) system instead — always return empty
 superAdmin.get('/messages/reaction-notifications', async (req, res) => {
-    res.json({ ok: true, notifications: [] })
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const after  = parseInt(req.query.after) || 0
+        const isSeed = req.query.seed === '1'
+        const db = require('../configuration/db')
+        db.execute(
+            `DELETE FROM notifications WHERE type = 'reaction' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
+            [], () => {}
+        )
+        db.execute(
+            `SELECT id, type, title, message, meta, created_at FROM notifications
+             WHERE type = 'reaction' AND id > ?
+             AND CAST(JSON_EXTRACT(meta, '$.receiver_id') AS CHAR) = CAST(? AS CHAR)
+             AND JSON_EXTRACT(meta, '$.receiver_role') = ?
+             ORDER BY id DESC LIMIT ${isSeed ? 100 : 20}`,
+            [after, tok.super_admin_id, 'super_admin'],
+            (err, rows) => {
+                if (err) return res.json({ ok: true, notifications: [] })
+                const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
+                services.enrichReactionNotifications(parsed).then(enriched => {
+                    res.json({ ok: true, notifications: enriched })
+                }).catch(() => res.json({ ok: true, notifications: parsed }))
+            }
+        )
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
 // POST /messages/react/:id
@@ -1239,8 +1286,8 @@ superAdmin.post('/messages/react/:id', async (req, res) => {
         const isSelf       = String(receiverId) === String(tok.super_admin_id) && receiverRole === 'super_admin'
         const isSuper      = receiverRole === 'super_admin'
         // Write a short-lived notification row so receiver's poll sees it
-        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
-        if (emoji && !isSelf && !isSuper) {
+        // Write reaction notification so receiver's poll picks it up
+        if (emoji && !isSelf) {
             services.createNotification(
                 'reaction',
                 'New Reaction',

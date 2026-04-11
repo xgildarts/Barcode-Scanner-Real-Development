@@ -104,6 +104,11 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 2;
 }
+/* Tooltip system sets position:relative on [data-tooltip], override to keep camera-badge absolutely placed */
+.camera-badge[data-tooltip] {
+    position: absolute;
+}
+
 
 .camera-badge:hover {
     transform: scale(1.12);

@@ -1408,7 +1408,7 @@
 .notif-mark-all:hover { background: rgba(255,255,255,0.28); }
 .notif-list { overflow-y: auto; flex: 1; }
 .notif-empty { padding: 32px 20px; text-align: center; color: #aaa; font-size: 13px; }
-.notif-item {
+.notif-item { position:relative;
     display: flex; gap: 12px; align-items: flex-start;
     padding: 13px 16px; border-bottom: 1px solid #f0f0f0;
     cursor: pointer; transition: background 0.15s;
@@ -1627,3 +1627,145 @@
   [data-theme="dark"] #yearLevelsList:empty::before { background-color: #2a3a4a; }
   [data-theme="dark"] #programsList:empty::after,
   [data-theme="dark"] #yearLevelsList:empty::after  { color: #4a7a8a; }
+/* ── Password Strength Bar ── */
+.pw-strength-wrap {
+    display: none;
+    width: 100%;
+    margin: 3px 0 6px;
+    flex-basis: 100%;
+    flex-shrink: 0;
+}
+.pw-strength-wrap.visible {
+    display: block;
+}
+.pw-strength-bar {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: #e0e0e0;
+    overflow: hidden;
+    position: relative;
+}
+.pw-strength-bar::after {
+    content: '';
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    width: var(--pw-width, 0%);
+    background: var(--pw-color, #e0e0e0);
+    transition: width 0.3s ease, background 0.3s ease;
+}
+.pw-strength-label {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--pw-color, #aaa);
+    transition: color 0.3s;
+}
+
+.notif-delete-btn { position:absolute; top:6px; right:6px; background:none; border:none; color:#aaa; font-size:16px; cursor:pointer; line-height:1; padding:2px 5px; border-radius:4px; opacity:0; transition:opacity 0.15s; }
+.notif-item:hover .notif-delete-btn { opacity:1; }
+.notif-delete-btn:hover { color:#e53935; background:#ffebee; }
+
+/* ============================================================
+TOOLTIP SYSTEM — matches teacher dashboard style
+Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
+============================================================ */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: rgba(20, 40, 40, 0.92);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 6px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    max-width: 220px;
+    white-space: normal;
+    text-align: center;
+}
+
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(20, 40, 40, 0.92);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    z-index: 9999;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip][data-tooltip-pos="bottom"]::after {
+    bottom: auto;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-4px);
+}
+[data-tooltip][data-tooltip-pos="bottom"]::before {
+    bottom: auto;
+    top: calc(100% + 3px);
+    border-top-color: transparent;
+    border-bottom-color: rgba(20, 40, 40, 0.92);
+}
+[data-tooltip][data-tooltip-pos="bottom"]:hover::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip][data-tooltip-pos="right"]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 8px);
+    transform: translateY(-50%) translateX(-4px);
+}
+[data-tooltip][data-tooltip-pos="right"]::before {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 3px);
+    transform: translateY(-50%);
+    border-top-color: transparent;
+    border-right-color: rgba(20, 40, 40, 0.92);
+}
+[data-tooltip][data-tooltip-pos="right"]:hover::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+[data-tooltip][data-tooltip-pos="left"]::after {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 8px);
+    transform: translateY(-50%) translateX(4px);
+}
+[data-tooltip][data-tooltip-pos="left"]::before {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 3px);
+    transform: translateY(-50%);
+    border-top-color: transparent;
+    border-left-color: rgba(20, 40, 40, 0.92);
+}
+[data-tooltip][data-tooltip-pos="left"]:hover::after {
+    transform: translateY(-50%) translateX(0);
+}

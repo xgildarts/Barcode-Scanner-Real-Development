@@ -112,7 +112,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         const fs      = Math.round(size * 0.38)
         if (picUrl) {
             const src = _apiBase() + '/api/v1/uploads/profile_pictures/' + picUrl
-            return `<img class="chat-avatar-img" src="${escHtml(src)}" width="${size}" height="${size}" alt="${initial}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+            return `<div class="chat-avatar role-${role}" style="width:${size}px;height:${size}px;font-size:${fs}px;flex-shrink:0;padding:0;overflow:hidden;"><img src="${escHtml(src)}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"></div>`
         }
         return `<div class="chat-avatar role-${role}" style="width:${size}px;height:${size}px;font-size:${fs}px;flex-shrink:0;">${initial}</div>`
     }
@@ -812,6 +812,11 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     })()
 
     window.toggleChat = function() {
+        // If minimized, restore the panel instead of toggling closed
+        if (_isMinimized) {
+            window.minimizeChat()
+            return
+        }
         _isOpen = !_isOpen
         panel?.classList.toggle('open', _isOpen)
         if (_isOpen) {
@@ -829,9 +834,85 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     window.closeChat = function() {
         _isOpen = false
         panel?.classList.remove('open')
+        panel?.classList.remove('minimized')
+        _isMinimized = false
+        const _mb = document.querySelector('.chat-minimize-btn')
+        if (_mb) _mb.textContent = '−'
+        _bubble.classList.remove('visible')
         clearInterval(_pollInterval)
         clearInterval(_convPollInterval)
         _convContact = null
+    }
+
+    let _isMinimized = false
+
+    // Create bubble directly on body so it is never hidden by panel display:none
+    const _bubble = document.createElement('div')
+    _bubble.id = 'chatMiniBubble'
+    _bubble.innerHTML = `
+        <div id="chatMiniBubbleAvatar"></div>
+        <div id="chatMiniBubbleEdit">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </div>
+        <div id="chatMiniBubbleUnread"></div>
+    `
+    _bubble.onclick = () => window.minimizeChat()
+    document.body.appendChild(_bubble)
+
+    function _renderBubbleAvatar(avatarEl, name, role, picFilename) {
+        const colors = { admin:'#2e7d32', super_admin:'#f57f17', teacher:'#1565c0', student:'#6a1b9a', guard:'#00695c' }
+        if (picFilename) {
+            const src = _apiBase() + '/api/v1/uploads/profile_pictures/' + picFilename
+            avatarEl.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">'
+            avatarEl.style.background = 'transparent'
+        } else {
+            avatarEl.style.background = colors[role] || '#1a4545'
+            avatarEl.innerHTML = avatarInitial(name)
+        }
+    }
+
+    async function _updateMiniBubble() {
+        const avatarEl = document.getElementById('chatMiniBubbleAvatar')
+        if (!avatarEl) return
+        if (_convContact) {
+            // Always fetch the latest profile picture from the contacts list
+            try {
+                const data = await _fetch(`${endpoint}/messages/contacts`)
+                if (data.ok && data.contacts) {
+                    const match = data.contacts.find(c =>
+                        String(c.contact_id) === String(_convContact.id) &&
+                        c.contact_role === _convContact.role
+                    )
+                    const latestPic = match?.contact_profile_picture || _convContact.profilePicture || null
+                    _renderBubbleAvatar(avatarEl, _convContact.name, _convContact.role, latestPic)
+                    return
+                }
+            } catch(e) {}
+            // Fallback to stored profilePicture
+            _renderBubbleAvatar(avatarEl, _convContact.name, _convContact.role, _convContact.profilePicture)
+        } else {
+            avatarEl.style.background = '#1a4545'
+            avatarEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:white;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>'
+        }
+    }
+
+    window.minimizeChat = function() {
+        _isMinimized = !_isMinimized
+        panel?.classList.toggle('minimized', _isMinimized)
+        if (_isMinimized) {
+            _updateMiniBubble()
+            _bubble.classList.add('visible')
+            clearInterval(_convPollInterval)
+        } else {
+            _bubble.classList.remove('visible')
+            // Clear bubble unread badge on restore
+            const bubbleUnread = document.getElementById('chatMiniBubbleUnread')
+            if (bubbleUnread) { bubbleUnread.textContent = ''; bubbleUnread.classList.remove('visible') }
+            if (_convContact) {
+                clearInterval(_convPollInterval)
+                _convPollInterval = setInterval(loadMessages, 4000)
+            }
+        }
     }
 
     function showListView() {
@@ -1209,10 +1290,48 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         const color     = roleColors[role] || '#7aadaa'
         const roleLabel = roleLabels[role] || role
 
+        // Try to find profile picture from cached contacts or contacts API
+        const cachedContact = (_contacts || []).find(c =>
+            String(c.contact_id) === String(contactId) && c.contact_role === contactRole
+        )
+        const picFilename = cachedContact?.contact_profile_picture || null
+
+        const fallbackAvatar = `<div style="width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;">${initial}</div>`
+
+        const buildImgAvatar = (pic) => pic
+            ? `<img src="${_apiBase()}/api/v1/uploads/profile_pictures/${pic}"
+                   style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;flex-shrink:0;"
+                   onerror="this.replaceWith(Object.assign(document.createElement('div'),{innerHTML:'${initial}',style:'width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;'}))">`
+            : null
+
+        let avatarHtmlStr = buildImgAvatar(picFilename) || fallbackAvatar
+
+        // If no pic in cache, try fetching from contacts API asynchronously and update avatar later
+        if (!picFilename && contactId && contactRole) {
+            _fetch(`${endpoint}/messages/contacts`).then(cd => {
+                if (!cd.ok) return
+                const found = (cd.contacts || []).find(c =>
+                    String(c.contact_id) === String(contactId) && c.contact_role === contactRole
+                )
+                if (found?.contact_profile_picture) {
+                    const avatarEl = toast.querySelector('img, div[style*="border-radius:50%"]')
+                    if (avatarEl && toast.contains(avatarEl)) {
+                        const img = document.createElement('img')
+                        img.src = `${_apiBase()}/api/v1/uploads/profile_pictures/${found.contact_profile_picture}`
+                        img.style.cssText = 'width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;flex-shrink:0;'
+                        img.onerror = () => img.replaceWith(avatarEl.cloneNode(true))
+                        avatarEl.replaceWith(img)
+                        // Update cache
+                        const existing = _contacts.find(c => String(c.contact_id) === String(contactId) && c.contact_role === contactRole)
+                        if (existing) existing.contact_profile_picture = found.contact_profile_picture
+                        else _contacts.push({ contact_id: contactId, contact_role: contactRole, contact_profile_picture: found.contact_profile_picture })
+                    }
+                }
+            }).catch(() => {})
+        }
+
         toast.innerHTML = `
-            <div style="width:36px;height:36px;border-radius:50%;background:${color};
-                        display:flex;align-items:center;justify-content:center;
-                        font-weight:700;font-size:15px;flex-shrink:0;">${initial}</div>
+            ${avatarHtmlStr}
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:700;font-size:13px;margin-bottom:2px;">${escHtml(name)}</div>
                 <div style="font-size:11px;opacity:0.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">${roleLabel}</div>
@@ -1228,7 +1347,11 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             }
             hideToast(toast)
             // Open chat panel then navigate to the conversation
-            if (!_isOpen) {
+            if (_isMinimized) {
+                // Restore from minimized then open the conversation
+                window.minimizeChat()
+                setTimeout(() => window._chatOpenConv(contactId, contactRole, name), 150)
+            } else if (!_isOpen) {
                 window.toggleChat()
                 setTimeout(() => window._chatOpenConv(contactId, contactRole, name), 350)
             } else {
@@ -1269,7 +1392,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         }
 
         // Detect newly unread contacts and show toast
-        if (!_isOpen) {
+        if (!_isOpen || _isMinimized) {
             const contacts = data.contacts || []
             contacts.forEach(c => {
                 const id         = c.contact_id
@@ -1281,6 +1404,15 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 const currUnread = parseInt(c.unread) || 0
                 if (currUnread > prevUnread && currUnread > 0) {
                     showMessageToast(senderName, role, c.last_message || 'New message', id, role)
+                    // Update bubble unread badge when minimized
+                    if (_isMinimized) {
+                        const bubbleUnread = document.getElementById('chatMiniBubbleUnread')
+                        if (bubbleUnread) {
+                            const totalUnread = Object.values(_lastUnreadContacts).reduce((a, b) => a + b, 0) + (currUnread - prevUnread)
+                            bubbleUnread.textContent = totalUnread > 99 ? '99+' : totalUnread
+                            bubbleUnread.classList.add('visible')
+                        }
+                    }
                 }
                 _lastUnreadContacts[key] = currUnread
             })
@@ -1302,6 +1434,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 }
                 _lastUnreadContacts[key] = currUnread
             })
+            // Always check reaction notifications regardless of panel state
+            _checkReactionNotifications()
         }
     }, 8000)
 
@@ -1316,7 +1450,12 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                 const meta = n.meta || {}
                 // Only show toast if the reactor is not me
                 if (String(meta.reactor_id) !== String(myId) || meta.reactor_role !== myRole) {
-                    showMessageToast(n.title, meta.reactor_role || 'user', n.message, meta.reactor_id, meta.reactor_role, 'reaction')
+                    // Use live name from cached contacts if available
+                    const reactorContact = (_contacts || []).find(c =>
+                        String(c.contact_id) === String(meta.reactor_id) && c.contact_role === meta.reactor_role
+                    )
+                    const reactorName = reactorContact?.contact_name || n.title
+                    showMessageToast(reactorName, meta.reactor_role || 'user', n.message, meta.reactor_id, meta.reactor_role, 'reaction')
                 }
                 // If the conversation is open, refresh messages to show the reaction
                 if (_convContact &&

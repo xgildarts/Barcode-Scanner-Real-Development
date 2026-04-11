@@ -280,7 +280,8 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
 
         // Send SMS to Guardian
         const smsMiddle = student_middlename ? student_middlename.charAt(0).toUpperCase() + '.' : '';
-        await services.sendSMS(student_guardian_number, `${student_firstname}${smsMiddle ? ' ' + smsMiddle : ''} ${student_lastname} Your child has attended school today.`);
+        const _smsTime = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true });
+        await services.sendSMS(student_guardian_number, `Pan Pacific University: ${student_firstname}${smsMiddle ? ' ' + smsMiddle : ''} ${student_lastname} attended class today at ${_smsTime}.`);
 
         res.json({ ok: true, message: response })
 
@@ -495,6 +496,7 @@ teacher.put('/change_teacher_name', async (req, res) => {
         const decodedToken = services.verifyToken(token)
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
         const result = await services.updateTeacherName(decodedToken.teacher_id, newName)
+        services.updateMessagesName(decodedToken.teacher_id, 'teacher', newName).catch(() => {})
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name || newName, 'teacher', 'CHANGE_NAME', 'Teacher', decodedToken.teacher_id, newName, `Changed name to: ${newName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({ ok: true, message: 'Successfully updated new name!', content: result})
     } catch(err) {
@@ -812,6 +814,17 @@ teacher.get('/messages/notifications', async (req, res) => {
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
 })
 
+
+// DELETE /messages/notifications/:id
+teacher.delete('/messages/notifications/:id', async (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        await services.deleteMsgNotification(parseInt(req.params.id), tok.teacher_id, 'teacher')
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
 // POST /messages/notifications/read
 teacher.post('/messages/notifications/read', async (req, res) => {
     try {
@@ -846,7 +859,7 @@ teacher.get('/messages/reaction-notifications', async (req, res) => {
             (err, rows) => {
                 if (err) return res.json({ ok: true, notifications: [] })
                 const parsed = rows.map(r => ({ ...r, meta: r.meta ? (typeof r.meta === 'string' ? JSON.parse(r.meta) : r.meta) : {} }))
-                res.json({ ok: true, notifications: parsed })
+                services.enrichReactionNotifications(parsed).then(enriched => { res.json({ ok: true, notifications: enriched }) }).catch(() => res.json({ ok: true, notifications: parsed }))
             }
         )
     } catch(err) { res.status(500).json({ ok: false, message: err.message }) }
@@ -871,10 +884,8 @@ teacher.post('/messages/react/:id', async (req, res) => {
             ? msg.receiver_role : msg.sender_role
         // Never notify yourself and never notify super_admin via bell
         const isSelf       = String(receiverId) === String(tok.teacher_id) && receiverRole === 'teacher'
-        const isSuper      = receiverRole === 'super_admin'
-        // Write a short-lived notification row so receiver's poll sees it
-        // Skip if receiver is self or super_admin (super_admin doesn't use this system)
-        if (emoji && !isSelf && !isSuper) {
+        // Write reaction notification for all roles including super_admin
+        if (emoji && !isSelf) {
             services.createNotification(
                 'reaction',
                 'New Reaction',

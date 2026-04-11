@@ -530,18 +530,18 @@ async function getAttendanceHistory() {
     try {
         Swal.fire({ title: 'Loading attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-        // Fetch history and enrolled teachers in parallel
-        const [{ res, data }, teacherRes] = await Promise.all([
+        // Fetch history, enrolled teachers, AND class sessions in parallel
+        const [{ res, data }, teacherRes, sessionRes] = await Promise.all([
             apiCall('/students/get_attendance_history_record'),
-            apiCall('/students/enrolled_teachers')
+            apiCall('/students/enrolled_teachers'),
+            apiCall('/students/class_sessions')
         ]);
         Swal.close();
 
         if (!res.ok) { Swal.close(); return Swal.fire({ icon: 'error', title: 'Error', text: data.message }); }
 
-        // Build serial → teacher_name map from the student's own enrolled teachers
+        // Build serial → teacher info map from enrolled teachers
         const teacherMap = {};
-        const enrolledSubjects = new Set(); // subject names this student is enrolled in
         if (teacherRes.res.ok && teacherRes.data.content) {
             teacherRes.data.content.forEach(t => {
                 if (t.teacher_barcode_scanner_serial_number) {
@@ -550,24 +550,11 @@ async function getAttendanceHistory() {
                         subject: t.subject || ''
                     };
                 }
-                if (t.subject) enrolledSubjects.add(t.subject);
             });
         }
 
         const realRecords = data.content || [];
-
-        // Derive student_id_number from first real record (all belong to same student)
         const studentIdNumber = realRecords.length ? realRecords[0].student_id_number : null;
-
-        // Find all unique class dates per subject (days where ANY record exists = class was held)
-        const classDates = {}; // subject → Set<dateString>
-        realRecords.forEach(r => {
-            const subj = r.subject || '';
-            const date = r.attendance_date ? String(r.attendance_date).split('T')[0] : '';
-            if (!subj || !date) return;
-            if (!classDates[subj]) classDates[subj] = new Set();
-            classDates[subj].add(date);
-        });
 
         // Build lookup of existing records: "subject|date"
         const existingKeys = new Set();
@@ -576,28 +563,30 @@ async function getAttendanceHistory() {
             existingKeys.add(`${r.subject || ''}|${date}`);
         });
 
-        // Synthesise virtual Absent rows for each class day with no record for this student
+        // Use real class sessions from the backend to synthesize absent rows.
+        // This works even when the student has zero records for a subject.
         const virtualAbsents = [];
-        Object.entries(classDates).forEach(([subj, dates]) => {
-            // Find the teacher serial for this subject
-            const teacherEntry = Object.entries(teacherMap).find(([, v]) => v.subject === subj);
-            const serial = teacherEntry ? teacherEntry[0] : null;
+        const classSessions = (sessionRes.res.ok && sessionRes.data.content) ? sessionRes.data.content : [];
 
-            dates.forEach(date => {
-                const key = `${subj}|${date}`;
-                if (!existingKeys.has(key)) {
-                    virtualAbsents.push({
-                        attendance_date:                   date,
-                        attendance_time:                   null,
-                        subject:                           subj,
-                        teacher_barcode_scanner_serial_number: serial,
-                        teacher_name:                      null,
-                        student_id_number:                 studentIdNumber,
-                        attendance_status:                 'Absent',
-                        _virtual:                          true
-                    });
-                }
-            });
+        classSessions.forEach(session => {
+            const subj   = session.subject || '';
+            const date   = session.class_date ? String(session.class_date).split('T')[0] : '';
+            const serial = session.teacher_barcode_scanner_serial_number;
+            if (!subj || !date) return;
+
+            const key = `${subj}|${date}`;
+            if (!existingKeys.has(key)) {
+                virtualAbsents.push({
+                    attendance_date:                      date,
+                    attendance_time:                      null,
+                    subject:                              subj,
+                    teacher_barcode_scanner_serial_number: serial,
+                    teacher_name:                         null,
+                    student_id_number:                    studentIdNumber,
+                    attendance_status:                    'Absent',
+                    _virtual:                             true
+                });
+            }
         });
 
         const allRecords = [...realRecords, ...virtualAbsents];
@@ -607,7 +596,7 @@ async function getAttendanceHistory() {
             return;
         }
 
-        // Sort by date descending (most recent first)
+        // Sort by date descending
         allRecords.sort((a, b) => {
             const da = a.attendance_date ? String(a.attendance_date).split('T')[0] : '';
             const db = b.attendance_date ? String(b.attendance_date).split('T')[0] : '';
@@ -617,7 +606,6 @@ async function getAttendanceHistory() {
         body.innerHTML = allRecords.map(d => {
             const status = d.attendance_status || 'Present';
             const statusColor = { Present: '#27ae60', Late: '#e67e22', Absent: '#e74c3c', Excused: '#8e44ad' }[status] || '#555';
-            // Resolve teacher name from enrolled teachers map using the record's serial number
             const teacherEntry = d.teacher_barcode_scanner_serial_number
                 ? teacherMap[d.teacher_barcode_scanner_serial_number]
                 : null;

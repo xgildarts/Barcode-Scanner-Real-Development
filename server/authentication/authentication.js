@@ -9,6 +9,11 @@ router.get('/', (req, res) => {
 });
 
 // Student Registration API
+const ALLOWED_EMAIL_DOMAIN = '@panpacificu.edu.ph'
+function isValidInstitutionEmail(email) {
+    return typeof email === 'string' && email.trim().toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN)
+}
+
 router.post('/student_registration', async (req, res) => {
     try {
         const {
@@ -24,6 +29,9 @@ router.post('/student_registration', async (req, res) => {
             device_id
         } = req.body;
 
+        if (!isValidInstitutionEmail(email))
+            return res.status(400).json({ ok: false, message: 'Email must end with @panpacificu.edu.ph.' });
+
         const isDuplicate = await services.checkStudentAccountDuplication(email, idNumber);
         if (isDuplicate) {
             return res.json({ ok: false, message: 'Email or ID number already registered' });
@@ -36,7 +44,7 @@ router.post('/student_registration', async (req, res) => {
         await services.studentRegistration(
             idNumber, firstName, middleName, lastName, email,
             hashedPassword, yearLevel, guardianContact, program,
-            locationGenerated, barcode, device_id
+            locationGenerated, barcode, device_id || ''
         );
 
         services.createNotification(
@@ -49,7 +57,7 @@ router.post('/student_registration', async (req, res) => {
         res.json({ ok: true, message: 'Successfully registered!' });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ ok: false, message: 'Server error' });
+        res.status(500).json({ ok: false, message: error?.message || error?.sqlMessage || 'Server error' });
     }
 });
 
@@ -94,6 +102,8 @@ router.post('/teacher_registration', async (req, res) => {
         const decodedToken = services.verifyToken(token);
         // FIX: null check was missing — an expired/invalid token caused TypeError crash
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' });
+        if (!isValidInstitutionEmail(email))
+            return res.status(400).json({ ok: false, message: 'Email must end with @panpacificu.edu.ph.' });
         const result = await services.teacherRegistration(fullName, email, password, department, decodedToken.admin_id);
         res.json({ ok: true, message: result });
     } catch (err) {
@@ -125,6 +135,8 @@ router.post('/guard_registration', async (req, res) => {
         const decodedToken = services.verifyToken(token);
         // FIX: null check was missing — an expired/invalid token caused TypeError crash
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' });
+        if (!isValidInstitutionEmail(guard_email))
+            return res.status(400).json({ ok: false, message: 'Email must end with @panpacificu.edu.ph.' });
         const result = await services.guardRegistration(guard_name, guard_email, guard_password, guard_designated_location, decodedToken.admin_id);
         res.json({ ok: true, message: result });
     } catch (err) {

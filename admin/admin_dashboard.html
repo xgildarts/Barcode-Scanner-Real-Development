@@ -21,6 +21,13 @@
     <script src="../css/chat.js"></script>
     <link rel="stylesheet" href="../css/image-crop.css">
     <script src="../css/image-crop.js"></script>
+    <style>
+        .pw-strength-wrap { display: none; width: 100%; margin: 3px 0 6px; }
+        .pw-strength-wrap.visible { display: block !important; }
+        .pw-strength-bar { width: 100% !important; height: 4px !important; border-radius: 2px; background: #e0e0e0; overflow: hidden; position: relative; display: block !important; }
+        .pw-strength-bar::after { content: ''; display: block !important; height: 100% !important; border-radius: 2px; width: var(--pw-width, 0%); background: var(--pw-color, #e0e0e0); transition: width 0.3s ease, background 0.3s ease; }
+        .pw-strength-label { font-size: 12px; font-weight: 400; color: var(--pw-color, #aaa); transition: color 0.3s; display: block; margin-top: 2px; }
+    </style>
 </head>
 <body>
     <!-- Sidebar Overlay -->
@@ -29,7 +36,7 @@
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-avatar-wrap" onclick="document.getElementById('adminProfilePicInput').click()" title="Change profile picture">
+            <div class="sidebar-avatar-wrap" onclick="document.getElementById('adminProfilePicInput').click()" data-tooltip="Change profile picture" data-tooltip-pos="right">
                 <div class="sidebar-profile" id="sidebarAvatar">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -52,7 +59,7 @@
         </div>
 
         <div class="sidebar-menu">
-            <button class="menu-item" onclick="navigateTo('dashboard')">
+            <button class="menu-item" onclick="navigateTo('dashboard')" data-tooltip="View dashboard overview" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -63,7 +70,7 @@
                 </div>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('eventAttendance')">
+            <button class="menu-item" onclick="navigateTo('eventAttendance')" data-tooltip="View event attendance" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -75,7 +82,7 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('eventAttendanceHistory')">
+            <button class="menu-item" onclick="navigateTo('eventAttendanceHistory')" data-tooltip="View event attendance history" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -87,7 +94,7 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('academicSetup')">
+            <button class="menu-item" onclick="navigateTo('academicSetup')" data-tooltip="Manage programs and subjects" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -99,7 +106,7 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('studentAccountManagement')">
+            <button class="menu-item" onclick="navigateTo('studentAccountManagement')" data-tooltip="Manage student accounts" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -111,7 +118,7 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('teacherAccountManagement')">
+            <button class="menu-item" onclick="navigateTo('teacherAccountManagement')" data-tooltip="Manage teacher accounts" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -123,7 +130,7 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('guardAccountManagement')">
+            <button class="menu-item" onclick="navigateTo('guardAccountManagement')" data-tooltip="Manage guard accounts" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -135,7 +142,7 @@
                 <span class="menu-item-arrow">›</span>
             </button>
 
-            <button class="menu-item" onclick="navigateTo('adminSettings')">
+            <button class="menu-item" onclick="navigateTo('adminSettings')" data-tooltip="Go to settings" data-tooltip-pos="right">
                 <div class="menu-item-content">
                     <div class="menu-item-icon">
                         <svg viewBox="0 0 24 24">
@@ -154,36 +161,36 @@
 
         <!--header-->
         <div class="top-bar">
-            <button class="menu-btn">
+            <button class="menu-btn" data-tooltip="Open / close navigation menu" data-tooltip-pos="bottom">
                 <span></span>
                 <span></span>
                 <span></span>
             </button>
             <span class="title-header" id="titleHeader">Sample header</span>
             <div class="top-actions">
-                                <button class="chat-btn" onclick="toggleChat()" title="Messages">
+                                <button class="chat-btn" onclick="toggleChat()" data-tooltip="Messages" data-tooltip-pos="bottom">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
                     </svg>
                     <span class="chat-badge" id="chatBadge"></span>
                 </button>
-<button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" title="Notifications">
+<button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" data-tooltip="Notifications" data-tooltip-pos="bottom">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
                     </svg>
                     <span class="notif-badge" id="notifBadge" style="display:none">0</span>
                 </button>
-                <button class="settings-btn" onclick="navigateTo('adminSettings')">
+                <button class="settings-btn" onclick="navigateTo('adminSettings')" data-tooltip="Go to Settings" data-tooltip-pos="bottom">
                     <svg viewBox="0 0 24 24">
                         <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                     </svg>
                 </button>
-                <button class="profile-btn" onclick="navigateTo('adminSettings')" title="Go to Settings">
+                <button class="profile-btn" onclick="navigateTo('adminSettings')" data-tooltip="Go to Settings" data-tooltip-pos="bottom">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                 </button>
-                <button class="top-logout-btn" onclick="logout()" title="Log out">
+                <button class="top-logout-btn" onclick="logout()" data-tooltip="Log out" data-tooltip-pos="bottom">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                         <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
                     </svg>
@@ -285,42 +292,42 @@
                             <svg class="search-icon" viewBox="0 0 24 24">
                                 <path fill="#7aadaa" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                             </svg>
-                            <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendance">
+                            <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendance" autocomplete="off" data-tooltip="Search students by name or ID">
                         </div>
                         <div class="live-badge">
                             <span class="live-dot" id="adminLiveDotEvent"></span>
                             LIVE
                         </div>
-                        <button class="export-btn" onclick="exportTableToExcel('eventAttendanceTable', 'Event Attendance')">
+                        <button class="export-btn" onclick="exportTableToExcel('eventAttendanceTable', 'Event Attendance')" data-tooltip="Download as Excel file">
                             <svg viewBox="0 0 24 24">
                                 <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
                             </svg>
                             Export Excel
                         </button>
-                        <button class="export-btn" onclick="printSection('eventAttendanceTable','Event Attendance')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
+                        <button class="export-btn" onclick="printSection('eventAttendanceTable','Event Attendance')" style="background:#1a4545;" data-tooltip="Print event attendance list"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                     </div>
             
                     <div class="active-event-bar">
                         <svg width="18" height="18" viewBox="0 0 24 24" class="active-event-bar__icon"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
                         <span class="active-event-bar__label">Active Event Setup</span>
-                        <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name">
-                        <button onclick="handleSetEvent()" class="set-event-button">Set Event</button>
+                        <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name" data-tooltip="Type the event name here">
+                        <button onclick="handleSetEvent()" class="set-event-button" data-tooltip="Save and activate this event">Set Event</button>
                         <span id="activeEventDisplay" class="active-event-bar__badge"></span>
                     </div>
 
                     <div class="filters-row" style="margin-bottom:10px;">
-                        <select class="filter-select" id="eventStatusFilter">
+                        <select class="filter-select" id="eventStatusFilter" data-tooltip="Filter by attendance status">
                             <option value="">All Status</option>
                             <option value="TIME IN">TIME IN</option>
                             <option value="TIME OUT">TIME OUT</option>
                         </select>
-                        <select class="filter-select" id="eventNameFilter">
+                        <select class="filter-select" id="eventNameFilter" data-tooltip="Filter by event name">
                             <option value="">All Events</option>
                         </select>
-                        <select class="filter-select" id="eventYearFilter">
+                        <select class="filter-select" id="eventYearFilter" data-tooltip="Filter by year level">
                             <option value="">All Year Levels</option>
                         </select>
-                        <select class="filter-select" id="eventProgramFilter">
+                        <select class="filter-select" id="eventProgramFilter" data-tooltip="Filter by program">
                             <option value="">All Programs</option>
                         </select>
                     </div>
@@ -357,48 +364,48 @@
                             <svg class="search-icon" viewBox="0 0 24 24">
                                 <path fill="#7aadaa" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                             </svg>
-                            <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendanceHistory">
+                            <input type="text" class="search-input" placeholder="Search students..." id="searchFilterEventAttendanceHistory" autocomplete="off" data-tooltip="Search students by name or ID">
                         </div>
                         <div class="live-badge">
                             <span class="live-dot" id="adminLiveDotEventHist"></span>
                             LIVE
                         </div>
-                        <button class="export-btn calendar-btn">
+                        <button class="export-btn calendar-btn" data-tooltip="Filter by date">
                             <svg viewBox="0 0 24 24">
                                 <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
                             </svg>
                             Date
                         </button>
-                        <button class="export-btn" id="clearDateFilter" onclick="clearDateFilter()" style="display:none;">
+                        <button class="export-btn" id="clearDateFilter" onclick="clearDateFilter()" style="display:none;" data-tooltip="Clear date filter">
                             <svg viewBox="0 0 24 24">
                                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                             </svg>
                             Clear
                         </button>
-                        <button class="export-btn" onclick="exportTableToExcel('eventAttendanceHistoryTable', 'Event Attendance History')">
+                        <button class="export-btn" onclick="exportTableToExcel('eventAttendanceHistoryTable', 'Event Attendance History')" data-tooltip="Download as Excel file">
                             <svg viewBox="0 0 24 24">
                                 <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
                             </svg>
                             Export Excel
                         </button>
-                        <button class="export-btn" onclick="printSection('eventAttendanceHistoryTable','Event Attendance History')" style="background:#1a4545;"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
+                        <button class="export-btn" onclick="printSection('eventAttendanceHistoryTable','Event Attendance History')" style="background:#1a4545;" data-tooltip="Print attendance history"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                         <input type="text" id="datePicker" class="hidden-date-picker">
                     </div>
             
                     <div class="filters-row">
-                        <select class="filter-select" id="eventHistoryYearFilter">
+                        <select class="filter-select" id="eventHistoryYearFilter" data-tooltip="Filter by year level">
                             <option value="">All Year Levels</option>
                             <!-- Populated dynamically from year_level table -->
                         </select>
-                        <select class="filter-select" id="eventHistoryProgramFilter">
+                        <select class="filter-select" id="eventHistoryProgramFilter" data-tooltip="Filter by program">
                             <option value="">All Programs</option>
                         </select>
-                        <select class="filter-select" id="eventHistoryStatusFilter">
+                        <select class="filter-select" id="eventHistoryStatusFilter" data-tooltip="Filter by status">
                             <option value="">All Status</option>
                             <option value="TIME IN">TIME IN</option>
                             <option value="TIME OUT">TIME OUT</option>
                         </select>
-                        <select class="filter-select" id="eventHistoryNameFilter">
+                        <select class="filter-select" id="eventHistoryNameFilter" data-tooltip="Filter by event name">
                             <option value="">All Events</option>
                         </select>
                     </div>
@@ -430,12 +437,12 @@
         <section class="sections" id="adminSettings">
             <div class="profile-section">
                 <div class="avatar-container">
-                    <div class="avatar" id="adminAvatar" onclick="document.getElementById('adminProfilePicInput').click()" title="Change profile picture">
+                    <div class="avatar" id="adminAvatar" onclick="document.getElementById('adminProfilePicInput').click()" data-tooltip="Change profile picture">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                         </svg>
                     </div>
-                    <div class="camera-badge" onclick="document.getElementById('adminProfilePicInput').click()" style="cursor:pointer;">
+                    <div class="camera-badge" onclick="document.getElementById('adminProfilePicInput').click()" style="cursor:pointer;" data-tooltip="Change profile picture">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
@@ -445,7 +452,7 @@
                 </div>
                 <div class="profile-name" id="settingsProfileName">Admin</div>
                 <div class="profile-email" id="profileEmailTop"></div>
-                <button class="edit-profile-btn" onclick="editProfileName()">
+                <button class="edit-profile-btn" onclick="editProfileName()" data-tooltip="Edit your name">
                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     Edit
                 </button>
@@ -457,7 +464,7 @@
                     <div class="info-row">
                         <span class="info-label">Name</span>
                         <span class="info-value" id="adminProfileName">—</span>
-                        <button class="edit-btn" onclick="editProfileName()">
+                        <button class="edit-btn" onclick="editProfileName()" data-tooltip="Edit name">
                             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                             Edit
                         </button>
@@ -470,17 +477,17 @@
                     <div class="info-card">
                         <div class="form-group">
                             <label class="form-label">Current Password</label>
-                            <input type="password" class="password-input" id="currentPassword" placeholder="••••••••">
+                            <input type="password" class="password-input" id="currentPassword" placeholder="••••••••" data-tooltip="Enter your current password">
                         </div>
                         <div class="form-group">
                             <label class="form-label">New Password</label>
-                            <input type="password" class="password-input" id="newPassword" placeholder="••••••••">
+                            <input type="password" class="password-input" id="newPassword" placeholder="••••••••" data-tooltip="Enter your new password">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Confirm New Password</label>
-                            <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••">
+                            <input type="password" class="password-input" id="confirmPassword" placeholder="••••••••" data-tooltip="Re-enter your new password">
                         </div>
-                        <button class="update-password-btn" onclick="updatePassword()">
+                        <button class="update-password-btn" onclick="updatePassword()" data-tooltip="Save new password">
                             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;flex-shrink:0;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                             Update Password
                         </button>
@@ -496,11 +503,11 @@
                         <div>
                             <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Mode</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                                <button class="theme-mode-btn" id="modeLight" onclick="setThemeMode('light')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;">
+                                <button class="theme-mode-btn" id="modeLight" onclick="setThemeMode('light')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;" data-tooltip="Switch to Light mode">
                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
                                     <span style="font-size:0.8rem;font-weight:700;">Light</span>
                                 </button>
-                                <button class="theme-mode-btn" id="modeDark" onclick="setThemeMode('dark')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;">
+                                <button class="theme-mode-btn" id="modeDark" onclick="setThemeMode('dark')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;border:2px solid var(--surface-border);background:var(--surface);cursor:pointer;transition:all .2s;" data-tooltip="Switch to Dark mode">
                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
                                     <span style="font-size:0.8rem;font-weight:700;">Dark</span>
                                 </button>
@@ -511,11 +518,11 @@
                         <div>
                             <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Font</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                                <button onclick="setThemeFont('system')"  class="font-btn" data-font="system"  style="font-family:system-ui;">System Default</button>
-                                <button onclick="setThemeFont('inter')"   class="font-btn" data-font="inter"   style="font-family:'Inter',sans-serif;">Inter</button>
-                                <button onclick="setThemeFont('poppins')" class="font-btn" data-font="poppins" style="font-family:'Poppins',sans-serif;">Poppins</button>
-                                <button onclick="setThemeFont('roboto')"  class="font-btn" data-font="roboto"  style="font-family:'Roboto',sans-serif;">Roboto</button>
-                                <button onclick="setThemeFont('mono')"    class="font-btn" data-font="mono"    style="font-family:'JetBrains Mono',monospace;">Monospace</button>
+                                <button onclick="setThemeFont('system')"  class="font-btn" data-font="system"  style="font-family:system-ui;" data-tooltip="Use system default font">System Default</button>
+                                <button onclick="setThemeFont('inter')"   class="font-btn" data-font="inter"   style="font-family:'Inter',sans-serif;" data-tooltip="Use Inter font">Inter</button>
+                                <button onclick="setThemeFont('poppins')" class="font-btn" data-font="poppins" style="font-family:'Poppins',sans-serif;" data-tooltip="Use Poppins font">Poppins</button>
+                                <button onclick="setThemeFont('roboto')"  class="font-btn" data-font="roboto"  style="font-family:'Roboto',sans-serif;" data-tooltip="Use Roboto font">Roboto</button>
+                                <button onclick="setThemeFont('mono')"    class="font-btn" data-font="mono"    style="font-family:'JetBrains Mono',monospace;" data-tooltip="Use Monospace font">Monospace</button>
                             </div>
                         </div>
 
@@ -523,13 +530,13 @@
                         <div>
                             <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Text Size</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                                <button onclick="setThemeSize('small')"  class="size-btn" data-size="small"  style="font-size:0.78rem;">Small</button>
-                                <button onclick="setThemeSize('medium')" class="size-btn" data-size="medium" style="font-size:0.88rem;">Medium</button>
-                                <button onclick="setThemeSize('large')"  class="size-btn" data-size="large"  style="font-size:1rem;">Large</button>
+                                <button onclick="setThemeSize('small')"  class="size-btn" data-size="small"  style="font-size:0.78rem;" data-tooltip="Use small text size">Small</button>
+                                <button onclick="setThemeSize('medium')" class="size-btn" data-size="medium" style="font-size:0.88rem;" data-tooltip="Use medium text size">Medium</button>
+                                <button onclick="setThemeSize('large')"  class="size-btn" data-size="large"  style="font-size:1rem;" data-tooltip="Use large text size">Large</button>
                             </div>
                         </div>
 
-                        <button onclick="resetTheme()" style="width:100%;padding:10px;background:var(--surface-alt);border:1.5px solid var(--surface-border);border-radius:10px;color:var(--text-secondary);font-size:0.82rem;font-weight:700;cursor:pointer;">↺ Reset to Defaults</button>
+                        <button onclick="resetTheme()" style="width:100%;padding:10px;background:var(--surface-alt);border:1.5px solid var(--surface-border);border-radius:10px;color:var(--text-secondary);font-size:0.82rem;font-weight:700;cursor:pointer;" data-tooltip="Reset all appearance settings to default">↺ Reset to Defaults</button>
                     </div>
                 </div>
 
@@ -550,7 +557,7 @@
                             <div class="stat-tile__value" id="settingsStatStudents">—</div>
                         </div>
                     </div>
-                    <button class="stat-refresh-btn" onclick="loadSettingsStats()">↻ Refresh Stats</button>
+                    <button class="stat-refresh-btn" onclick="loadSettingsStats()" data-tooltip="Refresh system statistics">↻ Refresh Stats</button>
                 </div>
 
                 <!-- Quick Actions -->
@@ -632,7 +639,7 @@
                                 <div class="danger-zone-title">Log Out</div>
                                 <div class="danger-zone-sub">End your current session and return to login</div>
                             </div>
-                            <button onclick="logout()" class="danger-logout-btn">Log Out</button>
+                            <button onclick="logout()" class="danger-logout-btn" data-tooltip="Log out of your account">Log Out</button>
                         </div>
                     </div>
                 </div>
@@ -646,7 +653,7 @@
                     <svg class="search-icon" viewBox="0 0 24 24">
                         <path fill="#7aadaa" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                     </svg>
-                    <input onkeyup="searchFilterStudentsAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterStudentsAccounts">
+                    <input onkeyup="searchFilterStudentsAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterStudentsAccounts" autocomplete="off" data-tooltip="Search students by name or ID">
                 </div>
             </div>
         
@@ -655,7 +662,7 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="navigateTo('registration'); switchRole('student');">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('student');" data-tooltip="Register a new student account">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -671,7 +678,7 @@
                     <svg class="search-icon" viewBox="0 0 24 24">
                         <path fill="#7aadaa" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                     </svg>
-                    <input onkeyup="searchFilterTeachersAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterTeachersAccounts">
+                    <input onkeyup="searchFilterTeachersAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterTeachersAccounts" autocomplete="off" data-tooltip="Search teachers by name">
                 </div>
             </div>
         
@@ -680,7 +687,7 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="navigateTo('registration'); switchRole('teacher');">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('teacher');" data-tooltip="Register a new teacher account">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -696,7 +703,7 @@
                     <svg class="search-icon" viewBox="0 0 24 24">
                         <path fill="#7aadaa" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                     </svg>
-                    <input onkeyup="searchFilterGuardAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterGuardAccounts">
+                    <input onkeyup="searchFilterGuardAccounts()" type="text" class="search-input" placeholder="Search" id="searchFilterGuardAccounts" autocomplete="off" data-tooltip="Search guards by name">
                 </div>
             </div>
         
@@ -705,7 +712,7 @@
             </div>
         
             <div class="register-btn-container">
-                <button class="register-btn" onclick="navigateTo('registration'); switchRole('guard');">
+                <button class="register-btn" onclick="navigateTo('registration'); switchRole('guard');" data-tooltip="Register a new guard account">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -718,7 +725,7 @@
         <section class="sections" id="academicSetup">
             <div class="content-modal">
                 <p class="setup-section-label">Programs</p>
-                <button class="add-program-btn" onclick="openAddModal()">
+                <button class="add-program-btn" onclick="openAddModal()" data-tooltip="Add a new program">
                     <svg viewBox="0 0 24 24">
                         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                     </svg>
@@ -730,7 +737,7 @@
                 </div>
 
                 <p class="setup-section-label">Year Levels</p>
-                <button class="add-program-btn" onclick="openAddYearLevelModal()">
+                <button class="add-program-btn" onclick="openAddYearLevelModal()" data-tooltip="Add a new year level">
                     <svg viewBox="0 0 24 24">
                         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                     </svg>
@@ -751,8 +758,8 @@
                         <input type="text" class="form-input" id="programNameInput" placeholder="Enter program name">
                     </div>
                     <div class="modal-actions">
-                        <button class="modal-btn cancel-btn" onclick="closeAddModal()">Cancel</button>
-                        <button class="modal-btn confirm-btn" onclick="addProgram()">Add</button>
+                        <button class="modal-btn cancel-btn" onclick="closeAddModal()" data-tooltip="Cancel">Cancel</button>
+                        <button class="modal-btn confirm-btn" onclick="addProgram()" data-tooltip="Save new program">Add</button>
                     </div>
                 </div>
             </div>
@@ -766,8 +773,8 @@
                         <input type="text" class="form-input" id="yearLevelNameInput" placeholder="e.g. 1st Year">
                     </div>
                     <div class="modal-actions">
-                        <button class="modal-btn cancel-btn" onclick="closeAddYearLevelModal()">Cancel</button>
-                        <button class="modal-btn confirm-btn" onclick="addYearLevel()">Add</button>
+                        <button class="modal-btn cancel-btn" onclick="closeAddYearLevelModal()" data-tooltip="Cancel">Cancel</button>
+                        <button class="modal-btn confirm-btn" onclick="addYearLevel()" data-tooltip="Save new year level">Add</button>
                     </div>
                 </div>
             </div>
@@ -780,22 +787,22 @@
                 <!-- Role picker cards -->
                 <p style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.6px; margin:0 0 10px;">Select Account Type</p>
                 <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px;">
-                    <button class="reg-role-card active" id="roleCard-guard" onclick="switchRole('guard')">
+                    <button class="reg-role-card active" id="roleCard-guard" onclick="switchRole('guard')" data-tooltip="Register a Guard account">
                         <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
                         <span>Guard</span>
                     </button>
-                    <button class="reg-role-card" id="roleCard-teacher" onclick="switchRole('teacher')">
+                    <button class="reg-role-card" id="roleCard-teacher" onclick="switchRole('teacher')" data-tooltip="Register a Teacher account">
                         <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
                         <span>Teacher</span>
                     </button>
-                    <button class="reg-role-card" id="roleCard-student" onclick="switchRole('student')">
+                    <button class="reg-role-card" id="roleCard-student" onclick="switchRole('student')" data-tooltip="Register a Student account">
                         <svg viewBox="0 0 24 24" style="width:26px;height:26px;fill:currentColor;margin-bottom:6px;"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
                         <span>Student</span>
                     </button>
                 </div>
 
                 <!-- Guard Registration Form -->
-                <form class="form-section active reg-form-card" id="guardForm">
+                <form class="form-section active reg-form-card" id="guardForm" autocomplete="off">
                     <div class="reg-form-header">
                         <div class="reg-form-header-icon" style="background:#e0f2f1;">
                             <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#3d6b6b;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
@@ -813,7 +820,7 @@
                     </div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                        <input type="email" class="form-input" id="guard_email" placeholder="Email Address" required>
+                        <input type="email" class="form-input" id="guard_email" placeholder="example@panpacificu.edu.ph" required autocomplete="off">
                     </div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -829,11 +836,12 @@
                     <div class="reg-section-label">Security</div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                        <input type="password" class="form-input" id="guard_password" placeholder="Password" required>
+                        <input type="password" class="form-input" id="guard_password" placeholder="Password" required autocomplete="new-password" oninput="updatePasswordStrength(this.value,'guard_pw_bar','guard_pw_label')">
                     </div>
+                    <div class="pw-strength-wrap"><div class="pw-strength-bar" id="guard_pw_bar"></div><span class="pw-strength-label" id="guard_pw_label"></span></div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                        <input type="password" class="form-input" id="guard_confirm_password" placeholder="Confirm Password" required>
+                        <input type="password" class="form-input" id="guard_confirm_password" placeholder="Confirm Password" required autocomplete="new-password">
                     </div>
 
                     <button type="submit" class="reg-submit-btn">
@@ -843,7 +851,7 @@
                 </form>
 
                 <!-- Teacher Registration Form -->
-                <form class="form-section reg-form-card" id="teacherForm">
+                <form class="form-section reg-form-card" id="teacherForm" autocomplete="off">
                     <div class="reg-form-header">
                         <div class="reg-form-header-icon" style="background:#e8f5e9;">
                             <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#2e7d32;"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
@@ -861,7 +869,7 @@
                     </div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                        <input type="email" id="teacher_email" name="email" class="form-input" placeholder="Email Address" required>
+                        <input type="email" id="teacher_email" name="email" class="form-input" placeholder="example@panpacificu.edu.ph" required autocomplete="off">
                     </div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
@@ -873,11 +881,12 @@
                     <div class="reg-section-label">Security</div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                        <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required>
+                        <input type="password" id="teacher_password" name="password" class="form-input" placeholder="Password" required autocomplete="new-password" oninput="updatePasswordStrength(this.value,'teacher_pw_bar','teacher_pw_label')">
                     </div>
+                    <div class="pw-strength-wrap"><div class="pw-strength-bar" id="teacher_pw_bar"></div><span class="pw-strength-label" id="teacher_pw_label"></span></div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                        <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required>
+                        <input type="password" id="confirm_password" name="confirmPassword" class="form-input" placeholder="Confirm Password" required autocomplete="new-password">
                     </div>
 
                     <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#2e7d32,#43a047);">
@@ -887,7 +896,7 @@
                 </form>
 
                 <!-- Student Registration Form -->
-                <form class="form-section reg-form-card" id="studentForm">
+                <form class="form-section reg-form-card" id="studentForm" autocomplete="off">
                     <div class="reg-form-header">
                         <div class="reg-form-header-icon" style="background:#e3f2fd;">
                             <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#1565c0;"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
@@ -915,7 +924,7 @@
                     </div>
                     <div class="reg-field">
                         <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                        <input type="email" id="std_email" class="form-input" placeholder="Email Address" required>
+                        <input type="email" id="std_email" class="form-input" placeholder="example@panpacificu.edu.ph" required autocomplete="off">
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                         <div class="reg-field">
@@ -924,7 +933,7 @@
                         </div>
                         <div class="reg-field">
                             <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                            <input type="tel" id="std_contact" class="form-input" placeholder="Guardian Contact" required>
+                            <input type="tel" id="std_contact" class="form-input" placeholder="09XXXXXXXXX" required>
                         </div>
                     </div>
 
@@ -945,15 +954,14 @@
                     </div>
 
                     <div class="reg-section-label">Security</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <div class="reg-field">
-                            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                            <input type="password" id="std_password" class="form-input" placeholder="Password" required>
-                        </div>
-                        <div class="reg-field">
-                            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                            <input type="password" id="std_confirm_password" class="form-input" placeholder="Confirm Password" required>
-                        </div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="std_password" class="form-input" placeholder="Password" required autocomplete="new-password" oninput="updatePasswordStrength(this.value,'std_pw_bar','std_pw_label')">
+                    </div>
+                    <div class="pw-strength-wrap"><div class="pw-strength-bar" id="std_pw_bar"></div><span class="pw-strength-label" id="std_pw_label"></span></div>
+                    <div class="reg-field">
+                        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <input type="password" id="std_confirm_password" class="form-input" placeholder="Confirm Password" required autocomplete="new-password">
                     </div>
 
                     <button type="submit" class="reg-submit-btn" style="background:linear-gradient(135deg,#1565c0,#1976d2);">
@@ -1157,7 +1165,10 @@
                     <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     Messages
                 </div>
-                <button class="chat-close-btn" onclick="closeChat()">×</button>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button class="chat-minimize-btn" onclick="minimizeChat()" data-tooltip="Minimize" data-tooltip-pos="bottom">−</button>
+                    <button class="chat-close-btn" onclick="closeChat()">×</button>
+                </div>
             </div>
             <!-- Contact list view -->
             <div class="chat-view active" id="chatListView">
@@ -1193,13 +1204,13 @@
                 <div class="chat-messages" id="chatMessages"></div>
                 <div id="chatFilePreview" class="chat-file-preview-bar"></div>
                 <div class="chat-input-row">
-                    <label class="chat-attach-btn" title="Attach file (max 100MB)">
+                    <label class="chat-attach-btn" data-tooltip="Attach file (max 100MB)">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                             <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
                         </svg>
                         <input type="file" id="chatFileInput" style="display:none" accept="*/*">
                     </label>
-                    <button class="chat-emoji-btn" id="chatEmojiBtn" title="Emoji" type="button">
+                    <button class="chat-emoji-btn" id="chatEmojiBtn" data-tooltip="Emoji" type="button">
                         😊
                     </button>
                                         <textarea class="chat-input" id="chatInput" placeholder="Type a message..." rows="1"></textarea>

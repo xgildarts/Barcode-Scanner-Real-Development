@@ -78,32 +78,36 @@
 .msg-notif-time { font-size: 10px; color: #aaa; margin-top: 3px; }
 .msg-notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; flex-shrink: 0; margin-top: 6px; }
 .msg-notif-overlay { position: fixed; inset: 0; z-index: 3999; }
+.msg-notif-item { position:relative !important; }
+.notif-delete-btn { position:absolute; top:6px; right:6px; background:none; border:none; color:#aaa; font-size:16px; cursor:pointer; line-height:1; padding:2px 5px; border-radius:4px; opacity:0; transition:opacity 0.15s; }
+.msg-notif-item:hover .notif-delete-btn { opacity:1; }
+.notif-delete-btn:hover { color:#e53935; background:#ffebee; }
 </style>
 </head>
 <body>
 
     <div class="header">
-        <button class="go-back-btn" id="goBackBtn" onclick="goBackBtn()">
+        <button class="go-back-btn" id="goBackBtn" onclick="goBackBtn()" data-tooltip="Go back" data-tooltip-pos="bottom">
         <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
     </button>
         <h1 class="title" id="title">Student Dashboard</h1>
         <div style="display:flex;align-items:center;gap:6px;">
-            <button class="settings-btn" onclick="tab('settings')">
+            <button class="settings-btn" onclick="tab('settings')" data-tooltip="Open Settings" data-tooltip-pos="bottom">
                 <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
             </button>
-                <button class="msg-notif-btn" id="msgNotifBtn" onclick="toggleMsgNotifPanel()" title="Notifications">
+                <button class="msg-notif-btn" id="msgNotifBtn" onclick="toggleMsgNotifPanel()" data-tooltip="Notifications" data-tooltip-pos="bottom">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
         <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
     </svg>
     <span class="msg-notif-badge" id="msgNotifBadge">0</span>
 </button>
-            <button class="chat-btn student-variant" onclick="toggleChat()" title="Messages">
+            <button class="chat-btn student-variant" onclick="toggleChat()" data-tooltip="Messages" data-tooltip-pos="bottom">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
                     </svg>
                     <span class="chat-badge" id="chatBadge"></span>
                 </button>
-            <button class="student-logout-btn" onclick="logout()" title="Log out">
+            <button class="student-logout-btn" onclick="logout()" data-tooltip="Log out" data-tooltip-pos="bottom">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                     <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
                 </svg>
@@ -115,12 +119,12 @@
     <section id="generateBarcode" class="sections">
         <div class="profile-section">
             <div class="avatar-container">
-                <div class="avatar">
+                <div class="avatar" data-tooltip="Click to change profile picture">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                 </div>
-                <div class="camera-icon">
+                <div class="camera-icon" data-tooltip="Change profile picture">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                         <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
@@ -140,13 +144,13 @@
 
             <!-- Type Selector -->
             <div class="code-type-selector">
-                <button class="code-type-btn active" id="btnBarcode" onclick="setCodeType('barcode')">
+                <button class="code-type-btn active" id="btnBarcode" onclick="setCodeType('barcode')" data-tooltip="Switch to Barcode">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
                         <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
                     </svg>
                     Barcode
                 </button>
-                <button class="code-type-btn" id="btnQr" onclick="setCodeType('qr')">
+                <button class="code-type-btn" id="btnQr" onclick="setCodeType('qr')" data-tooltip="Switch to QR Code">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
                         <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm13 3h2v2h-2v-2zm0-5h2v2h-2v-2zm-4 0h2v2h-2v-2zm0 5h2v2h-2v-2zm4-3h-2v-2h2v2z"/>
                     </svg>
@@ -166,7 +170,7 @@
                 </div>
             </div>
     
-            <button class="generate-btn" onclick="pickTeacherThenGenerate()">Generate today's code</button>
+            <button class="generate-btn" onclick="pickTeacherThenGenerate()" data-tooltip="Generate your attendance code for today">Generate today's code</button>
         </div>
     </section>
 
@@ -175,12 +179,12 @@
         
         <div class="profile-section">
             <div class="avatar-container">
-                <div class="avatar">
+                <div class="avatar" data-tooltip="Click to change profile picture">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                 </div>
-                <div class="camera-icon">
+                <div class="camera-icon" data-tooltip="Change profile picture">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                         <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
@@ -215,13 +219,13 @@
     </section>
 
     <div class="action-buttons"  id="actionButtons">
-        <button id="btn-generateBarcode" class="action-btn" onclick="tab('generateBarcode')">
+        <button id="btn-generateBarcode" class="action-btn" onclick="tab('generateBarcode')" data-tooltip="Generate your barcode or QR code" >
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
             </svg>
             Generate Barcode
         </button>
-        <button id="btn-attendanceHistory" class="action-btn" onclick="tab('attendanceHistory')">
+        <button id="btn-attendanceHistory" class="action-btn" onclick="tab('attendanceHistory')" data-tooltip="View your attendance history" >
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
@@ -234,12 +238,12 @@
         
         <div class="profile-section">
             <div class="avatar-container">
-                <div class="avatar">
+                <div class="avatar" data-tooltip="Click to change profile picture">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                 </div>
-                <div class="camera-icon">
+                <div class="camera-icon" data-tooltip="Change profile picture">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                         <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/>
@@ -257,7 +261,7 @@
         <div class="content-section">
             <div class="section-title">
                 <span>Edit Profile</span>
-                <button class="edit-profile-btn" onclick="toggleEdit()">Edit Profile</button>
+                <button class="edit-profile-btn" onclick="toggleEdit()" data-tooltip="Edit your profile information">Edit Profile</button>
             </div>
     
             <div class="form-card">
@@ -321,7 +325,7 @@
                         </div>
                     </div>
     
-                    <button class="update-password-btn" onclick="updatePassword()">Update Password</button>
+                    <button class="update-password-btn" onclick="updatePassword()" data-tooltip="Save your new password">Update Password</button>
                 </div>
             </div>
     
@@ -332,11 +336,11 @@
                 <!-- Dark / Light mode -->
                 <div class="s-pref-label">Theme</div>
                 <div class="s-mode-row">
-                    <button class="s-mode-btn" id="s-modeLight" onclick="sSetMode('light')">
+                    <button class="s-mode-btn" id="s-modeLight" onclick="sSetMode('light')" data-tooltip="Switch to Light mode">
                         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
                         Light
                     </button>
-                    <button class="s-mode-btn" id="s-modeDark" onclick="sSetMode('dark')">
+                    <button class="s-mode-btn" id="s-modeDark" onclick="sSetMode('dark')" data-tooltip="Switch to Dark mode">
                         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
                         Dark
                     </button>
@@ -345,23 +349,23 @@
                 <!-- Font family -->
                 <div class="s-pref-label">Font Family</div>
                 <div class="s-font-row">
-                    <button class="s-font-btn" data-font="system"  onclick="sSetFont('system')"  style="font-family:system-ui;">Default</button>
-                    <button class="s-font-btn" data-font="inter"   onclick="sSetFont('inter')"   style="font-family:'Inter',sans-serif;">Inter</button>
-                    <button class="s-font-btn" data-font="poppins" onclick="sSetFont('poppins')" style="font-family:'Poppins',sans-serif;">Poppins</button>
-                    <button class="s-font-btn" data-font="roboto"  onclick="sSetFont('roboto')"  style="font-family:'Roboto',sans-serif;">Roboto</button>
-                    <button class="s-font-btn" data-font="mono"    onclick="sSetFont('mono')"    style="font-family:'JetBrains Mono',monospace;">Mono</button>
+                    <button class="s-font-btn" data-font="system"  onclick="sSetFont('system')"  style="font-family:system-ui;" data-tooltip="Use system default font">Default</button>
+                    <button class="s-font-btn" data-font="inter"   onclick="sSetFont('inter')"   style="font-family:'Inter',sans-serif;" data-tooltip="Use Inter font">Inter</button>
+                    <button class="s-font-btn" data-font="poppins" onclick="sSetFont('poppins')" style="font-family:'Poppins',sans-serif;" data-tooltip="Use Poppins font">Poppins</button>
+                    <button class="s-font-btn" data-font="roboto"  onclick="sSetFont('roboto')"  style="font-family:'Roboto',sans-serif;" data-tooltip="Use Roboto font">Roboto</button>
+                    <button class="s-font-btn" data-font="mono"    onclick="sSetFont('mono')"    style="font-family:'JetBrains Mono',monospace;" data-tooltip="Use Monospace font">Mono</button>
                 </div>
 
                 <!-- Font size -->
                 <div class="s-pref-label">Text Size</div>
                 <div class="s-size-row">
-                    <button class="s-size-btn" data-size="small"  onclick="sSetSize('small')"  style="font-size:11px;">Small</button>
-                    <button class="s-size-btn" data-size="medium" onclick="sSetSize('medium')" style="font-size:13px;">Medium</button>
-                    <button class="s-size-btn" data-size="large"  onclick="sSetSize('large')"  style="font-size:15px;">Large</button>
+                    <button class="s-size-btn" data-size="small"  onclick="sSetSize('small')"  style="font-size:11px;" data-tooltip="Use small text size">Small</button>
+                    <button class="s-size-btn" data-size="medium" onclick="sSetSize('medium')" style="font-size:13px;" data-tooltip="Use medium text size">Medium</button>
+                    <button class="s-size-btn" data-size="large"  onclick="sSetSize('large')"  style="font-size:15px;" data-tooltip="Use large text size">Large</button>
                 </div>
             </div>
 
-            <button class="logout-btn" onclick="logout()">
+            <button class="logout-btn" onclick="logout()" data-tooltip="Log out of your account">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                     <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
                 </svg>
@@ -386,7 +390,10 @@
                     <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     Messages
                 </div>
-                <button class="chat-close-btn" onclick="closeChat()">×</button>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button class="chat-minimize-btn" onclick="minimizeChat()" data-tooltip="Minimize">−</button>
+                    <button class="chat-close-btn" onclick="closeChat()">×</button>
+                </div>
             </div>
             <!-- Contact list view -->
             <div class="chat-view active" id="chatListView">
@@ -422,13 +429,13 @@
                 <div class="chat-messages" id="chatMessages"></div>
                 <div id="chatFilePreview" class="chat-file-preview-bar"></div>
                 <div class="chat-input-row">
-                    <label class="chat-attach-btn" title="Attach file (max 100MB)">
+                    <label class="chat-attach-btn" data-tooltip="Attach file (max 100MB)">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                             <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
                         </svg>
                         <input type="file" id="chatFileInput" style="display:none" accept="*/*">
                     </label>
-                    <button class="chat-emoji-btn" id="chatEmojiBtn" title="Emoji" type="button">
+                    <button class="chat-emoji-btn" id="chatEmojiBtn" data-tooltip="Emoji" type="button">
                         😊
                     </button>
                                         <textarea class="chat-input" id="chatInput" placeholder="Type a message..." rows="1"></textarea>
@@ -525,9 +532,9 @@
             list.innerHTML = '<div class="msg-notif-empty">No notifications yet</div>';
             return;
         }
+        const _ROLE_C = { admin:'#2e7d32', super_admin:'#f57f17', teacher:'#1565c0', student:'#6a1b9a', guard:'#00695c' };
         list.innerHTML = _msgNotifData.map(n => {
             const unread  = !n.is_read;
-            const icon    = n.type === 'reaction' ? (n.emoji || '😀') : n.type === 'file' ? '📎' : '💬';
             const preview = n.type === 'reaction'
                 ? `Reacted ${n.emoji || ''} to your message`
                 : (n.preview ? (n.preview.length > 50 ? n.preview.substring(0,50)+'…' : n.preview) : 'Sent a file');
@@ -536,14 +543,23 @@
             const time = diff < 60 ? 'Just now' : diff < 3600 ? Math.floor(diff/60)+'m ago'
                        : diff < 86400 ? Math.floor(diff/3600)+'h ago'
                        : d.toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+            const senderName = n.sender_name || 'Unknown';
+            const senderRole = n.sender_role || 'student';
+            const initial    = senderName.charAt(0).toUpperCase();
+            const bgColor    = _ROLE_C[senderRole] || '#1a4545';
+            const picFile    = n.sender_picture || null;
+            const avatarHtml = picFile
+                ? `<img src="${BASE_URL || URL_BASED}/uploads/profile_pictures/${picFile}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;flex-shrink:0;" onerror="this.outerHTML='<div style=\'width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;flex-shrink:0;\'>${initial}</div>'">`
+                : `<div style="width:38px;height:38px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:white;flex-shrink:0;">${initial}</div>`;
             return `<div class="msg-notif-item ${unread?'unread':''}" onclick="markMsgNotifRead(${n.id})">
-                <div class="msg-notif-icon">${icon}</div>
+                ${avatarHtml}
                 <div class="msg-notif-body">
-                    <div class="msg-notif-sender">${n.sender_name}</div>
+                    <div class="msg-notif-sender">${senderName}</div>
                     <div class="msg-notif-preview">${preview}</div>
                     <div class="msg-notif-time">${time}</div>
                 </div>
                 ${unread ? '<div class="msg-notif-dot"></div>' : ''}
+                <button class="notif-delete-btn" onclick="event.stopPropagation();deleteNotif(${n.id})" data-tooltip="Delete">×</button>
             </div>`;
         }).join('');
     }
@@ -562,15 +578,33 @@
         closeMsgNotifPanel();
         if (n && n.sender_id && typeof window._chatOpenConv === 'function') {
             const panel = document.getElementById('chatPanel');
-            const isOpen = panel && panel.classList.contains('open');
-            if (!isOpen && typeof toggleChat === 'function') toggleChat();
-            setTimeout(() => {
-                window._chatOpenConv(n.sender_id, n.sender_role || 'teacher', n.sender_name || 'User', n.sender_picture || null);
-            }, isOpen ? 0 : 350);
+            const isMinimized = panel && panel.classList.contains('minimized');
+            const isOpen      = panel && panel.classList.contains('open');
+            if (isMinimized) {
+                if (typeof window.minimizeChat === 'function') window.minimizeChat();
+                setTimeout(() => {
+                    window._chatOpenConv(n.sender_id, n.sender_role || 'teacher', n.sender_name || 'User', n.sender_picture || null);
+                }, 200);
+            } else {
+                if (!isOpen && typeof toggleChat === 'function') toggleChat();
+                setTimeout(() => {
+                    window._chatOpenConv(n.sender_id, n.sender_role || 'teacher', n.sender_name || 'User', n.sender_picture || null);
+                }, isOpen ? 0 : 350);
+            }
         } else if (typeof toggleChat === 'function') {
             toggleChat();
         }
     }
+    async function deleteNotif(id) {
+        _msgNotifData = _msgNotifData.filter(n => String(n.id) !== String(id));
+        renderMsgNotifPanel();
+        fetch(`${BASE_URL || URL_BASED}/students/messages/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('student_token') || '') }
+        }).catch(() => {});
+    }
+    window.deleteNotif = deleteNotif;
+
     window.markMsgNotifRead = markMsgNotifRead;
 
     async function markAllMsgNotifsRead() {
