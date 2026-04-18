@@ -25,8 +25,10 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     let _contacts = []
     let _isSearching = false
     let _convContact = null
-    let _pollInterval = null
+    let _pollInterval     = null
     let _convPollInterval = null
+    let _typingPollInterval = null
+    let _typingSendThrottle = null
     let _isOpen = false
 
     // ── DOM ──────────────────────────────────────────────────
@@ -260,7 +262,9 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
 
         await loadMessages()
         clearInterval(_convPollInterval)
-        _convPollInterval = setInterval(loadMessages, 4000)
+        clearInterval(_typingPollInterval)
+        _convPollInterval   = setInterval(loadMessages, 4000)
+        _typingPollInterval = setInterval(_pollTyping, 2000)
     }
 
     let _lastIncomingMsgId = 0   // tracks last received msg id for in-conv sound
@@ -332,7 +336,13 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
                                 <div class="chat-bubble">
                                     ${unsent
                                         ? `<span class="chat-unsent-label">${sent ? 'You unsent a message' : escHtml(m.sender_name) + ' unsent a message'}</span>`
-                                        : `${m.content ? escHtml(m.content) : ''}${m.file_url ? renderFileBubble(m.file_url, m.file_name, m.file_type) : ''}${m.is_edited ? '<span class="chat-edited-label"> (edited)</span>' : ''}`
+                                        : `${m.reply_to_id && !m.reply_is_unsent
+                                            ? `<div class="chat-reply-quote" onclick="scrollToMsg(${m.reply_to_id})">
+                                                <div class="chat-reply-quote-name">${escHtml(m.reply_sender_name || '')}</div>
+                                                <div class="chat-reply-quote-text">${escHtml((m.reply_content || m.reply_file_name || 'Message').substring(0, 80))}</div>
+                                               </div>`
+                                            : ''}
+                                          ${m.content ? escHtml(m.content) : ''}${m.file_url ? renderFileBubble(m.file_url, m.file_name, m.file_type) : ''}${m.is_edited ? '<span class="chat-edited-label"> (edited)</span>' : ''}`
                                     }
                                 </div>
                             </div>
@@ -430,6 +440,8 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         formData.append('receiver_name', _convContact.name)
         if (content) formData.append('content', content)
         if (file)    formData.append('file', file)
+        if (_replyTo) formData.append('reply_to_id', _replyTo.id)
+        cancelReply()
 
         // Show sending indicator bubble
         const msgList = document.getElementById('chatMessages')
@@ -585,6 +597,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         }
 
         if (!isUnsent) {
+            items += `<div class="chat-ctx-item" onclick="doReply(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg> Reply</div>`
             if (isSent) {
                 items += `<div class="chat-ctx-item" onclick="doEdit(${msgId})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</div>`
             }
@@ -687,6 +700,7 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
     }
 
     let _editingMsgId = null
+    let _replyTo      = null   // { id, senderName, content, fileName }
 
     window.doEdit = function(msgId) {
         closeMsgMenu()
@@ -720,6 +734,64 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
             chatInput.focus()
             chatInput.select()
         }
+    }
+
+    // ── Reply to message ────────────────────────────────────
+    window.doReply = function(msgId) {
+        closeMsgMenu()
+        const msgEl = messagesEl?.querySelector(`[data-id="${msgId}"]`)
+        if (!msgEl) return
+
+        const isSent     = msgEl.classList.contains('sent')
+        const senderName = msgEl.querySelector('.chat-msg-sender')?.textContent?.trim()
+            || (isSent ? 'You' : _convContact?.name || '')
+        const bubbleEl   = msgEl.querySelector('.chat-bubble')
+        const contentTxt = bubbleEl?.querySelector('.chat-file-attach, .chat-file-img')
+            ? '📎 ' + (msgEl.querySelector('.chat-file-name')?.textContent?.trim() || 'file')
+            : bubbleEl?.innerText?.trim() || ''
+
+        // Resolve avatar for whoever sent the message being replied to
+        let replyAvatarHtml
+        if (isSent) {
+            // Replying to own message — use my name/role (no pic stored client-side)
+            replyAvatarHtml = avatarHtml(myName, myRole, null, 28)
+        } else {
+            // Replying to contact's message — use contact's profile picture
+            replyAvatarHtml = avatarHtml(
+                _convContact?.name  || senderName,
+                _convContact?.role  || 'student',
+                _convContact?.profilePicture || null,
+                28
+            )
+        }
+
+        _replyTo = { id: msgId, senderName, content: contentTxt }
+
+        let replyBar = document.getElementById('chatReplyBar')
+        if (!replyBar) {
+            replyBar = document.createElement('div')
+            replyBar.id = 'chatReplyBar'
+            replyBar.className = 'chat-reply-bar'
+            const filePreview = document.getElementById('chatFilePreview')
+            filePreview?.parentNode?.insertBefore(replyBar, filePreview)
+        }
+        replyBar.style.display = 'flex'
+        replyBar.innerHTML = `
+            <div class="chat-reply-bar-accent"></div>
+            ${replyAvatarHtml}
+            <div class="chat-reply-bar-body">
+                <div class="chat-reply-bar-name">${escHtml(senderName)}</div>
+                <div class="chat-reply-bar-preview">${escHtml(contentTxt.substring(0, 80))}${contentTxt.length > 80 ? '…' : ''}</div>
+            </div>
+            <button class="chat-reply-bar-close" onclick="cancelReply()">×</button>
+        `
+        chatInput?.focus()
+    }
+
+    window.cancelReply = function() {
+        _replyTo = null
+        const replyBar = document.getElementById('chatReplyBar')
+        if (replyBar) replyBar.style.display = 'none'
     }
 
     window.cancelEdit = function() {
@@ -915,10 +987,50 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         }
     }
 
+    // ── Typing indicator ────────────────────────────────────
+    async function _pollTyping() {
+        if (!_convContact) return
+        try {
+            const data = await _fetch(`${endpoint}/messages/typing?contact_id=${_convContact.id}&contact_role=${_convContact.role}`)
+            if (data.typing) _showTypingBubble()
+            else _removeTypingBubble()
+        } catch(e) {}
+    }
+
+    function _showTypingBubble() {
+        if (document.getElementById('chatTypingBubble')) return
+        const bubble = document.createElement('div')
+        bubble.id = 'chatTypingBubble'
+        bubble.className = 'chat-msg recv chat-typing-msg'
+        const recvPic = _convContact?.profilePicture || null
+        bubble.innerHTML = `
+            <div class="chat-msg-row chat-msg-row-recv">
+                ${avatarHtml(_convContact?.name || '', _convContact?.role || '', recvPic, 28)}
+                <div class="chat-msg-body">
+                    <div class="chat-msg-sender">${escHtml(_convContact?.name || '')}</div>
+                    <div class="chat-bubble chat-typing-bubble">
+                        <span class="chat-typing-dot"></span>
+                        <span class="chat-typing-dot"></span>
+                        <span class="chat-typing-dot"></span>
+                    </div>
+                </div>
+            </div>`
+        if (messagesEl) {
+            messagesEl.appendChild(bubble)
+            messagesEl.scrollTop = messagesEl.scrollHeight
+        }
+    }
+
+    function _removeTypingBubble() {
+        document.getElementById('chatTypingBubble')?.remove()
+    }
+
     function showListView() {
         convView?.classList.remove('active')
         listView?.classList.add('active')
         clearInterval(_convPollInterval)
+        clearInterval(_typingPollInterval)
+        _removeTypingBubble()
         _convContact = null
     }
 
@@ -956,6 +1068,14 @@ function initChat({ endpoint, getToken, myId, myRole, myName }) {
         chatInput.addEventListener('input', () => {
             chatInput.style.height = 'auto'
             chatInput.style.height = Math.min(chatInput.scrollHeight, 80) + 'px'
+            // Throttle typing events — send at most once every 3s
+            if (!_typingSendThrottle && _convContact) {
+                _fetch(`${endpoint}/messages/typing`, {
+                    method: 'POST',
+                    body: JSON.stringify({ contact_id: _convContact.id, contact_role: _convContact.role })
+                }).catch(() => {})
+                _typingSendThrottle = setTimeout(() => { _typingSendThrottle = null }, 3000)
+            }
         })
 
         // ── Ctrl+V / paste image from clipboard ──────────────

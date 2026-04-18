@@ -260,7 +260,7 @@
        display: block;
        max-height: 460px;
        overflow-y: auto;
-       overflow-x: hidden;
+       overflow-x: visible;
    }
 
    .attendance-table tbody tr {
@@ -288,6 +288,15 @@
        vertical-align: middle;
    }
 
+   /* Full Name — allow wrap so badge isn't clipped */
+   .attendance-table td:nth-child(2) {
+       white-space: normal !important;
+       word-break: break-word;
+       overflow: visible !important;
+       text-overflow: clip !important;
+       line-height: 1.35;
+   }
+
    /* Dark mode */
    [data-theme="dark"] .table-container { background: #1a2535 !important; }
    [data-theme="dark"] .attendance-table thead { background: #1a2d4a !important; }
@@ -297,7 +306,7 @@
    [data-theme="dark"] .attendance-table td { color: #c0d0d8 !important; }
 
    /* ── Mobile: card layout ── */
-   @media (max-width: 640px) {
+   @media (max-width: 768px) {
        .table-container { overflow-x: hidden !important; }
        .attendance-table { min-width: 0 !important; width: 100% !important; display: block !important; }
        .attendance-table thead { display: none !important; }
@@ -330,7 +339,7 @@
    }
 
    /* ── Tablet: 2-column card grid ── */
-   @media (min-width: 641px) and (max-width: 1025px) {
+   @media (min-width: 769px) and (max-width: 1025px) {
        .table-container { overflow-x: hidden !important; }
        .attendance-table { min-width: 0 !important; width: 100% !important; display: block !important; }
        .attendance-table thead { display: none !important; }
@@ -603,7 +612,7 @@
    }
    
    /* Mobile */
-   @media (max-width: 640px) {
+   @media (max-width: 768px) {
        .title-header { font-size: 1rem; }
 
        .search-row {
@@ -612,14 +621,18 @@
        }
 
        .filters-row {
+           flex-direction: column;
+           align-items: stretch;
            gap: 6px;
        }
 
        .filters-row select,
        .filter-select {
-           flex: 1 1 calc(50% - 6px);
+           flex: 1 1 100%;
+           width: 100%;
            min-width: 0;
            max-width: none;
+           box-sizing: border-box;
        }
 
        .export-btn {
@@ -1769,3 +1782,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
 [data-tooltip][data-tooltip-pos="left"]:hover::after {
     transform: translateY(-50%) translateX(0);
 }
+/* Filter hide — higher specificity to override mobile display:block !important on <tr> */
+.filter-hidden,
+.attendance-table tbody tr.filter-hidden,
+.students-table tbody tr.filter-hidden { display: none !important; }

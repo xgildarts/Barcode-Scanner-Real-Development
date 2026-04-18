@@ -131,7 +131,7 @@ function parseUAString(ua) {
     return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
 }
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const URL_BASED = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 const TOKEN = localStorage.getItem('admin_token');
 
 const PAGES = [
@@ -361,13 +361,39 @@ function populateFilterOptions(data, selectId, valueFn, allLabel, storageKey) {
 }
 
 /** Filter a tbody by multiple column-value pairs simultaneously */
+function applyEventNowFilters() {
+    localStorage.setItem('ef_status',  document.getElementById('eventStatusFilter')?.value || '');
+    localStorage.setItem('ef_name',    document.getElementById('eventNameFilter')?.value   || '');
+    localStorage.setItem('ef_year',    document.getElementById('eventYearFilter')?.value   || '');
+    localStorage.setItem('ef_program', document.getElementById('eventProgramFilter')?.value || '');
+    multiFilterTableRows('attendanceBody', [
+        { colIndex: 6, value: document.getElementById('eventStatusFilter')?.value  || '' },
+        { colIndex: 7, value: document.getElementById('eventNameFilter')?.value    || '' },
+        { colIndex: 3, value: document.getElementById('eventYearFilter')?.value    || '' },
+        { colIndex: 2, value: document.getElementById('eventProgramFilter')?.value || '' },
+    ]);
+}
+
+function applyEventHistoryFilters() {
+    localStorage.setItem('ehf_status',  document.getElementById('eventHistoryStatusFilter')?.value  || '');
+    localStorage.setItem('ehf_name',    document.getElementById('eventHistoryNameFilter')?.value    || '');
+    localStorage.setItem('ehf_year',    document.getElementById('eventHistoryYearFilter')?.value    || '');
+    localStorage.setItem('ehf_program', document.getElementById('eventHistoryProgramFilter')?.value || '');
+    multiFilterTableRows('attendanceHistory', [
+        { colIndex: 6, value: document.getElementById('eventHistoryStatusFilter')?.value  || '' },
+        { colIndex: 7, value: document.getElementById('eventHistoryNameFilter')?.value    || '' },
+        { colIndex: 3, value: document.getElementById('eventHistoryYearFilter')?.value    || '' },
+        { colIndex: 2, value: document.getElementById('eventHistoryProgramFilter')?.value || '' },
+    ]);
+}
+
 function multiFilterTableRows(tbodyId, filters) {
     document.querySelectorAll(`#${tbodyId} tr`).forEach(row => {
         const visible = filters.every(({ colIndex, value }) => {
             if (!value) return true;
             return row.cells[colIndex]?.textContent.trim().toLowerCase() === value.toLowerCase();
         });
-        row.style.display = visible ? '' : 'none';
+        row.classList.toggle('filter-hidden', !visible);
     });
 }
 
@@ -376,7 +402,7 @@ function filterTableRows(tbodyEl, searchText) {
     const rows = tbodyEl.getElementsByTagName('tr');
     const lower = searchText.toLowerCase();
     for (const row of rows) {
-        row.style.display = row.textContent.toLowerCase().includes(lower) ? '' : 'none';
+        row.classList.toggle('filter-hidden', !row.textContent.toLowerCase().includes(lower));
     }
 }
 
@@ -391,6 +417,13 @@ function filterCards(containerSelector, cardSelector, searchText) {
 // ============================================================
 // INIT
 // ============================================================
+// Back-button guard: if user logged out, pressing back must not restore the page
+window.addEventListener('pageshow', (event) => {
+    if (!localStorage.getItem('admin_token')) {
+        window.location.replace('admin_login.html');
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     navigateTo('dashboard');
@@ -751,6 +784,7 @@ async function renderEventAttendanceRecord() {
         if (DOM.eventNameFilter)    DOM.eventNameFilter.value    = '';
         if (DOM.eventYearFilter)    DOM.eventYearFilter.value    = '';
         if (DOM.eventProgramFilter) DOM.eventProgramFilter.value = '';
+        applyEventNowFilters(); // re-show all rows after reset
 
         _lastEventCount = data.content.length;
         startAdminPolling();
@@ -790,6 +824,7 @@ async function renderEventHistoryAttendanceRecord() {
         if (DOM.eventHistoryNameFilter)    DOM.eventHistoryNameFilter.value    = '';
         if (DOM.eventHistoryYearFilter)    DOM.eventHistoryYearFilter.value    = '';
         if (DOM.eventHistoryProgramFilter) DOM.eventHistoryProgramFilter.value = '';
+        applyEventHistoryFilters(); // re-show all rows after reset
 
         _lastEventHistCount = data.content.length;
     } catch (err) {
@@ -823,6 +858,7 @@ async function pollAdminSilently() {
                 populateFilterOptions(d1.content, 'eventNameFilter',    d => d.event_name,         'All Events',      'ef_name');
                 populateFilterOptions(d1.content, 'eventYearFilter',    d => d.student_year_level,  'All Year Levels', 'ef_year');
                 populateFilterOptions(d1.content, 'eventProgramFilter', d => d.student_program,    'All Programs',    'ef_program');
+                applyEventNowFilters();
                 showAdminLiveIndicator('adminLiveDotEvent');
                 updateChart();
             }
@@ -849,6 +885,7 @@ async function pollAdminSilently() {
                 populateFilterOptions(d2.content, 'eventHistoryNameFilter',    d => d.event_name,         'All Events',      'ehf_name');
                 populateFilterOptions(d2.content, 'eventHistoryYearFilter',    d => d.student_year_level,  'All Year Levels', 'ehf_year');
                 populateFilterOptions(d2.content, 'eventHistoryProgramFilter', d => d.student_program,    'All Programs',    'ehf_program');
+                applyEventHistoryFilters();
                 showAdminLiveIndicator('adminLiveDotEventHist');
             }
         }
@@ -2134,39 +2171,13 @@ function initEventListeners() {
         filterTableRows(DOM.attendanceHistory, this.value);
     });
 
-    // Event attendance current — multi filters
-    function applyEventNowFilters() {
-        // Persist selections
-        localStorage.setItem('ef_status',  DOM.eventStatusFilter.value);
-        localStorage.setItem('ef_name',    DOM.eventNameFilter.value);
-        localStorage.setItem('ef_year',    DOM.eventYearFilter.value);
-        localStorage.setItem('ef_program', DOM.eventProgramFilter.value);
-        multiFilterTableRows('attendanceBody', [
-            { colIndex: 6, value: DOM.eventStatusFilter.value },
-            { colIndex: 7, value: DOM.eventNameFilter.value },
-            { colIndex: 3, value: DOM.eventYearFilter.value },
-            { colIndex: 2, value: DOM.eventProgramFilter.value },
-        ]);
-    }
+    // Event attendance current — multi filters (global functions — also called after poll re-render)
     DOM.eventStatusFilter?.addEventListener('change', applyEventNowFilters);
     DOM.eventNameFilter?.addEventListener('change', applyEventNowFilters);
     DOM.eventYearFilter?.addEventListener('change', applyEventNowFilters);
     DOM.eventProgramFilter?.addEventListener('change', applyEventNowFilters);
 
-    // Event attendance history — multi filters
-    function applyEventHistoryFilters() {
-        // Persist selections
-        localStorage.setItem('ehf_status',  DOM.eventHistoryStatusFilter.value);
-        localStorage.setItem('ehf_name',    DOM.eventHistoryNameFilter.value);
-        localStorage.setItem('ehf_year',    DOM.eventHistoryYearFilter.value);
-        localStorage.setItem('ehf_program', DOM.eventHistoryProgramFilter.value);
-        multiFilterTableRows('attendanceHistory', [
-            { colIndex: 6, value: DOM.eventHistoryStatusFilter.value },
-            { colIndex: 7, value: DOM.eventHistoryNameFilter.value },
-            { colIndex: 3, value: DOM.eventHistoryYearFilter.value },
-            { colIndex: 2, value: DOM.eventHistoryProgramFilter.value },
-        ]);
-    }
+    // Event attendance history — multi filters (global functions — also called after poll re-render)
     DOM.eventHistoryStatusFilter?.addEventListener('change', applyEventHistoryFilters);
     DOM.eventHistoryNameFilter?.addEventListener('change', applyEventHistoryFilters);
     DOM.eventHistoryYearFilter?.addEventListener('change', applyEventHistoryFilters);

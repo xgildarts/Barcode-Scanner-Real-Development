@@ -111,7 +111,7 @@ function parseUAString(ua) {
     return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
 }
 
-const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const BASE_URL = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 const TOKEN    = localStorage.getItem('student_token');
 
 // ============================================================
@@ -141,6 +141,13 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 // ============================================================
 // INIT
 // ============================================================
+// Back-button guard: if user logged out, pressing back must not restore the page
+window.addEventListener('pageshow', (event) => {
+    if (!localStorage.getItem('student_token')) {
+        window.location.replace('student_login.html');
+    }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Sequential startup: await each async step so Swals don't race/overwrite each other
     await checkToken();
@@ -277,9 +284,7 @@ async function loadProfileData() {
         document.getElementById('firstName').value  = student_firstname;
         document.getElementById('middleName').value = student_middlename;
         document.getElementById('lastName').value   = student_lastname;
-        document.getElementById('idNumber').value   = student_id_number;
-        document.getElementById('yearLevel').value  = student_year_level;
-        document.getElementById('program').value    = student_program;
+
 
     } catch (err) {
         Swal.close();
@@ -525,6 +530,9 @@ const formatTime = (time) => {
     return `${((hour + 11) % 12 + 1)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
 };
 
+let _allAttendanceRecords = [];
+let _attendanceTeacherMap = {};
+
 async function getAttendanceHistory() {
     const body = document.getElementById('attendanceBody');
     try {
@@ -591,11 +599,6 @@ async function getAttendanceHistory() {
 
         const allRecords = [...realRecords, ...virtualAbsents];
 
-        if (allRecords.length === 0) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align:center">No attendance records found.</td></tr>';
-            return;
-        }
-
         // Sort by date descending
         allRecords.sort((a, b) => {
             const da = a.attendance_date ? String(a.attendance_date).split('T')[0] : '';
@@ -603,30 +606,76 @@ async function getAttendanceHistory() {
             return db.localeCompare(da);
         });
 
-        body.innerHTML = allRecords.map(d => {
-            const status = d.attendance_status || 'Present';
-            const statusColor = { Present: '#27ae60', Late: '#e67e22', Absent: '#e74c3c', Excused: '#8e44ad' }[status] || '#555';
-            const teacherEntry = d.teacher_barcode_scanner_serial_number
-                ? teacherMap[d.teacher_barcode_scanner_serial_number]
-                : null;
-            const teacherName = teacherEntry
-                ? teacherEntry.name
-                : (d.teacher_name || 'N/A');
-            return `
-            <tr>
-                <td>${d.attendance_date ? String(d.attendance_date).split('T')[0] : '—'}</td>
-                <td>${d.attendance_time ? formatTime(d.attendance_time) : '—'}</td>
-                <td>${d.subject || 'N/A'}</td>
-                <td>${teacherName}</td>
-                <td>${d.student_id_number || '—'}</td>
-                <td><span style="color:${statusColor};font-weight:600">${status}</span></td>
-            </tr>`;
-        }).join('');
+        // Store globally for filtering
+        _allAttendanceRecords = allRecords;
+        _attendanceTeacherMap = teacherMap;
+
+        // Populate subject dropdown
+        const subjects = [...new Set(allRecords.map(r => r.subject).filter(Boolean))].sort();
+        const subjectSel = document.getElementById('filterSubject');
+        if (subjectSel) {
+            subjectSel.innerHTML = '<option value="">All Subjects</option>' +
+                subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+
+        renderAttendanceTable(_allAttendanceRecords);
 
     } catch (err) {
         Swal.close();
         Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to load attendance history.' });
     }
+}
+
+function renderAttendanceTable(records) {
+    const body = document.getElementById('attendanceBody');
+    if (!body) return;
+    if (!records.length) {
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999">No records match the selected filters.</td></tr>';
+        return;
+    }
+    const statusColor = { Present: '#27ae60', Late: '#e67e22', Absent: '#e74c3c', Excused: '#8e44ad' };
+    body.innerHTML = records.map(d => {
+        const status = d.attendance_status || 'Present';
+        const color  = statusColor[status] || '#555';
+        const teacherEntry = d.teacher_barcode_scanner_serial_number
+            ? _attendanceTeacherMap[d.teacher_barcode_scanner_serial_number]
+            : null;
+        const teacherName = teacherEntry ? teacherEntry.name : (d.teacher_name || 'N/A');
+        return `<tr>
+            <td data-label="Date">${d.attendance_date ? String(d.attendance_date).split('T')[0] : '—'}</td>
+            <td data-label="Time">${d.attendance_time ? formatTime(d.attendance_time) : '—'}</td>
+            <td data-label="Subject">${d.subject || 'N/A'}</td>
+            <td data-label="Teacher">${teacherName}</td>
+            <td data-label="ID Number">${d.student_id_number || '—'}</td>
+            <td data-label="Status"><span style="color:${color};font-weight:600">${status}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function applyAttendanceFilters() {
+    const subject = (document.getElementById('filterSubject')?.value || '').trim();
+    const date    = (document.getElementById('filterDate')?.value    || '').trim();
+    const status  = (document.getElementById('filterStatus')?.value  || '').trim();
+
+    const filtered = _allAttendanceRecords.filter(r => {
+        const rDate = r.attendance_date ? String(r.attendance_date).split('T')[0] : '';
+        if (subject && r.subject !== subject) return false;
+        if (date    && rDate    !== date)    return false;
+        if (status  && (r.attendance_status || 'Present') !== status) return false;
+        return true;
+    });
+
+    renderAttendanceTable(filtered);
+}
+
+function resetAttendanceFilters() {
+    const subjectSel = document.getElementById('filterSubject');
+    const dateInput  = document.getElementById('filterDate');
+    const statusSel  = document.getElementById('filterStatus');
+    if (subjectSel) subjectSel.value = '';
+    if (dateInput)  dateInput.value  = '';
+    if (statusSel)  statusSel.value  = '';
+    renderAttendanceTable(_allAttendanceRecords);
 }
 
 // ============================================================
@@ -637,7 +686,7 @@ let isEditing = false;
 async function toggleEdit() {
     isEditing = !isEditing;
 
-    const fieldIds = ['firstName', 'middleName', 'lastName', 'idNumber', 'yearLevel', 'program'];
+    const fieldIds = ['firstName', 'middleName', 'lastName'];
     const btn      = document.querySelector('.edit-profile-btn');
 
     fieldIds.forEach(id => document.getElementById(id).disabled = !isEditing);
@@ -666,10 +715,7 @@ async function toggleEdit() {
     const payload = {
         firstName:  document.getElementById('firstName').value,
         middleName: document.getElementById('middleName').value,
-        lastName:   document.getElementById('lastName').value,
-        idNumber:   document.getElementById('idNumber').value,
-        yearLevel:  document.getElementById('yearLevel').value,
-        program:    document.getElementById('program').value
+        lastName:   document.getElementById('lastName').value
     };
 
     try {

@@ -82,7 +82,7 @@ function parseUAString(ua) {
     return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
 }
 
-const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const BASE_URL = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 const TOKEN = localStorage.getItem('teacher_token');
 
 // ============================================================
@@ -179,6 +179,13 @@ if (!navigator.onLine) showOfflineBanner();
 // ============================================================
 // INIT
 // ============================================================
+// Back-button guard: if user logged out, pressing back must not restore the page
+window.addEventListener('pageshow', (event) => {
+    if (!localStorage.getItem('teacher_token')) {
+        window.location.replace('teacher_login.html');
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // ── Floating tooltip for elements inside overflow:hidden/auto containers ──
@@ -271,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Re-render attendance list whenever the Active Class Setup dropdowns change
     document.getElementById('courseFilter')?.addEventListener('change', () => renderAttendanceNowMerged());
-    document.getElementById('yearFilter')?.addEventListener('change',   () => renderAttendanceNowMerged());
 
     studentRegisteredDropdownFilter('recordYearFilter', 5);
 
@@ -438,6 +444,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
         const res = await fetch(`${BASE_URL}${endpoint}`, options);
         const data = await res.json();
+
+        if (res.status === 401) {
+            await Swal.fire({ icon: 'warning', title: 'Session Expired', text: 'Your session has expired. Please login again.', allowOutsideClick: false });
+            return clearSessionAndRedirect();
+        }
 
         if (!res.ok) throw new Error(data.message || 'API Error');
         return data;
@@ -1167,6 +1178,8 @@ function populateAnalyticsSubjectFilter() {
         subjects.map(s => `<option value="${s}"${s===prev?' selected':''}>${s}</option>`).join('');
 }
 
+/* ── populate year filter dropdown dynamically from attendance records ── */
+
 // ============================================================
 // ATTENDANCE
 // ============================================================
@@ -1197,6 +1210,9 @@ function buildAttendanceRow(d, statusOverride) {
     }
 
     const fullName = [d.student_firstname, d.student_middlename ? d.student_middlename.charAt(0) + '.' : '', d.student_lastname].filter(Boolean).join(' ');
+    const irregularBadge = d.is_irregular
+        ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fff3cd;color:#92400e;padding:2px 8px;border-radius:20px;font-size:0.68rem;font-weight:700;margin-left:6px;border:1px solid #f59e0b;vertical-align:middle;white-space:nowrap;" title="This student's year level does not match the active subject's year level">⚠ Irregular</span>`
+        : '';
     const timeIn = d.attendance_time ? formatTime(d.attendance_time) : '<span style="color:#aaa;">—</span>';
     const dateIn = d.attendance_date ? formatDate(d.attendance_date) : '<span style="color:#aaa;">—</span>';
 
@@ -1232,7 +1248,7 @@ function buildAttendanceRow(d, statusOverride) {
 
     return `
         <td data-label="ID No.">${d.student_id_number}</td>
-        <td data-label="Name">${fullName}</td>
+        <td data-label="Name">${fullName}${irregularBadge}</td>
         <td data-label="Subject">${d.subject || '—'}</td>
         <td data-label="Year">${d.year_level || d.student_year_level || '—'}</td>
         <td data-label="Time In">${timeIn}</td>
@@ -1385,7 +1401,7 @@ async function pollAttendanceSilently() {
         state.allAttendanceRecords = data.content;
         if (state.totalStudentRegistered > 0) updateAllDashboardCharts();
 
-        renderAttendanceNowMerged();
+            renderAttendanceNowMerged();
         // Flash live indicator if it exists
         const dot = document.getElementById('teacherLiveDot');
         if (dot) {
@@ -1559,7 +1575,7 @@ async function renderAttendanceNowMerged() {
 
     // Read active subject from the dropdowns (source of truth — already pre-selected on load)
     const subjectName = document.getElementById('courseFilter')?.value || state.activeSubjectName || '';
-    const yearLevel   = document.getElementById('yearFilter')?.value   || state.activeYearLevel   || '';
+    const yearLevel   = state.activeYearLevel || '';
     const dateFilter  = document.getElementById('attendanceNowDateFilter')?.value || '';
 
     // Resolve subject_id from allSubjects list using the dropdown value
@@ -1593,12 +1609,13 @@ async function renderAttendanceNowMerged() {
     if (roster.length === 0 && Object.keys(presentMap).length === 0) {
         document.getElementById('attendanceBody').innerHTML =
             `<tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">
-                ${subjectId ? 'No students in this class list yet. Use “Manage Class” to add students.' : 'No active subject set. Please select a subject and year level above.'}
+                ${subjectId ? 'No students in this class list yet. Use "Manage Class" to add students.' : 'No active subject set. Please select a subject above.'}
             </td></tr>`;
         return;
     }
 
-    // If roster is empty but we have attendance records (fallback — no class list yet)
+
+    // Use full roster — year-level filtering removed (roster is already subject-specific)
     const sourceList = roster.length > 0 ? roster : Object.values(presentMap).map(r => ({
         student_id_number:  r.student_id_number,
         student_firstname:  r.student_firstname,
@@ -1632,6 +1649,10 @@ async function renderAttendanceNowMerged() {
             attendance_time:    null,
             attendance_date:    null
         };
+        // Mark as irregular if student's year level differs from the active subject's year level
+        rowData.is_irregular = !!(yearLevel && s.student_year_level &&
+            s.student_year_level.toLowerCase() !== yearLevel.toLowerCase());
+
         let rowClass = 'row-absent';
         if (recStatus === 'Present') rowClass = 'row-present';
         else if (recStatus === 'Late')    rowClass = 'row-late';
@@ -2276,12 +2297,25 @@ document.addEventListener('click', function (e) {
 // ============================================================
 async function subjectAndYearLevelSetter() {
     const subject   = document.getElementById('courseFilter').value;
-    const yearLevel = document.getElementById('yearFilter').value;
-
     const classTime = document.getElementById('classTimeInput')?.value || '';
 
-    if (!subject || !yearLevel) {
-        return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select both a subject and a year level before setting.' });
+    if (!subject) {
+        return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select a subject before setting.' });
+    }
+
+    // Auto-derive year level from the subject's class roster (most common student_year_level)
+    let yearLevel = '';
+    const matched = state.allSubjects?.find(s => s.subject_name === subject);
+    const rId = matched?.subject_id || state.activeSubjectId;
+    if (rId) {
+        const rData = await apiCall(`/teacher/subject-class-list/${rId}`, 'GET');
+        const levels = (rData?.content || []).map(s => s.student_year_level).filter(Boolean);
+        if (levels.length) {
+            // Pick the most frequent year level in the roster
+            yearLevel = levels.sort((a, b) =>
+                levels.filter(v => v === b).length - levels.filter(v => v === a).length
+            )[0];
+        }
     }
 
     const result = await Swal.fire({
@@ -2327,8 +2361,7 @@ async function loadActiveSubject() {
     updateSubjectBanner(); // update banner state after loading active subject
 
     // Pre-select dropdowns to match the currently active values
-    const courseFilter  = document.getElementById('courseFilter');
-    const yearFilter    = document.getElementById('yearFilter');
+    const courseFilter   = document.getElementById('courseFilter');
     const classTimeInput = document.getElementById('classTimeInput');
     if (courseFilter   && subject_name_set) courseFilter.value   = subject_name_set;
     // Sync donut subject filter too
@@ -2336,7 +2369,6 @@ async function loadActiveSubject() {
     if (donutSelSync && subject_name_set && donutSelSync.querySelector(`option[value="${subject_name_set}"]`)) {
         donutSelSync.value = subject_name_set;
     }
-    if (yearFilter     && year_level_set)   yearFilter.value     = year_level_set;
     if (classTimeInput && class_time_set)   classTimeInput.value = class_time_set;
 
     renderActiveSubject(subject_name_set, year_level_set, class_time_set);
@@ -2346,13 +2378,14 @@ async function loadActiveSubject() {
 function renderActiveSubject(subject, yearLevel, classTime) {
     const el = document.getElementById('activeSubjectDisplay');
     if (!el) return;
-    if (subject && yearLevel) {
-        const timePart = classTime ? ` @ ${classTime}` : '';
-        el.textContent = `✓ ${subject} — ${yearLevel}${timePart}`;
-        el.style.background = '#c8ece5';
-        el.style.color = '#1a5c4f';
-    } else if (subject) {
-        el.textContent = `✓ ${subject}`;
+    if (subject) {
+        const fmtTime = classTime ? (() => {
+            const [h, m] = classTime.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            return `${((h % 12) || 12)}:${String(m).padStart(2,'0')} ${ampm}`;
+        })() : '';
+        const timePart = fmtTime ? ` @ ${fmtTime}` : '';
+        el.textContent = `✓ ${subject}${timePart}`;
         el.style.background = '#c8ece5';
         el.style.color = '#1a5c4f';
     } else {
@@ -2541,7 +2574,6 @@ async function renderYearLevel() {
     if (!data) return;
 
     const optionsHtml = data.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('');
-    document.getElementById('yearFilter').innerHTML                  = `<option value="">Select Year Level</option>` + optionsHtml;
     document.getElementById('recordYearFilter').innerHTML            = `<option value="">Select Year Level</option>` + optionsHtml;
     document.getElementById('year_level').innerHTML                  = `<option value="">Select Year</option>` + optionsHtml;
 }
@@ -2667,7 +2699,7 @@ async function checkSubjectReminder() {
             title: '<span style="font-size:1.1rem;font-weight:700;color:#1a4545;">Confirm Today&#39;s Subject</span>',
             html: `<div style="font-size:0.9rem;color:#555;line-height:1.6;">
                        Your active subject is still<br>
-                       <strong style="font-size:1rem;color:#1a4545;">${subject} — ${yearLevel}</strong><br>
+                       <strong style="font-size:1rem;color:#1a4545;">${subject}</strong><br>
                        <span style="font-size:0.8rem;color:#999;display:block;margin-top:4px;">Last set on ${setOnDay}</span><br>
                        Is this correct for today, or do you need to change it?
                    </div>`,
@@ -2686,7 +2718,7 @@ async function checkSubjectReminder() {
         toast: true,
         position: 'top-end',
         icon: 'success',
-        title: `Active: ${subject} — ${yearLevel}`,
+        title: `Active: ${subject}`,
         showConfirmButton: false,
         timer: 2500,
         timerProgressBar: true

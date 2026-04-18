@@ -73,12 +73,16 @@ guard.post('/event_attendance', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const ip         = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || null;
+        const deviceInfo = req.body.device_info || req.headers['x-device-info'] || req.headers['user-agent'] || null;
         const result = await services.guardInsertAttendanceRecord(
             barcode,
             status,
             decodedToken.guard_id,
             decodedToken.guard_name,
-            decodedToken.guard_location)
+            decodedToken.guard_location,
+            ip,
+            deviceInfo)
         res.json(result)
     } catch(err) {
         console.error(err)
@@ -87,6 +91,48 @@ guard.post('/event_attendance', async (req, res) => {
 })
 
 
+
+// ============================================================
+// GUARD STUDENT SEARCH — search by name or ID number (no barcode needed)
+// ============================================================
+guard.get('/search_students', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const q = (req.query.q || '').trim()
+        if (!q || q.length < 2) return res.json({ ok: true, content: [] })
+        const results = await services.searchStudentAccounts(q)
+        res.json({ ok: true, content: results })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Record event attendance by student ID number (for students without internet)
+guard.post('/event_attendance_by_id', async (req, res) => {
+    try {
+        const { student_id_number, status } = req.body
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const ip2         = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || null;
+        const deviceInfo2 = req.body.device_info || req.headers['x-device-info'] || req.headers['user-agent'] || null;
+        const result = await services.guardInsertAttendanceRecordByIdNumber(
+            student_id_number,
+            status,
+            decodedToken.guard_id,
+            decodedToken.guard_name,
+            decodedToken.guard_location,
+            ip2,
+            deviceInfo2
+        )
+        res.json(result)
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
 
 // ============================================================
 // GUARD FORGOT PASSWORD — public routes (no token required)
@@ -191,7 +237,8 @@ guard.post('/messages/send', uploadMsgFile.single('file'), async (req, res) => {
             require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
         })
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
-        const id = await services.sendMessage(tok.guard_id, 'guard', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
+        const replyToId = req.body.reply_to_id ? parseInt(req.body.reply_to_id) : null
+        const id = await services.sendMessage(tok.guard_id, 'guard', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic, replyToId)
         res.json({ ok: true, id })
         // Notify receiver via bell
         services.createMsgNotification(
@@ -202,6 +249,26 @@ guard.post('/messages/send', uploadMsgFile.single('file'), async (req, res) => {
                 null, id
         ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+guard.post('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.body
+        services.setTypingStatus(tok.guard_id, 'guard', contact_id, contact_role)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false }) }
+})
+
+guard.get('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        const isTyping = services.getTypingStatus(parseInt(contact_id), contact_role, tok.guard_id, 'guard')
+        res.json({ ok: true, typing: isTyping })
+    } catch(err) { res.status(500).json({ ok: false, typing: false }) }
 })
 
 guard.get('/messages/search', async (req, res) => {

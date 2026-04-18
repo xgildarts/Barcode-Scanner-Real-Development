@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/public/logo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Barcode</title>
     <link rel="stylesheet" href="/css/guard-css/guard_camera_scan.css">
@@ -149,6 +150,109 @@
         <button class="action-btn manual-btn" onclick="manualEntry()">Enter Manually</button>
     </div>
 </div>
+
+<!-- ── Manual Search Modal ── -->
+<div id="guardSearchModal" class="guard-modal">
+    <div class="guard-modal-content">
+        <div class="guard-modal-header">
+            <h2>Search Student</h2>
+            <span class="guard-modal-close" onclick="closeGuardSearchModal()">&times;</span>
+        </div>
+        <div class="guard-modal-body">
+            <div class="guard-form-group">
+                <label>Search by Name, ID Number, or Email</label>
+                <input id="guardStudentSearchInput" type="text" class="guard-form-input"
+                    placeholder="Type name, ID number, or email..."
+                    autocomplete="off" oninput="guardSearchDebounced()">
+            </div>
+
+            <!-- Search Results -->
+            <div id="guardStudentSearchResults" style="max-height:280px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;display:none;"></div>
+
+            <!-- Selected Student Preview -->
+            <div id="guardSelectedStudentPreview" style="display:none;margin-top:12px;padding:14px;background:#f0f7f7;border-radius:8px;border:1.5px solid #1a4545;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div>
+                        <div id="guardPreviewName" style="font-weight:700;font-size:1rem;color:#1a4545;"></div>
+                        <div id="guardPreviewId" style="font-size:0.85rem;color:#555;margin-top:2px;"></div>
+                        <div id="guardPreviewProgram" style="font-size:0.85rem;color:#555;"></div>
+                        <div id="guardPreviewEmail" style="font-size:0.82rem;color:#888;margin-top:2px;"></div>
+                    </div>
+                    <button type="button" onclick="guardClearSelectedStudent()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#999;">&#x2715;</button>
+                </div>
+            </div>
+
+            <div class="guard-modal-footer">
+                <button type="button" class="guard-cancel-btn" onclick="closeGuardSearchModal()">Cancel</button>
+                <button type="button" class="guard-timein-btn" id="guardTimeInBtn" onclick="guardSubmitAttendance('TIME IN')" disabled style="opacity:0.5;cursor:not-allowed;">Time IN</button>
+                <button type="button" class="guard-timeout-btn" id="guardTimeOutBtn" onclick="guardSubmitAttendance('TIME OUT')" disabled style="opacity:0.5;cursor:not-allowed;">Time OUT</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.guard-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.55);
+    align-items: center;
+    justify-content: center;
+}
+.guard-modal-content {
+    background: #fff;
+    width: 520px;
+    max-width: 95vw;
+    border-radius: 10px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.25);
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: guardFadeIn 0.25s ease;
+}
+@keyframes guardFadeIn {
+    from { opacity:0; transform:translateY(-18px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+.guard-modal-header {
+    background: #3f6864;
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.guard-modal-header h2 { margin:0; font-size:17px; font-weight:600; }
+.guard-modal-close { font-size:24px; cursor:pointer; color:#fff; line-height:1; }
+.guard-modal-body { padding: 20px; }
+.guard-form-group { margin-bottom: 14px; }
+.guard-form-group label { display:block; margin-bottom:5px; font-size:13px; color:#555; font-weight:bold; }
+.guard-form-input {
+    width: 100%; padding: 10px;
+    border: 1px solid #ddd; border-radius: 6px;
+    box-sizing: border-box; font-size: 14px;
+    outline: none; transition: border 0.2s;
+}
+.guard-form-input:focus { border-color: #3f6864; }
+.guard-modal-footer {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 14px; border-top: 1px solid #eee; padding-top: 14px;
+}
+.guard-cancel-btn {
+    padding: 8px 16px; background: #e0e0e0;
+    border: none; border-radius: 5px; cursor: pointer; font-size:14px;
+}
+.guard-timein-btn {
+    padding: 8px 18px; background: #28a745;
+    color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size:14px;
+}
+.guard-timeout-btn {
+    padding: 8px 18px; background: #d33;
+    color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size:14px;
+}
+</style>
 
 <script src="app.js"></script>
 

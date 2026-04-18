@@ -91,7 +91,7 @@ async function getDeviceInfo() {
     return _cachedDeviceInfo;
 }
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const URL_BASED = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 // FIX: Read token dynamically on every request instead of once at page load.
 // The old `const TOKEN = localStorage.getItem(...)` captured the value at
 // module-parse time — BEFORE the login page had a chance to write it.
@@ -344,13 +344,39 @@ function populateFilterOptions(data, selectId, valueFn, allLabel, storageKey) {
 }
 
 /** Filter a tbody by multiple column-value pairs simultaneously */
+function applyEventNowFilters() {
+    localStorage.setItem('ef_status',  document.getElementById('eventStatusFilter')?.value  || '');
+    localStorage.setItem('ef_name',    document.getElementById('eventNameFilter')?.value    || '');
+    localStorage.setItem('ef_year',    document.getElementById('eventYearFilter')?.value    || '');
+    localStorage.setItem('ef_program', document.getElementById('eventProgramFilter')?.value || '');
+    multiFilterTableRows('attendanceBody', [
+        { colIndex: 6, value: document.getElementById('eventStatusFilter')?.value  || '' },
+        { colIndex: 7, value: document.getElementById('eventNameFilter')?.value    || '' },
+        { colIndex: 3, value: document.getElementById('eventYearFilter')?.value    || '' },
+        { colIndex: 2, value: document.getElementById('eventProgramFilter')?.value || '' },
+    ]);
+}
+
+function applyEventHistoryFilters() {
+    localStorage.setItem('ehf_status',  document.getElementById('eventHistoryStatusFilter')?.value  || '');
+    localStorage.setItem('ehf_name',    document.getElementById('eventHistoryNameFilter')?.value    || '');
+    localStorage.setItem('ehf_year',    document.getElementById('eventHistoryYearFilter')?.value    || '');
+    localStorage.setItem('ehf_program', document.getElementById('eventHistoryProgramFilter')?.value || '');
+    multiFilterTableRows('attendanceHistory', [
+        { colIndex: 6, value: document.getElementById('eventHistoryStatusFilter')?.value  || '' },
+        { colIndex: 7, value: document.getElementById('eventHistoryNameFilter')?.value    || '' },
+        { colIndex: 3, value: document.getElementById('eventHistoryYearFilter')?.value    || '' },
+        { colIndex: 2, value: document.getElementById('eventHistoryProgramFilter')?.value || '' },
+    ]);
+}
+
 function multiFilterTableRows(tbodyId, filters) {
     document.querySelectorAll(`#${tbodyId} tr`).forEach(row => {
         const visible = filters.every(({ colIndex, value }) => {
             if (!value) return true;
             return row.cells[colIndex]?.textContent.trim().toLowerCase() === value.toLowerCase();
         });
-        row.style.display = visible ? '' : 'none';
+        row.classList.toggle('filter-hidden', !visible);
     });
 }
 
@@ -383,7 +409,7 @@ function filterTableRows(tbodyEl, searchText) {
     const rows = tbodyEl.getElementsByTagName('tr');
     const lower = searchText.toLowerCase();
     for (const row of rows) {
-        row.style.display = row.textContent.toLowerCase().includes(lower) ? '' : 'none';
+        row.classList.toggle('filter-hidden', !row.textContent.toLowerCase().includes(lower));
     }
 }
 
@@ -398,6 +424,13 @@ function filterCards(containerSelector, cardSelector, searchText) {
 // ============================================================
 // INIT
 // ============================================================
+// Back-button guard: if user logged out, pressing back must not restore the page
+window.addEventListener('pageshow', (event) => {
+    if (!localStorage.getItem('super_admin_token')) {
+        window.location.replace('super_admin_login.html');
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     navigateTo('dashboard');
@@ -729,6 +762,7 @@ async function renderEventAttendanceRecord() {
         if (DOM.eventNameFilter)    DOM.eventNameFilter.value    = '';
         if (DOM.eventYearFilter)    DOM.eventYearFilter.value    = '';
         if (DOM.eventProgramFilter) DOM.eventProgramFilter.value = '';
+        applyEventNowFilters(); // re-show all rows after reset
 
         startAdminPolling();
     } catch (err) {
@@ -767,6 +801,7 @@ async function renderEventHistoryAttendanceRecord() {
         if (DOM.eventHistoryNameFilter)    DOM.eventHistoryNameFilter.value    = '';
         if (DOM.eventHistoryYearFilter)    DOM.eventHistoryYearFilter.value    = '';
         if (DOM.eventHistoryProgramFilter) DOM.eventHistoryProgramFilter.value = '';
+        applyEventHistoryFilters(); // re-show all rows after reset
     } catch (err) {
         console.error(err);
     }
@@ -798,6 +833,7 @@ async function pollAdminSilently() {
                 populateFilterOptions(d1.content, 'eventNameFilter',    d => d.event_name,         'All Events',      'ef_name');
                 populateFilterOptions(d1.content, 'eventYearFilter',    d => d.student_year_level,  'All Year Levels', 'ef_year');
                 populateFilterOptions(d1.content, 'eventProgramFilter', d => d.student_program,    'All Programs',    'ef_program');
+                applyEventNowFilters();
                 showAdminLiveIndicator('adminLiveDotEvent');
                 updateChart();
             }
@@ -824,6 +860,7 @@ async function pollAdminSilently() {
                 populateFilterOptions(d2.content, 'eventHistoryNameFilter',    d => d.event_name,         'All Events',      'ehf_name');
                 populateFilterOptions(d2.content, 'eventHistoryYearFilter',    d => d.student_year_level,  'All Year Levels', 'ehf_year');
                 populateFilterOptions(d2.content, 'eventHistoryProgramFilter', d => d.student_program,    'All Programs',    'ehf_program');
+                applyEventHistoryFilters();
                 showAdminLiveIndicator('adminLiveDotEventHist');
             }
         }
@@ -2507,36 +2544,13 @@ function initEventListeners() {
     });
 
     // Event attendance current — multi filters
-    function applyEventNowFilters() {
-        localStorage.setItem('ef_status',  DOM.eventStatusFilter?.value || '');
-        localStorage.setItem('ef_name',    DOM.eventNameFilter?.value   || '');
-        localStorage.setItem('ef_year',    DOM.eventYearFilter?.value   || '');
-        localStorage.setItem('ef_program', DOM.eventProgramFilter?.value|| '');
-        multiFilterTableRows('attendanceBody', [
-            { colIndex: 6, value: DOM.eventStatusFilter?.value  || '' },
-            { colIndex: 7, value: DOM.eventNameFilter?.value    || '' },
-            { colIndex: 3, value: DOM.eventYearFilter?.value    || '' },
-            { colIndex: 2, value: DOM.eventProgramFilter?.value || '' },
-        ]);
-    }
+    // Event attendance current — multi filters (global functions — also called after poll re-render)
     DOM.eventStatusFilter?.addEventListener('change', applyEventNowFilters);
     DOM.eventNameFilter?.addEventListener('change', applyEventNowFilters);
     DOM.eventYearFilter?.addEventListener('change', applyEventNowFilters);
     DOM.eventProgramFilter?.addEventListener('change', applyEventNowFilters);
 
-    // Event attendance history — multi filters
-    function applyEventHistoryFilters() {
-        localStorage.setItem('ehf_status',  DOM.eventHistoryStatusFilter?.value  || '');
-        localStorage.setItem('ehf_name',    DOM.eventHistoryNameFilter?.value    || '');
-        localStorage.setItem('ehf_year',    DOM.eventHistoryYearFilter?.value    || '');
-        localStorage.setItem('ehf_program', DOM.eventHistoryProgramFilter?.value || '');
-        multiFilterTableRows('attendanceHistory', [
-            { colIndex: 6, value: DOM.eventHistoryStatusFilter?.value  || '' },
-            { colIndex: 7, value: DOM.eventHistoryNameFilter?.value    || '' },
-            { colIndex: 3, value: DOM.eventHistoryYearFilter?.value    || '' },
-            { colIndex: 2, value: DOM.eventHistoryProgramFilter?.value || '' },
-        ]);
-    }
+    // Event attendance history — multi filters (global functions — also called after poll re-render)
     DOM.eventHistoryStatusFilter?.addEventListener('change', applyEventHistoryFilters);
     DOM.eventHistoryNameFilter?.addEventListener('change', applyEventHistoryFilters);
     DOM.eventHistoryYearFilter?.addEventListener('change', applyEventHistoryFilters);
@@ -3315,13 +3329,12 @@ async function loadClassAttendanceNow() {
         // Sync UI controls
         const subSel = document.getElementById('classSubjectFilterNow');
         if (subSel && activeSubject) subSel.value = activeSubject;
-        const yrSel = document.getElementById('classYearFilterNow');
-        if (yrSel && activeYear) yrSel.value = activeYear;
         const timeInput = document.getElementById('classTimeInputNow');
         if (timeInput && activeTime) timeInput.value = activeTime;
         const badge = document.getElementById('classActiveSubjectDisplayNow');
-        if (badge && activeSubject && activeYear) {
-            badge.textContent = `✓ ${activeSubject} — ${activeYear}`;
+        if (badge && activeSubject) {
+            const _t1 = activeTime ? (() => { const [h,m] = activeTime.split(':').map(Number); const ap = h>=12?'PM':'AM'; return ` @ ${(h%12)||12}:${String(m).padStart(2,'0')} ${ap}`; })() : '';
+            badge.textContent = `✓ ${activeSubject}${_t1}`;
             badge.style.display = '';
         }
 
@@ -3408,6 +3421,10 @@ async function loadClassAttendanceNow() {
             });
 
             const fullName = [s.student_firstname, s.student_middlename ? s.student_middlename.charAt(0) + '.' : '', s.student_lastname].filter(Boolean).join(' ');
+            const isIrregular = !!(activeYear && s.student_year_level && s.student_year_level.toLowerCase() !== activeYear.toLowerCase());
+            const irregularBadge = isIrregular
+                ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fff3cd;color:#92400e;padding:2px 8px;border-radius:20px;font-size:0.68rem;font-weight:700;margin-left:6px;border:1px solid #f59e0b;vertical-align:middle;white-space:nowrap;" title="This student's year level does not match the active subject's year level">⚠ Irregular</span>`
+                : '';
             const timeIn   = rec?.attendance_time ? formatTime(rec.attendance_time) : '<span style="color:#aaa;">—</span>';
             const dateIn   = rec?.attendance_date ? rec.attendance_date.split('T')[0] : '<span style="color:#aaa;">—</span>';
 
@@ -3421,7 +3438,7 @@ async function loadClassAttendanceNow() {
             const isP = status==='Present', isL = status==='Late', isA = status==='Absent', isE = status==='Excused';
             return `<tr class="${rowClass}" id="sa-att-row-${rowKey}" data-status="${status}">
                 <td data-label="ID">${s.student_id_number}</td>
-                <td data-label="Full Name">${fullName}</td>
+                <td data-label="Full Name">${fullName}${irregularBadge}</td>
                 <td data-label="Subject">${activeSubject}</td>
                 <td data-label="Year">${s.student_year_level || rec?.year_level || '—'}</td>
                 <td data-label="Time In">${timeIn}</td>
@@ -3861,8 +3878,9 @@ async function loadClassSubjectSetup() {
 
         // Update Attendance Now active badge
         const badgeNow = document.getElementById('classActiveSubjectDisplayNow');
-        if (badgeNow && activeSubject && activeYearLevel) {
-            badgeNow.textContent = `✓ ${activeSubject} — ${activeYearLevel}`;
+        if (badgeNow && activeSubject) {
+            const _t2 = activeClassTime ? (() => { const [h,m] = activeClassTime.split(':').map(Number); const ap = h>=12?'PM':'AM'; return ` @ ${(h%12)||12}:${String(m).padStart(2,'0')} ${ap}`; })() : '';
+            badgeNow.textContent = `✓ ${activeSubject}${_t2}`;
             badgeNow.style.display = '';
         }
 
@@ -3873,8 +3891,6 @@ async function loadClassSubjectSetup() {
             ? '<option value="">Select Year Level</option>' + yData.content.map(y => `<option value="${y.year_level_name}">${y.year_level_name}</option>`).join('')
             : '<option value="">Select Year Level</option>';
 
-        const yrSelNow = document.getElementById('classYearFilterNow');
-        if (yrSelNow) { yrSelNow.innerHTML = yearOptions; if (activeYearLevel) yrSelNow.value = activeYearLevel; }
 
         // Populate subject cards list (like teacher's academic setup programsList)
         const listEl = document.getElementById('classSubjectList');
@@ -3908,10 +3924,27 @@ async function loadClassSubjectSetup() {
 // Set active subject from the Attendance Now tab (mirrors setClassSubject)
 async function setClassSubjectFromNowTab() {
     const subject   = document.getElementById('classSubjectFilterNow')?.value;
-    const yearLevel = document.getElementById('classYearFilterNow')?.value;
     const classTime = document.getElementById('classTimeInputNow')?.value || null;
     if (!_selectedTeacherId) return Swal.fire({ icon: 'warning', title: 'No Teacher Selected', text: 'Please select a teacher first.' });
-    if (!subject || !yearLevel) return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select both a subject and a year level.' });
+    if (!subject) return Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Please select a subject.' });
+
+    // Auto-derive year level from the subject's class roster (most common student_year_level)
+    let yearLevel = '';
+    try {
+        const sRes  = await apiFetch(`/super_admin/class/get_subjects/${_selectedTeacherId}`);
+        const sData = await sRes.json();
+        const matched = (sData?.content || []).find(s => s.subject_name === subject);
+        if (matched?.subject_id) {
+            const rRes  = await apiFetch(`/super_admin/class/subject_class_list/${_selectedTeacherId}/${matched.subject_id}`);
+            const rData = await rRes.json();
+            const levels = (rData?.content || []).map(s => s.student_year_level).filter(Boolean);
+            if (levels.length) {
+                yearLevel = levels.sort((a, b) =>
+                    levels.filter(v => v === b).length - levels.filter(v => v === a).length
+                )[0];
+            }
+        }
+    } catch (e) { console.warn('Could not derive year level:', e); }
     try {
         const res  = await apiFetch(`/super_admin/class/set_subject/${_selectedTeacherId}`, {
             method: 'PUT',
@@ -3921,7 +3954,7 @@ async function setClassSubjectFromNowTab() {
         if (!res.ok) return Swal.fire({ icon: 'error', title: 'Error', text: data.message });
         // Update active badge
         const badge = document.getElementById('classActiveSubjectDisplayNow');
-        if (badge) { badge.textContent = `✓ ${subject} — ${yearLevel}`; badge.style.display = ''; }
+        if (badge) { const _t3 = classTime ? (() => { const [h,m] = classTime.split(':').map(Number); const ap = h>=12?'PM':'AM'; return ` @ ${(h%12)||12}:${String(m).padStart(2,'0')} ${ap}`; })() : ''; badge.textContent = `✓ ${subject}${_t3}`; badge.style.display = ''; }
         // Reload attendance filtered to the newly set subject
         await loadClassAttendanceNow();
         Swal.fire({ icon: 'success', title: 'Updated!', text: `Active class set to ${subject} — ${yearLevel}`, timer: 1800, showConfirmButton: false });

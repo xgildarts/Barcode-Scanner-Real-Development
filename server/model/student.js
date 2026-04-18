@@ -360,7 +360,8 @@ student.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
             require('../configuration/db').execute(`SELECT ${col} WHERE id = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
         })
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
-        const id = await services.sendMessage(tok.student_id, 'student', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
+        const replyToId = req.body.reply_to_id ? parseInt(req.body.reply_to_id) : null
+        const id = await services.sendMessage(tok.student_id, 'student', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic, replyToId)
         res.json({ ok: true, id })
         // Notify receiver via bell
         services.createMsgNotification(
@@ -371,6 +372,26 @@ student.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
                 null, id
         ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+student.post('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.body
+        services.setTypingStatus(tok.student_id, 'student', contact_id, contact_role)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false }) }
+})
+
+student.get('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        const isTyping = services.getTypingStatus(parseInt(contact_id), contact_role, tok.student_id, 'student')
+        res.json({ ok: true, typing: isTyping })
+    } catch(err) { res.status(500).json({ ok: false, typing: false }) }
 })
 
 student.get('/messages/search', async (req, res) => {

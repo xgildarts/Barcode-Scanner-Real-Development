@@ -56,7 +56,7 @@ function parseUAString(ua) {
     return (browser + (os ? ' · ' + os : '')) || ua.substring(0, 80);
 }
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const URL_BASED = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 // ============================================================
 // OFFLINE BANNER
 // ============================================================
@@ -161,6 +161,39 @@ function clearSessionAndRedirect() {
     localStorage.removeItem('guard_device_info');
     localStorage.removeItem('guard_user');
     window.location.href = 'guard_login.html';
+}
+
+// ============================================================
+// API — centralised fetch with 401 session-expiry handling
+// ============================================================
+async function apiCall(endpoint, method = 'GET', body = null, isFormData = false) {
+    try {
+        const token = localStorage.getItem('guard_token') || '';
+        const options = {
+            method,
+            headers: { 'Authorization': 'Bearer ' + token }
+        };
+        if (isFormData) {
+            options.body = body;
+        } else if (body) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(body);
+        }
+
+        const res  = await fetch(`${URL_BASED}${endpoint}`, options);
+        const data = await res.json();
+
+        if (res.status === 401) {
+            await Swal.fire({ icon: 'warning', title: 'Session Expired', text: 'Your session has expired. Please login again.', allowOutsideClick: false });
+            return clearSessionAndRedirect();
+        }
+
+        return { res, data };
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong!' });
+        return null;
+    }
 }
 
 async function checkToken() {
@@ -279,16 +312,11 @@ function processAttendance(code, type) {
         didOpen: () => Swal.showLoading()
     });
 
-    fetch(`${URL_BASED}/guard/event_attendance`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('guard_token')}`
-        },
-        body: JSON.stringify({ barcode: code, status: type })
-    })
-    .then(response => response.json())
-    .then(data => {
+    const deviceInfo = localStorage.getItem('guard_device_info') || '';
+    apiCall('/guard/event_attendance', 'POST', { barcode: code, status: type, device_info: deviceInfo })
+    .then(result => {
+        if (!result) return; // 401 already handled
+        const { data } = result;
         if(data.ok) {
             Swal.fire({
                 title: 'Success!',
@@ -314,20 +342,128 @@ function processAttendance(code, type) {
 
 }
 
-// Manual Entry
-async function manualEntry() {
+// ============================================================
+// MANUAL SEARCH MODAL — teacher-style live search
+// ============================================================
+let _guardSelectedStudent = null;
+let _guardSearchDebounceTimer = null;
+
+function manualEntry() {
     scanning = false;
+    _guardSelectedStudent = null;
+    document.getElementById('guardSearchModal').style.display = 'flex';
+    document.getElementById('guardStudentSearchInput').value = '';
+    document.getElementById('guardStudentSearchResults').style.display = 'none';
+    document.getElementById('guardStudentSearchResults').innerHTML = '';
+    document.getElementById('guardSelectedStudentPreview').style.display = 'none';
+    _guardSetButtons(false);
+    setTimeout(() => document.getElementById('guardStudentSearchInput').focus(), 100);
+}
 
-    const { value: code } = await Swal.fire({
-        title: 'Manual Entry',
-        input: 'text',
-        showCancelButton: true
+function closeGuardSearchModal() {
+    document.getElementById('guardSearchModal').style.display = 'none';
+    _guardSelectedStudent = null;
+    startScan();
+}
+
+function _guardSetButtons(enabled) {
+    ['guardTimeInBtn', 'guardTimeOutBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.5';
+        btn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
     });
+}
 
-    if (code) {
-        showActionModal(code);
-    } else {
+function guardSearchDebounced() {
+    clearTimeout(_guardSearchDebounceTimer);
+    _guardSearchDebounceTimer = setTimeout(guardRunSearch, 350);
+}
+
+async function guardRunSearch() {
+    const q = document.getElementById('guardStudentSearchInput').value.trim();
+    const resultsBox = document.getElementById('guardStudentSearchResults');
+
+    if (q.length < 2) {
+        resultsBox.style.display = 'none';
+        resultsBox.innerHTML = '';
+        return;
+    }
+
+    resultsBox.style.display = 'block';
+    resultsBox.innerHTML = '<div style="padding:12px;color:#888;text-align:center;">Searching...</div>';
+
+    try {
+        const result = await apiCall(`/guard/search_students?q=${encodeURIComponent(q)}`);
+        if (!result) return;
+
+        const students = result.data.content || [];
+
+        if (students.length === 0) {
+            resultsBox.innerHTML = '<div style="padding:12px;color:#888;text-align:center;">No students found.</div>';
+            return;
+        }
+
+        resultsBox.innerHTML = students.map(s => `
+            <div onclick="guardSelectStudent(${JSON.stringify(s).replace(/"/g, '&quot;')})"
+                style="padding:12px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.15s;"
+                onmouseover="this.style.background='#f0f7f7'" onmouseout="this.style.background=''">
+                <div style="font-weight:600;color:#1a4545;">${s.student_firstname} ${s.student_middlename ? s.student_middlename + '.' : ''} ${s.student_lastname}</div>
+                <div style="font-size:0.82rem;color:#666;">${s.student_id_number} · ${s.student_program} · ${s.student_year_level}</div>
+                <div style="font-size:0.8rem;color:#999;">${s.student_email}</div>
+            </div>
+        `).join('');
+    } catch (err) {
+        resultsBox.innerHTML = '<div style="padding:12px;color:#c00;text-align:center;">Error loading results.</div>';
+    }
+}
+
+function guardSelectStudent(student) {
+    _guardSelectedStudent = student;
+
+    document.getElementById('guardStudentSearchResults').style.display = 'none';
+    document.getElementById('guardStudentSearchInput').value = '';
+
+    const preview = document.getElementById('guardSelectedStudentPreview');
+    preview.style.display = 'block';
+    document.getElementById('guardPreviewName').textContent =
+        `${student.student_firstname} ${student.student_middlename ? student.student_middlename + '.' : ''} ${student.student_lastname}`;
+    document.getElementById('guardPreviewId').textContent      = `ID: ${student.student_id_number}`;
+    document.getElementById('guardPreviewProgram').textContent = `${student.student_program} · ${student.student_year_level}`;
+    document.getElementById('guardPreviewEmail').textContent   = student.student_email;
+
+    _guardSetButtons(true);
+}
+
+function guardClearSelectedStudent() {
+    _guardSelectedStudent = null;
+    document.getElementById('guardSelectedStudentPreview').style.display = 'none';
+    _guardSetButtons(false);
+}
+
+async function guardSubmitAttendance(status) {
+    if (!_guardSelectedStudent) return;
+
+    // Hide modal first so SweetAlert is not covered
+    document.getElementById('guardSearchModal').style.display = 'none';
+
+    Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const result = await apiCall('/guard/event_attendance_by_id', 'POST', {
+        student_id_number: _guardSelectedStudent.student_id_number,
+        status
+    });
+    if (!result) return;
+
+    const { data } = result;
+    if (data.ok) {
+        await Swal.fire({ icon: 'success', title: 'Success!', text: data.message, timer: 1500, showConfirmButton: false });
+        _guardSelectedStudent = null;
         startScan();
+    } else {
+        // Show error then re-open modal so guard can try again
+        await Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+        document.getElementById('guardSearchModal').style.display = 'flex';
     }
 }
 
@@ -372,10 +508,9 @@ function _setGuardAvatar(src) {
 
 async function loadGuardProfile() {
     try {
-        const res  = await fetch(`${URL_BASED}/guard/get_data`, {
-            headers: { 'Authorization': 'Bearer ' + TOKEN }
-        });
-        const data = await res.json();
+        const result = await apiCall('/guard/get_data');
+        if (!result) return; // 401 already handled
+        const { data } = result;
         if (!data.ok) return;
         const pic = data.content.guard_profile_picture;
         if (pic) {
@@ -390,13 +525,10 @@ async function _uploadGuardPic(blob) {
     fd.append('guard_profile_picture', croppedFile);
     Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
-        const res  = await fetch(`${URL_BASED}/guard/upload_profile_picture`, {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + TOKEN },
-            body: fd
-        });
-        const data = await res.json();
+        const result = await apiCall('/guard/upload_profile_picture', 'POST', fd, true);
         Swal.close();
+        if (!result) return; // 401 already handled
+        const { data } = result;
         if (data.ok) {
             const url = `${URL_BASED.replace('/api/v1','')}/api/v1/uploads/profile_pictures/${data.picture}`;
             _setGuardAvatar(url);
@@ -445,6 +577,13 @@ function changeGuardPicture() {
 }
 
 // Init
+// Back-button guard: if user logged out, pressing back must not restore the page
+window.addEventListener('pageshow', (event) => {
+    if (!localStorage.getItem('guard_token')) {
+        window.location.replace('guard_login.html');
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     checkToken();
     startCamera();

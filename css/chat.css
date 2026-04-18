@@ -1109,3 +1109,130 @@
 }
 [data-theme="dark"] .chat-reaction-count { color: #7aadaa; }
 [data-theme="dark"] .chat-ctx-react-btn:hover { background: #1e2f3f; }
+/* ============================================================
+   TYPING INDICATOR
+   ============================================================ */
+.chat-typing-bubble {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 14px !important;
+    min-width: 52px;
+}
+
+.chat-typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #aaa;
+    display: inline-block;
+    animation: chatTypingBounce 1.2s infinite ease-in-out;
+    flex-shrink: 0;
+}
+.chat-typing-dot:nth-child(1) { animation-delay: 0s; }
+.chat-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes chatTypingBounce {
+    0%, 60%, 100% { transform: translateY(0); background: #bbb; }
+    30%            { transform: translateY(-6px); background: #888; }
+}
+
+/* ============================================================
+   REPLY BAR (above input)
+   ============================================================ */
+.chat-reply-bar {
+    display: none;
+    align-items: center;
+    gap: 0;
+    background: #f0f7f7;
+    border-top: 1px solid #d0e8e4;
+    border-left: none;
+    border-right: none;
+    padding: 6px 10px 6px 0;
+    font-size: 13px;
+    overflow: hidden;
+}
+
+.chat-reply-bar-accent {
+    width: 3px;
+    min-height: 36px;
+    background: #1a4545;
+    border-radius: 2px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.chat-reply-bar-body {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.chat-reply-bar-name {
+    font-weight: 700;
+    color: #1a4545;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-reply-bar-preview {
+    color: #666;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+
+.chat-reply-bar-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.chat-reply-bar-close:hover { color: #c00; }
+
+/* ============================================================
+   REPLY QUOTE inside bubble
+   ============================================================ */
+.chat-reply-quote {
+    background: rgba(0,0,0,0.07);
+    border-left: 3px solid rgba(0,0,0,0.25);
+    border-radius: 4px;
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.chat-reply-quote:hover { background: rgba(0,0,0,0.12); }
+
+.chat-msg.sent .chat-reply-quote {
+    background: rgba(255,255,255,0.18);
+    border-left-color: rgba(255,255,255,0.5);
+}
+.chat-msg.sent .chat-reply-quote:hover { background: rgba(255,255,255,0.25); }
+
+.chat-reply-quote-name {
+    font-weight: 700;
+    font-size: 11px;
+    margin-bottom: 2px;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-reply-quote-text {
+    font-size: 12px;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

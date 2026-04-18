@@ -44,7 +44,7 @@ function updatePasswordStrength(val, barId, labelId) {
 }
 // ─────────────────────────────────────────────────────────────
 
-const BASE_URL = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const BASE_URL = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 const GOOGLE_CLIENT_ID = '778771236440-59j9p3hl8tikvffo6s3983s9sfu79ljg.apps.googleusercontent.com';
 
 // Hardware-bound device fingerprint using Canvas + WebGL signals.

@@ -43,3 +43,36 @@
 @media (max-width: 1025px) {
     #eventAttendanceHistory .attendance-table tbody { max-height: none; }
 }
+@media (max-width: 768px) {
+    /* Override min-width so filters stack full width on mobile */
+    .filter-select {
+        min-width: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* Active Event Setup banner — stack vertically */
+    div[style*="background:#eef6f4"],
+    div[style*="background: #eef6f4"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .event-name-input {
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+    }
+
+    .set-event-button {
+        width: 100% !important;
+    }
+
+    #activeEventDisplay {
+        display: block;
+        text-align: center;
+        white-space: normal !important;
+        word-break: break-word;
+    }
+}

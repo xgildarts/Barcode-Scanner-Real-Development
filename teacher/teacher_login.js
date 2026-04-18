@@ -52,7 +52,7 @@ function parseUAString(ua) {
     return (browser + (os ? ' · ' + os : '')) || ua.substring(0, 80);
 }
 
-const URL_BASED = 'https://32g7g83w-3000.asse.devtunnels.ms/api/v1';
+const URL_BASED = 'https://barcode-scanner-based-student-attendance.com/api/v1';
 
 const emailInput = document.getElementById('email');
 const rememberMeCheckbox = document.getElementById('rememberMe');

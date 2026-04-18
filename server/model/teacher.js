@@ -340,12 +340,17 @@ teacher.delete('/delete_program/:id', async (req, res) => {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
-        // Look up subject name before deleting so the log shows the name not the ID
+        // Look up subject name DIRECTLY by subject_id before deleting
         let subjectName = `Subject ID: ${subjectID}`
         try {
-            const subjects = await services.getStudentSubjects(decodedToken.teacher_id)
-            const found = subjects.find(s => String(s.subject_id) === String(subjectID))
-            if (found) subjectName = found.subject_name
+            const rows = await new Promise((res, rej) => {
+                require('../configuration/db').execute(
+                    'SELECT subject_name FROM subject WHERE subject_id = ? LIMIT 1',
+                    [subjectID],
+                    (err, r) => err ? rej(err) : res(r)
+                )
+            })
+            if (rows.length && rows[0].subject_name) subjectName = rows[0].subject_name
         } catch (_) {}
         const result = await services.deleteSubject(subjectID)
         services.writeActivityLog(decodedToken.teacher_id, decodedToken.teacher_name, 'teacher', 'DELETE_SUBJECT', 'Subject', null, subjectName, `Deleted subject: ${subjectName}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
@@ -423,7 +428,7 @@ teacher.put('/update_student_record', async (req, res) => {
             program
         )
 
-        if (!result.duplicate) services.writeActivityLog(decodedToken.teacher_id || null, decodedToken.teacher_name || null, 'teacher', 'EDIT_STUDENT_RECORD', 'Student', req.body.student_id, `${req.body.firstname} ${req.body.lastname}`, `Edited class record: ${req.body.student_id_number}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
+        if (!result.duplicate) services.writeActivityLog(decodedToken.teacher_id || null, decodedToken.teacher_name || null, 'teacher', 'EDIT_STUDENT_RECORD', 'Student', req.body.student_id, `${req.body.firstname} ${req.body.lastname}`, `Edited class record: ${req.body.firstname} ${req.body.mi ? req.body.mi + '. ' : ''}${req.body.lastname} (ID: ${req.body.student_id_number})`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json({
             ok: true,
             message: 'Student record updated successfully!',
@@ -563,6 +568,32 @@ teacher.put('/update_attendance_status/:attendance_id', async (req, res) => {
             status,
             decodedToken.teacher_barcode_scanner_serial_number
         )
+
+        // Send SMS to guardian after manual status update
+        try {
+            const row = await new Promise((resolve, reject) => {
+                require('../configuration/db').execute(
+                    `SELECT ar.student_id_number, ar.student_firstname, ar.student_middlename, ar.student_lastname,
+                            COALESCE(sa.student_guardian_number, '') AS guardian_number
+                     FROM attendance_record ar
+                     LEFT JOIN student_accounts sa ON sa.student_id_number = ar.student_id_number
+                     WHERE ar.attendance_id = ? LIMIT 1`,
+                    [attendance_id],
+                    (err, rows) => err ? reject(err) : resolve(rows[0] || null)
+                )
+            })
+            if (row && row.guardian_number) {
+                const mid = row.student_middlename ? row.student_middlename.charAt(0).toUpperCase() + '.' : ''
+                const fullName = [row.student_firstname, mid, row.student_lastname].filter(Boolean).join(' ')
+                const _smsTime = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true })
+                const statusMsg = status === 'Present' ? `is marked Present in class at ${_smsTime}`
+                    : status === 'Late'    ? `is marked Late in class at ${_smsTime}`
+                    : status === 'Excused' ? `has been marked Excused from class today`
+                    : `is marked Absent from class today`
+                await services.sendSMS(row.guardian_number, `Pan Pacific University: ${fullName} ${statusMsg}.`)
+            }
+        } catch (smsErr) { console.warn('[SMS] Manual update SMS failed:', smsErr.message) }
+
         res.json({ ok: true, message: result })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -590,6 +621,28 @@ teacher.post('/insert_manual_status', async (req, res) => {
             student_lastname, student_program, student_year_level, subject,
             decodedToken.teacher_barcode_scanner_serial_number, status
         )
+
+        // Send SMS to guardian after manual status insert
+        try {
+            const guardianRow = await new Promise((resolve, reject) => {
+                require('../configuration/db').execute(
+                    'SELECT student_guardian_number FROM student_accounts WHERE student_id_number = ? LIMIT 1',
+                    [student_id_number],
+                    (err, rows) => err ? reject(err) : resolve(rows[0] || null)
+                )
+            })
+            if (guardianRow && guardianRow.student_guardian_number) {
+                const mid = student_middlename ? student_middlename.charAt(0).toUpperCase() + '.' : ''
+                const fullName = [student_firstname, mid, student_lastname].filter(Boolean).join(' ')
+                const _smsTime = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true })
+                const statusMsg = status === 'Present' ? `is marked Present in class at ${_smsTime}`
+                    : status === 'Late'    ? `is marked Late in class at ${_smsTime}`
+                    : status === 'Excused' ? `has been marked Excused from class today`
+                    : `is marked Absent from class today`
+                await services.sendSMS(guardianRow.student_guardian_number, `Pan Pacific University: ${fullName} ${statusMsg}.`)
+            }
+        } catch (smsErr) { console.warn('[SMS] Manual insert SMS failed:', smsErr.message) }
+
         res.json({ ok: true, message: result.message, insertId: result.insertId })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || String(err) })
@@ -759,7 +812,8 @@ teacher.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
             require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
         })
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
-        const id = await services.sendMessage(tok.teacher_id, 'teacher', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
+        const replyToId = req.body.reply_to_id ? parseInt(req.body.reply_to_id) : null
+        const id = await services.sendMessage(tok.teacher_id, 'teacher', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic, replyToId)
         res.json({ ok: true, id })
         // Notify receiver via bell
         services.createMsgNotification(
@@ -770,6 +824,26 @@ teacher.post('/messages/send', uploadMsgFile.single('file'), async (req, res) =>
                 null, id
         ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+teacher.post('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.body
+        services.setTypingStatus(tok.teacher_id, 'teacher', contact_id, contact_role)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false }) }
+})
+
+teacher.get('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        const isTyping = services.getTypingStatus(parseInt(contact_id), contact_role, tok.teacher_id, 'teacher')
+        res.json({ ok: true, typing: isTyping })
+    } catch(err) { res.status(500).json({ ok: false, typing: false }) }
 })
 
 teacher.get('/messages/search', async (req, res) => {

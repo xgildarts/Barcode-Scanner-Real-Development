@@ -504,3 +504,120 @@
     background: #c0392b;
     border-color: #c0392b;
 }
+
+/* ── Responsive attendance table → card layout ── */
+@media (max-width: 600px) {
+    .attendance-table {
+        min-width: unset;
+    }
+
+    .attendance-table thead {
+        display: none;
+    }
+
+    .attendance-table tbody tr {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e0eeec;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        padding: 10px 14px;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(44,95,95,0.07);
+    }
+
+    .attendance-table tbody tr:nth-child(even) {
+        background: #fff;
+    }
+
+    .attendance-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 13px;
+        border-bottom: 1px dashed #f0f0f0;
+        white-space: normal;
+    }
+
+    .attendance-table td:last-child {
+        border-bottom: none;
+    }
+
+    .attendance-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: #2c5f5f;
+        letter-spacing: 0.4px;
+        flex-shrink: 0;
+        margin-right: 10px;
+    }
+}
+/* ── Attendance History Filter Bar ── */
+.att-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    padding: 14px 16px;
+    background: #f4f9f8;
+    border: 1px solid #d0e8e4;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+.att-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 140px;
+}
+.att-filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #3d6b6b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.att-filter-select,
+.att-filter-input {
+    padding: 8px 10px;
+    border: 1.5px solid #b2d8d2;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #1a3a3a;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+.att-filter-select:focus,
+.att-filter-input:focus {
+    border-color: #3d8c84;
+}
+.att-filter-reset {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-self: flex-end;
+    white-space: nowrap;
+}
+.att-filter-reset:hover { background: #c0392b; }
+
+@media (max-width: 600px) {
+    .att-filter-bar { flex-direction: column; }
+    .att-filter-group { min-width: 100%; }
+    .att-filter-reset { width: 100%; justify-content: center; }
+}

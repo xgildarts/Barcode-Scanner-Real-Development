@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/public/logo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="../css/student-css/student_global.css">
@@ -199,6 +200,34 @@
             </div>
         </div>
 
+        <!-- Attendance History Filters -->
+        <div class="att-filter-bar">
+            <div class="att-filter-group">
+                <label class="att-filter-label">Subject</label>
+                <select id="filterSubject" class="att-filter-select" onchange="applyAttendanceFilters()">
+                    <option value="">All Subjects</option>
+                </select>
+            </div>
+            <div class="att-filter-group">
+                <label class="att-filter-label">Date</label>
+                <input type="date" id="filterDate" class="att-filter-input" oninput="applyAttendanceFilters()">
+            </div>
+            <div class="att-filter-group">
+                <label class="att-filter-label">Status</label>
+                <select id="filterStatus" class="att-filter-select" onchange="applyAttendanceFilters()">
+                    <option value="">All Status</option>
+                    <option value="Present">Present</option>
+                    <option value="Late">Late</option>
+                    <option value="Absent">Absent</option>
+                    <option value="Excused">Excused</option>
+                </select>
+            </div>
+            <button class="att-filter-reset" onclick="resetAttendanceFilters()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                Reset
+            </button>
+        </div>
+
         <div class="table-container">
             <table class="attendance-table">
                 <thead>
@@ -281,24 +310,11 @@
                     <input type="text" class="form-input" id="lastName" value="Unknown" disabled>
                 </div>
             
-                <div class="form-group">
-                    <label class="form-label">ID Number</label>
-                    <input type="text" class="form-input" id="idNumber" value="000000" disabled>
-                </div>
-            
-                <div class="form-group">
-                    <label class="form-label">Year Level</label>
-                    <input type="text" class="form-input" id="yearLevel" value="0" disabled>
-                </div>
-            
-                <div class="form-group">
-                    <label class="form-label">Program</label>
-                    <input type="text" class="form-input" id="program" value="Unknown" disabled>
-                </div>
+
             
             </div>            
     
-            <div class="password-section">
+            <div class="password-section" style="margin-top: 20px;">
                 <div class="section-title">
                     <span>Change Password</span>
                 </div>

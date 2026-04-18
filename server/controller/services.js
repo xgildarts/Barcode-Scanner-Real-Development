@@ -6,6 +6,24 @@ const SALT_ROUNDS = 10
 const JWT_SECRET = process.env.TOKEN_KEYWORD;
 
 // ============================================================
+// TYPING STATUS — in-memory, no DB needed
+// ============================================================
+const _typingStore = new Map() // key: "userId:role:contactId:contactRole" → timestamp
+const TYPING_TTL_MS = 5000    // 5 seconds
+
+function setTypingStatus(userId, userRole, contactId, contactRole) {
+    const key = `${userId}:${userRole}:${contactId}:${contactRole}`
+    _typingStore.set(key, Date.now())
+}
+
+function getTypingStatus(userId, userRole, contactId, contactRole) {
+    // Is userId:userRole currently typing to contactId:contactRole?
+    const key = `${userId}:${userRole}:${contactId}:${contactRole}`
+    const ts = _typingStore.get(key)
+    return !!ts && (Date.now() - ts) < TYPING_TTL_MS
+}
+
+// ============================================================
 // TOKEN BLACKLIST
 // Tokens are added here on logout. verifyToken checks this set
 // before accepting any token. Entries auto-expire when the JWT
@@ -667,6 +685,8 @@ function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
     return new Promise((resolve, reject) => {
         // JOIN student_accounts for current student name data and
         // JOIN teacher on serial number to show teacher full name instead of student name.
+        // JOIN student_records_regular_class to get the date the student was registered
+        // under each teacher, and only return records from that date onwards.
         const sql = `
             SELECT
                 h.attendance_id AS id, h.student_id, h.student_id_number,
@@ -681,6 +701,14 @@ function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
             LEFT JOIN teacher t
                 ON t.teacher_barcode_scanner_serial_number = h.teacher_barcode_scanner_serial_number
             WHERE ${studentID ? 'h.student_id = ?' : 'h.student_id_number = ?'}
+            AND h.attendance_date >= (
+                SELECT DATE(src.date_created)
+                FROM student_records_regular_class src
+                WHERE src.student_id_number = h.student_id_number
+                AND src.teacher_barcode_scanner_serial_number = h.teacher_barcode_scanner_serial_number
+                ORDER BY src.date_created ASC
+                LIMIT 1
+            )
             ORDER BY h.attendance_date DESC, h.attendance_time DESC
         `;
         const param = studentID ? studentID : studentIDNumber;
@@ -702,6 +730,14 @@ function getAttendanceHistoryForStudentOnly(studentID, studentIDNumber) {
                     LEFT JOIN teacher t
                         ON t.teacher_barcode_scanner_serial_number = h.teacher_barcode_scanner_serial_number
                     WHERE h.student_id_number = ?
+                    AND h.attendance_date >= (
+                        SELECT DATE(src.date_created)
+                        FROM student_records_regular_class src
+                        WHERE src.student_id_number = h.student_id_number
+                        AND src.teacher_barcode_scanner_serial_number = h.teacher_barcode_scanner_serial_number
+                        ORDER BY src.date_created ASC
+                        LIMIT 1
+                    )
                     ORDER BY h.attendance_date DESC, h.attendance_time DESC
                 `;
                 db.execute(sql2, [studentIDNumber], (err2, result2) => {
@@ -1516,7 +1552,26 @@ function updateStudentRegisteredRecord(
 
                 db.execute(query, values, (err, result) => {
                     if (err) return reject(err);
-                    resolve({ duplicate: false, result });
+
+                    // Sync student_accounts so the student login reflects the teacher's correction
+                    const syncSql = `
+                        UPDATE student_accounts
+                        SET student_firstname  = ?,
+                            student_middlename = ?,
+                            student_lastname   = ?,
+                            student_year_level = ?,
+                            student_program    = ?
+                        WHERE student_id_number = ?
+                    `;
+                    db.execute(
+                        syncSql,
+                        [student_firstname, student_middlename, student_lastname,
+                         student_year_level, student_program, student_id_number],
+                        (syncErr) => {
+                            if (syncErr) console.warn('[updateStudentRegisteredRecord] student_accounts sync failed:', syncErr.message);
+                            resolve({ duplicate: false, result });
+                        }
+                    );
                 });
             }
         );
@@ -1920,7 +1975,7 @@ async function getEventSet() {
 }
 
 // Insert Event Attendance
-async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guardName, guardLocation) {
+async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guardName, guardLocation, ip, userAgent) {
     return new Promise(async (resolve, reject) => {
         try {
             const student = await studentBarcodeFinder(studentBarcode);
@@ -1962,7 +2017,7 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                 try {
                     await guardInsertAttendanceHistoryRecord(values);
 
-                    writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`, null, null)
+                    writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`, ip || null, userAgent || null)
 
                     // Send SMS notification to guardian
                     const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
@@ -1980,6 +2035,80 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                     });
                 } catch (historyErr) {
                     console.error("History insert failed:", historyErr);
+                    reject(historyErr);
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// Guard insert attendance by student ID number (for students without internet — no barcode needed)
+async function guardInsertAttendanceRecordByIdNumber(studentIdNumber, status, guardID, guardName, guardLocation, ip, userAgent) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Look up student directly by ID number instead of barcode
+            const rows = await new Promise((res, rej) => {
+                db.execute(
+                    `SELECT student_id, student_id_number, student_firstname, student_middlename,
+                            student_lastname, student_email, student_year_level,
+                            student_guardian_number, student_program
+                     FROM student_accounts WHERE student_id_number = ? LIMIT 1`,
+                    [studentIdNumber],
+                    (err, result) => { if (err) return rej(err); res(result); }
+                );
+            });
+
+            if (!rows || rows.length === 0) {
+                return reject(new Error('Student not found with that ID number.'));
+            }
+
+            const student = rows[0];
+            const eventData = await getEventSet();
+            if (!eventData || !eventData.event_name_set) {
+                return reject(new Error('No active event found. Please contact Admin.'));
+            }
+
+            const alreadyScanned = await studentCheckEventIfExists(student.student_id_number, status, eventData.event_name_set);
+            if (alreadyScanned) {
+                return reject(new Error(`Student has already scanned for ${status} in this event!`));
+            }
+
+            const activeEventName = eventData.event_name_set;
+            const activeAdminId   = eventData.admin_id;
+            const fullName = `${student.student_firstname} ${student.student_middlename ? student.student_middlename + '.' : ''} ${student.student_lastname}`.trim();
+            const values = [
+                student.student_id, fullName, student.student_id_number,
+                student.student_program, student.student_year_level,
+                activeEventName, guardName || 'Guard', guardLocation,
+                status, guardID, activeAdminId
+            ];
+
+            const insertQuery = `
+                INSERT INTO event_attendance_record
+                (student_id, student_name, student_id_number, student_program, student_year_level,
+                 event_name, guard_name, guard_location, status, guard_id, admin_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+            db.execute(insertQuery, values, async (err) => {
+                if (err) return reject(err);
+                try {
+                    await guardInsertAttendanceHistoryRecord(values);
+                    writeActivityLog(guardID, guardName, 'guard',
+                        status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT',
+                        'Event Attendance', student.student_id_number, fullName,
+                        `Event: ${activeEventName} | Location: ${guardLocation}`, ip || null, userAgent || null);
+
+                    const smsAction = status === 'TIME IN' ? 'arrived at' : 'left';
+                    if (student.student_guardian_number) {
+                        sendSMS(student.student_guardian_number,
+                            `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
+                        ).catch(() => {});
+                    }
+
+                    resolve({ ok: true, message: `${status} Recorded Successfully`, student: fullName, event: activeEventName });
+                } catch (historyErr) {
                     reject(historyErr);
                 }
             });
@@ -2901,7 +3030,7 @@ async function updateAttendanceStatus(attendance_id, new_status, teacher_barcode
         // Present and Late get the current time (teacher override = now)
         // Absent and Excused clear the time (no scan time makes sense)
         const needsTime = new_status === 'Present' || new_status === 'Late';
-        const now = new Date().toTimeString().slice(0, 8); // "HH:MM:SS"
+        const now = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(11, 19); // "HH:MM:SS" Philippine Time
         const sql = needsTime
             ? `UPDATE attendance_record SET attendance_status = ?, attendance_time = ?, manually_overridden = 1 WHERE attendance_id = ? AND teacher_barcode_scanner_serial_number = ?`
             : `UPDATE attendance_record SET attendance_status = ?, attendance_time = NULL, manually_overridden = 1 WHERE attendance_id = ? AND teacher_barcode_scanner_serial_number = ?`;
@@ -2933,7 +3062,7 @@ async function insertManualStatusRecord(
              student_lastname, student_program || null, student_year_level, subject,
              teacher_barcode_scanner_serial_number, attendance_status,
              // Absent and Excused have no scan time — set NULL explicitly to avoid curtime() default
-             (attendance_status === 'Absent' || attendance_status === 'Excused') ? null : new Date().toTimeString().slice(0,8)],
+             (attendance_status === 'Absent' || attendance_status === 'Excused') ? null : new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(11, 19)],
             (err, result) => {
                 if (err) return reject(err)
                 resolve({ insertId: result.insertId, message: 'Record inserted successfully.' })
@@ -3122,7 +3251,6 @@ async function enrichReactionNotifications(notifications) {
 }
 
 function updateMessagesName(userId, userRole, newName) {
-    const db = require('./db')
     const p = (sql, params) => new Promise(res => db.execute(sql, params, (err) => { if (err) console.error('[updateMessagesName]', err.message); res() }))
     return Promise.all([
         p('UPDATE messages SET sender_name = ? WHERE sender_id = ? AND sender_role = ?', [newName, userId, userRole]),
@@ -3133,7 +3261,7 @@ function updateMessagesName(userId, userRole, newName) {
 
 function deleteMsgNotification(id, receiverId, receiverRole) {
     return new Promise((resolve) => {
-        require('./db').execute(
+        db.execute(
             'DELETE FROM message_notifications WHERE id = ? AND receiver_id = ? AND receiver_role = ?',
             [id, receiverId, receiverRole],
             (err) => { if (err) console.error('[DeleteNotif]', err.message); resolve() }
@@ -3191,6 +3319,7 @@ module.exports = {
     getAttendanceEventRecords,
     guardLogin,
     guardInsertAttendanceRecord,
+    guardInsertAttendanceRecordByIdNumber,
     setEventName,
     getEventSet,
     getActiveEventName,
@@ -3296,6 +3425,8 @@ module.exports = {
     markNotificationsRead,
     getUnreadCount,
     sendMessage,
+    setTypingStatus,
+    getTypingStatus,
     editMessage,
     unsendMessage,
     deleteMessageForMe,
@@ -3513,12 +3644,12 @@ function reactToMessage(messageId, reactorId, reactorRole, emoji) {
     })
 }
 
-function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content, fileUrl, fileName, fileType, senderPic, receiverPic) {
+function sendMessage(senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content, fileUrl, fileName, fileType, senderPic, receiverPic, replyToId) {
     return new Promise((resolve, reject) => {
         db.execute(
-            `INSERT INTO messages (sender_id, sender_role, sender_name, receiver_id, receiver_role, receiver_name, content, file_url, file_name, file_type, sender_profile_picture, receiver_profile_picture)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content || null, fileUrl || null, fileName || null, fileType || null, senderPic || null, receiverPic || null],
+            `INSERT INTO messages (sender_id, sender_role, sender_name, receiver_id, receiver_role, receiver_name, content, file_url, file_name, file_type, sender_profile_picture, receiver_profile_picture, reply_to_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [senderId, senderRole, senderName, receiverId, receiverRole, receiverName, content || null, fileUrl || null, fileName || null, fileType || null, senderPic || null, receiverPic || null, replyToId || null],
             (err, result) => {
                 if (err) return reject(err)
                 resolve(result.insertId)
@@ -3545,15 +3676,21 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
     })
     return new Promise((resolve) => {
         db.execute(
-            `SELECT * FROM messages
+            `SELECT m.*,
+                    r.content       AS reply_content,
+                    r.sender_name   AS reply_sender_name,
+                    r.file_name     AS reply_file_name,
+                    r.is_unsent     AS reply_is_unsent
+             FROM messages m
+             LEFT JOIN messages r ON r.id = m.reply_to_id
              WHERE (
-                sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?
-                AND deleted_for_sender = 0
+                m.sender_id = ? AND m.sender_role = ? AND m.receiver_id = ? AND m.receiver_role = ?
+                AND m.deleted_for_sender = 0
              ) OR (
-                sender_id = ? AND sender_role = ? AND receiver_id = ? AND receiver_role = ?
-                AND deleted_for_receiver = 0
+                m.sender_id = ? AND m.sender_role = ? AND m.receiver_id = ? AND m.receiver_role = ?
+                AND m.deleted_for_receiver = 0
              )
-             ORDER BY created_at DESC
+             ORDER BY m.created_at DESC
              LIMIT ?`,
             [userAId, userARole, userBId, userBRole,
              userBId, userBRole, userAId, userARole, n],

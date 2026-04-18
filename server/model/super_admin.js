@@ -1158,7 +1158,8 @@ superAdmin.post('/messages/send', uploadMsgFile.single('file'), async (req, res)
             require('../configuration/db').execute(`SELECT ${col} = ? LIMIT 1`, [receiver_id], (e,rows) => r(rows?.[0]?.[Object.keys(rows[0])[0]] || null))
         })
         const [senderPic, receiverPic] = await Promise.all([getSenderPic(), getReceiverPic()])
-        const id = await services.sendMessage(tok.super_admin_id, 'super_admin', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic)
+        const replyToId = req.body.reply_to_id ? parseInt(req.body.reply_to_id) : null
+        const id = await services.sendMessage(tok.super_admin_id, 'super_admin', senderName, receiver_id, receiver_role, receiver_name, content?.trim() || null, fileUrl, fileName, fileType, senderPic, receiverPic, replyToId)
         res.json({ ok: true, id })
         // Notify receiver via bell
         services.createMsgNotification(
@@ -1169,6 +1170,26 @@ superAdmin.post('/messages/send', uploadMsgFile.single('file'), async (req, res)
                 null, id
         ).catch(() => {})
     } catch (err) { res.status(500).json({ ok: false, message: err.message }) }
+})
+
+superAdmin.post('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.body
+        services.setTypingStatus(tok.super_admin_id, 'super_admin', contact_id, contact_role)
+        res.json({ ok: true })
+    } catch(err) { res.status(500).json({ ok: false }) }
+})
+
+superAdmin.get('/messages/typing', (req, res) => {
+    try {
+        const tok = services.verifyToken(services.removeBearer(req.headers['authorization']))
+        if (!tok) return res.status(401).json({ ok: false })
+        const { contact_id, contact_role } = req.query
+        const isTyping = services.getTypingStatus(parseInt(contact_id), contact_role, tok.super_admin_id, 'super_admin')
+        res.json({ ok: true, typing: isTyping })
+    } catch(err) { res.status(500).json({ ok: false, typing: false }) }
 })
 
 superAdmin.get('/messages/search', async (req, res) => {

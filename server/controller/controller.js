@@ -117,5 +117,5 @@ app.use('/api/v1/super_admin', superAdmin)
 
 
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`)
+    console.log(`Server running at https://barcode-scanner-based-student-attendance.com`)
 })
