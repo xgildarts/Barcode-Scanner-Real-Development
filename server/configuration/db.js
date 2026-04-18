@@ -15,6 +15,15 @@ const connection = mysql.createPool({
     keepAliveInitialDelay: 10000
 })
 
+// Force Philippine Time (UTC+8) on every new MySQL connection
+// This ensures curtime(), curdate(), NOW() all return PH time
+connection.on('connection', (conn) => {
+    conn.query("SET time_zone = '+08:00'", (err) => {
+        if (err) console.error('[DB] Failed to set timezone:', err.message)
+        else console.log('[DB] Timezone set to Asia/Manila (+08:00)')
+    })
+})
+
 connection.getConnection((err, conn) => {
     if (err) return console.error('[DB] Connection error:', err.message)
     console.log('Connected!')
