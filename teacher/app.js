@@ -2155,11 +2155,34 @@ function initMap(lat, lng) {
     setTimeout(() => map.invalidateSize(), 600);
 }
 
+// Philippines bounding box: lat 4.5-21.2, lng 116.0-127.0
+function isInPhilippines(lat, lng) {
+    return lat >= 4.5 && lat <= 21.2 && lng >= 116.0 && lng <= 127.0;
+}
+
 function loadLocation() {
     Swal.fire({ title: 'Acquiring location...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     navigator.geolocation.getCurrentPosition(position => {
         Swal.close();
         const { latitude: lat, longitude: lng } = position.coords;
+
+        if (!isInPhilippines(lat, lng)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incorrect Location Detected',
+                html: 'Your device returned a location outside the Philippines <b>(Lat: ' + lat.toFixed(4) + ', Lng: ' + lng.toFixed(4) + ')</b>.<br><br>This happens on <b>laptops/PCs</b> because they use IP-based location instead of GPS, which can be inaccurate.<br><br>The map will still load — please <b>use the search bar</b> to find your correct location and drag the pin manually.',
+                confirmButtonText: 'OK, I will set it manually',
+                confirmButtonColor: '#5a8a7a'
+            }).then(() => {
+                const defaultLat = 12.8797;
+                const defaultLng = 121.7740;
+                setTimeout(() => {
+                    initMap(defaultLat, defaultLng);
+                    setTimeout(() => { if (map) map.invalidateSize(); }, 300);
+                }, 150);
+            });
+            return;
+        }
 
         // Always wait for the section to be visible before initializing
         setTimeout(() => {
