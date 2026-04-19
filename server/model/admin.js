@@ -447,12 +447,13 @@ admin.put('/edit_student_account/:id', async (req, res) => {
         if (result.ok !== false) services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result);
     } catch (err) {
+        const msg = err?.message || err?.sqlMessage || 'Something went wrong.';
         if (err.status_code === 401) {
-            res.status(err.status_code).json(err);
+            res.status(401).json({ ok: false, message: msg });
         } else if (err.status_code === 500) {
-            res.status(err.status_code).json(err);
+            res.status(500).json({ ok: false, message: msg });
         } else {
-            res.status(409).json(err);
+            res.status(409).json({ ok: false, message: msg });
         }
     }
 });

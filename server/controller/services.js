@@ -2407,10 +2407,10 @@ function adminEditStudentAccounts(id, id_number, firstname, middlename, lastname
                                         student_program = ?,
                                         student_year_level = ?,
                                         student_email = COALESCE(NULLIF(?, ''), student_email),
-                                        student_guardian_number = COALESCE(NULLIF(?, ''), student_guardian_number)
+                                        student_guardian_number = ?
                                     WHERE student_id = ?`
                                 connection.execute(updateAccountQuery,
-                                    [id_number, firstname, middlename, lastname, program, year_level, email || '', guardian_number || '', id],
+                                    [id_number, firstname, middlename, lastname, program, year_level, email || '', guardian_number || null, id],
                                     (err, result) => {
                                         if (err) return connection.rollback(() => { connection.release(); reject(err) })
                                         if (result.affectedRows === 0) return connection.rollback(() => { connection.release(); reject(new Error('Student not found.')) })

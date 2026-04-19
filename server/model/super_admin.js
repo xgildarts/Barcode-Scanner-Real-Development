@@ -540,7 +540,8 @@ superAdmin.put('/edit_student_account/:id', requireSuperAdmin, async (req, res) 
         if (result.ok !== false) services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch (err) {
-        res.status(err.status_code || 500).json(err)
+        const msg = err?.message || err?.sqlMessage || 'Something went wrong.';
+        res.status(err.status_code || 500).json({ ok: false, message: msg })
     }
 })
 
