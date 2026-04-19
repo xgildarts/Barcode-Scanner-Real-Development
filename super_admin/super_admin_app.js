@@ -2322,9 +2322,13 @@ async function printSection(tableId, title) {
             if (row.children[actionColIndex]) row.children[actionColIndex].remove();
         });
     }
-    // Skip filtered-out rows
-    clone.querySelectorAll('tbody tr').forEach(tr => {
-        if (tr.style.display === 'none') tr.remove();
+    // Skip filtered-out rows (handles both style.display=none and filter-hidden CSS class)
+    const originalRows = Array.from(table.querySelectorAll('tbody tr'));
+    clone.querySelectorAll('tbody tr').forEach((tr, i) => {
+        const orig = originalRows[i];
+        if (!orig) return;
+        const isHidden = orig.style.display === 'none' || orig.classList.contains('filter-hidden');
+        if (isHidden) tr.remove();
     });
 
     const rows    = clone.querySelectorAll('tbody tr').length;
