@@ -420,7 +420,8 @@ admin.put('/edit_student_account/:id', async (req, res) => {
         lastname, 
         program, 
         year_level,
-        email
+        email,
+        guardian_number
     } = req.body;
 
     try {
@@ -440,7 +441,8 @@ admin.put('/edit_student_account/:id', async (req, res) => {
             lastname, 
             program, 
             year_level,
-            email
+            email,
+            guardian_number
         );
         if (result.ok !== false) services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result);

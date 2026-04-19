@@ -188,6 +188,7 @@ const DOM = {
     studentProgram: document.getElementById('studentProgram'),
     studentYearLevel: document.getElementById('studentYearLevel'),
     studentEmail: document.getElementById('studentEmail'),
+    studentGuardianNumber: document.getElementById('studentGuardianNumber'),
 
     // Teacher modal fields
     teacherAccountManagementModal: document.getElementById('teacherAccountManagementModal'),
@@ -1705,7 +1706,8 @@ async function fetchStudentAccounts() {
                         '${d.student_lastname}',
                         '${d.student_program}',
                         '${d.student_year_level}',
-                        '${d.student_email || ''}')">Edit</button>
+                        '${d.student_email || ''}',
+                        '${d.student_guardian_number || ''}')">Edit</button>
                     <button class="action-btn" style="background:#e67e22;color:#fff;" onclick="resetStudentDevice(${d.student_id}, '${d.student_firstname} ${d.student_lastname}')">Reset Device</button>
                     <button class="action-btn" style="background:#8e44ad;color:#fff;" onclick="resetUserPassword('student',${d.student_id},'${d.student_firstname} ${d.student_lastname}')">Reset PW</button>
                     <button class="action-btn delete-btn-account-management" onclick="deleteStudent(${d.student_id})">Delete</button>
@@ -1776,7 +1778,7 @@ async function fetchGuardAccounts() {
 // ============================================================
 // ACCOUNTS — EDIT (open modals)
 // ============================================================
-function editStudent(id, student_id_number, student_firstname, student_middlename, student_lastname, student_program, student_year_level, student_email) {
+function editStudent(id, student_id_number, student_firstname, student_middlename, student_lastname, student_program, student_year_level, student_email, student_guardian_number) {
     DOM.studentAccountManagementModal.style.display = 'flex';
     DOM.studentIDTracking.value = id;
     DOM.studentIdNumber.value = student_id_number;
@@ -1786,6 +1788,7 @@ function editStudent(id, student_id_number, student_firstname, student_middlenam
     DOM.studentProgram.value = student_program;
     DOM.studentYearLevel.value = student_year_level;
     if (DOM.studentEmail) DOM.studentEmail.value = student_email || '';
+    if (DOM.studentGuardianNumber) DOM.studentGuardianNumber.value = student_guardian_number || '';
 }
 
 function editTeacher(id, teacher_name, teacher_email, teacher_program, teacher_barcode_scanner_serial_number) {
@@ -1829,7 +1832,8 @@ DOM.studentAccountManagementForm.addEventListener('submit', async function(e) {
         lastname: DOM.studentLastName.value.trim(),
         program: DOM.studentProgram.value,
         year_level: DOM.studentYearLevel.value,
-        email: DOM.studentEmail?.value.trim() || ''
+        email: DOM.studentEmail?.value.trim() || '',
+        guardian_number: DOM.studentGuardianNumber?.value.trim() || ''
     };
 
     showLoading();

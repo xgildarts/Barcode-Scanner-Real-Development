@@ -45,13 +45,13 @@ app.use('/public', express.static(path.join(__dirname, '../../public')))  // log
 
 
 // Static folders — frontend served directly by Express
-app.use('/admin',       express.static(path.join(__dirname, '../../admin')))
-app.use('/guard',       express.static(path.join(__dirname, '../../guard')))
-app.use('/student',     express.static(path.join(__dirname, '../../student')))
-app.use('/teacher',     express.static(path.join(__dirname, '../../teacher')))
+app.use('/admin', express.static(path.join(__dirname, '../../admin')))
+app.use('/guard', express.static(path.join(__dirname, '../../guard')))
+app.use('/student', express.static(path.join(__dirname, '../../student')))
+app.use('/teacher', express.static(path.join(__dirname, '../../teacher')))
 app.use('/super_admin', express.static(path.join(__dirname, '../../super_admin')))
-app.use('/css',         express.static(path.join(__dirname, '../../css')))
-app.use('/sounds',      express.static(path.join(__dirname, '../../sounds')))
+app.use('/css', express.static(path.join(__dirname, '../../css')))
+app.use('/sounds', express.static(path.join(__dirname, '../../sounds')))
 
 // Root redirect — change to whichever role you want as default
 app.get('/', (req, res) => {

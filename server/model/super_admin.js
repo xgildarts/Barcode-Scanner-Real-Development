@@ -534,9 +534,9 @@ superAdmin.delete('/delete_student_account/:id', requireSuperAdmin, async (req, 
 })
 
 superAdmin.put('/edit_student_account/:id', requireSuperAdmin, async (req, res) => {
-    const { id_number, firstname, middlename, lastname, program, year_level, email } = req.body
+    const { id_number, firstname, middlename, lastname, program, year_level, email, guardian_number } = req.body
     try {
-        const result = await services.adminEditStudentAccounts(parseInt(req.params.id, 10), id_number, firstname, middlename, lastname, program, year_level, email)
+        const result = await services.adminEditStudentAccounts(parseInt(req.params.id, 10), id_number, firstname, middlename, lastname, program, year_level, email, guardian_number)
         if (result.ok !== false) services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'EDIT_STUDENT', 'Student', null, `${firstname} ${lastname}`, `Edited student: ${firstname} ${lastname} — ${program} ${year_level}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
         res.json(result)
     } catch (err) {
