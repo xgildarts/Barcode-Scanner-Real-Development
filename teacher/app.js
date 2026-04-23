@@ -3152,3 +3152,62 @@ function loadSettingsPage() {
     const name = el('accountInformationName')?.textContent;
     if (name && name !== 'Unknown' && el('settingsProfileName')) el('settingsProfileName').textContent = name;
 }
+
+// ============================================================
+// BARCODE SCANNER LISTENER
+// ============================================================
+let _barcodeBuffer = '';
+let _barcodeTimer = null;
+
+document.addEventListener('keydown', (e) => {
+    // Ignore if user is typing in an input, textarea, or select
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+    if (e.key === 'Enter') {
+        const scanned = _barcodeBuffer.trim();
+        _barcodeBuffer = '';
+        clearTimeout(_barcodeTimer);
+        if (scanned.length > 5) {
+            handleBarcodeScan(scanned);
+        }
+    } else {
+        _barcodeBuffer += e.key;
+        clearTimeout(_barcodeTimer);
+        _barcodeTimer = setTimeout(() => { _barcodeBuffer = ''; }, 300);
+    }
+});
+
+async function handleBarcodeScan(barcode) {
+    try {
+        const token = localStorage.getItem('teacher_token');
+        if (!token) return;
+
+        const teacherData = JSON.parse(atob(token.split('.')[1]));
+        const teacher_barcode_scanner_serial_number = teacherData.teacher_barcode_scanner_serial_number;
+
+        const data = await apiCall('/teacher/teacher_attendance_insertion', 'POST', {
+            barcode,
+            teacher_barcode_scanner_serial_number
+        });
+
+        if (data.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Attendance Recorded',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            getStudentAttendanceRecords(); // refresh the attendance table
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Scan Failed',
+                text: data.message
+            });
+        }
+    } catch (err) {
+        console.error('[Barcode Scanner] Error:', err);
+        Swal.fire({ icon: 'error', title: 'Scan Error', text: 'Something went wrong processing the scan.' });
+    }
+}
