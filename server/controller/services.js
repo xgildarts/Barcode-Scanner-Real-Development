@@ -37,7 +37,7 @@ function blacklistToken(token) {
         if (decoded && decoded.exp) {
             tokenBlacklist.set(token, decoded.exp * 1000)
         }
-    } catch (_) {}
+    } catch (_) { }
 }
 
 function isTokenBlacklisted(token) {
@@ -522,7 +522,7 @@ function studentRegistration(
 // ============================================================
 function writeLoginLog(userId, userName, userEmail, role, status, ip, userAgent) {
     const cleanIp = (ip || '').replace(/^::ffff:/, '') || null;
-    const params  = [userId || null, userName || null, userEmail || null, role, status, cleanIp, userAgent || null];
+    const params = [userId || null, userName || null, userEmail || null, role, status, cleanIp, userAgent || null];
 
     function tryInsert(attempt) {
         db.execute(
@@ -1394,7 +1394,7 @@ async function insertStudentAttendance(
     )
 
     writeActivityLog(student_id, `${student_firstname} ${student_middlename}. ${student_lastname}`, 'student', 'CLASS_ATTENDANCE_IN', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Teacher: ${teacherName || 'Unknown'} | Program: ${student_program}, Year: ${student_year_level}`, null, null)
-    return 'Successfully inserted student attendance!'
+    return { message: 'Successfully inserted student attendance!', subject: result[0].subject_name_set }
 }
 
 // Insert student Attendance History
@@ -1566,7 +1566,7 @@ function updateStudentRegisteredRecord(
                     db.execute(
                         syncSql,
                         [student_firstname, student_middlename, student_lastname,
-                         student_year_level, student_program, student_id_number],
+                            student_year_level, student_program, student_id_number],
                         (syncErr) => {
                             if (syncErr) console.warn('[updateStudentRegisteredRecord] student_accounts sync failed:', syncErr.message);
                             resolve({ duplicate: false, result });
@@ -1695,10 +1695,10 @@ function getWholeCampusAccounts(tableName) {
 // All current callers use hardcoded string literals — never pass user input here.
 const ALLOWED_EMAIL_FINDER_TABLES = {
     'student_accounts': ['student_email'],
-    'teacher':          ['teacher_email'],
-    'guards':           ['guard_email'],
-    'admin_accounts':   ['admin_email'],
-    'super_admin':      ['super_admin_email'],
+    'teacher': ['teacher_email'],
+    'guards': ['guard_email'],
+    'admin_accounts': ['admin_email'],
+    'super_admin': ['super_admin_email'],
 }
 function emailFinder(columnToFind, email, tableName) {
     // FIX: Whitelist both table and column to prevent injection if a caller ever
@@ -2024,7 +2024,7 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
                     if (student.student_guardian_number) {
                         sendSMS(student.student_guardian_number,
                             `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
-                        ).catch(() => {})
+                        ).catch(() => { })
                     }
 
                     resolve({
@@ -2076,7 +2076,7 @@ async function guardInsertAttendanceRecordByIdNumber(studentIdNumber, status, gu
             }
 
             const activeEventName = eventData.event_name_set;
-            const activeAdminId   = eventData.admin_id;
+            const activeAdminId = eventData.admin_id;
             const fullName = `${student.student_firstname} ${student.student_middlename ? student.student_middlename + '.' : ''} ${student.student_lastname}`.trim();
             const values = [
                 student.student_id, fullName, student.student_id_number,
@@ -2104,7 +2104,7 @@ async function guardInsertAttendanceRecordByIdNumber(studentIdNumber, status, gu
                     if (student.student_guardian_number) {
                         sendSMS(student.student_guardian_number,
                             `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
-                        ).catch(() => {});
+                        ).catch(() => { });
                     }
 
                     resolve({ ok: true, message: `${status} Recorded Successfully`, student: fullName, event: activeEventName });
@@ -3060,10 +3060,10 @@ async function insertManualStatusRecord(
               manually_overridden, attendance_time)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
             [student_id || null, student_id_number, student_firstname, student_middlename || null,
-             student_lastname, student_program || null, student_year_level, subject,
-             teacher_barcode_scanner_serial_number, attendance_status,
-             // Absent and Excused have no scan time — set NULL explicitly to avoid curtime() default
-             (attendance_status === 'Absent' || attendance_status === 'Excused') ? null : new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(11, 19)],
+                student_lastname, student_program || null, student_year_level, subject,
+                teacher_barcode_scanner_serial_number, attendance_status,
+            // Absent and Excused have no scan time — set NULL explicitly to avoid curtime() default
+            (attendance_status === 'Absent' || attendance_status === 'Excused') ? null : new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(11, 19)],
             (err, result) => {
                 if (err) return reject(err)
                 resolve({ insertId: result.insertId, message: 'Record inserted successfully.' })
@@ -3191,11 +3191,11 @@ function createMsgNotification(receiverId, receiverRole, senderId, senderRole, s
 function getMsgNotifications(receiverId, receiverRole, limit) {
     const n = parseInt(limit) || 30
     const picQuery = {
-        student:     { pic: 'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1', name: 'SELECT CONCAT(student_firstname, " ", COALESCE(student_middlename, ""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1' },
-        teacher:     { pic: 'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1', name: 'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1' },
-        admin:       { pic: 'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1', name: 'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1' },
+        student: { pic: 'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1', name: 'SELECT CONCAT(student_firstname, " ", COALESCE(student_middlename, ""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1' },
+        teacher: { pic: 'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1', name: 'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1' },
+        admin: { pic: 'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1', name: 'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1' },
         super_admin: { pic: 'SELECT super_admin_profile_picture AS pic FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1', name: 'SELECT super_admin_name AS name FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1' },
-        guard:       { pic: 'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1', name: 'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1' }
+        guard: { pic: 'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1', name: 'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1' }
     }
     return new Promise((resolve) => {
         db.execute(
@@ -3210,7 +3210,7 @@ function getMsgNotifications(receiverId, receiverRole, limit) {
                 const withPics = await Promise.all(rows.map(row => new Promise(res => {
                     const q = picQuery[row.sender_role]
                     if (!q || !row.sender_id) return res({ ...row, sender_picture: null })
-                    const fetchPic  = new Promise(r => db.execute(q.pic,  [row.sender_id], (e, r2) => r((!e && r2?.length) ? r2[0].pic  : null)))
+                    const fetchPic = new Promise(r => db.execute(q.pic, [row.sender_id], (e, r2) => r((!e && r2?.length) ? r2[0].pic : null)))
                     const fetchName = new Promise(r => db.execute(q.name, [row.sender_id], (e, r2) => r((!e && r2?.length) ? r2[0].name?.trim() : null)))
                     Promise.all([fetchPic, fetchName]).then(([pic, name]) => {
                         res({ ...row, sender_picture: pic || null, sender_name: name || row.sender_name })
@@ -3226,11 +3226,11 @@ function getMsgNotifications(receiverId, receiverRole, limit) {
 // Get current name for a user from their account table
 function getCurrentUserName(userId, userRole) {
     const nameQuery = {
-        student:     'SELECT CONCAT(student_firstname, " ", COALESCE(NULLIF(student_middlename,""),""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1',
-        teacher:     'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1',
-        admin:       'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+        student: 'SELECT CONCAT(student_firstname, " ", COALESCE(NULLIF(student_middlename,""),""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1',
+        teacher: 'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1',
+        admin: 'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1',
         super_admin: 'SELECT super_admin_name AS name FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
-        guard:       'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1'
+        guard: 'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1'
     }
     return new Promise(res => {
         const q = nameQuery[userRole]
@@ -3457,7 +3457,7 @@ module.exports = {
 
 function writeLogoutLog(userId, userName, userEmail, role, ip, userAgent) {
     const cleanIp = (ip || '').replace(/^::ffff:/, '') || null;
-    const params  = [userId || null, userName || null, userEmail || null, role, 'LOGOUT', cleanIp, userAgent || null];
+    const params = [userId || null, userName || null, userEmail || null, role, 'LOGOUT', cleanIp, userAgent || null];
 
     function tryInsert(attempt) {
         db.execute(
@@ -3631,10 +3631,10 @@ function reactToMessage(messageId, reactorId, reactorRole, emoji) {
                 if (!rows.length) return reject(new Error('Message not found.'))
                 const msg = rows[0]
                 let reactions = {}
-                try { reactions = JSON.parse(msg.reactions || '{}') } catch(e) { reactions = {} }
+                try { reactions = JSON.parse(msg.reactions || '{}') } catch (e) { reactions = {} }
                 const key = `${reactorRole}_${reactorId}`
                 if (emoji) reactions[key] = { reactorId, reactorRole, emoji }
-                else        delete reactions[key]
+                else delete reactions[key]
                 const json = Object.keys(reactions).length ? JSON.stringify(reactions) : null
                 db.execute('UPDATE messages SET reactions = ? WHERE id = ?', [json, messageId], (err2) => {
                     if (err2) return reject(err2)
@@ -3664,11 +3664,11 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
     const n = parseInt(limit) || 50
     // Always fetch current profile pictures from account tables (not stored in message)
     const picQuery = {
-        student:     'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1',
-        teacher:     'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1',
-        admin:       'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+        student: 'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1',
+        teacher: 'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1',
+        admin: 'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1',
         super_admin: 'SELECT super_admin_profile_picture AS pic FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
-        guard:       'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1'
+        guard: 'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1'
     }
     const fetchPic = (role, id) => new Promise(res => {
         const pq = picQuery[role]
@@ -3694,7 +3694,7 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
              ORDER BY m.created_at DESC
              LIMIT ?`,
             [userAId, userARole, userBId, userBRole,
-             userBId, userBRole, userAId, userARole, n],
+                userBId, userBRole, userAId, userARole, n],
             async (err, rows) => {
                 if (err) { console.error('[getConversation]', err.message); return resolve([]) }
                 // Fetch current pics for both parties once
@@ -3706,7 +3706,7 @@ function getConversation(userAId, userARole, userBId, userBRole, limit) {
                     const senderIsA = String(m.sender_id) === String(userAId) && m.sender_role === userARole
                     return {
                         ...m,
-                        sender_profile_picture:   senderIsA ? picA : picB,
+                        sender_profile_picture: senderIsA ? picA : picB,
                         receiver_profile_picture: senderIsA ? picB : picA
                     }
                 })
@@ -3727,7 +3727,7 @@ function deleteMessageForMe(messageId, userId, userRole) {
                 if (err) return reject(err)
                 if (!rows.length) return reject(new Error('Message not found.'))
                 const m = rows[0]
-                const isSender   = String(m.sender_id)   === String(userId) && m.sender_role   === userRole
+                const isSender = String(m.sender_id) === String(userId) && m.sender_role === userRole
                 const isReceiver = String(m.receiver_id) === String(userId) && m.receiver_role === userRole
                 if (!isSender && !isReceiver) return reject(new Error('Unauthorized.'))
                 const col = isSender ? 'deleted_for_sender' : 'deleted_for_receiver'
@@ -3760,7 +3760,7 @@ function unsendMessage(messageId, senderId, senderRole) {
                             const pathMod = require('path')
                             const fs = require('fs')
                             const fp = pathMod.join(__dirname, '../../', fileUrl.replace('/api/v1/', ''))
-                            fs.unlink(fp, () => {})
+                            fs.unlink(fp, () => { })
                         }
                         resolve('Message unsent for everyone.')
                     }
@@ -3781,7 +3781,7 @@ function pinMessage(messageId, userId, userRole) {
                 if (!rows.length) return reject(new Error('Message not found.'))
                 const m = rows[0]
                 const involved = (String(m.sender_id) === String(userId) && m.sender_role === userRole) ||
-                                 (String(m.receiver_id) === String(userId) && m.receiver_role === userRole)
+                    (String(m.receiver_id) === String(userId) && m.receiver_role === userRole)
                 if (!involved) return reject(new Error('Unauthorized.'))
                 const newPin = m.is_pinned ? 0 : 1
                 db.execute(`UPDATE messages SET is_pinned = ? WHERE id = ?`, [newPin, messageId], (err2) => {
@@ -3839,20 +3839,20 @@ function getMessageContacts(userId, userRole) {
 
                 // Profile picture lookup map — always fetch current pic from account table
                 const picQuery = {
-                    student:     'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1',
-                    teacher:     'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1',
-                    admin:       'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+                    student: 'SELECT student_profile_picture AS pic FROM student_accounts WHERE student_id = ? LIMIT 1',
+                    teacher: 'SELECT teacher_profile_picture AS pic FROM teacher WHERE teacher_id = ? LIMIT 1',
+                    admin: 'SELECT admin_profile_picture AS pic FROM admin_accounts WHERE admin_id = ? LIMIT 1',
                     super_admin: 'SELECT super_admin_profile_picture AS pic FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
-                    guard:       'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1'
+                    guard: 'SELECT guard_profile_picture AS pic FROM guards WHERE guard_id = ? LIMIT 1'
                 }
 
                 // Name lookup map — always use current name from account tables
                 const nameQuery = {
-                    student:     'SELECT CONCAT(student_firstname, " ", COALESCE(student_middlename, ""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1',
-                    teacher:     'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1',
-                    admin:       'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1',
+                    student: 'SELECT CONCAT(student_firstname, " ", COALESCE(student_middlename, ""), " ", student_lastname) AS name FROM student_accounts WHERE student_id = ? LIMIT 1',
+                    teacher: 'SELECT teacher_name AS name FROM teacher WHERE teacher_id = ? LIMIT 1',
+                    admin: 'SELECT admin_name AS name FROM admin_accounts WHERE admin_id = ? LIMIT 1',
                     super_admin: 'SELECT super_admin_name AS name FROM super_admin_accounts WHERE super_admin_id = ? LIMIT 1',
-                    guard:       'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1'
+                    guard: 'SELECT guard_name AS name FROM guards WHERE guard_id = ? LIMIT 1'
                 }
 
                 const tasks = contacts.map(c => new Promise(res => {
@@ -3879,10 +3879,10 @@ function getMessageContacts(userId, userRole) {
                             if (!pq) {
                                 return res({
                                     ...c,
-                                    last_message:            rows[0].content,
-                                    last_sender_name:        rows[0].sender_name,
-                                    unread:                  rows[0].unread || 0,
-                                    last_message_at:         rows[0].created_at,
+                                    last_message: rows[0].content,
+                                    last_sender_name: rows[0].sender_name,
+                                    unread: rows[0].unread || 0,
+                                    last_message_at: rows[0].created_at,
                                     contact_profile_picture: null
                                 })
                             }
@@ -3892,10 +3892,10 @@ function getMessageContacts(userId, userRole) {
                                 if (!nq) {
                                     return res({
                                         ...c,
-                                        last_message:            rows[0].content,
-                                        last_sender_name:        rows[0].sender_name,
-                                        unread:                  rows[0].unread || 0,
-                                        last_message_at:         rows[0].created_at,
+                                        last_message: rows[0].content,
+                                        last_sender_name: rows[0].sender_name,
+                                        unread: rows[0].unread || 0,
+                                        last_message_at: rows[0].created_at,
                                         contact_profile_picture: currentPic || null
                                     })
                                 }
@@ -3903,11 +3903,11 @@ function getMessageContacts(userId, userRole) {
                                     const currentName = (!err4 && nameRows?.length) ? nameRows[0].name?.trim() : c.contact_name
                                     res({
                                         ...c,
-                                        contact_name:            currentName || c.contact_name,
-                                        last_message:            rows[0].content,
-                                        last_sender_name:        rows[0].sender_name,
-                                        unread:                  rows[0].unread || 0,
-                                        last_message_at:         rows[0].created_at,
+                                        contact_name: currentName || c.contact_name,
+                                        last_message: rows[0].content,
+                                        last_sender_name: rows[0].sender_name,
+                                        unread: rows[0].unread || 0,
+                                        last_message_at: rows[0].created_at,
                                         contact_profile_picture: currentPic || null
                                     })
                                 })

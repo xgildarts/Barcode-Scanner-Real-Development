@@ -281,9 +281,10 @@ teacher.post('/teacher_attendance_insertion', async (req, res) => {
         // Send SMS to Guardian
         const smsMiddle = student_middlename ? student_middlename.charAt(0).toUpperCase() + '.' : '';
         const _smsTime = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true });
-        await services.sendSMS(student_guardian_number, `Pan Pacific University: ${student_firstname}${smsMiddle ? ' ' + smsMiddle : ''} ${student_lastname} attended class today at ${_smsTime}.`);
+        const subjectName = response.subject || 'class';
+        await services.sendSMS(student_guardian_number, `Pan Pacific University: ${student_firstname}${smsMiddle ? ' ' + smsMiddle : ''} ${student_lastname} attended ${subjectName} at ${_smsTime} today.`);
 
-        res.json({ ok: true, message: response })
+        res.json({ ok: true, message: response.message })
 
     } catch (err) {
         console.error(err)
