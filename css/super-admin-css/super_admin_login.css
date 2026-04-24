@@ -1,17 +1,17 @@
 /* ============================================================
    SUPER ADMIN LOGIN PAGE
-   Palette: Deep navy  #162d4a / #1e3a5f / #2d5282
+   Palette: Deep navy  #1e3a10 / #407029 / #2d4f1a
    ============================================================ */
 
    body {
-    background: linear-gradient(135deg, #162d4a 0%, #2d5282 100%);
+    background: linear-gradient(135deg, #1e3a10 0%, #2d4f1a 100%);
     display: flex;
     flex-direction: column;
     padding: 20px;
 }
 
 .login-container {
-    background: linear-gradient(135deg, rgba(200, 215, 235, 0.92) 0%, rgba(175, 195, 220, 0.88) 100%);
+    background: linear-gradient(135deg, rgba(190, 215, 160, 0.92) 0%, rgba(170, 200, 140, 0.88) 100%);
     border-radius: 24px;
     padding: 40px 30px;
     max-width: 400px;
@@ -52,7 +52,7 @@
    ============================================================ */
 .welcome-text {
     text-align: center;
-    color: #1a2f4a;
+    color: #1e3a10;
     margin-bottom: 30px;
 }
 
@@ -90,7 +90,7 @@
     height: 20px;
     opacity: 0.5;
     pointer-events: none;
-    fill: #1e3a5f;
+    fill: #407029;
 }
 
 .form-input {
@@ -103,7 +103,7 @@
 }
 
 .form-input:focus {
-    outline: 2px solid #2d5282;
+    outline: 2px solid #2d4f1a;
 }
 
 .form-input::placeholder {
@@ -125,7 +125,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #1a2f4a;
+    color: #1e3a10;
     font-weight: 500;
     cursor: pointer;
 }
@@ -134,11 +134,11 @@
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: #1e3a5f;
+    accent-color: #407029;
 }
 
 .forgot-password {
-    color: #1a2f4a;
+    color: #1e3a10;
     text-decoration: none;
     font-weight: 500;
 }
@@ -153,7 +153,7 @@
 .login-btn {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #162d4a 0%, #1e3a5f 100%);
+    background: linear-gradient(135deg, #1e3a10 0%, #407029 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -197,7 +197,7 @@
 .pw-eye svg {
     width: 20px;
     height: 20px;
-    fill: #1e3a5f;
+    fill: #407029;
 }
 
 /* ============================================================
