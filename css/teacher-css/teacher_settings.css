@@ -283,7 +283,7 @@
 
 /* ── Dark mode ── */
 [data-theme="dark"] .profile-section {
-    background: linear-gradient(160deg, #1a2f2f 0%, #0f1c1c 100%) !important;
+    background: linear-gradient(160deg, #1a2f10 0%, #0f1923 100%) !important;
 }
 
 [data-theme="dark"] .profile-name  { color: #e0eaf0 !important; }

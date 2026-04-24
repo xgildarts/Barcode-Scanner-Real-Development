@@ -61,27 +61,81 @@ body {
 THEME — CSS variables
 ============================================================ */
 :root {
-    --t-accent:        #407029;
-    --t-accent-light:  #eef6e8;
-    --t-accent-border: #b2d880;
-    --t-surface:       #ffffff;
-    --t-surface-alt:   #f8faf9;
-    --t-surface-border:#e0ebe8;
-    --t-text-primary:  #1e3a10;
-    --t-text-secondary:#5a7a7a;
-    --t-text-muted:    #9ab0b0;
+    /* Brand / accent */
+    --accent:           #407029;
+    --accent-dark:      #2d4f1a;
+    --accent-light:     #eef6e8;
+    --accent-border:    #b2d880;
+    --accent-badge:     #c8ecb0;
+    --accent-text:      #1e4a10;
+    --controls-bg:      #2d4f1a;
+    --page-bg:          linear-gradient(180deg, #e8f0e0 0%, #d0e5c0 100%);
+    --surface:          #ffffff;
+    --surface-alt:      #f8faf9;
+    --surface-border:   #e0ebe8;
+    --surface-hover:    #f0f7f5;
+    --text-primary:     #1e3a10;
+    --text-secondary:   #666666;
+    --text-muted:       #999999;
+    --sidebar-bg:       linear-gradient(180deg, #1e3a10 0%, #2d4f1a 100%);
+    --sidebar-text:     #ffffff;
+    --sidebar-muted:    rgba(255,255,255,0.7);
+    --sidebar-hover:    rgba(255,255,255,0.15);
+    --sidebar-active:   rgba(255,255,255,0.2);
+    --table-header-bg:  #1e3a10;
+    --table-header-text:#ffffff;
+    --table-row-alt:    #f5f9f9;
+    --table-border:     #e0e0e0;
+    --font-family:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-base:   14px;
+    --border-radius:    10px;
+    /* Legacy t- aliases */
+    --t-accent:        var(--accent);
+    --t-accent-light:  var(--accent-light);
+    --t-accent-border: var(--accent-border);
+    --t-surface:       var(--surface);
+    --t-surface-alt:   var(--surface-alt);
+    --t-surface-border:var(--surface-border);
+    --t-text-primary:  var(--text-primary);
+    --t-text-secondary:var(--text-secondary);
+    --t-text-muted:    var(--text-muted);
 }
 
 [data-theme="dark"] {
-    --t-accent:        #5a9e2a;
-    --t-accent-light:  #1a2f2f;
-    --t-accent-border: #2d5a5a;
-    --t-surface:       #1a2535;
-    --t-surface-alt:   #14202e;
-    --t-surface-border:#2a3a4a;
-    --t-text-primary:  #e0eaf0;
-    --t-text-secondary:#8aaabb;
-    --t-text-muted:    #4a6a7a;
+    --accent:           #5a9e2a;
+    --accent-dark:      #2d4f1a;
+    --accent-light:     #1a2f10;
+    --accent-border:    #2d5a1a;
+    --accent-badge:     #1e4010;
+    --accent-text:      #7ece40;
+    --controls-bg:      #1a2510;
+    --page-bg:          #0f1923;
+    --surface:          #1a2510;
+    --surface-alt:      #14202e;
+    --surface-border:   #2a3a10;
+    --surface-hover:    #1e2f10;
+    --text-primary:     #e0eaf0;
+    --text-secondary:   #9ab0c0;
+    --text-muted:       #6a8090;
+    --sidebar-bg:       linear-gradient(180deg, #0d1a2a 0%, #091422 100%);
+    --sidebar-text:     #e0eaf0;
+    --sidebar-muted:    rgba(200,220,240,0.6);
+    --sidebar-hover:    rgba(255,255,255,0.08);
+    --sidebar-active:   rgba(90,158,42,0.2);
+    --table-header-bg:  #0d2a2a;
+    --table-header-text:#7ece40;
+    --table-row-alt:    #131f2a;
+    --table-border:     #2a3a10;
+    /* Legacy t- aliases */
+    --t-accent:        var(--accent);
+    --t-accent-light:  var(--accent-light);
+    --t-accent-border: var(--accent-border);
+    --t-surface:       var(--surface);
+    --t-surface-alt:   var(--surface-alt);
+    --t-surface-border:var(--surface-border);
+    --t-text-primary:  var(--text-primary);
+    --t-text-secondary:var(--text-secondary);
+    --t-text-muted:    var(--text-muted);
 }
 
 /* Font family cascade */
@@ -152,7 +206,7 @@ SETTINGS PAGE — teacher-specific wrappers
     border: 2px solid #e0ebe8;
     border-radius: 10px;
     background: #fff;
-    color: #5a7a7a;
+    color: #666666;
     font-weight: 700;
     cursor: pointer;
     transition: all .2s;
@@ -166,7 +220,7 @@ SETTINGS PAGE — teacher-specific wrappers
     background: #eef6e8;
 }
 
-.t-theme-mode-btn { color: #5a7a7a; }
+.t-theme-mode-btn { color: #666666; }
 .t-theme-mode-btn.t-active {
     border-color: #407029 !important;
     color: #407029;
@@ -185,68 +239,68 @@ SETTINGS PAGE — teacher-specific wrappers
 DARK MODE — full overrides
 ============================================================ */
 [data-theme="dark"] body {
-    background: #0f1c2e !important;
+    background: #0f1923 !important;
     color: var(--t-text-primary) !important;
 }
 
 /* Header / top bar */
-[data-theme="dark"] .header { background: #1a2535 !important; }
+[data-theme="dark"] .header { background: #1a2510 !important; }
 [data-theme="dark"] .header-title { color: #e0eaf0 !important; }
 [data-theme="dark"] .menu-btn svg { fill: #e0eaf0 !important; }
 
 /* Main content */
-[data-theme="dark"] .sections { background: #0f1c2e !important; }
+[data-theme="dark"] .sections { background: #0f1923 !important; }
 
 /* Profile section */
 [data-theme="dark"] .profile-section {
-    background: #1a2535 !important;
-    border-bottom-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-bottom-color: #2a3a10 !important;
 }
 
 [data-theme="dark"] .profile-name { color: #e0eaf0 !important; }
-[data-theme="dark"] .profile-email { color: #8aaabb !important; }
+[data-theme="dark"] .profile-email { color: #9ab0c0 !important; }
 [data-theme="dark"] .edit-profile-btn {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 
 /* Content section */
-[data-theme="dark"] .content-section { background: #0f1c2e !important; }
+[data-theme="dark"] .content-section { background: #0f1923 !important; }
 [data-theme="dark"] .section-title { color: #e0eaf0 !important; }
 
 /* Info card */
 [data-theme="dark"] .info-card {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
 
-[data-theme="dark"] .info-row { border-bottom-color: #2a3a4a !important; }
-[data-theme="dark"] .info-label { color: #8aaabb !important; }
+[data-theme="dark"] .info-row { border-bottom-color: #2a3a10 !important; }
+[data-theme="dark"] .info-label { color: #9ab0c0 !important; }
 [data-theme="dark"] .info-value { color: #e0eaf0 !important; }
-[data-theme="dark"] .edit-settings-btn { color: #8aaabb !important; }
-[data-theme="dark"] .edit-settings-btn svg { fill: #8aaabb !important; }
+[data-theme="dark"] .edit-settings-btn { color: #9ab0c0 !important; }
+[data-theme="dark"] .edit-settings-btn svg { fill: #9ab0c0 !important; }
 
 /* Form inputs */
 [data-theme="dark"] .password-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 
 [data-theme="dark"] .password-input:focus { border-color: #5a9e2a !important; }
-[data-theme="dark"] .form-label { color: #8aaabb !important; }
+[data-theme="dark"] .form-label { color: #9ab0c0 !important; }
 
 /* Update password btn */
-[data-theme="dark"] .update-password-settings-btn { background: #3d7a7a !important; }
-[data-theme="dark"] .update-password-settings-btn:hover { background: #2d6a6a !important; }
+[data-theme="dark"] .update-password-settings-btn { background: #407029 !important; }
+[data-theme="dark"] .update-password-settings-btn:hover { background: #2d4f1a !important; }
 
 /* Appearance buttons dark */
 [data-theme="dark"] .t-font-btn,
 [data-theme="dark"] .t-size-btn {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #8aaabb !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
+    color: #9ab0c0 !important;
 }
 
 [data-theme="dark"] .t-font-btn.t-active,
@@ -255,19 +309,19 @@ DARK MODE — full overrides
 [data-theme="dark"] .t-size-btn:hover {
     border-color: #5a9e2a !important;
     color: #7ece40 !important;
-    background: #1a2f2f !important;
+    background: #1a2f10 !important;
 }
 
 [data-theme="dark"] .t-theme-mode-btn {
-    border-color: #2a3a4a !important;
-    background: #1e2f3f !important;
-    color: #8aaabb !important;
+    border-color: #2a3a10 !important;
+    background: #1e2f10 !important;
+    color: #9ab0c0 !important;
 }
 
 [data-theme="dark"] .t-theme-mode-btn.t-active {
     border-color: #5a9e2a !important;
     color: #7ece40 !important;
-    background: #1a2f2f !important;
+    background: #1a2f10 !important;
 }
 
 /* Danger zone (shared classes from admin) */
@@ -277,50 +331,50 @@ DARK MODE — full overrides
 }
 
 [data-theme="dark"] .danger-zone-title { color: #e57373 !important; }
-[data-theme="dark"] .danger-zone-sub   { color: #6a7a7a !important; }
+[data-theme="dark"] .danger-zone-sub   { color: #6a8090 !important; }
 [data-theme="dark"] .danger-logout-btn { background: #922b21 !important; }
 [data-theme="dark"] .danger-logout-btn:hover { background: #7b241c !important; }
 
 /* Modals */
 [data-theme="dark"] .record-modal-content,
 [data-theme="dark"] .custom-modal .record-modal-content {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
 }
 
-[data-theme="dark"] .modal-body { background: #1a2535 !important; }
+[data-theme="dark"] .modal-body { background: #1a2510 !important; }
 [data-theme="dark"] .modal-body label,
-[data-theme="dark"] .modal-body .form-group label { color: #8aaabb !important; }
+[data-theme="dark"] .modal-body .form-group label { color: #9ab0c0 !important; }
 [data-theme="dark"] .modal-body input,
 [data-theme="dark"] .modal-body select,
 [data-theme="dark"] .modal-body textarea {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 
-[data-theme="dark"] .modal-footer { border-top-color: #2a3a4a !important; background: #1a2535 !important; }
+[data-theme="dark"] .modal-footer { border-top-color: #2a3a10 !important; background: #1a2510 !important; }
 [data-theme="dark"] .modal-footer .cancel-btn {
-    background: #1e2f3f !important;
-    color: #8aaabb !important;
+    background: #1e2f10 !important;
+    color: #9ab0c0 !important;
 }
 
-[data-theme="dark"] .modal-footer .save-btn { background: #3d7a7a !important; }
-[data-theme="dark"] .modal-header-student-registered { background: #2a5a56 !important; }
+[data-theme="dark"] .modal-footer .save-btn { background: #407029 !important; }
+[data-theme="dark"] .modal-header-student-registered { background: #1e3a10 !important; }
 
 /* Add Student modal — search results container */
 [data-theme="dark"] #studentSearchResults {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
 }
 
 /* Each search result row */
 [data-theme="dark"] #studentSearchResults > div {
-    border-bottom-color: #2a3a4a !important;
-    background: #1a2535 !important;
+    border-bottom-color: #2a3a10 !important;
+    background: #1a2510 !important;
 }
 
 [data-theme="dark"] #studentSearchResults > div:hover {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
 }
 
 /* Student name inside result row */
@@ -330,7 +384,7 @@ DARK MODE — full overrides
 
 /* ID · program · year line */
 [data-theme="dark"] #studentSearchResults > div div:nth-child(2) {
-    color: #8aaabb !important;
+    color: #9ab0c0 !important;
 }
 
 /* Email line */
@@ -350,7 +404,7 @@ DARK MODE — full overrides
 
 [data-theme="dark"] #previewId,
 [data-theme="dark"] #previewProgram {
-    color: #8aaabb !important;
+    color: #9ab0c0 !important;
 }
 
 [data-theme="dark"] #previewEmail {
@@ -363,7 +417,7 @@ DARK MODE — full overrides
 }
 
 [data-theme="dark"] #selectedStudentPreview button:hover {
-    color: #8aaabb !important;
+    color: #9ab0c0 !important;
 }
 
 /* Disabled Add Student button */
@@ -374,7 +428,7 @@ DARK MODE — full overrides
 
 /* Enabled Add Student button */
 [data-theme="dark"] #confirmAddStudentBtn:not(:disabled) {
-    background: #3d7a7a !important;
+    background: #407029 !important;
     color: #e0eaf0 !important;
     opacity: 1 !important;
     cursor: pointer !important;
@@ -383,27 +437,27 @@ DARK MODE — full overrides
 /* Tables */
 [data-theme="dark"] .attendance-table,
 [data-theme="dark"] table {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
 }
 
 [data-theme="dark"] th {
     background: #1e3a3a !important;
     color: #7ece40 !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 
 [data-theme="dark"] td {
     color: #e0eaf0 !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 
 [data-theme="dark"] tr:nth-child(even) { background: #14202e !important; }
-[data-theme="dark"] tr:hover { background: #1e2f3f !important; }
+[data-theme="dark"] tr:hover { background: #1e2f10 !important; }
 
 /* Search */
 [data-theme="dark"] .search-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 
@@ -411,8 +465,8 @@ DARK MODE — full overrides
 [data-theme="dark"] input[type="search"],
 [data-theme="dark"] input[type="email"],
 [data-theme="dark"] select {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 
@@ -420,8 +474,8 @@ DARK MODE — full overrides
 [data-theme="dark"] .student-card,
 [data-theme="dark"] .card,
 [data-theme="dark"] .info-box {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
 }
 
 /* Controls / sections bg */
@@ -434,12 +488,12 @@ DARK MODE — full overrides
 [data-theme="dark"] #studentRegistered,
 [data-theme="dark"] #manualEntry,
 [data-theme="dark"] #location {
-    background: #0f1c2e !important;
+    background: #0f1923 !important;
 }
 
 /* Scrollbar */
-[data-theme="dark"] ::-webkit-scrollbar-track { background: #0f1c2e; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a3a4a; }
+[data-theme="dark"] ::-webkit-scrollbar-track { background: #0f1923; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a3a10; }
 /* ============================================================
 EMPTY STATE INDICATORS
 Uses :empty pseudo-class — triggers automatically when JS
@@ -568,7 +622,7 @@ The ::before inserts the icon + message, ::after the subtext.
 [data-theme="dark"] #attendanceHistoryBody:empty::before,
 [data-theme="dark"] #studentList:empty::before,
 [data-theme="dark"] #programsList:empty::before {
-    background-color: #2a3a4a;
+    background-color: #2a3a10;
 }
 
 [data-theme="dark"] #attendanceBody:empty::after,
@@ -934,17 +988,17 @@ MOBILE RESPONSIVE — Global
 
 /* ---- Dark mode ---- */
 [data-theme="dark"] .search-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
-    color: #c0d0d8 !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
+    color: #e0eaf0 !important;
     box-shadow: none !important;
 }
 [data-theme="dark"] .search-input:focus {
     border-color: #7ece40 !important;
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 0 0 3px rgba(126,206,206,0.12) !important;
 }
-[data-theme="dark"] .search-input::placeholder { color: #4a6a7a !important; }
+[data-theme="dark"] .search-input::placeholder { color: #6a8090 !important; }
 [data-theme="dark"] .search-icon { fill: #4a7a8a !important; }
 [data-theme="dark"] .search-wrapper:focus-within .search-icon { fill: #7ece40 !important; }
 
@@ -953,16 +1007,16 @@ MOBILE RESPONSIVE — Global
 [data-theme="dark"] .export-btn svg { fill: #7ece40 !important; }
 [data-theme="dark"] .export-btn[style*="background:#1e3a10"],
 [data-theme="dark"] .export-btn[style*="background: #1e3a10"] {
-    background: #1a2f2f !important;
+    background: #1a2f10 !important;
     color: #7ece40 !important;
 }
 [data-theme="dark"] .refresh-btn { background: #1e3a3a !important; }
 [data-theme="dark"] .refresh-btn:hover { background: #2a4a4a !important; }
 
 [data-theme="dark"] .filter-select {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     color: #e0eaf0 !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .filter-select:focus { outline-color: #5a9e2a !important; }
 

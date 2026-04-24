@@ -273,7 +273,7 @@ DARK MODE — Academic setup
 
 /* Subject cards */
 [data-theme="dark"] .program-card {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -282,12 +282,12 @@ DARK MODE — Academic setup
 }
 
 [data-theme="dark"] .program-name {
-    color: #c0d0d8 !important;
+    color: #e0eaf0 !important;
 }
 
 /* Delete icon — neutral state */
 [data-theme="dark"] .delete-btn svg {
-    fill: #4a6a7a !important;
+    fill: #6a8090 !important;
 }
 
 /* Delete icon — hover goes red as expected */
@@ -307,7 +307,7 @@ DARK MODE — Academic setup
 
 /* Add Subject modal */
 [data-theme="dark"] .modal-content {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
 }
 
@@ -316,12 +316,12 @@ DARK MODE — Academic setup
 }
 
 [data-theme="dark"] .form-label {
-    color: #8aaabb !important;
+    color: #9ab0c0 !important;
 }
 
 [data-theme="dark"] .form-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 
@@ -335,12 +335,12 @@ DARK MODE — Academic setup
 
 /* Modal action buttons */
 [data-theme="dark"] .modal-btn.cancel-btn {
-    background: #1e2f3f !important;
-    color: #8aaabb !important;
+    background: #1e2f10 !important;
+    color: #9ab0c0 !important;
 }
 
 [data-theme="dark"] .modal-btn.cancel-btn:hover {
-    background: #2a3a4a !important;
+    background: #2a3a10 !important;
 }
 
 [data-theme="dark"] .modal-btn.confirm-btn {

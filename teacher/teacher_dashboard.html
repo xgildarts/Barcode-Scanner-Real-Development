@@ -5,6 +5,7 @@
     <link rel="icon" type="image/png" href="/public/logo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="/css/teacher-css/teacher_theme.css">
     <link rel="stylesheet" href="/css/teacher-css/teacher_global.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,12 +94,12 @@
 .msg-notif-time { font-size: 10px; color: #aaa; margin-top: 3px; }
 .msg-notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; flex-shrink: 0; margin-top: 6px; }
 .msg-notif-overlay { position: fixed; inset: 0; z-index: 3999; }
-[data-theme="dark"] .msg-notif-panel { background: #1a2535; border-color: #2a3a4a; }
-[data-theme="dark"] .msg-notif-item { border-color: #2a3a4a; }
-[data-theme="dark"] .msg-notif-item:hover { background: #1e2f3f; }
+[data-theme="dark"] .msg-notif-panel { background: #1a2510; border-color: #2a3a10; }
+[data-theme="dark"] .msg-notif-item { border-color: #2a3a10; }
+[data-theme="dark"] .msg-notif-item:hover { background: #1e2f10; }
 [data-theme="dark"] .msg-notif-item.unread { background: #0f2a20; }
-[data-theme="dark"] .msg-notif-sender { color: #c0d0d8; }
-[data-theme="dark"] .msg-notif-preview { color: #7a9aaa; }
+[data-theme="dark"] .msg-notif-sender { color: #e0eaf0; }
+[data-theme="dark"] .msg-notif-preview { color: #6a8090; }
 </style>
 
 <style>
@@ -917,7 +918,7 @@
                             </div>
                         </div>
 
-                        <button onclick="resetTheme()" style="width:100%;padding:10px;background:#f8faf9;border:1.5px solid #e0ebe8;border-radius:10px;color:#5a7a7a;font-size:0.82rem;font-weight:700;cursor:pointer;">↺ Reset to Defaults</button>
+                        <button onclick="resetTheme()" style="width:100%;padding:10px;background:#f8faf9;border:1.5px solid #e0ebe8;border-radius:10px;color:#666666;font-size:0.82rem;font-weight:700;cursor:pointer;">↺ Reset to Defaults</button>
                     </div>
                 </div>
 
@@ -1273,17 +1274,17 @@
         }
         .mcl-remove-btn svg { width:13px;height:13px;fill:#b91c1c;flex-shrink:0; }
         .mcl-remove-btn:hover { background:linear-gradient(135deg,#fecaca,#fdb8b8);border-color:#ef4444;transform:translateY(-1px);box-shadow:0 2px 6px rgba(185,28,28,0.2); }
-        [data-theme="dark"] .mcl-row { background:#1a2535;border-color:#2a3a4a; }
-        [data-theme="dark"] .mcl-row:hover { background:#1e2f3f; }
-        [data-theme="dark"] #manageClassModal > div { background:#1a2535; }
-        [data-theme="dark"] #manageClassSearch { background:#1e2f3f;border-color:#2a3a4a;color:#c0d0d8; }
+        [data-theme="dark"] .mcl-row { background:#1a2510;border-color:#2a3a10; }
+        [data-theme="dark"] .mcl-row:hover { background:#1e2f10; }
+        [data-theme="dark"] #manageClassModal > div { background:#1a2510; }
+        [data-theme="dark"] #manageClassSearch { background:#1e2f10;border-color:#2a3a10;color:#e0eaf0; }
         [data-theme="dark"] .mcl-add-btn { background:linear-gradient(135deg,#1a3a28,#1e4430);color:#6ee7b7;border-color:#2a6b4a; }
         [data-theme="dark"] .mcl-add-btn svg { fill:#6ee7b7; }
         [data-theme="dark"] .mcl-add-btn:hover { background:linear-gradient(135deg,#1e4430,#224e36);border-color:#22c55e; }
         [data-theme="dark"] .mcl-remove-btn { background:linear-gradient(135deg,#3a1a1a,#441e1e);color:#fca5a5;border-color:#6b2a2a; }
         [data-theme="dark"] .mcl-remove-btn svg { fill:#fca5a5; }
         [data-theme="dark"] .mcl-remove-btn:hover { background:linear-gradient(135deg,#441e1e,#4e2222);border-color:#ef4444; }
-        [data-theme="dark"] .mcl-name { color:#c0d0d8; }
+        [data-theme="dark"] .mcl-name { color:#e0eaf0; }
         [data-theme="dark"] .mcl-meta { color:#5a7a8a; }
     .msg-notif-item { position:relative !important; }
 .notif-delete-btn { position:absolute; top:6px; right:6px; background:none; border:none; color:#aaa; font-size:16px; cursor:pointer; line-height:1; padding:2px 5px; border-radius:4px; opacity:0; transition:opacity 0.15s; }

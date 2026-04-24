@@ -130,7 +130,7 @@
     .attendance-table tbody td::before {
         content: attr(data-label);
         font-weight: 700;
-        color: #5a7a7a;
+        color: #666666;
         font-size: 11px;
         min-width: 68px;
         flex-shrink: 0;
@@ -140,8 +140,8 @@
     }
 
     [data-theme="dark"] .attendance-table tbody tr {
-        background: #1a2535;
-        border-color: #2a3a4a;
+        background: #1a2510;
+        border-color: #2a3a10;
     }
     [data-theme="dark"] .attendance-table tbody td::before { color: #5a9e9e; }
 }
