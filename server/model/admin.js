@@ -7,7 +7,7 @@ const admin = express.Router()
 // ── Message file upload (100 MB limit) ──────────────────────
 const msgStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../../uploads/message_files/')
+        const dir = path.join(__dirname, '../../uploads/message_files/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
@@ -27,7 +27,7 @@ admin.use(express.json())
 
 // Multer — Admin Profile Picture
 const adminPicStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../../uploads/profile_pictures/')),
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
     filename:    (req, file, cb) => cb(null, 'admin-' + Date.now() + '-' + Math.round(Math.random() * 1e6) + path.extname(file.originalname))
 })
 const uploadAdminPic = multer({
@@ -120,16 +120,44 @@ admin.delete('/delete_program/:id', async (req, res) => {
 
 // Set Event Route
 admin.post('/set_event', async (req, res) => {
-    const { event_name } = req.body
+    const { event_name, location, radius } = req.body
     try {
         const token = services.removeBearer(req.headers['authorization'])
         const decodedToken = services.verifyToken(token)
         if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
-        const result = await services.setEventName(event_name, decodedToken.admin_id)
+        const qrToken = require('crypto').randomBytes(20).toString('hex')
+        const result = await services.setEventNameWithLocation(event_name, decodedToken.admin_id, location || null, radius || 50, qrToken)
         services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'SET_EVENT', 'Event', null, event_name, `Set event name to: ${event_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
-        res.json({ ok: true, message: result })
+        res.json({ ok: true, message: result, qr_token: qrToken })
     } catch(err) {
         res.status(500).json({ ok: false, message: err })
+    }
+})
+
+// Get current event QR data (token + location + radius)
+admin.get('/get_event_qr', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const data = await services.getEventQR()
+        res.json({ ok: true, content: data })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Regenerate QR token (invalidates old printed QRs)
+admin.post('/regenerate_event_qr', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const newToken = await services.regenerateEventQRToken(decodedToken.admin_id)
+        services.writeActivityLog(decodedToken.admin_id, decodedToken.admin_name, 'admin', 'REGENERATE_EVENT_QR', 'Event', null, null, 'Regenerated event QR token', req.ip, req.headers['user-agent'])
+        res.json({ ok: true, qr_token: newToken })
+    } catch(err) {
+        res.status(500).json({ ok: false, message: err.message || err })
     }
 })
 

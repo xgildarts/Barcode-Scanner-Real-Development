@@ -987,3 +987,122 @@ document.getElementById('studentProfilePicInput')?.addEventListener('change', as
     // Reset so the same file can be re-selected if needed
     this.value = '';
 });
+// ============================================================
+// EVENT QR SELF CHECK-IN
+// ============================================================
+
+let _eventQRScanner = null
+let _scannedQRToken = null
+
+function startEventQRScanner() {
+    const wrap = document.getElementById('qrReaderWrap')
+    const statusBox = document.getElementById('eventCheckinStatus')
+    const btnStart = document.getElementById('btnStartScan')
+
+    // Reset state
+    _scannedQRToken = null
+    statusBox.style.display = 'none'
+    wrap.style.display = 'block'
+    btnStart.style.display = 'none'
+
+    if (_eventQRScanner) {
+        _eventQRScanner.clear().catch(() => {})
+        _eventQRScanner = null
+    }
+
+    _eventQRScanner = new Html5Qrcode('qrReader')
+    _eventQRScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+            // QR scanned
+            _scannedQRToken = decodedText.trim()
+            stopEventQRScanner()
+            onQRScanned(_scannedQRToken)
+        },
+        () => {}
+    ).catch((err) => {
+        stopEventQRScanner()
+        Swal.fire({ icon: 'error', title: 'Camera Error', text: 'Could not access camera. Please allow camera permission and try again.' })
+    })
+}
+
+function stopEventQRScanner() {
+    const wrap = document.getElementById('qrReaderWrap')
+    const btnStart = document.getElementById('btnStartScan')
+    wrap.style.display = 'none'
+    btnStart.style.display = ''
+    if (_eventQRScanner) {
+        _eventQRScanner.stop().catch(() => {})
+        _eventQRScanner = null
+    }
+}
+
+async function onQRScanned(token) {
+    // Validate token with server and show event info + TIME IN / TIME OUT buttons
+    Swal.fire({ title: 'Verifying QR...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+    try {
+        // We just need to verify the token exists — use the student self-checkin endpoint
+        // but we ask for event info first via a lightweight GET check
+        const res = await apiCall('/students/event_checkin_info', 'POST', { qr_token: token })
+        Swal.close()
+        if (!res.data.ok) {
+            return Swal.fire({ icon: 'error', title: 'Invalid QR', text: res.data.message || 'This QR code is not valid or the event has ended.' })
+        }
+        _scannedQRToken = token
+        document.getElementById('eventCheckinName').textContent = `📅 ${res.data.event_name}`
+        document.getElementById('eventCheckinLocation').textContent = `Radius: ${res.data.radius}m from event location`
+        document.getElementById('eventCheckinStatus').style.display = 'block'
+    } catch (err) {
+        Swal.close()
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Could not verify QR code.' })
+    }
+}
+
+async function submitEventCheckin(status) {
+    if (!_scannedQRToken) return Swal.fire({ icon: 'warning', title: 'No QR Scanned', text: 'Please scan the event QR code first.' })
+
+    // Get GPS location
+    Swal.fire({ title: 'Getting your location...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+
+    if (!navigator.geolocation) {
+        Swal.close()
+        return Swal.fire({ icon: 'error', title: 'Location Required', text: 'Your browser does not support geolocation. Please use a modern mobile browser.' })
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const latitude  = pos.coords.latitude
+        const longitude = pos.coords.longitude
+
+        Swal.fire({ title: `Recording ${status}...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+
+        try {
+            const { res, data } = await apiCall('/students/event_self_checkin', 'POST', {
+                qr_token: _scannedQRToken,
+                status,
+                latitude,
+                longitude
+            })
+            Swal.close()
+            if (data.ok) {
+                _scannedQRToken = null
+                document.getElementById('eventCheckinStatus').style.display = 'none'
+                await Swal.fire({
+                    icon: 'success',
+                    title: status === 'TIME IN' ? '✅ Checked In!' : '🚪 Checked Out!',
+                    text: `${status} recorded for "${data.event}".`,
+                    timer: 3000,
+                    showConfirmButton: false
+                })
+            } else {
+                Swal.fire({ icon: 'error', title: 'Check-in Failed', text: data.message || 'Could not record attendance.' })
+            }
+        } catch (err) {
+            Swal.close()
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Network error. Please try again.' })
+        }
+    }, (err) => {
+        Swal.close()
+        Swal.fire({ icon: 'error', title: 'Location Denied', text: 'Location access is required to check in. Please allow location and try again.' })
+    }, { enableHighAccuracy: true, timeout: 10000 })
+}

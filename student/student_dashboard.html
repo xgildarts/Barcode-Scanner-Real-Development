@@ -175,6 +175,59 @@
         </div>
     </section>
 
+    <!--Event Check-in via QR-->
+    <section id="eventCheckin" class="sections">
+        <div class="profile-section">
+            <div class="avatar-container">
+                <div class="avatar" data-tooltip="Click to change profile picture">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div class="camera-icon" data-tooltip="Change profile picture">
+                    <svg viewBox="0 0 24 24"><path d="M12 15.2c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">Unknown</div>
+                <div class="profile-id">0000000</div>
+                <div class="profile-course">Unknown</div>
+                <div class="profile-year">Unknown</div>
+            </div>
+        </div>
+
+        <div style="max-width:420px;margin:0 auto;padding:0 16px 32px;">
+            <h2 style="text-align:center;font-size:1.05rem;font-weight:700;color:#1a4545;margin-bottom:6px;">Event QR Check-in</h2>
+            <p style="text-align:center;font-size:0.82rem;color:#666;margin-bottom:20px;">Scan the printed QR code at the event entrance to record your attendance.</p>
+
+            <!-- Scanner box -->
+            <div id="qrReaderWrap" style="border-radius:12px;overflow:hidden;background:#000;margin-bottom:16px;display:none;position:relative;">
+                <div id="qrReader" style="width:100%;"></div>
+                <button onclick="stopEventQRScanner()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;line-height:1;">✕</button>
+            </div>
+
+            <!-- Scan button -->
+            <button id="btnStartScan" class="generate-btn" onclick="startEventQRScanner()" style="width:100%;margin-bottom:12px;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="vertical-align:middle;margin-right:6px;"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm13 3h2v2h-2v-2zm0-5h2v2h-2v-2zm-4 0h2v2h-2v-2zm0 5h2v2h-2v-2zm4-3h-2v-2h2v2z"/></svg>
+                Scan Event QR Code
+            </button>
+
+            <!-- Status display after scan -->
+            <div id="eventCheckinStatus" style="display:none;background:#eef6f4;border:1.5px solid #b2d8d0;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px;">
+                <div id="eventCheckinName" style="font-weight:700;font-size:1rem;color:#1a4545;margin-bottom:4px;"></div>
+                <div id="eventCheckinLocation" style="font-size:0.78rem;color:#666;margin-bottom:14px;"></div>
+                <div style="display:flex;gap:10px;justify-content:center;">
+                    <button onclick="submitEventCheckin('TIME IN')" class="generate-btn" style="background:#2e7d32;flex:1;max-width:160px;">
+                        ✅ TIME IN
+                    </button>
+                    <button onclick="submitEventCheckin('TIME OUT')" class="generate-btn" style="background:#c62828;flex:1;max-width:160px;">
+                        🚪 TIME OUT
+                    </button>
+                </div>
+            </div>
+
+            <p style="text-align:center;font-size:0.75rem;color:#aaa;">Your GPS location will be verified before check-in is recorded.</p>
+        </div>
+    </section>
+
     <!--Attendance History-->
     <section id="attendanceHistory" class="sections">
         
@@ -253,6 +306,12 @@
                 <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
             </svg>
             Generate Barcode
+        </button>
+        <button id="btn-eventCheckin" class="action-btn" onclick="tab('eventCheckin')" data-tooltip="Scan event QR to check in" >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm13 3h2v2h-2v-2zm0-5h2v2h-2v-2zm-4 0h2v2h-2v-2zm0 5h2v2h-2v-2zm4-3h-2v-2h2v2z"/>
+            </svg>
+            Event Check-in
         </button>
         <button id="btn-attendanceHistory" class="action-btn" onclick="tab('attendanceHistory')" data-tooltip="View your attendance history" >
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -396,6 +455,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
 

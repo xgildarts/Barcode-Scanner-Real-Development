@@ -312,7 +312,13 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" class="active-event-bar__icon"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
                         <span class="active-event-bar__label">Active Event Setup</span>
                         <input type="text" id="event_name_input" class="event-name-input" placeholder="Enter event name" data-tooltip="Type the event name here">
+                        <input type="number" id="event_radius_input" class="event-name-input" placeholder="Radius (m)" style="width:110px;" min="10" max="5000" value="50" data-tooltip="Allowed distance from event location in meters">
+                        <input type="text" id="event_lat_input" class="event-name-input" placeholder="Latitude" style="width:120px;" data-tooltip="Event latitude">
+                        <input type="text" id="event_lng_input" class="event-name-input" placeholder="Longitude" style="width:120px;" data-tooltip="Event longitude">
+                        <button onclick="handleUseMyLocation()" class="set-event-button" style="background:#2e7d32;" data-tooltip="Auto-fill location using your current GPS">📍 My Location</button>
                         <button onclick="handleSetEvent()" class="set-event-button" data-tooltip="Save and activate this event">Set Event</button>
+                        <button onclick="handleShowEventQR()" class="set-event-button" style="background:#1a4545;" data-tooltip="View or print the QR code for this event">🖨️ Print QR</button>
+                        <button onclick="handleRegenerateEventQR()" class="set-event-button" style="background:#b71c1c;" data-tooltip="Generate a new QR code — old printed QRs will be invalidated">↺ New QR</button>
                         <span id="activeEventDisplay" class="active-event-bar__badge"></span>
                     </div>
 

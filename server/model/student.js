@@ -7,7 +7,7 @@ const student = express.Router()
 // ── Message file upload (100 MB limit) ──────────────────────
 const msgStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../../uploads/message_files/')
+        const dir = path.join(__dirname, '../../uploads/message_files/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
@@ -29,7 +29,7 @@ student.use(express.json())
 // MULTER — Student Profile Picture Upload
 // ============================================================
 const studentPicStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../../uploads/profile_pictures/')),
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
     filename:    (req, file, cb) => {
         const unique = Date.now() + '-' + Math.round(Math.random() * 1e6)
         cb(null, 'student-' + unique + path.extname(file.originalname))
@@ -631,7 +631,7 @@ student.post('/contact/send', async (req, res) => {
 const uploadContactFile = require('multer')({
     storage: require('multer').diskStorage({
         destination: (req, file, cb) => {
-            const dir = require('path').join(__dirname, '../../../uploads/message_files/');
+            const dir = require('path').join(__dirname, '../../uploads/message_files/');
             require('fs').mkdirSync(dir, { recursive: true });
             cb(null, dir);
         },
@@ -726,4 +726,43 @@ student.post('/contact/pin/:id', async (req, res) => {
         res.json({ ok: true, message: msg });
     } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
 });
+// Event check-in info — verify QR token and return event details (no location check yet)
+student.post('/event_checkin_info', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const { qr_token } = req.body
+        if (!qr_token) return res.status(400).json({ ok: false, message: 'QR token is required.' })
+        const event = await services.getEventByQRToken(qr_token)
+        if (!event) return res.status(404).json({ ok: false, message: 'Invalid or expired QR code.' })
+        if (!event.event_name_set) return res.status(404).json({ ok: false, message: 'No active event found.' })
+        if (!event.event_location) return res.status(400).json({ ok: false, message: 'Event location has not been set yet. Contact admin.' })
+        res.json({ ok: true, event_name: event.event_name_set, radius: event.event_location_radius || 50 })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
+// Event self check-in via QR scan
+student.post('/event_self_checkin', async (req, res) => {
+    try {
+        const token = services.removeBearer(req.headers['authorization'])
+        const decodedToken = services.verifyToken(token)
+        if (!decodedToken) return res.status(401).json({ ok: false, message: 'Invalid or expired token.' })
+        const { qr_token, status, latitude, longitude } = req.body
+        if (!qr_token) return res.status(400).json({ ok: false, message: 'QR token is required.' })
+        if (!status || !['TIME IN', 'TIME OUT'].includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status.' })
+        if (latitude == null || longitude == null) return res.status(400).json({ ok: false, message: 'Location is required for check-in.' })
+        const result = await services.studentSelfEventCheckIn(
+            decodedToken.student_id, status, qr_token,
+            parseFloat(latitude), parseFloat(longitude),
+            req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent']
+        )
+        res.json(result)
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message || String(err) })
+    }
+})
+
 module.exports = student

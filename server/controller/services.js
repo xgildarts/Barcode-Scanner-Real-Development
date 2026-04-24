@@ -3455,7 +3455,14 @@ module.exports = {
     getMsgNotifications,
     getUnreadMsgNotifCount,
     markMsgNotificationsRead,
-    cleanOldMsgNotifications
+    cleanOldMsgNotifications,
+    setEventNameWithLocation,
+    setEventNameWithLocationSystemWide,
+    regenerateEventQRToken,
+    regenerateEventQRTokenSystemWide,
+    getEventQR,
+    getEventByQRToken,
+    studentSelfEventCheckIn
 }
 
 function writeLogoutLog(userId, userName, userEmail, role, ip, userAgent) {
@@ -4042,5 +4049,137 @@ function editClassRosterStudent(studentId, id_number, firstname, middlename, las
                 )
             }
         )
+    })
+}
+// ============================================================
+// EVENT QR / SELF CHECK-IN FUNCTIONS
+// ============================================================
+
+function generateEventQRToken() {
+    return require('crypto').randomBytes(20).toString('hex')
+}
+
+async function setEventNameWithLocation(eventName, adminID, location, radius, qrToken) {
+    return new Promise((resolve, reject) => {
+        const locationJson = location ? JSON.stringify(location) : null
+        const sql = `UPDATE event_setter SET event_name_set = ?, event_location = ?, event_location_radius = ?, event_qr_token = ? WHERE admin_id = ?`
+        db.execute(sql, [eventName, locationJson, radius || 50, qrToken, adminID], (err) => {
+            if (err) return reject(err.message)
+            resolve('Event updated successfully')
+        })
+    })
+}
+
+async function setEventNameWithLocationSystemWide(eventName, location, radius, qrToken) {
+    return new Promise((resolve, reject) => {
+        const locationJson = location ? JSON.stringify(location) : null
+        const sql = `UPDATE event_setter SET event_name_set = ?, event_location = ?, event_location_radius = ?, event_qr_token = ?`
+        db.execute(sql, [eventName, locationJson, radius || 50, qrToken], (err) => {
+            if (err) return reject(err.message)
+            resolve('Event updated successfully')
+        })
+    })
+}
+
+async function regenerateEventQRToken(adminID) {
+    return new Promise((resolve, reject) => {
+        const token = generateEventQRToken()
+        db.execute(`UPDATE event_setter SET event_qr_token = ? WHERE admin_id = ?`, [token, adminID], (err) => {
+            if (err) return reject(err.message)
+            resolve(token)
+        })
+    })
+}
+
+async function regenerateEventQRTokenSystemWide() {
+    return new Promise((resolve, reject) => {
+        const token = generateEventQRToken()
+        db.execute(`UPDATE event_setter SET event_qr_token = ?`, [token], (err) => {
+            if (err) return reject(err.message)
+            resolve(token)
+        })
+    })
+}
+
+function getEventQR() {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT event_name_set, event_location, event_location_radius, event_qr_token FROM event_setter ORDER BY event_setter_id DESC LIMIT 1`,
+            [], (err, result) => {
+                if (err) return reject(err)
+                resolve(result[0] || null)
+            }
+        )
+    })
+}
+
+function getEventByQRToken(token) {
+    return new Promise((resolve, reject) => {
+        db.execute(
+            `SELECT event_setter_id, event_name_set, event_location, event_location_radius, admin_id FROM event_setter WHERE event_qr_token = ? LIMIT 1`,
+            [token], (err, result) => {
+                if (err) return reject(err)
+                resolve(result[0] || null)
+            }
+        )
+    })
+}
+
+async function studentSelfEventCheckIn(studentId, status, token, studentLat, studentLng, ip, userAgent) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // 1. Find event by token
+            const event = await getEventByQRToken(token)
+            if (!event) return reject(new Error('Invalid or expired QR code.'))
+            if (!event.event_name_set) return reject(new Error('No active event found.'))
+
+            // 2. Location check
+            if (!event.event_location) return reject(new Error('Event location has not been set. Please contact admin.'))
+            const { latitude: evLat, longitude: evLng } = JSON.parse(event.event_location)
+            const radius = event.event_location_radius || 50
+            const distance = Math.round(haversineDistance(evLat, evLng, studentLat, studentLng))
+            if (distance > radius) {
+                return reject(new Error(`You are ${distance}m away from the event location. Must be within ${radius}m.`))
+            }
+
+            // 3. Find student
+            db.execute(`SELECT student_id, student_id_number, student_firstname, student_middlename, student_lastname, student_year_level, student_program, student_guardian_number FROM student_accounts WHERE student_id = ?`,
+                [studentId], async (err, rows) => {
+                    if (err) return reject(err)
+                    const student = rows[0]
+                    if (!student) return reject(new Error('Student account not found.'))
+
+                    const fullName = [student.student_firstname, student.student_middlename, student.student_lastname].filter(Boolean).join(' ')
+
+                    // 4. Check duplicate
+                    const alreadyScanned = await new Promise((res, rej) => {
+                        db.execute(
+                            `SELECT event_id FROM event_attendance_record WHERE student_id_number = ? AND status = ? AND event_name = ? LIMIT 1`,
+                            [student.student_id_number, status, event.event_name_set],
+                            (e, r) => { if (e) return rej(e); res(r.length > 0) }
+                        )
+                    })
+                    if (alreadyScanned) return reject(new Error(`You have already recorded ${status} for this event.`))
+
+                    // 5. Insert record
+                    db.execute(
+                        `INSERT INTO event_attendance_record (student_id, student_name, student_id_number, student_program, student_year_level, event_name, guard_name, guard_location, status, guard_id, admin_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+                        [student.student_id, fullName, student.student_id_number, student.student_program, student.student_year_level, event.event_name_set, 'Self Check-in', 'Student App', status, null, event.admin_id],
+                        (err, result) => {
+                            if (err) return reject(err)
+                            writeActivityLog(studentId, fullName, 'student', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event', null, fullName, `Self check-in: ${event.event_name_set} | ${status}`, ip || null, userAgent || null)
+                            // SMS notification
+                            if (student.student_guardian_number) {
+                                const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
+                                sendSMS(student.student_guardian_number, `Pan Pacific University: ${fullName} has ${smsAction} the event "${event.event_name_set}" (${status}) via self check-in.`).catch(() => {})
+                            }
+                            resolve({ ok: true, message: `${status} recorded successfully!`, event: event.event_name_set })
+                        }
+                    )
+                }
+            )
+        } catch (err) {
+            reject(err)
+        }
     })
 }

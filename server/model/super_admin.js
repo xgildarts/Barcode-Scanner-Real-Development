@@ -7,7 +7,7 @@ const superAdmin = express.Router()
 // ── Message file upload (100 MB limit) ──────────────────────
 const msgStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../../uploads/message_files/')
+        const dir = path.join(__dirname, '../../uploads/message_files/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
@@ -46,7 +46,7 @@ function requireSuperAdmin(req, res, next) {
 // MULTER — Super Admin Profile Picture
 // ============================================================
 const superAdminPicStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../../uploads/profile_pictures/')),
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
     filename:    (req, file, cb) => cb(null, 'superadmin-' + Date.now() + '-' + Math.round(Math.random() * 1e6) + path.extname(file.originalname))
 })
 const uploadSuperAdminPic = multer({
@@ -766,18 +766,34 @@ superAdmin.get('/get_active_event', requireSuperAdmin, async (req, res) => {
 
 // Set event name system-wide (updates all admin event setters)
 superAdmin.post('/set_event', requireSuperAdmin, async (req, res) => {
-    const { event_name } = req.body
+    const { event_name, location, radius } = req.body
     if (!event_name) return res.status(400).json({ ok: false, message: 'Event name is required.' })
     try {
-        const db = require('../configuration/db')
-        await new Promise((resolve, reject) => {
-            db.execute('UPDATE event_setter SET event_name_set = ?', [event_name], (err) => {
-                if (err) return reject(err)
-                resolve()
-            })
-        })
+        const qrToken = require('crypto').randomBytes(20).toString('hex')
+        await services.setEventNameWithLocationSystemWide(event_name, location || null, radius || 50, qrToken)
         services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'SET_EVENT', 'Event', null, event_name, `Set system-wide event: ${event_name}`, req.ip, req.body?.device_info || req.headers['x-device-info'] || req.headers['user-agent'])
-        res.json({ ok: true, message: 'Event updated successfully.' })
+        res.json({ ok: true, message: 'Event updated successfully.', qr_token: qrToken })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Get current event QR data
+superAdmin.get('/get_event_qr', requireSuperAdmin, async (req, res) => {
+    try {
+        const data = await services.getEventQR()
+        res.json({ ok: true, content: data })
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message || err })
+    }
+})
+
+// Regenerate QR token system-wide
+superAdmin.post('/regenerate_event_qr', requireSuperAdmin, async (req, res) => {
+    try {
+        const newToken = await services.regenerateEventQRTokenSystemWide()
+        services.writeActivityLog(req.superAdmin.super_admin_id, req.superAdmin.super_admin_name, 'super_admin', 'REGENERATE_EVENT_QR', 'Event', null, null, 'Regenerated event QR token system-wide', req.ip, req.headers['user-agent'])
+        res.json({ ok: true, qr_token: newToken })
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message || err })
     }

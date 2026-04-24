@@ -1095,38 +1095,103 @@ async function checkEventReminder() {
 }
 
 async function handleSetEvent() {
-    const eventInput = document.getElementById('event_name_input');
-    const eventName = eventInput.value.trim();
+    const eventName  = document.getElementById('event_name_input').value.trim()
+    const radius     = parseInt(document.getElementById('event_radius_input')?.value) || 50
+    const latVal     = document.getElementById('event_lat_input')?.value.trim()
+    const lngVal     = document.getElementById('event_lng_input')?.value.trim()
 
-    if (!TOKEN) {
-        return Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'You must be logged in.' })
-            .then(() => clearSessionAndRedirect());
-    }
-    if (!eventName) {
-        return Swal.fire({ icon: 'warning', title: 'Empty Input', text: 'Please enter an event name.' });
-    }
+    if (!TOKEN) return Swal.fire({ icon:'error', title:'Unauthorized', text:'You must be logged in.' }).then(()=>clearSessionAndRedirect())
+    if (!eventName)  return Swal.fire({ icon:'warning', title:'Empty Input', text:'Please enter an event name.' })
+    if (!latVal || !lngVal) return Swal.fire({ icon:'warning', title:'Location Required', text:'Please set the event location first. Use "📍 My Location" or enter coordinates manually.' })
+
+    const location = { latitude: parseFloat(latVal), longitude: parseFloat(lngVal) }
+    if (isNaN(location.latitude) || isNaN(location.longitude)) return Swal.fire({ icon:'warning', title:'Invalid Location', text:'Latitude and longitude must be valid numbers.' })
 
     try {
-        const response = await apiFetch('/admin/set_event', {
-            method: 'POST',
-            body: JSON.stringify({ event_name: eventName })
-        });
-        const data = await response.json();
-
-        if (response.status === 401 || response.status === 403) {
-            return Swal.fire({ icon: 'error', title: 'Session Expired', text: 'Please login again.' })
-                .then(() => clearSessionAndRedirect());
-        }
-        if (!response.ok) {
-            return Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'Failed to set event.' });
-        }
-
-        renderActiveEvent(eventName);
-        await Swal.fire({ icon: 'success', title: 'Event Set!', text: `Event set to: "${eventName}"`, timer: 2000, showConfirmButton: false });
-        eventInput.value = '';
+        const response = await apiFetch('/admin/set_event', { method:'POST', body: JSON.stringify({ event_name: eventName, location, radius }) })
+        const data = await response.json()
+        if (response.status === 401 || response.status === 403) return Swal.fire({ icon:'error', title:'Session Expired', text:'Please login again.' }).then(()=>clearSessionAndRedirect())
+        if (!response.ok) return Swal.fire({ icon:'error', title:'Error', text: data.message || 'Failed to set event.' })
+        renderActiveEvent(eventName)
+        await Swal.fire({ icon:'success', title:'Event Set!', text:`Event "${eventName}" is now active. QR code is ready to print.`, timer:2500, showConfirmButton:false })
+        document.getElementById('event_name_input').value = ''
+        // Auto-show QR after setting event
+        handleShowEventQR()
     } catch (error) {
-        console.error(error);
-        Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+        Swal.fire({ icon:'error', title:'Error', text: error.message })
+    }
+}
+
+function handleUseMyLocation() {
+    if (!navigator.geolocation) return Swal.fire({ icon:'error', title:'Not Supported', text:'Geolocation is not supported by your browser.' })
+    Swal.fire({ title:'Getting Location...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() })
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            Swal.close()
+            document.getElementById('event_lat_input').value = pos.coords.latitude.toFixed(7)
+            document.getElementById('event_lng_input').value = pos.coords.longitude.toFixed(7)
+            Swal.fire({ icon:'success', title:'Location Set!', text:`Lat: ${pos.coords.latitude.toFixed(5)}, Lng: ${pos.coords.longitude.toFixed(5)}`, timer:2000, showConfirmButton:false })
+        },
+        (err) => { Swal.close(); Swal.fire({ icon:'error', title:'Location Error', text: err.message }) },
+        { enableHighAccuracy: true, timeout: 10000 }
+    )
+}
+
+async function handleShowEventQR() {
+    try {
+        const response = await apiFetch('/admin/get_event_qr')
+        const data = await response.json()
+        if (!data.ok || !data.content?.event_qr_token) return Swal.fire({ icon:'warning', title:'No QR Available', text:'Set an event first to generate a QR code.' })
+        const { event_name_set, event_qr_token, event_location_radius } = data.content
+        const loc = data.content.event_location ? JSON.parse(data.content.event_location) : null
+        const locText = loc ? `${parseFloat(loc.latitude).toFixed(5)}, ${parseFloat(loc.longitude).toFixed(5)}` : 'Not set'
+        await Swal.fire({
+            title: `📋 Event QR Code`,
+            html: `
+                <p style="font-weight:700;font-size:1.1rem;margin-bottom:4px;">${event_name_set}</p>
+                <p style="font-size:0.78rem;color:#666;margin-bottom:12px;">Location: ${locText} &nbsp;|&nbsp; Radius: ${event_location_radius}m</p>
+                <div id="swalEventQR" style="display:flex;justify-content:center;margin-bottom:12px;"></div>
+                <p style="font-size:0.72rem;color:#999;">Students scan this QR in their dashboard to check in.<br>Print and display at the event entrance.</p>`,
+            showConfirmButton: true,
+            confirmButtonText: '🖨️ Print',
+            showCancelButton: true,
+            cancelButtonText: 'Close',
+            confirmButtonColor: '#1a4545',
+            didOpen: () => {
+                new QRCode(document.getElementById('swalEventQR'), { text: event_qr_token, width:200, height:200, correctLevel: QRCode.CorrectLevel.H })
+            }
+        }).then(result => { if (result.isConfirmed) printEventQR(event_name_set, event_qr_token, locText, event_location_radius) })
+    } catch (err) {
+        Swal.fire({ icon:'error', title:'Error', text: err.message })
+    }
+}
+
+function printEventQR(eventName, token, locText, radius) {
+    const win = window.open('', '_blank')
+    win.document.write(`<!DOCTYPE html><html><head><title>Event QR - ${eventName}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    <style>body{font-family:Arial,sans-serif;text-align:center;padding:40px;} h1{font-size:2rem;margin-bottom:8px;} p{color:#555;margin:4px 0;} #qr{display:inline-block;margin:24px auto;}</style>
+    </head><body>
+    <h1>${eventName}</h1>
+    <p>Scan this QR code using the Student Dashboard to check in.</p>
+    <p style="font-size:0.85rem;color:#888;">Location: ${locText} | Within ${radius}m</p>
+    <div id="qr"></div>
+    <script>new QRCode(document.getElementById('qr'),{text:'${token}',width:300,height:300,correctLevel:QRCode.CorrectLevel.H});setTimeout(()=>window.print(),800);<\/script>
+    </body></html>`)
+    win.document.close()
+}
+
+async function handleRegenerateEventQR() {
+    const confirm = await Swal.fire({ icon:'warning', title:'Regenerate QR?', text:'This will invalidate all previously printed QR codes. Students will not be able to use old QRs.', showCancelButton:true, confirmButtonText:'Yes, Regenerate', confirmButtonColor:'#b71c1c' })
+    if (!confirm.isConfirmed) return
+    try {
+        const response = await apiFetch('/admin/regenerate_event_qr', { method:'POST' })
+        const data = await response.json()
+        if (!data.ok) return Swal.fire({ icon:'error', title:'Error', text: data.message })
+        await Swal.fire({ icon:'success', title:'New QR Generated!', text:'Print the new QR code and replace the old one.', timer:2000, showConfirmButton:false })
+        handleShowEventQR()
+    } catch (err) {
+        Swal.fire({ icon:'error', title:'Error', text: err.message })
     }
 }
 
