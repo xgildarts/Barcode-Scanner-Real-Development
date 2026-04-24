@@ -54,14 +54,12 @@ async function getDeviceInfo() {
             const platform = (data.platform || navigator.userAgentData.platform || '').trim();
             const ver      = (data.platformVersion || '').split('.')[0];
             const brands   = navigator.userAgentData.brands || [];
-            // Include Chromium as fallback brand
             const browser  = brands.find(b => /chrome|edge|opera/i.test(b.brand) && !/chromium/i.test(b.brand))
                           || brands.find(b => /chromium/i.test(b.brand));
             const browserStr = browser
                 ? browser.brand.replace('Google Chrome','Chrome').replace('Microsoft Edge','Edge') + ' ' + browser.version.split('.')[0]
                 : '';
             const osStr = platform + (ver && ver !== '0' ? ' ' + ver : '');
-            // Only trust modern path if platform is a real OS name (not empty, not generic Linux)
             if (platform && platform !== 'Linux') {
                 const parts = [browserStr, osStr, model].filter(Boolean);
                 if (parts.length > 0) return parts.join(' \u00b7 ');
@@ -73,9 +71,6 @@ async function getDeviceInfo() {
 
 function parseUAString(ua) {
     if (!ua) return 'Unknown Device';
-    // Chrome's frozen/reduced UA on desktop contains "Android 6.0; Nexus 5" as a fake placeholder.
-    // Detect this by checking if the UA also contains "Windows NT" or "Macintosh" — meaning
-    // the Android token is fake. Strip it and re-parse.
     if (/Android/i.test(ua) && (/Windows NT/i.test(ua) || /Macintosh/i.test(ua))) {
         ua = ua.replace(/\(Linux;[^)]*Android[^)]*\)\s*/i, '');
     }
@@ -105,7 +100,6 @@ function parseUAString(ua) {
         os = 'macOS' + (vMatch ? ' ' + vMatch[1].replace(/_/g, '.') : '');
     }
     else if (ua.indexOf('Linux') !== -1) os = 'Linux';
-    // Get browser version from UA for the fallback path
     const verMatch = ua.match(/(?:Chrome|Firefox|Safari|OPR|Edg)\/([0-9]+)/);
     const browserVer = verMatch ? ' ' + verMatch[1] : '';
     return (browser + browserVer + (os ? ' \u00b7 ' + os : '')) || ua.substring(0, 80);
@@ -126,7 +120,6 @@ async function apiCall(endpoint, method = 'GET', body = null) {
             'Authorization': 'Bearer ' + TOKEN
         }
     };
-    // Auto-inject device_info into all POST/PUT request bodies
     if (method === 'POST' || method === 'PUT') {
         options.body = JSON.stringify({ ...(body || {}), device_info: deviceInfo });
     } else if (body) {
@@ -141,7 +134,6 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 // ============================================================
 // INIT
 // ============================================================
-// Back-button guard: if user logged out, pressing back must not restore the page
 window.addEventListener('pageshow', (event) => {
     if (!localStorage.getItem('student_token')) {
         window.location.replace('student_login.html');
@@ -149,18 +141,16 @@ window.addEventListener('pageshow', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Sequential startup: await each async step so Swals don't race/overwrite each other
     await checkToken();
     tab('generateBarcode');
-    await loadProfileData();   // has its own loading Swal — must finish before barcode check
-    getAttendanceHistory();    // no Swal, safe to run concurrently
-    await initialCheckBarcodeExpiration(); // barcode Swal shows last, stays visible
+    await loadProfileData();
+    getAttendanceHistory();
+    await initialCheckBarcodeExpiration();
 });
 
 // ============================================================
 // AUTH
 // ============================================================
-// FIX: centralised session cleanup
 function clearSessionAndRedirect() {
     localStorage.removeItem('student_token');
     localStorage.removeItem('student_device_info');
@@ -170,7 +160,7 @@ function clearSessionAndRedirect() {
 async function checkToken() {
     if (!TOKEN) {
         await Swal.fire({ icon: 'error', title: 'Please login first!', text: 'Your session is missing or expired.', allowOutsideClick: false });
-        return clearSessionAndRedirect(); // FIX: clear token before redirect
+        return clearSessionAndRedirect();
     }
 
     try {
@@ -182,7 +172,7 @@ async function checkToken() {
 
         if (!res.ok) {
             await Swal.fire({ icon: 'error', title: 'Session Expired', text: data.message || 'Please login again.', allowOutsideClick: false });
-            clearSessionAndRedirect(); // FIX: clear token before redirect
+            clearSessionAndRedirect();
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong.' });
@@ -206,7 +196,7 @@ function logout() {
         } catch (_) {}
         localStorage.removeItem('student_token');
         localStorage.removeItem('student_device_info');
-        clearSessionAndRedirect(); // FIX: clear token before redirect
+        clearSessionAndRedirect();
     });
 }
 
@@ -215,6 +205,7 @@ function logout() {
 // ============================================================
 const TAB_TITLES = {
     generateBarcode:   'Barcode Generation',
+    eventCheckin:      'Event Check-in',
     attendanceHistory: 'Attendance History',
     settings:          'Settings'
 };
@@ -222,16 +213,17 @@ const TAB_TITLES = {
 function tab(tabName) {
     document.getElementById('title').textContent = TAB_TITLES[tabName] || tabName;
 
-    // Toggle sections
     Object.keys(TAB_TITLES).forEach(t => {
         document.getElementById(t)?.classList.toggle('active', t === tabName);
-        // Also toggle active on the nav button (prefixed with btn-)
         document.getElementById('btn-' + t)?.classList.toggle('active', t === tabName);
     });
 
     const isSettings = tabName === 'settings';
     document.getElementById('actionButtons').classList.toggle('hide', isSettings);
     document.getElementById('goBackBtn').classList.toggle('show', isSettings);
+
+    // Stop scanner when leaving the eventCheckin tab
+    if (tabName !== 'eventCheckin') stopEventQRScanner();
 }
 
 function goBackBtn() {
@@ -250,7 +242,7 @@ async function loadProfileData() {
         if (!res.ok) {
             Swal.close();
             Swal.fire({ icon: 'error', title: 'Error', text: data.message })
-                .then(() => clearSessionAndRedirect()); // FIX
+                .then(() => clearSessionAndRedirect());
             return;
         }
 
@@ -267,7 +259,6 @@ async function loadProfileData() {
         const mid = student_middlename ? student_middlename.charAt(0).toUpperCase() + '.' : '';
         const fullName = `${student_firstname}${mid ? ' ' + mid : ''} ${student_lastname}`.trim();
 
-        // Load saved profile picture if available
         if (student_profile_picture) {
             setStudentAvatar(`${BASE_URL}/uploads/profile_pictures/${student_profile_picture}`);
         }
@@ -284,7 +275,6 @@ async function loadProfileData() {
         document.getElementById('firstName').value  = student_firstname;
         document.getElementById('middleName').value = student_middlename;
         document.getElementById('lastName').value   = student_lastname;
-
 
     } catch (err) {
         Swal.close();
@@ -322,17 +312,16 @@ async function verifyLocation() {
     const { res, data } = await apiCall('/students/verify_location', 'POST', {
         latitude:       coords.latitude,
         longitude:      coords.longitude,
-        teacher_serial: _selectedTeacherSerial  // prevents bypass via a different enrolled teacher
+        teacher_serial: _selectedTeacherSerial
     });
 
     Swal.close();
 
-    // If teacher hasn't set a location yet, allow barcode generation anyway
     if (!res.ok) {
         const msg = data?.message || '';
         if (msg.toLowerCase().includes('location') || msg.toLowerCase().includes('not set')) {
             Swal.close();
-            return true; // no location set — skip check, let student generate
+            return true;
         }
         Swal.fire({ icon: 'error', title: 'Error', text: msg || 'Something went wrong.', confirmButtonColor: '#d33' });
         return false;
@@ -356,8 +345,7 @@ async function verifyLocation() {
 // ============================================================
 let _codeType = 'barcode'; // 'barcode' | 'qr'
 let _qrInstance = null;
-let _selectedTeacherSerial = null; // set when student picks a class
-
+let _selectedTeacherSerial = null;
 
 function setCodeType(type) {
     _codeType = type;
@@ -408,10 +396,10 @@ function generateRandomBarcode() {
 }
 
 function isBarcodeExpired(barcode_date_generated) {
-    if (!barcode_date_generated) return true; // never generated → treat as expired
+    if (!barcode_date_generated) return true;
     const now        = new Date();
     const generated  = new Date(barcode_date_generated);
-    if (isNaN(generated.getTime())) return true; // invalid date → treat as expired
+    if (isNaN(generated.getTime())) return true;
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const genStart   = new Date(generated.getFullYear(), generated.getMonth(), generated.getDate());
     return todayStart > genStart;
@@ -453,8 +441,6 @@ async function initialCheckBarcodeExpiration() {
 }
 
 async function pickTeacherThenGenerate() {
-    // Try to fetch enrolled teachers
-    // If endpoint not available or student not enrolled, skip picker and go straight
     try {
         const { res, data } = await apiCall('/students/enrolled_teachers');
 
@@ -462,10 +448,8 @@ async function pickTeacherThenGenerate() {
             const teachers = data.content;
 
             if (teachers.length === 1) {
-                // Only one teacher — skip picker
                 _selectedTeacherSerial = teachers[0].teacher_barcode_scanner_serial_number;
             } else {
-                // Multiple teachers — show picker
                 const options = {};
                 teachers.forEach((t, i) => {
                     const label = t.subject ? `${t.teacher_name} — ${t.subject}` : t.teacher_name;
@@ -481,15 +465,11 @@ async function pickTeacherThenGenerate() {
                     confirmButtonColor: '#1e3a5f',
                     inputValidator: (v) => v === '' ? 'Please select a class' : null
                 });
-                if (value === undefined) return; // user cancelled
+                if (value === undefined) return;
                 _selectedTeacherSerial = teachers[parseInt(value)].teacher_barcode_scanner_serial_number;
             }
         }
-        // If endpoint fails or no teachers found, _selectedTeacherSerial stays null
-        // verifyLocation will still run — backend falls back to first enrolled teacher
-    } catch (_) {
-        // Endpoint not available — proceed without teacher selection
-    }
+    } catch (_) {}
 
     await checkBarcodeExpiration();
 }
@@ -538,7 +518,6 @@ async function getAttendanceHistory() {
     try {
         Swal.fire({ title: 'Loading attendance...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-        // Fetch history, enrolled teachers, AND class sessions in parallel
         const [{ res, data }, teacherRes, sessionRes] = await Promise.all([
             apiCall('/students/get_attendance_history_record'),
             apiCall('/students/enrolled_teachers'),
@@ -548,7 +527,6 @@ async function getAttendanceHistory() {
 
         if (!res.ok) { Swal.close(); return Swal.fire({ icon: 'error', title: 'Error', text: data.message }); }
 
-        // Build serial → teacher info map from enrolled teachers
         const teacherMap = {};
         if (teacherRes.res.ok && teacherRes.data.content) {
             teacherRes.data.content.forEach(t => {
@@ -564,15 +542,12 @@ async function getAttendanceHistory() {
         const realRecords = data.content || [];
         const studentIdNumber = realRecords.length ? realRecords[0].student_id_number : null;
 
-        // Build lookup of existing records: "subject|date"
         const existingKeys = new Set();
         realRecords.forEach(r => {
             const date = r.attendance_date ? String(r.attendance_date).split('T')[0] : '';
             existingKeys.add(`${r.subject || ''}|${date}`);
         });
 
-        // Use real class sessions from the backend to synthesize absent rows.
-        // This works even when the student has zero records for a subject.
         const virtualAbsents = [];
         const classSessions = (sessionRes.res.ok && sessionRes.data.content) ? sessionRes.data.content : [];
 
@@ -599,18 +574,15 @@ async function getAttendanceHistory() {
 
         const allRecords = [...realRecords, ...virtualAbsents];
 
-        // Sort by date descending
         allRecords.sort((a, b) => {
             const da = a.attendance_date ? String(a.attendance_date).split('T')[0] : '';
             const db = b.attendance_date ? String(b.attendance_date).split('T')[0] : '';
             return db.localeCompare(da);
         });
 
-        // Store globally for filtering
         _allAttendanceRecords = allRecords;
         _attendanceTeacherMap = teacherMap;
 
-        // Populate subject dropdown
         const subjects = [...new Set(allRecords.map(r => r.subject).filter(Boolean))].sort();
         const subjectSel = document.getElementById('filterSubject');
         if (subjectSel) {
@@ -772,6 +744,7 @@ async function updatePassword() {
         Swal.fire({ icon: 'error', title: 'Update Failed', text: err.message || 'Something went wrong.' });
     }
 }
+
 // ============================================================
 // MAINTENANCE MODE POLLING
 // ============================================================
@@ -833,6 +806,7 @@ function hideMaintenanceBanner() {
 
 checkMaintenanceMode();
 _maintenancePollInterval = setInterval(checkMaintenanceMode, 15000);
+
 // ============================================================
 // APPEARANCE — Dark mode, Font family, Text size
 // ============================================================
@@ -845,11 +819,8 @@ function sLoadTheme() {
 
 function sApplyTheme(mode, font, size, save = true) {
     const html = document.documentElement;
-
-    // Dark / light
     html.setAttribute('data-theme', mode === 'dark' ? 'dark' : '');
 
-    // Font family
     const fontMap = {
         system:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         inter:   "'Inter', sans-serif",
@@ -859,13 +830,11 @@ function sApplyTheme(mode, font, size, save = true) {
     };
     document.body.style.fontFamily = fontMap[font] || fontMap.system;
 
-    // Text size via zoom on sections
     const zoomMap = { small: '0.88', medium: '1', large: '1.12' };
     document.querySelectorAll('.sections').forEach(el => {
         el.style.zoom = zoomMap[size] || '1';
     });
 
-    // Sync button active states
     document.querySelectorAll('.s-mode-btn').forEach(b => b.classList.remove('s-active'));
     document.getElementById(mode === 'dark' ? 's-modeDark' : 's-modeLight')?.classList.add('s-active');
     document.querySelectorAll('.s-font-btn').forEach(b => b.classList.toggle('s-active', b.dataset.font === font));
@@ -887,13 +856,11 @@ function sSetSize(size) {
     sApplyTheme(saved.mode || 'light', saved.font || 'system', size);
 }
 
-// Load on startup
 sLoadTheme();
 
 // ============================================================
 // PROFILE PICTURE UPLOAD
 // ============================================================
-
 function setStudentAvatar(url) {
     document.querySelectorAll('.avatar').forEach(av => {
         av.innerHTML = `<img src="${url}"
@@ -903,7 +870,6 @@ function setStudentAvatar(url) {
     });
 }
 
-// Wire camera icons and avatar clicks → open file picker
 document.querySelectorAll('.camera-icon').forEach(icon => {
     icon.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -917,8 +883,6 @@ document.querySelectorAll('.avatar').forEach(av => {
     });
 });
 
-// File selected → preview instantly then upload
-// Wrap with crop modal
 if (typeof initImageCrop === 'function') {
     const _studentPicInput = document.getElementById('studentProfilePicInput');
     if (_studentPicInput) {
@@ -945,15 +909,15 @@ if (typeof initImageCrop === 'function') {
         });
     }
 }
+
 document.getElementById('studentProfilePicInput')?.addEventListener('change', async function () {
-    if (typeof initImageCrop === 'function') return; // handled by crop
+    if (typeof initImageCrop === 'function') return;
     const file = this.files[0];
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024)
         return Swal.fire({ icon: 'warning', title: 'File too large', text: 'Please choose an image under 5MB.' });
 
-    // Instant local preview before server responds
     const reader = new FileReader();
     reader.onload = e => setStudentAvatar(e.target.result);
     reader.readAsDataURL(file);
@@ -984,22 +948,20 @@ document.getElementById('studentProfilePicInput')?.addEventListener('change', as
         Swal.fire({ icon: 'error', title: 'Upload failed', text: err.message || 'Network error.' });
     }
 
-    // Reset so the same file can be re-selected if needed
     this.value = '';
 });
+
 // ============================================================
 // EVENT QR SELF CHECK-IN
 // ============================================================
-
 let _eventQRScanner = null
 let _scannedQRToken = null
 
 function startEventQRScanner() {
-    const wrap = document.getElementById('qrReaderWrap')
+    const wrap     = document.getElementById('qrReaderWrap')
     const statusBox = document.getElementById('eventCheckinStatus')
-    const btnStart = document.getElementById('btnStartScan')
+    const btnStart  = document.getElementById('btnStartScan')
 
-    // Reset state
     _scannedQRToken = null
     statusBox.style.display = 'none'
     wrap.style.display = 'block'
@@ -1015,23 +977,22 @@ function startEventQRScanner() {
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 220, height: 220 } },
         (decodedText) => {
-            // QR scanned
             _scannedQRToken = decodedText.trim()
             stopEventQRScanner()
             onQRScanned(_scannedQRToken)
         },
         () => {}
-    ).catch((err) => {
+    ).catch(() => {
         stopEventQRScanner()
         Swal.fire({ icon: 'error', title: 'Camera Error', text: 'Could not access camera. Please allow camera permission and try again.' })
     })
 }
 
 function stopEventQRScanner() {
-    const wrap = document.getElementById('qrReaderWrap')
-    const btnStart = document.getElementById('btnStartScan')
-    wrap.style.display = 'none'
-    btnStart.style.display = ''
+    const wrap     = document.getElementById('qrReaderWrap')
+    const btnStart  = document.getElementById('btnStartScan')
+    if (wrap)     wrap.style.display = 'none'
+    if (btnStart) btnStart.style.display = ''
     if (_eventQRScanner) {
         _eventQRScanner.stop().catch(() => {})
         _eventQRScanner = null
@@ -1039,19 +1000,16 @@ function stopEventQRScanner() {
 }
 
 async function onQRScanned(token) {
-    // Validate token with server and show event info + TIME IN / TIME OUT buttons
     Swal.fire({ title: 'Verifying QR...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
     try {
-        // We just need to verify the token exists — use the student self-checkin endpoint
-        // but we ask for event info first via a lightweight GET check
-        const res = await apiCall('/students/event_checkin_info', 'POST', { qr_token: token })
+        const { res, data } = await apiCall('/students/event_checkin_info', 'POST', { qr_token: token })
         Swal.close()
-        if (!res.data.ok) {
-            return Swal.fire({ icon: 'error', title: 'Invalid QR', text: res.data.message || 'This QR code is not valid or the event has ended.' })
+        if (!data.ok) {
+            return Swal.fire({ icon: 'error', title: 'Invalid QR', text: data.message || 'This QR code is not valid or the event has ended.' })
         }
         _scannedQRToken = token
-        document.getElementById('eventCheckinName').textContent = `📅 ${res.data.event_name}`
-        document.getElementById('eventCheckinLocation').textContent = `Radius: ${res.data.radius}m from event location`
+        document.getElementById('eventCheckinName').textContent     = `📅 ${data.event_name}`
+        document.getElementById('eventCheckinLocation').textContent = `Within ${data.radius}m of event location`
         document.getElementById('eventCheckinStatus').style.display = 'block'
     } catch (err) {
         Swal.close()
@@ -1062,13 +1020,11 @@ async function onQRScanned(token) {
 async function submitEventCheckin(status) {
     if (!_scannedQRToken) return Swal.fire({ icon: 'warning', title: 'No QR Scanned', text: 'Please scan the event QR code first.' })
 
-    // Get GPS location
-    Swal.fire({ title: 'Getting your location...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
-
     if (!navigator.geolocation) {
-        Swal.close()
         return Swal.fire({ icon: 'error', title: 'Location Required', text: 'Your browser does not support geolocation. Please use a modern mobile browser.' })
     }
+
+    Swal.fire({ title: 'Getting your location...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
         const latitude  = pos.coords.latitude
@@ -1101,7 +1057,7 @@ async function submitEventCheckin(status) {
             Swal.close()
             Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Network error. Please try again.' })
         }
-    }, (err) => {
+    }, () => {
         Swal.close()
         Swal.fire({ icon: 'error', title: 'Location Denied', text: 'Location access is required to check in. Please allow location and try again.' })
     }, { enableHighAccuracy: true, timeout: 10000 })
