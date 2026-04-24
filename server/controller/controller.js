@@ -8,6 +8,7 @@ const teacher = require('../model/teacher');
 const admin = require('../model/admin');
 const guard = require('../model/guard');
 const superAdmin = require('../model/super_admin');
+const { academics, teacherAttRouter } = require('../model/academics');
 require('dotenv').config();
 // ── Global error guards — prevent ECONNRESET crashing the process ──
 process.on('uncaughtException', (err) => {
@@ -50,6 +51,7 @@ app.use('/guard', express.static(path.join(__dirname, '../../guard')))
 app.use('/student', express.static(path.join(__dirname, '../../student')))
 app.use('/teacher', express.static(path.join(__dirname, '../../teacher')))
 app.use('/super_admin', express.static(path.join(__dirname, '../../super_admin')))
+app.use('/academics', express.static(path.join(__dirname, '../../academics')))
 app.use('/css', express.static(path.join(__dirname, '../../css')))
 app.use('/sounds', express.static(path.join(__dirname, '../../sounds')))
 
@@ -68,6 +70,9 @@ app.get('/super_admin', (req, res) => {
 })
 app.get('/teacher', (req, res) => {
     res.redirect('/teacher/teacher_login.html')
+})
+app.get('/academics', (req, res) => {
+    res.redirect('/academics/academics_login.html')
 })
 
 const services = require('./services')
@@ -109,11 +114,13 @@ app.use(async (req, res, next) => {
 // API Routes
 app.use('/api/v1/authentication', auth)
 app.use('/api/v1/students', student)
+app.use('/api/v1/teacher', teacherAttRouter)   // attendance routes first
 app.use('/api/v1/teacher', teacher)
 app.use('/api/v1/programs', programs)
 app.use('/api/v1/admin', admin)
 app.use('/api/v1/guard', guard)
 app.use('/api/v1/super_admin', superAdmin)
+app.use('/api/v1/academics', academics)
 
 
 app.listen(PORT, () => {
