@@ -204,7 +204,7 @@
    }
    
    .export-btn:hover {
-       background: #2c5a5a;
+       background: #2d4f1a;
    }
    
    .export-btn svg {
@@ -288,11 +288,11 @@
    }
 
    /* Dark mode */
-   [data-theme="dark"] .table-container { background: #1a2535 !important; }
-   [data-theme="dark"] .attendance-table thead { background: #1e3a3a !important; }
-   [data-theme="dark"] .attendance-table tbody tr { border-bottom-color: #2a3a4a !important; }
-   [data-theme="dark"] .attendance-table tbody tr:nth-child(even) { background: #1e2535 !important; }
-   [data-theme="dark"] .attendance-table tbody tr:hover { background: #1e2f3f !important; }
+   [data-theme="dark"] .table-container { background: #1a2510 !important; }
+   [data-theme="dark"] .attendance-table thead { background: #1e3a10 !important; }
+   [data-theme="dark"] .attendance-table tbody tr { border-bottom-color: #2a3a10 !important; }
+   [data-theme="dark"] .attendance-table tbody tr:nth-child(even) { background: #1e2510 !important; }
+   [data-theme="dark"] .attendance-table tbody tr:hover { background: #1e2f10 !important; }
    [data-theme="dark"] .attendance-table td { color: #c0d0d8 !important; }
 
    /* ── Mobile: card layout ── */
@@ -324,7 +324,7 @@
            min-width: 80px; flex-shrink: 0;
            text-transform: uppercase; letter-spacing: 0.3px; padding-top: 2px;
        }
-       [data-theme="dark"] .attendance-table tbody tr { background: #1a2535; border-color: #2a3a4a; }
+       [data-theme="dark"] .attendance-table tbody tr { background: #1a2510; border-color: #2a3a10; }
        [data-theme="dark"] .attendance-table tbody td::before { color: #5a9e2a; }
    }
 
@@ -358,7 +358,7 @@
            min-width: 80px; flex-shrink: 0;
            text-transform: uppercase; letter-spacing: 0.3px; padding-top: 2px;
        }
-       [data-theme="dark"] .attendance-table tbody tr { background: #1a2535; border-color: #2a3a4a; }
+       [data-theme="dark"] .attendance-table tbody tr { background: #1a2510; border-color: #2a3a10; }
        [data-theme="dark"] .attendance-table tbody td::before { color: #5a9e2a; }
    }
    
@@ -371,7 +371,7 @@
        left: 0;
        height: 100vh;
        width: 300px;
-       background: linear-gradient(180deg, #407029 0%, #2d4f1a 100%);
+       background: linear-gradient(180deg, #1e3a10 0%, #2d4f1a 100%);
        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
        overflow-y: auto;
        flex-shrink: 0;
@@ -548,12 +548,12 @@
       ACCOUNT MANAGEMENT BUTTONS (global)
       ============================================================ */
    .edit-btn-account-management {
-       background: #5fa881;
+       background: #407029;
        color: white;
    }
    
    .edit-btn-account-management:hover {
-       background: #4d8a6a;
+       background: #4d8a30;
    }
    
    .delete-btn-account-management {
@@ -655,7 +655,7 @@
 /* ── Theme CSS variables (light + dark mode) ── */
 :root {
     --accent:           #407029;
-    --accent-dark:      #2c5a5a;
+    --accent-dark:      #2d4f1a;
     --accent-light:     #eef6e8;
     --accent-border:    #b2d880;
     --surface:          #ffffff;
@@ -672,10 +672,10 @@
     --accent-dark:      #4a8e8e;
     --accent-light:     #1a2f2f;
     --accent-border:    #2d5a5a;
-    --surface:          #1a2535;
+    --surface:          #1a2510;
     --surface-alt:      #14202e;
-    --surface-border:   #2a3a4a;
-    --surface-hover:    #1e2f3f;
+    --surface-border:   #2a3a10;
+    --surface-hover:    #1e2f10;
     --text-primary:     #e0eaf0;
     --text-secondary:   #8aaabb;
     --text-muted:       #4a6a7a;
@@ -725,12 +725,12 @@
 
 /* Top bar */
 [data-theme="dark"] .top-bar {
-    background: #1a2535 !important;
-    border-bottom: 1px solid #2a3a4a;
+    background: #1a2510 !important;
+    border-bottom: 1px solid #2a3a10;
 }
 [data-theme="dark"] .menu-btn span { background: #e0eaf0 !important; }
 [data-theme="dark"] .settings-btn {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     box-shadow: none;
 }
 [data-theme="dark"] .settings-btn svg { fill: #e0eaf0 !important; }
@@ -745,9 +745,9 @@
 [data-theme="dark"] .info-card,
 [data-theme="dark"] .content-modal,
 [data-theme="dark"] .record-modal-content {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .welcome-text,
 [data-theme="dark"] .stats-title,
@@ -757,14 +757,14 @@
 
 /* Profile section */
 [data-theme="dark"] .profile-section {
-    background: #1a2535 !important;
-    border-bottom-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-bottom-color: #2a3a10 !important;
 }
 [data-theme="dark"] .profile-name { color: #e0eaf0 !important; }
 [data-theme="dark"] .profile-email { color: #8aaabb !important; }
 [data-theme="dark"] .edit-profile-btn {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 [data-theme="dark"] .edit-profile-btn:hover { background: #253545 !important; }
@@ -773,7 +773,7 @@
 
 /* Content section */
 [data-theme="dark"] .content-section { background: #0f1c2e !important; }
-[data-theme="dark"] .info-row { border-bottom-color: #2a3a4a !important; }
+[data-theme="dark"] .info-row { border-bottom-color: #2a3a10 !important; }
 [data-theme="dark"] .info-label { color: #8aaabb !important; }
 [data-theme="dark"] .info-value { color: #e0eaf0 !important; }
 [data-theme="dark"] .edit-btn,
@@ -787,8 +787,8 @@
 [data-theme="dark"] input:not([type="submit"]):not([type="button"]),
 [data-theme="dark"] select,
 [data-theme="dark"] textarea {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 [data-theme="dark"] .password-input:focus,
@@ -798,18 +798,18 @@
 
 /* Reg fields */
 [data-theme="dark"] .reg-field {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .reg-field:focus-within {
     border-color: #5a9e2a !important;
     background: #253545 !important;
 }
 [data-theme="dark"] .reg-form-card {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
 }
-[data-theme="dark"] .reg-form-header { border-bottom-color: #2a3a4a !important; }
+[data-theme="dark"] .reg-form-header { border-bottom-color: #2a3a10 !important; }
 [data-theme="dark"] .reg-section-label { color: #5a9e2a !important; }
 
 /* Buttons */
@@ -820,8 +820,8 @@
 [data-theme="dark"] .register-btn { background: #1e3a5a !important; }
 
 /* Search */
-[data-theme="dark"] .search-container { background: #1a2535 !important; }
-[data-theme="dark"] .search-wrapper { background: #1e2f3f !important; border-color: #2a3a4a !important; }
+[data-theme="dark"] .search-container { background: #1a2510 !important; }
+[data-theme="dark"] .search-wrapper { background: #1e2f10 !important; border-color: #2a3a10 !important; }
 [data-theme="dark"] .search-input { background: transparent !important; color: #e0eaf0 !important; }
 [data-theme="dark"] .search-icon { fill: #8aaabb !important; }
 
@@ -829,8 +829,8 @@
 [data-theme="dark"] .student-card,
 [data-theme="dark"] .teacher-card,
 [data-theme="dark"] .guard-card {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .student-name,
 [data-theme="dark"] .teacher-name,
@@ -841,29 +841,29 @@
 [data-theme="dark"] .guard-domain-gate { color: #8aaabb !important; }
 
 /* Event attendance */
-[data-theme="dark"] .attendance-table thead { background: #1e3a3a !important; }
-[data-theme="dark"] .attendance-table th { color: #7ece40 !important; border-color: #2a3a4a !important; }
-[data-theme="dark"] .attendance-table td { color: #e0eaf0 !important; border-color: #2a3a4a !important; }
-[data-theme="dark"] .attendance-table tr:nth-child(even) { background: #1a2535 !important; }
-[data-theme="dark"] .attendance-table tr:hover { background: #1e2f3f !important; }
-[data-theme="dark"] .table-container { background: #1a2535 !important; border-color: #2a3a4a !important; }
+[data-theme="dark"] .attendance-table thead { background: #1e3a10 !important; }
+[data-theme="dark"] .attendance-table th { color: #7ece40 !important; border-color: #2a3a10 !important; }
+[data-theme="dark"] .attendance-table td { color: #e0eaf0 !important; border-color: #2a3a10 !important; }
+[data-theme="dark"] .attendance-table tr:nth-child(even) { background: #1a2510 !important; }
+[data-theme="dark"] .attendance-table tr:hover { background: #1e2f10 !important; }
+[data-theme="dark"] .table-container { background: #1a2510 !important; border-color: #2a3a10 !important; }
 
 /* Modals */
 [data-theme="dark"] .modal-content,
 [data-theme="dark"] .student-account-management-modal .record-modal-content,
 [data-theme="dark"] .teacher-account-management-modal .record-modal-content,
 [data-theme="dark"] .guard-account-management-modal .record-modal-content {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
 }
-[data-theme="dark"] .modal-header-account-management { border-bottom-color: #2a3a4a !important; }
+[data-theme="dark"] .modal-header-account-management { border-bottom-color: #2a3a10 !important; }
 [data-theme="dark"] .modal-header-account-management h2 { color: #e0eaf0 !important; }
 [data-theme="dark"] .form-group label { color: #8aaabb !important; }
-[data-theme="dark"] .modal-footer { border-top-color: #2a3a4a !important; }
+[data-theme="dark"] .modal-footer { border-top-color: #2a3a10 !important; }
 [data-theme="dark"] .cancel-btn {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     color: #e0eaf0 !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 
 /* Academic setup */
@@ -871,17 +871,17 @@
 [data-theme="dark"] .setup-section-label { color: #8aaabb !important; }
 [data-theme="dark"] .program-name { color: #e0eaf0 !important; }
 [data-theme="dark"] .add-program-btn {
-    background: #1e3a3a !important;
+    background: #1e3a10 !important;
     color: #7ece40 !important;
     border-color: #2d5a5a !important;
 }
 
 /* Password section */
-[data-theme="dark"] .password-section { border-top-color: #2a3a4a !important; }
+[data-theme="dark"] .password-section { border-top-color: #2a3a10 !important; }
 
 /* Scrollbar */
 [data-theme="dark"] ::-webkit-scrollbar-track { background: #0f1c2e !important; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a3a4a !important; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a3a10 !important; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3a4a5a !important; }
 
 /* ============================================================
@@ -895,7 +895,7 @@
     border-bottom-color: rgba(90,158,158,0.3) !important;
 }
 [data-theme="dark"] .program-card {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
 [data-theme="dark"] .program-card:hover {
@@ -917,7 +917,7 @@
 }
 /* Modal */
 [data-theme="dark"] .modal-content {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
 }
 [data-theme="dark"] .modal-header {
@@ -927,15 +927,15 @@
     color: #8aaabb !important;
 }
 [data-theme="dark"] .modal-content .form-input {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 [data-theme="dark"] .modal-content .form-input:focus {
     border-color: #5a9e2a !important;
 }
 [data-theme="dark"] .cancel-btn {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     color: #8aaabb !important;
 }
 [data-theme="dark"] .cancel-btn:hover {
@@ -952,7 +952,7 @@
     background: #0f1c2e !important;
 }
 [data-theme="dark"] .programs-list::-webkit-scrollbar-thumb {
-    background: #2a3a4a !important;
+    background: #2a3a10 !important;
 }
 
 /* ============================================================
@@ -961,13 +961,13 @@
 
 /* Top bar */
 [data-theme="dark"] .top-bar {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.4) !important;
 }
 [data-theme="dark"] .menu-btn span { background: #e0eaf0 !important; }
 [data-theme="dark"] .title-header { color: #e0eaf0 !important; }
 [data-theme="dark"] .settings-btn {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     box-shadow: none !important;
 }
 [data-theme="dark"] .settings-btn svg { fill: #e0eaf0 !important; }
@@ -977,7 +977,7 @@
 
 /* Stats cards */
 [data-theme="dark"] .stats-card {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
 [data-theme="dark"] .stats-label { color: #8aaabb !important; }
@@ -986,7 +986,7 @@
 
 /* Chart card */
 [data-theme="dark"] .chart-card {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
 [data-theme="dark"] .chart-legend { color: #8aaabb !important; }
@@ -999,23 +999,23 @@
 
 /* Account management modals */
 [data-theme="dark"] .record-modal-content {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
     box-shadow: 0 4px 24px rgba(0,0,0,0.6) !important;
 }
-[data-theme="dark"] .modal-body { background: #1a2535 !important; }
+[data-theme="dark"] .modal-body { background: #1a2510 !important; }
 [data-theme="dark"] .modal-body .form-group label { color: #8aaabb !important; }
 [data-theme="dark"] .modal-body .form-group input,
 [data-theme="dark"] .modal-body .form-group select {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
     color: #e0eaf0 !important;
 }
 [data-theme="dark"] .modal-footer {
-    border-top-color: #2a3a4a !important;
-    background: #1a2535 !important;
+    border-top-color: #2a3a10 !important;
+    background: #1a2510 !important;
 }
 [data-theme="dark"] .modal-footer .cancel-btn {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     color: #8aaabb !important;
 }
 [data-theme="dark"] .modal-footer .cancel-btn:hover {
@@ -1032,8 +1032,8 @@
 [data-theme="dark"] .student-card,
 [data-theme="dark"] .teacher-card,
 [data-theme="dark"] .guard-card {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
 }
 [data-theme="dark"] .student-name,
@@ -1046,10 +1046,10 @@
 [data-theme="dark"] .teacher-info .info-item { color: #8aaabb !important; }
 
 /* Search bar */
-[data-theme="dark"] .search-container { background: #1a2535 !important; }
+[data-theme="dark"] .search-container { background: #1a2510 !important; }
 [data-theme="dark"] .search-wrapper {
-    background: #1e2f3f !important;
-    border-color: #2a3a4a !important;
+    background: #1e2f10 !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .search-input {
     background: transparent !important;
@@ -1061,39 +1061,39 @@
 /* Register button at bottom of account sections */
 [data-theme="dark"] .register-btn-container { background: #0f1c2e !important; }
 [data-theme="dark"] .register-btn {
-    background: #1e3a3a !important;
+    background: #1e3a10 !important;
     color: #7ece40 !important;
     border-color: #2d5a5a !important;
 }
 
 /* Event attendance table */
 [data-theme="dark"] .table-container {
-    background: #1a2535 !important;
-    border-color: #2a3a4a !important;
+    background: #1a2510 !important;
+    border-color: #2a3a10 !important;
 }
-[data-theme="dark"] .attendance-table { background: #1a2535 !important; }
-[data-theme="dark"] .attendance-table thead tr { background: #1e3a3a !important; }
+[data-theme="dark"] .attendance-table { background: #1a2510 !important; }
+[data-theme="dark"] .attendance-table thead tr { background: #1e3a10 !important; }
 [data-theme="dark"] .attendance-table th {
     color: #7ece40 !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .attendance-table td {
     color: #e0eaf0 !important;
-    border-color: #2a3a4a !important;
+    border-color: #2a3a10 !important;
 }
 [data-theme="dark"] .attendance-table tr:nth-child(even) {
     background: #14202e !important;
 }
 [data-theme="dark"] .attendance-table tr:hover {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
 }
 [data-theme="dark"] .attendance-table tbody tr:nth-child(odd) {
-    background: #1a2535 !important;
+    background: #1a2510 !important;
 }
 
 /* Export / Print buttons */
 [data-theme="dark"] .export-btn {
-    background: #1e3a3a !important;
+    background: #1e3a10 !important;
     color: #7ece40 !important;
     border-color: #2d5a5a !important;
 }
@@ -1321,7 +1321,7 @@
     color: #7ece40;
 }
 [data-theme="dark"] .event-name-input {
-    background: #1e2f3f !important;
+    background: #1e2f10 !important;
     border-color: #5a9e2a !important;
     color: #e0eaf0 !important;
 }
@@ -1331,7 +1331,7 @@
    DARK MODE — Set Event button
    ============================================================ */
 [data-theme="dark"] .set-event-button {
-    background: linear-gradient(135deg, #1e3a3a 0%, #2d5a5a 100%) !important;
+    background: linear-gradient(135deg, #1e3a10 0%, #2d5a5a 100%) !important;
     color: #7ece40 !important;
     box-shadow: 0 3px 8px rgba(0,0,0,0.4) !important;
     border: 1.5px solid #407029 !important;
@@ -1434,9 +1434,9 @@
 .notif-time  { font-size: 10px; color: #aaa; margin-top: 4px; }
 .notif-dot   { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; flex-shrink: 0; margin-top: 5px; }
 .notif-overlay { position: fixed; inset: 0; z-index: 1999; }
-[data-theme="dark"] .notif-panel { background: #1a2535; border-color: #2a3a4a; }
-[data-theme="dark"] .notif-item  { border-color: #2a3a4a; }
-[data-theme="dark"] .notif-item:hover  { background: #1e2f3f; }
+[data-theme="dark"] .notif-panel { background: #1a2510; border-color: #2a3a10; }
+[data-theme="dark"] .notif-item  { border-color: #2a3a10; }
+[data-theme="dark"] .notif-item:hover  { background: #1e2f10; }
 [data-theme="dark"] .notif-item.unread { background: #0f2a20; }
 [data-theme="dark"] .notif-title { color: #c0d0d8; }
 [data-theme="dark"] .notif-msg   { color: #7a9aaa; }
@@ -1527,7 +1527,7 @@
   #attendanceHistory:empty::after { content: 'No event history yet'; }
 
   [data-theme="dark"] #attendanceBody:empty::before,
-  [data-theme="dark"] #attendanceHistory:empty::before { background-color: #2a3a4a; }
+  [data-theme="dark"] #attendanceHistory:empty::before { background-color: #2a3a10; }
   [data-theme="dark"] #attendanceBody:empty::after,
   [data-theme="dark"] #attendanceHistory:empty::after  { color: #4a7a29; }
 
@@ -1579,7 +1579,7 @@
 
   [data-theme="dark"] #studentsList:empty::before,
   [data-theme="dark"] #teacherList:empty::before,
-  [data-theme="dark"] #guardList:empty::before { background-color: #2a3a4a; }
+  [data-theme="dark"] #guardList:empty::before { background-color: #2a3a10; }
   [data-theme="dark"] #studentsList:empty::after,
   [data-theme="dark"] #teacherList:empty::after,
   [data-theme="dark"] #guardList:empty::after  { color: #4a7a29; }
@@ -1627,7 +1627,7 @@
   #yearLevelsList:empty::after { content: 'No year levels added yet'; }
 
   [data-theme="dark"] #programsList:empty::before,
-  [data-theme="dark"] #yearLevelsList:empty::before { background-color: #2a3a4a; }
+  [data-theme="dark"] #yearLevelsList:empty::before { background-color: #2a3a10; }
   [data-theme="dark"] #programsList:empty::after,
   [data-theme="dark"] #yearLevelsList:empty::after  { color: #4a7a29; }
 /* ── Password Strength Bar ── */
