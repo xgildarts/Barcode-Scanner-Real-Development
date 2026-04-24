@@ -39,8 +39,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 app.set('trust proxy', true);
-app.use('/api/v1/uploads', express.static(path.join(__dirname, '../../uploads')))
-app.use('/api/v1/uploads/message_files', express.static(path.join(__dirname, '../../uploads/message_files')))
+app.use('/api/v1/uploads', express.static(path.join(__dirname, '../../../uploads')))
+app.use('/api/v1/uploads/message_files', express.static(path.join(__dirname, '../../../uploads/message_files')))
 app.use('/public', express.static(path.join(__dirname, '../../public')))  // logo & public assets
 
 

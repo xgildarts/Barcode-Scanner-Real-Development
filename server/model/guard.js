@@ -4,7 +4,7 @@ const path   = require('path')
 // ── Profile picture upload ─────────────────────────────────
 const guardPicStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../uploads/profile_pictures/')
+        const dir = path.join(__dirname, '../../../uploads/profile_pictures/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
@@ -25,7 +25,7 @@ const uploadGuardPic = multer({
 // ── Message file upload (100 MB limit) ──────────────────────
 const msgStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../uploads/message_files/')
+        const dir = path.join(__dirname, '../../../uploads/message_files/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
