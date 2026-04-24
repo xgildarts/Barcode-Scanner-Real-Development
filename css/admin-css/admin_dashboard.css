@@ -9,7 +9,7 @@
    TOP BAR
    ============================================================ */
 .top-bar {
-    background: #e8f0ed;
+    background: #eef6e8;
     padding: 14px 20px;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -32,7 +32,7 @@
 .menu-btn span {
     width: 24px;
     height: 3px;
-    background: #1a4545;
+    background: #1e3a10;
     border-radius: 2px;
     display: none;
 }
@@ -61,13 +61,13 @@
 .settings-btn svg {
     width: 20px;
     height: 20px;
-    fill: #1a4545;
+    fill: #1e3a10;
 }
 
 .profile-btn {
     width: 36px;
     height: 36px;
-    background: #8fa89f;
+    background: #8faa60;
     border: none;
     border-radius: 50%;
     display: flex;
@@ -89,7 +89,7 @@
 .welcome-text {
     font-size: 24px;
     font-weight: 700;
-    color: #1a4545;
+    color: #1e3a10;
     margin-bottom: 20px;
 }
 
@@ -111,13 +111,13 @@
 .stats-label {
     font-size: 14px;
     font-weight: 600;
-    color: #1a4545;
+    color: #1e3a10;
 }
 
 .stats-value {
     font-size: 32px;
     font-weight: 700;
-    color: #1a4545;
+    color: #1e3a10;
 }
 
 /* ============================================================
@@ -130,7 +130,7 @@
 .section-title {
     font-size: 16px;
     font-weight: 700;
-    color: #1a4545;
+    color: #1e3a10;
     margin-bottom: 16px;
 }
 
@@ -158,7 +158,7 @@
 .legend-box {
     width: 12px;
     height: 12px;
-    background: #5a8a7a;
+    background: #5a8a2a;
     border-radius: 2px;
 }
 
@@ -173,7 +173,7 @@
 
 .chart-bar {
     flex: 1;
-    background: linear-gradient(180deg, #5a8a7a 0%, #4a7a6a 100%);
+    background: linear-gradient(180deg, #5a8a2a 0%, #4a7a29 100%);
     border-radius: 6px 6px 0 0;
     position: relative;
     transition: opacity 0.3s;
@@ -204,7 +204,7 @@
 }
 
 .account-card {
-    background: linear-gradient(135deg, #5a8a7a 0%, #6a9a8a 100%);
+    background: linear-gradient(135deg, #5a8a2a 0%, #6a9a40 100%);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 12px;
@@ -222,11 +222,11 @@
 }
 
 .account-card.teacher {
-    background: linear-gradient(135deg, #4a8aaa 0%, #5a9aba 100%);
+    background: linear-gradient(135deg, #4a8a30 0%, #5a9a30 100%);
 }
 
 .account-card.guard {
-    background: linear-gradient(135deg, #7a9a8a 0%, #8aaa9a 100%);
+    background: linear-gradient(135deg, #7a9a40 0%, #8aaa50 100%);
 }
 
 .account-info {
@@ -316,7 +316,7 @@
 }
 
 .modal-header-account-management {
-    background-color: #3f6864;
+    background-color: #407029;
     color: white;
     padding: 15px 20px;
     display: flex;
@@ -375,7 +375,7 @@
 
 .modal-footer .save-btn {
     padding: 8px 16px;
-    background: #5a8a7a;
+    background: #5a8a2a;
     color: white;
     border: none;
     border-radius: 4px;
@@ -384,7 +384,7 @@
 }
 
 .modal-footer .save-btn:hover {
-    background: #4a7a6a;
+    background: #4a7a29;
 }
 
 .modal-footer .cancel-btn {

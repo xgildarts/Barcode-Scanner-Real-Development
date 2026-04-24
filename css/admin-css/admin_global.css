@@ -14,7 +14,7 @@
       ============================================================ */
    body {
        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-       background: linear-gradient(180deg, #e8f0ed 0%, #d5e8df 100%);
+       background: linear-gradient(180deg, #eef6e8 0%, #d5e8df 100%);
        min-height: 100vh;
    }
    
@@ -814,7 +814,7 @@
 
 /* Buttons */
 [data-theme="dark"] .update-password-btn {
-    background: #3d7a7a !important;
+    background: #407029 !important;
 }
 [data-theme="dark"] .update-password-btn:hover { background: #2d6a6a !important; }
 [data-theme="dark"] .register-btn { background: #1e3a5a !important; }
@@ -942,7 +942,7 @@
     background: #253545 !important;
 }
 [data-theme="dark"] .confirm-btn {
-    background: #3d7a7a !important;
+    background: #407029 !important;
 }
 [data-theme="dark"] .confirm-btn:hover {
     background: #2d6a6a !important;
@@ -1022,7 +1022,7 @@
     background: #253545 !important;
 }
 [data-theme="dark"] .modal-footer .save-btn {
-    background: #3d7a7a !important;
+    background: #407029 !important;
 }
 [data-theme="dark"] .modal-footer .save-btn:hover {
     background: #2d6a6a !important;
@@ -1337,7 +1337,7 @@
     border: 1.5px solid #407029 !important;
 }
 [data-theme="dark"] .set-event-button:hover {
-    background: linear-gradient(135deg, #2d5a5a 0%, #3d7a7a 100%) !important;
+    background: linear-gradient(135deg, #2d5a5a 0%, #407029 100%) !important;
     color: #e0eaf0 !important;
     box-shadow: 0 6px 14px rgba(0,0,0,0.5) !important;
 }
@@ -1529,7 +1529,7 @@
   [data-theme="dark"] #attendanceBody:empty::before,
   [data-theme="dark"] #attendanceHistory:empty::before { background-color: #2a3a4a; }
   [data-theme="dark"] #attendanceBody:empty::after,
-  [data-theme="dark"] #attendanceHistory:empty::after  { color: #4a7a8a; }
+  [data-theme="dark"] #attendanceHistory:empty::after  { color: #4a7a29; }
 
   /* EMPTY STATE */
   #studentsList:empty,
@@ -1582,7 +1582,7 @@
   [data-theme="dark"] #guardList:empty::before { background-color: #2a3a4a; }
   [data-theme="dark"] #studentsList:empty::after,
   [data-theme="dark"] #teacherList:empty::after,
-  [data-theme="dark"] #guardList:empty::after  { color: #4a7a8a; }
+  [data-theme="dark"] #guardList:empty::after  { color: #4a7a29; }
 
   /* EMPTY STATE */
   #programsList:empty,
@@ -1629,7 +1629,7 @@
   [data-theme="dark"] #programsList:empty::before,
   [data-theme="dark"] #yearLevelsList:empty::before { background-color: #2a3a4a; }
   [data-theme="dark"] #programsList:empty::after,
-  [data-theme="dark"] #yearLevelsList:empty::after  { color: #4a7a8a; }
+  [data-theme="dark"] #yearLevelsList:empty::after  { color: #4a7a29; }
 /* ── Password Strength Bar ── */
 .pw-strength-wrap {
     display: none;
