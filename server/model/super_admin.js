@@ -7,7 +7,7 @@ const superAdmin = express.Router()
 // ── Message file upload (100 MB limit) ──────────────────────
 const msgStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../uploads/message_files/')
+        const dir = path.join(__dirname, '../../../uploads/message_files/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
@@ -46,7 +46,7 @@ function requireSuperAdmin(req, res, next) {
 // MULTER — Super Admin Profile Picture
 // ============================================================
 const superAdminPicStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
+    destination: (req, file, cb) => { const dir = path.join(__dirname, '../../../uploads/profile_pictures/'); require('fs').mkdirSync(dir, { recursive: true }); cb(null, dir) },
     filename:    (req, file, cb) => cb(null, 'superadmin-' + Date.now() + '-' + Math.round(Math.random() * 1e6) + path.extname(file.originalname))
 })
 const uploadSuperAdminPic = multer({

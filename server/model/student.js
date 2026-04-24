@@ -7,7 +7,7 @@ const student = express.Router()
 // ── Message file upload (100 MB limit) ──────────────────────
 const msgStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../../uploads/message_files/')
+        const dir = path.join(__dirname, '../../../uploads/message_files/')
         require('fs').mkdirSync(dir, { recursive: true })
         cb(null, dir)
     },
@@ -29,7 +29,11 @@ student.use(express.json())
 // MULTER — Student Profile Picture Upload
 // ============================================================
 const studentPicStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/profile_pictures/')),
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '../../../uploads/profile_pictures/')
+        require('fs').mkdirSync(dir, { recursive: true })
+        cb(null, dir)
+    },
     filename:    (req, file, cb) => {
         const unique = Date.now() + '-' + Math.round(Math.random() * 1e6)
         cb(null, 'student-' + unique + path.extname(file.originalname))
@@ -631,7 +635,7 @@ student.post('/contact/send', async (req, res) => {
 const uploadContactFile = require('multer')({
     storage: require('multer').diskStorage({
         destination: (req, file, cb) => {
-            const dir = require('path').join(__dirname, '../../uploads/message_files/');
+            const dir = require('path').join(__dirname, '../../../uploads/message_files/');
             require('fs').mkdirSync(dir, { recursive: true });
             cb(null, dir);
         },

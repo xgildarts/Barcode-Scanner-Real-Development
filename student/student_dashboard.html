@@ -194,37 +194,69 @@
             </div>
         </div>
 
-        <div style="max-width:420px;margin:0 auto;padding:0 16px 32px;">
-            <h2 style="text-align:center;font-size:1.05rem;font-weight:700;color:#1a4545;margin-bottom:6px;">Event QR Check-in</h2>
-            <p style="text-align:center;font-size:0.82rem;color:#666;margin-bottom:20px;">Scan the printed QR code at the event entrance to record your attendance.</p>
+        <div style="max-width:400px;margin:0 auto;padding:0 16px 40px;">
+
+            <!-- Header -->
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="width:56px;height:56px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                    <svg viewBox="0 0 24 24" fill="#2e7d32" width="28" height="28"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+                </div>
+                <h2 style="font-size:1.1rem;font-weight:700;color:#1a4545;margin:0 0 6px;">Event QR Check-in</h2>
+                <p style="font-size:0.82rem;color:#777;margin:0;line-height:1.5;">Scan the printed QR code at the event entrance to record your attendance.</p>
+            </div>
 
             <!-- Scanner box -->
-            <div id="qrReaderWrap" style="border-radius:12px;overflow:hidden;background:#000;margin-bottom:16px;display:none;position:relative;">
+            <div id="qrReaderWrap" style="border-radius:14px;overflow:hidden;background:#000;margin-bottom:16px;display:none;position:relative;box-shadow:0 4px 16px rgba(0,0,0,0.25);">
                 <div id="qrReader" style="width:100%;"></div>
-                <button onclick="stopEventQRScanner()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;line-height:1;">✕</button>
+                <button onclick="stopEventQRScanner()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.55);color:#fff;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                    <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
             </div>
 
             <!-- Scan button -->
-            <button id="btnStartScan" class="generate-btn" onclick="startEventQRScanner()" style="width:100%;margin-bottom:12px;">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="vertical-align:middle;margin-right:6px;"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm13 3h2v2h-2v-2zm0-5h2v2h-2v-2zm-4 0h2v2h-2v-2zm0 5h2v2h-2v-2zm4-3h-2v-2h2v2z"/></svg>
-                Scan Event QR Code
+            <button id="btnStartScan" class="generate-btn" onclick="startEventQRScanner()" style="width:100%;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm13 3h2v2h-2v-2zm0-5h2v2h-2v-2zm-4 0h2v2h-2v-2zm0 5h2v2h-2v-2zm4-3h-2v-2h2v2z"/></svg>
+                <span style="font-size:0.95rem;font-weight:700;">Scan Event QR Code</span>
             </button>
 
-            <!-- Status display after scan -->
-            <div id="eventCheckinStatus" style="display:none;background:#eef6f4;border:1.5px solid #b2d8d0;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px;">
-                <div id="eventCheckinName" style="font-weight:700;font-size:1rem;color:#1a4545;margin-bottom:4px;"></div>
-                <div id="eventCheckinLocation" style="font-size:0.78rem;color:#666;margin-bottom:14px;"></div>
-                <div style="display:flex;gap:10px;justify-content:center;">
-                    <button onclick="submitEventCheckin('TIME IN')" class="generate-btn" style="background:#2e7d32;flex:1;max-width:160px;">
-                        ✅ TIME IN
-                    </button>
-                    <button onclick="submitEventCheckin('TIME OUT')" class="generate-btn" style="background:#c62828;flex:1;max-width:160px;">
-                        🚪 TIME OUT
-                    </button>
+            <!-- Status card after scan -->
+            <div id="eventCheckinStatus" style="display:none;background:#fff;border:1.5px solid #b2d8d0;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+                <!-- Event info header -->
+                <div style="background:#eef6f4;padding:14px 16px;border-bottom:1px solid #d0ece8;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;background:#1a4545;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+                        </div>
+                        <div>
+                            <div id="eventCheckinName" style="font-weight:700;font-size:0.95rem;color:#1a4545;"></div>
+                            <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+                                <svg viewBox="0 0 24 24" fill="#5a9e9e" width="12" height="12"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                <div id="eventCheckinLocation" style="font-size:0.75rem;color:#5a8a7a;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action buttons -->
+                <div style="padding:14px 16px;">
+                    <p style="font-size:0.78rem;color:#888;margin:0 0 12px;text-align:center;">Select your attendance status:</p>
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="submitEventCheckin('TIME IN')" style="flex:1;padding:13px 8px;background:#2e7d32;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 2px 8px rgba(46,125,50,0.3);transition:opacity 0.2s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                            <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            TIME IN
+                        </button>
+                        <button onclick="submitEventCheckin('TIME OUT')" style="flex:1;padding:13px 8px;background:#c62828;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 2px 8px rgba(198,40,40,0.3);transition:opacity 0.2s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                            <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                            TIME OUT
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <p style="text-align:center;font-size:0.75rem;color:#aaa;">Your GPS location will be verified before check-in is recorded.</p>
+            <!-- Footer note -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+                <svg viewBox="0 0 24 24" fill="#aaa" width="13" height="13"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <p style="font-size:0.75rem;color:#aaa;margin:0;">GPS location verified before check-in is recorded.</p>
+            </div>
         </div>
     </section>
 

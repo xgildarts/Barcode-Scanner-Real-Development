@@ -1008,7 +1008,7 @@ async function onQRScanned(token) {
             return Swal.fire({ icon: 'error', title: 'Invalid QR', text: data.message || 'This QR code is not valid or the event has ended.' })
         }
         _scannedQRToken = token
-        document.getElementById('eventCheckinName').textContent     = `📅 ${data.event_name}`
+        document.getElementById('eventCheckinName').textContent     = data.event_name
         document.getElementById('eventCheckinLocation').textContent = `Within ${data.radius}m of event location`
         document.getElementById('eventCheckinStatus').style.display = 'block'
     } catch (err) {
