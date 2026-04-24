@@ -1094,47 +1094,158 @@ async function checkEventReminder() {
     localStorage.setItem('admin_event_reminder_last_shown', today);
 }
 
+// ============================================================
+// EVENT LOCATION MAP MODAL
+// ============================================================
+let _eventLocation = null   // { latitude, longitude }
+let _eventRadius   = 50
+let _eventMap      = null
+window._eventMapMarker = null
+window._eventMapCircle = null
+let _eventSearchTimer  = null
+
+function openEventLocationModal() {
+    const modal = document.getElementById('eventLocationModal')
+    modal.style.display = 'flex'
+    // Init map after modal is visible
+    setTimeout(() => {
+        if (_eventLocation) {
+            initEventMap(_eventLocation.latitude, _eventLocation.longitude)
+        } else {
+            eventMapUseGPS()
+        }
+    }, 80)
+}
+
+function closeEventLocationModal() {
+    document.getElementById('eventLocationModal').style.display = 'none'
+    if (_eventMap) { _eventMap.remove(); _eventMap = null; window._eventMapMarker = null; window._eventMapCircle = null }
+    document.getElementById('eventLocationSearchResults').style.display = 'none'
+}
+
+function initEventMap(lat, lng) {
+    if (_eventMap) { _eventMap.remove(); _eventMap = null; window._eventMapMarker = null; window._eventMapCircle = null }
+
+    delete L.Icon.Default.prototype._getIconUrl
+    L.Icon.Default.mergeOptions({
+        iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    })
+
+    _eventMap = L.map('eventMap', { zoomControl: true }).setView([lat, lng], 18)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(_eventMap)
+
+    const radius = parseInt(document.getElementById('eventRadiusSlider').value)
+    window._eventMapMarker = L.marker([lat, lng], { draggable: true }).addTo(_eventMap)
+    window._eventMapCircle = L.circle([lat, lng], { color:'#1a4545', fillColor:'#1a4545', fillOpacity:0.15, radius }).addTo(_eventMap)
+
+    window._eventMapMarker.on('drag', () => {
+        const pos = window._eventMapMarker.getLatLng()
+        window._eventMapCircle.setLatLng(pos)
+    })
+
+    setTimeout(() => _eventMap.invalidateSize(), 100)
+    setTimeout(() => _eventMap.invalidateSize(), 300)
+    setTimeout(() => _eventMap.invalidateSize(), 600)
+}
+
+function eventMapUseGPS() {
+    if (!navigator.geolocation) return Swal.fire({ icon:'error', title:'Not Supported', text:'Geolocation is not supported by your browser.' })
+    Swal.fire({ title:'Getting GPS location...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() })
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            Swal.close()
+            const { latitude: lat, longitude: lng } = pos.coords
+            if (_eventMap && window._eventMapMarker && window._eventMapCircle) {
+                window._eventMapMarker.setLatLng([lat, lng])
+                window._eventMapCircle.setLatLng([lat, lng])
+                _eventMap.setView([lat, lng], 18)
+            } else {
+                initEventMap(lat, lng)
+            }
+        },
+        (err) => { Swal.close(); Swal.fire({ icon:'error', title:'Location Error', text: err.message }) },
+        { enableHighAccuracy:true, timeout:10000 }
+    )
+}
+
+function confirmEventLocation() {
+    if (!window._eventMapMarker) return Swal.fire({ icon:'warning', title:'No Location', text:'Please load your location first.' })
+    const { lat, lng } = window._eventMapMarker.getLatLng()
+    _eventRadius   = parseInt(document.getElementById('eventRadiusSlider').value)
+    _eventLocation = { latitude: lat, longitude: lng }
+    const badge = document.getElementById('eventLocationBadge')
+    badge.textContent = `📍 ${lat.toFixed(4)}, ${lng.toFixed(4)} — ${_eventRadius}m`
+    badge.style.display = ''
+    closeEventLocationModal()
+    Swal.fire({ icon:'success', title:'Location Set!', text:`Radius: ${_eventRadius}m`, timer:1500, showConfirmButton:false })
+}
+
+let _eventLocationSearchTimer = null
+function handleEventLocationSearch(query) {
+    const results = document.getElementById('eventLocationSearchResults')
+    clearTimeout(_eventLocationSearchTimer)
+    results.innerHTML = ''
+    results.style.display = 'none'
+    if (query.length < 3) return
+    _eventLocationSearchTimer = setTimeout(async () => {
+        try {
+            const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, { headers:{ 'Accept-Language':'en' } })
+            const data = await res.json()
+            if (!data.length) {
+                results.innerHTML = '<li style="padding:10px 14px;color:#aaa;font-size:0.85rem;">No results found</li>'
+                results.style.display = 'block'
+                return
+            }
+            results.innerHTML = data.map(p => `
+                <li data-lat="${p.lat}" data-lng="${p.lon}"
+                    style="padding:10px 14px;cursor:pointer;font-size:0.83rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;"
+                    onmouseover="this.style.background='#eef6f4'" onmouseout="this.style.background=''">
+                    <svg viewBox="0 0 24 24" fill="#3d6b6b" width="14" height="14" style="flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    <span>${p.display_name}</span>
+                </li>`).join('')
+            results.style.display = 'block'
+            results.querySelectorAll('li').forEach(li => {
+                li.addEventListener('click', () => {
+                    const lat = parseFloat(li.dataset.lat), lng = parseFloat(li.dataset.lng)
+                    if (_eventMap && window._eventMapMarker && window._eventMapCircle) {
+                        window._eventMapMarker.setLatLng([lat, lng])
+                        window._eventMapCircle.setLatLng([lat, lng])
+                        _eventMap.setView([lat, lng], 18)
+                    } else { initEventMap(lat, lng) }
+                    document.getElementById('eventLocationSearch').value = li.querySelector('span').textContent
+                    results.style.display = 'none'
+                })
+            })
+        } catch(e) { console.error('Location search error:', e) }
+    }, 400)
+}
+
+document.addEventListener('click', (e) => {
+    const search  = document.getElementById('eventLocationSearch')
+    const results = document.getElementById('eventLocationSearchResults')
+    if (search && results && !search.contains(e.target) && !results.contains(e.target)) results.style.display = 'none'
+})
+
 async function handleSetEvent() {
-    const eventName  = document.getElementById('event_name_input').value.trim()
-    const radius     = parseInt(document.getElementById('event_radius_input')?.value) || 50
-    const latVal     = document.getElementById('event_lat_input')?.value.trim()
-    const lngVal     = document.getElementById('event_lng_input')?.value.trim()
-
+    const eventName = document.getElementById('event_name_input').value.trim()
     if (!TOKEN) return Swal.fire({ icon:'error', title:'Unauthorized', text:'You must be logged in.' }).then(()=>clearSessionAndRedirect())
-    if (!eventName)  return Swal.fire({ icon:'warning', title:'Empty Input', text:'Please enter an event name.' })
-    if (!latVal || !lngVal) return Swal.fire({ icon:'warning', title:'Location Required', text:'Please set the event location first. Use "📍 My Location" or enter coordinates manually.' })
-
-    const location = { latitude: parseFloat(latVal), longitude: parseFloat(lngVal) }
-    if (isNaN(location.latitude) || isNaN(location.longitude)) return Swal.fire({ icon:'warning', title:'Invalid Location', text:'Latitude and longitude must be valid numbers.' })
+    if (!eventName) return Swal.fire({ icon:'warning', title:'Empty Input', text:'Please enter an event name.' })
+    if (!_eventLocation) return Swal.fire({ icon:'warning', title:'Location Required', text:'Please set the event location first by clicking "📍 Set Location".' })
 
     try {
-        const response = await apiFetch('/admin/set_event', { method:'POST', body: JSON.stringify({ event_name: eventName, location, radius }) })
+        const response = await apiFetch('/admin/set_event', { method:'POST', body: JSON.stringify({ event_name: eventName, location: _eventLocation, radius: _eventRadius }) })
         const data = await response.json()
         if (response.status === 401 || response.status === 403) return Swal.fire({ icon:'error', title:'Session Expired', text:'Please login again.' }).then(()=>clearSessionAndRedirect())
         if (!response.ok) return Swal.fire({ icon:'error', title:'Error', text: data.message || 'Failed to set event.' })
         renderActiveEvent(eventName)
-        await Swal.fire({ icon:'success', title:'Event Set!', text:`Event "${eventName}" is now active. QR code is ready to print.`, timer:2500, showConfirmButton:false })
+        await Swal.fire({ icon:'success', title:'Event Set!', text:`"${eventName}" is now active. QR code is ready to print.`, timer:2500, showConfirmButton:false })
         document.getElementById('event_name_input').value = ''
-        // Auto-show QR after setting event
         handleShowEventQR()
     } catch (error) {
         Swal.fire({ icon:'error', title:'Error', text: error.message })
     }
-}
-
-function handleUseMyLocation() {
-    if (!navigator.geolocation) return Swal.fire({ icon:'error', title:'Not Supported', text:'Geolocation is not supported by your browser.' })
-    Swal.fire({ title:'Getting Location...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() })
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            Swal.close()
-            document.getElementById('event_lat_input').value = pos.coords.latitude.toFixed(7)
-            document.getElementById('event_lng_input').value = pos.coords.longitude.toFixed(7)
-            Swal.fire({ icon:'success', title:'Location Set!', text:`Lat: ${pos.coords.latitude.toFixed(5)}, Lng: ${pos.coords.longitude.toFixed(5)}`, timer:2000, showConfirmButton:false })
-        },
-        (err) => { Swal.close(); Swal.fire({ icon:'error', title:'Location Error', text: err.message }) },
-        { enableHighAccuracy: true, timeout: 10000 }
-    )
 }
 
 async function handleShowEventQR() {
