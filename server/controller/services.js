@@ -352,8 +352,9 @@ async function manualInsertAttendance(
     )
 
     const _now = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true })
-    await sendSMS(student_guardian_number,
-        `Pan Pacific University: ${student_firstname} ${student_middlename ? student_middlename.charAt(0) + '.' : ''} ${student_lastname} attended ${subjectData[0].subject_name_set} at ${_now} today.`)
+    // SMS DISABLED
+    // await sendSMS(student_guardian_number,
+    //     `Pan Pacific University: ${student_firstname} ${student_middlename ? student_middlename.charAt(0) + '.' : ''} ${student_lastname} attended ${subjectData[0].subject_name_set} at ${_now} today.`)
 
     writeActivityLog(teacherId || null, teacherName || null, 'teacher', 'MANUAL_ATTENDANCE', 'Class Attendance', student_id_number, `${student_firstname} ${student_middlename}. ${student_lastname}`, `Manual entry by ${teacherName || 'Unknown Teacher'} — Program: ${student_program}, Year: ${student_year_level}`, ip || null, userAgent || null)
     return 'Attendance recorded successfully!'
@@ -2022,13 +2023,13 @@ async function guardInsertAttendanceRecord(studentBarcode, status, guardID, guar
 
                     writeActivityLog(guardID, guardName, 'guard', status === 'TIME IN' ? 'EVENT_TIME_IN' : 'EVENT_TIME_OUT', 'Event Attendance', student.student_id_number, fullName, `Event: ${activeEventName} | Location: ${guardLocation}`, ip || null, userAgent || null)
 
-                    // Send SMS notification to guardian
-                    const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
-                    if (student.student_guardian_number) {
-                        sendSMS(student.student_guardian_number,
-                            `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
-                        ).catch(() => {})
-                    }
+                    // SMS DISABLED
+                    // const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
+                    // if (student.student_guardian_number) {
+                    //     sendSMS(student.student_guardian_number,
+                    //         `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
+                    //     ).catch(() => {})
+                    // }
 
                     resolve({
                         ok: true,
@@ -2103,12 +2104,13 @@ async function guardInsertAttendanceRecordByIdNumber(studentIdNumber, status, gu
                         'Event Attendance', student.student_id_number, fullName,
                         `Event: ${activeEventName} | Location: ${guardLocation}`, ip || null, userAgent || null);
 
-                    const smsAction = status === 'TIME IN' ? 'arrived at' : 'left';
-                    if (student.student_guardian_number) {
-                        sendSMS(student.student_guardian_number,
-                            `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
-                        ).catch(() => {});
-                    }
+                    // SMS DISABLED
+                    // const smsAction = status === 'TIME IN' ? 'arrived at' : 'left';
+                    // if (student.student_guardian_number) {
+                    //     sendSMS(student.student_guardian_number,
+                    //         `Pan Pacific University: ${fullName} has ${smsAction} the event "${activeEventName}" (${status}) at ${guardLocation}.`
+                    //     ).catch(() => {});
+                    // }
 
                     resolve({ ok: true, message: `${status} Recorded Successfully`, student: fullName, event: activeEventName });
                 } catch (historyErr) {
@@ -4171,7 +4173,11 @@ async function studentSelfEventCheckIn(studentId, status, token, studentLat, stu
                             // SMS notification
                             if (student.student_guardian_number) {
                                 const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
-                                sendSMS(student.student_guardian_number, `Pan Pacific University: ${fullName} has ${smsAction} the event "${event.event_name_set}" (${status}) via self check-in.`).catch(() => {})
+                            // SMS DISABLED
+                            // if (student.student_guardian_number) {
+                            //     const smsAction = status === 'TIME IN' ? 'arrived at' : 'left'
+                            //     sendSMS(student.student_guardian_number, `Pan Pacific University: ${fullName} has ${smsAction} the event "${event.event_name_set}" (${status}) via self check-in.`).catch(() => {})
+                            // }
                             }
                             resolve({ ok: true, message: `${status} recorded successfully!`, event: event.event_name_set })
                         }
