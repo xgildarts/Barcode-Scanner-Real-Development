@@ -6,18 +6,18 @@
 /* ---- DEFAULT (Light, Teal, Inter) ---- */
 :root {
     /* Brand / accent */
-    --accent:           #3d6b6b;
-    --accent-dark:      #2c5a5a;
-    --accent-light:     #eef6f4;
-    --accent-border:    #b2d8d0;
-    --accent-badge:     #c8ece5;
-    --accent-text:      #1a5c4f;
+    --accent:           #407029;
+    --accent-dark:      #2d4f1a;
+    --accent-light:     #eef6e8;
+    --accent-border:    #b2d880;
+    --accent-badge:     #c8ecb0;
+    --accent-text:      #1e4a10;
 
     /* Controls bar (top of tables) */
-    --controls-bg:      #2d5282;
+    --controls-bg:      #2d4f1a;
 
     /* Page background */
-    --page-bg:          linear-gradient(180deg, #e8edf5 0%, #d0daea 100%);
+    --page-bg:          linear-gradient(180deg, #e8f0e0 0%, #d0e5c0 100%);
 
     /* Surface / cards */
     --surface:          #ffffff;
@@ -26,19 +26,19 @@
     --surface-hover:    #f0f7f5;
 
     /* Text */
-    --text-primary:     #1a4545;
+    --text-primary:     #1e3a10;
     --text-secondary:   #666666;
     --text-muted:       #999999;
 
     /* Sidebar */
-    --sidebar-bg:       linear-gradient(180deg, #1e3a5f 0%, #162d4a 100%);
+    --sidebar-bg:       linear-gradient(180deg, #1e3a10 0%, #2d4f1a 100%);
     --sidebar-text:     #ffffff;
     --sidebar-muted:    rgba(255,255,255,0.7);
     --sidebar-hover:    rgba(255,255,255,0.15);
     --sidebar-active:   rgba(255,255,255,0.2);
 
     /* Table */
-    --table-header-bg:  #1a4545;
+    --table-header-bg:  #1e3a10;
     --table-header-text:#ffffff;
     --table-row-alt:    #f5f9f9;
     --table-border:     #e0e0e0;
@@ -53,21 +53,21 @@
    DARK MODE
    ============================================================ */
 [data-theme="dark"] {
-    --accent:           #5a9e9e;
-    --accent-dark:      #4a8e8e;
-    --accent-light:     #1a2f2f;
-    --accent-border:    #2d5a5a;
-    --accent-badge:     #1e4040;
-    --accent-text:      #7ecece;
+    --accent:           #5a9e2a;
+    --accent-dark:      #2d4f1a;
+    --accent-light:     #1a2f10;
+    --accent-border:    #2d5a1a;
+    --accent-badge:     #1e4010;
+    --accent-text:      #7ece40;
 
-    --controls-bg:      #1a2535;
+    --controls-bg:      #1a2510;
 
     --page-bg:          #0f1923;
 
-    --surface:          #1a2535;
+    --surface:          #1a2510;
     --surface-alt:      #14202e;
-    --surface-border:   #2a3a4a;
-    --surface-hover:    #1e2f3f;
+    --surface-border:   #2a3a10;
+    --surface-hover:    #1e2f10;
 
     --text-primary:     #e0eaf0;
     --text-secondary:   #9ab0c0;
@@ -80,9 +80,9 @@
     --sidebar-active:   rgba(90,158,158,0.2);
 
     --table-header-bg:  #0d2a2a;
-    --table-header-text:#7ecece;
+    --table-header-text:#7ece40;
     --table-row-alt:    #131f2a;
-    --table-border:     #2a3a4a;
+    --table-border:     #2a3a10;
 }
 
 /* ============================================================
@@ -436,8 +436,8 @@ label, input, select, textarea, button, th, td, li {
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
 
 /* --- Misc text colours scattered in inline styles --- */
-[data-theme="dark"] [style*="color:#1a4545"],
-[data-theme="dark"] [style*="color: #1a4545"],
+[data-theme="dark"] [style*="color:#1e3a10"],
+[data-theme="dark"] [style*="color: #1e3a10"],
 [data-theme="dark"] [style*="color:#1a2f4a"],
 [data-theme="dark"] [style*="color:#333"],
 [data-theme="dark"] [style*="color:#666"] { color: var(--text-primary) !important; }
@@ -448,7 +448,7 @@ label, input, select, textarea, button, th, td, li {
 [data-theme="dark"] [style*="background: white"],
 [data-theme="dark"] [style*="background:#f9f9f9"],
 [data-theme="dark"] [style*="background:#f8faf9"],
-[data-theme="dark"] [style*="background:#eef6f4"] { background: var(--surface) !important; }
+[data-theme="dark"] [style*="background:#eef6e8"] { background: var(--surface) !important; }
 /* ============================================================
    SIDEBAR NAVIGATION — ACCENT COLOR OVERRIDES
    ============================================================ */
