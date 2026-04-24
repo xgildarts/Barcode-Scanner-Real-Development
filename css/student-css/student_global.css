@@ -6,7 +6,7 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(160deg, #2c5f5f 0%, #3d8080 100%);
+  background: linear-gradient(160deg, #2d4f1a 0%, #4a8030 100%);
   min-height: 100vh;
   padding: 16px 16px 100px;
 }
@@ -25,7 +25,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
-    background: rgba(20, 40, 40, 0.92);
+    background: rgba(20, 40, 10, 0.92);
     color: #ffffff;
     font-size: 11px;
     font-weight: 500;
@@ -49,7 +49,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     left: 50%;
     transform: translateX(-50%);
     border: 5px solid transparent;
-    border-top-color: rgba(20, 40, 40, 0.92);
+    border-top-color: rgba(20, 40, 10, 0.92);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;
@@ -72,7 +72,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     bottom: auto;
     top: calc(100% + 3px);
     border-top-color: transparent;
-    border-bottom-color: rgba(20, 40, 40, 0.92);
+    border-bottom-color: rgba(20, 40, 10, 0.92);
 }
 [data-tooltip][data-tooltip-pos="bottom"]:hover::after {
     transform: translateX(-50%) translateY(0);
@@ -91,7 +91,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     left: calc(100% + 3px);
     transform: translateY(-50%);
     border-top-color: transparent;
-    border-right-color: rgba(20, 40, 40, 0.92);
+    border-right-color: rgba(20, 40, 10, 0.92);
 }
 [data-tooltip][data-tooltip-pos="right"]:hover::after {
     transform: translateY(-50%) translateX(0);
@@ -112,7 +112,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     right: calc(100% + 3px);
     transform: translateY(-50%);
     border-top-color: transparent;
-    border-left-color: rgba(20, 40, 40, 0.92);
+    border-left-color: rgba(20, 40, 10, 0.92);
 }
 [data-tooltip][data-tooltip-pos="left"]:hover::after {
     transform: translateY(-50%) translateX(0);

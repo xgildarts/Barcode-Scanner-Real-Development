@@ -61,19 +61,19 @@ body {
 THEME — CSS variables
 ============================================================ */
 :root {
-    --t-accent:        #3d6b6b;
-    --t-accent-light:  #eef6f4;
-    --t-accent-border: #b2d8d0;
+    --t-accent:        #407029;
+    --t-accent-light:  #eef6e8;
+    --t-accent-border: #b2d880;
     --t-surface:       #ffffff;
     --t-surface-alt:   #f8faf9;
     --t-surface-border:#e0ebe8;
-    --t-text-primary:  #1a4545;
+    --t-text-primary:  #1e3a10;
     --t-text-secondary:#5a7a7a;
     --t-text-muted:    #9ab0b0;
 }
 
 [data-theme="dark"] {
-    --t-accent:        #5a9e9e;
+    --t-accent:        #5a9e2a;
     --t-accent-light:  #1a2f2f;
     --t-accent-border: #2d5a5a;
     --t-surface:       #1a2535;
@@ -161,16 +161,16 @@ SETTINGS PAGE — teacher-specific wrappers
 
 .t-font-btn.t-active, .t-size-btn.t-active,
 .t-font-btn:hover, .t-size-btn:hover {
-    border-color: #3d6b6b;
-    color: #3d6b6b;
-    background: #eef6f4;
+    border-color: #407029;
+    color: #407029;
+    background: #eef6e8;
 }
 
 .t-theme-mode-btn { color: #5a7a7a; }
 .t-theme-mode-btn.t-active {
-    border-color: #3d6b6b !important;
-    color: #3d6b6b;
-    background: #eef6f4 !important;
+    border-color: #407029 !important;
+    color: #407029;
+    background: #eef6e8 !important;
 }
 
 /* update password btn icon flex */
@@ -234,7 +234,7 @@ DARK MODE — full overrides
     color: #e0eaf0 !important;
 }
 
-[data-theme="dark"] .password-input:focus { border-color: #5a9e9e !important; }
+[data-theme="dark"] .password-input:focus { border-color: #5a9e2a !important; }
 [data-theme="dark"] .form-label { color: #8aaabb !important; }
 
 /* Update password btn */
@@ -253,8 +253,8 @@ DARK MODE — full overrides
 [data-theme="dark"] .t-size-btn.t-active,
 [data-theme="dark"] .t-font-btn:hover,
 [data-theme="dark"] .t-size-btn:hover {
-    border-color: #5a9e9e !important;
-    color: #7ecece !important;
+    border-color: #5a9e2a !important;
+    color: #7ece40 !important;
     background: #1a2f2f !important;
 }
 
@@ -265,8 +265,8 @@ DARK MODE — full overrides
 }
 
 [data-theme="dark"] .t-theme-mode-btn.t-active {
-    border-color: #5a9e9e !important;
-    color: #7ecece !important;
+    border-color: #5a9e2a !important;
+    color: #7ece40 !important;
     background: #1a2f2f !important;
 }
 
@@ -325,7 +325,7 @@ DARK MODE — full overrides
 
 /* Student name inside result row */
 [data-theme="dark"] #studentSearchResults > div div:first-child {
-    color: #7ecece !important;
+    color: #7ece40 !important;
 }
 
 /* ID · program · year line */
@@ -345,7 +345,7 @@ DARK MODE — full overrides
 }
 
 [data-theme="dark"] #previewName {
-    color: #7ecece !important;
+    color: #7ece40 !important;
 }
 
 [data-theme="dark"] #previewId,
@@ -369,7 +369,7 @@ DARK MODE — full overrides
 /* Disabled Add Student button */
 [data-theme="dark"] #confirmAddStudentBtn:disabled {
     background: #1e3a3a !important;
-    color: #4a7a7a !important;
+    color: #407029 !important;
 }
 
 /* Enabled Add Student button */
@@ -388,7 +388,7 @@ DARK MODE — full overrides
 
 [data-theme="dark"] th {
     background: #1e3a3a !important;
-    color: #7ecece !important;
+    color: #7ece40 !important;
     border-color: #2a3a4a !important;
 }
 
@@ -599,7 +599,7 @@ Add data-tooltip-pos="bottom|left|right" to change side.
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(20, 40, 40, 0.92);
+    background: rgba(20, 40, 10, 0.92);
     color: #ffffff;
     font-size: 11px;
     font-weight: 500;
@@ -625,7 +625,7 @@ Add data-tooltip-pos="bottom|left|right" to change side.
     left: 50%;
     transform: translateX(-50%);
     border: 5px solid transparent;
-    border-top-color: rgba(20, 40, 40, 0.92);
+    border-top-color: rgba(20, 40, 10, 0.92);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;
@@ -649,7 +649,7 @@ Add data-tooltip-pos="bottom|left|right" to change side.
     bottom: auto;
     top: calc(100% + 3px);
     border-top-color: transparent;
-    border-bottom-color: rgba(20, 40, 40, 0.92);
+    border-bottom-color: rgba(20, 40, 10, 0.92);
 }
 
 [data-tooltip][data-tooltip-pos="bottom"]:hover::after {
@@ -670,7 +670,7 @@ Add data-tooltip-pos="bottom|left|right" to change side.
     left: calc(100% + 3px);
     transform: translateY(-50%);
     border-top-color: transparent;
-    border-right-color: rgba(20, 40, 40, 0.92);
+    border-right-color: rgba(20, 40, 10, 0.92);
 }
 
 [data-tooltip][data-tooltip-pos="right"]:hover::after {
@@ -693,7 +693,7 @@ Add data-tooltip-pos="bottom|left|right" to change side.
     right: calc(100% + 3px);
     transform: translateY(-50%);
     border-top-color: transparent;
-    border-left-color: rgba(20, 40, 40, 0.92);
+    border-left-color: rgba(20, 40, 10, 0.92);
 }
 
 [data-tooltip][data-tooltip-pos="left"]:hover::after {
@@ -796,20 +796,20 @@ MOBILE RESPONSIVE — Global
     border-radius: 10px;
     font-size: 13.5px;
     background: #f7fafa;
-    color: #1a4545;
+    color: #1e3a10;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     outline: none;
 }
 .search-input:focus {
-    border-color: #5a8a7a;
+    border-color: #5a8a2a;
     background: #ffffff;
     box-shadow: 0 0 0 3px rgba(90,138,122,0.12);
 }
 .search-input:focus + .search-icon,
 .search-wrapper:focus-within .search-icon,
 .search-wrapper:focus-within .search-icon path {
-    fill: #3d7070 !important;
+    fill: #407029 !important;
 }
 .search-input::placeholder {
     color: #a0b8b5;
@@ -818,7 +818,7 @@ MOBILE RESPONSIVE — Global
 
 /* Export / action buttons */
 .export-btn {
-    background: #3d6b6b;
+    background: #407029;
     border: none;
     color: white;
     padding: 10px 16px;
@@ -859,12 +859,12 @@ MOBILE RESPONSIVE — Global
     height: 16px;
     fill: white;
 }
-.refresh-btn { background: #4a7a7a; color: white; }
+.refresh-btn { background: #407029; color: white; }
 .refresh-btn:hover { background: #3a6a6a; }
-.print-btn { background: #3d6b6b; color: white; }
+.print-btn { background: #407029; color: white; }
 .print-btn:hover { background: #2c5a5a; }
-.save-btn { background: #5a8a7a; color: white; }
-.save-btn:hover { background: #4a7a6a; }
+.save-btn { background: #5a8a2a; color: white; }
+.save-btn:hover { background: #4a7a29; }
 
 /* Add student button */
 .add-student-btn {
@@ -902,7 +902,7 @@ MOBILE RESPONSIVE — Global
     color: #333;
     min-width: 120px;
 }
-.filter-select:focus { outline: 2px solid #5a8a7a; }
+.filter-select:focus { outline: 2px solid #5a8a2a; }
 
 /* Live badge */
 .live-badge {
@@ -940,21 +940,21 @@ MOBILE RESPONSIVE — Global
     box-shadow: none !important;
 }
 [data-theme="dark"] .search-input:focus {
-    border-color: #7ecece !important;
+    border-color: #7ece40 !important;
     background: #1a2535 !important;
     box-shadow: 0 0 0 3px rgba(126,206,206,0.12) !important;
 }
 [data-theme="dark"] .search-input::placeholder { color: #4a6a7a !important; }
 [data-theme="dark"] .search-icon { fill: #4a7a8a !important; }
-[data-theme="dark"] .search-wrapper:focus-within .search-icon { fill: #7ecece !important; }
+[data-theme="dark"] .search-wrapper:focus-within .search-icon { fill: #7ece40 !important; }
 
-[data-theme="dark"] .export-btn { background: #1e3a3a !important; color: #7ecece !important; }
+[data-theme="dark"] .export-btn { background: #1e3a3a !important; color: #7ece40 !important; }
 [data-theme="dark"] .export-btn:hover { background: #2a4a4a !important; }
-[data-theme="dark"] .export-btn svg { fill: #7ecece !important; }
-[data-theme="dark"] .export-btn[style*="background:#1a4545"],
-[data-theme="dark"] .export-btn[style*="background: #1a4545"] {
+[data-theme="dark"] .export-btn svg { fill: #7ece40 !important; }
+[data-theme="dark"] .export-btn[style*="background:#1e3a10"],
+[data-theme="dark"] .export-btn[style*="background: #1e3a10"] {
     background: #1a2f2f !important;
-    color: #7ecece !important;
+    color: #7ece40 !important;
 }
 [data-theme="dark"] .refresh-btn { background: #1e3a3a !important; }
 [data-theme="dark"] .refresh-btn:hover { background: #2a4a4a !important; }
@@ -964,7 +964,7 @@ MOBILE RESPONSIVE — Global
     color: #e0eaf0 !important;
     border-color: #2a3a4a !important;
 }
-[data-theme="dark"] .filter-select:focus { outline-color: #5a9e9e !important; }
+[data-theme="dark"] .filter-select:focus { outline-color: #5a9e2a !important; }
 
 [data-theme="dark"] .live-badge {
     background: rgba(34,197,94,0.08) !important;
@@ -1014,31 +1014,31 @@ MOBILE RESPONSIVE — Global
 
     /* Active Class Setup banner — stack vertically */
     .active-class-setup,
-    .controls-section > div[style*="background:#eef6f4"],
-    .controls-section > div[style*="background: #eef6f4"] {
+    .controls-section > div[style*="background:#eef6e8"],
+    .controls-section > div[style*="background: #eef6e8"] {
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 8px !important;
     }
     .active-class-setup select,
-    .controls-section > div[style*="background:#eef6f4"] select,
-    .controls-section > div[style*="background: #eef6f4"] select,
+    .controls-section > div[style*="background:#eef6e8"] select,
+    .controls-section > div[style*="background: #eef6e8"] select,
     .active-class-setup input[type="time"],
-    .controls-section > div[style*="background:#eef6f4"] input[type="time"],
-    .controls-section > div[style*="background: #eef6f4"] input[type="time"] {
+    .controls-section > div[style*="background:#eef6e8"] input[type="time"],
+    .controls-section > div[style*="background: #eef6e8"] input[type="time"] {
         width: 100% !important;
         min-width: 0 !important;
         box-sizing: border-box;
         flex: 1 1 100% !important;
     }
     .active-class-setup .set-btn,
-    .controls-section > div[style*="background:#eef6f4"] .set-btn,
-    .controls-section > div[style*="background: #eef6f4"] .set-btn {
+    .controls-section > div[style*="background:#eef6e8"] .set-btn,
+    .controls-section > div[style*="background: #eef6e8"] .set-btn {
         width: 100%;
     }
     .active-class-setup > div[style*="display:flex"],
-    .controls-section > div[style*="background:#eef6f4"] > div[style*="display:flex"],
-    .controls-section > div[style*="background: #eef6f4"] > div[style*="display:flex"] {
+    .controls-section > div[style*="background:#eef6e8"] > div[style*="display:flex"],
+    .controls-section > div[style*="background: #eef6e8"] > div[style*="display:flex"] {
         width: 100%;
     }
     /* Active subject display pill full width */

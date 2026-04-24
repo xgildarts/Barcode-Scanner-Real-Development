@@ -22,7 +22,7 @@
    .title-header {
        font-size: 1.5rem;
        font-weight: 700;
-       color: #1a4545;
+       color: #1e3a10;
        white-space: nowrap;
        overflow: hidden;
        text-overflow: ellipsis;
@@ -102,7 +102,7 @@
        border-radius: 10px;
        font-size: 13.5px;
        background: #f7fafa;
-       color: #1a4545;
+       color: #1e3a10;
        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
        outline: none;
@@ -111,7 +111,7 @@
    .search-input:focus {
        border-color: #2d6db5;
        background: #ffffff;
-       box-shadow: 0 0 0 3px rgba(90, 138, 122, 0.12);
+       box-shadow: 0 0 0 3px rgba(90, 138, 40, 0.12);
    }
 
    .search-input::placeholder {
@@ -490,7 +490,7 @@
    .sidebar-stats-value {
        font-size: 24px;
        font-weight: 700;
-       color: #1a4545;
+       color: #1e3a10;
    }
    
    .sidebar-menu {
@@ -666,13 +666,13 @@
 :root {
     --accent:           #1e3a5f;
     --accent-dark:      #2c5a5a;
-    --accent-light:     #eef6f4;
-    --accent-border:    #b2d8d0;
+    --accent-light:     #eef6e8;
+    --accent-border:    #b2d880;
     --surface:          #ffffff;
     --surface-alt:      #f8faf9;
     --surface-border:   #e0ebe8;
     --surface-hover:    #f0f7f5;
-    --text-primary:     #1a4545;
+    --text-primary:     #1e3a10;
     --text-secondary:   #4a6a9a;
     --text-muted:       #9ab0b0;
     --font-family:      system-ui, sans-serif;
@@ -762,7 +762,7 @@
 [data-theme="dark"] .welcome-text,
 [data-theme="dark"] .stats-title,
 [data-theme="dark"] .section-title { color: #e0eaf0 !important; }
-[data-theme="dark"] .stats-value { color: #7ecece !important; }
+[data-theme="dark"] .stats-value { color: #7ece40 !important; }
 [data-theme="dark"] .stats-label { color: #8aaabb !important; }
 
 /* Profile section */
@@ -852,7 +852,7 @@
 
 /* Event attendance */
 [data-theme="dark"] .attendance-table thead { background: #1a2d4a !important; }
-[data-theme="dark"] .attendance-table th { color: #7ecece !important; border-color: #2a3a4a !important; }
+[data-theme="dark"] .attendance-table th { color: #7ece40 !important; border-color: #2a3a4a !important; }
 [data-theme="dark"] .attendance-table td { color: #e0eaf0 !important; border-color: #2a3a4a !important; }
 [data-theme="dark"] .attendance-table tr:nth-child(even) { background: #1a2535 !important; }
 [data-theme="dark"] .attendance-table tr:hover { background: #1e2f3f !important; }
@@ -882,7 +882,7 @@
 [data-theme="dark"] .program-name { color: #e0eaf0 !important; }
 [data-theme="dark"] .add-program-btn {
     background: #1a2d4a !important;
-    color: #7ecece !important;
+    color: #7ece40 !important;
     border-color: #2d5a5a !important;
 }
 
@@ -901,7 +901,7 @@
     background: transparent !important;
 }
 [data-theme="dark"] .setup-section-label {
-    color: #7ecece !important;
+    color: #7ece40 !important;
     border-bottom-color: rgba(90,158,158,0.3) !important;
 }
 [data-theme="dark"] .program-card {
@@ -991,7 +991,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
 [data-theme="dark"] .stats-label { color: #8aaabb !important; }
-[data-theme="dark"] .stats-value { color: #7ecece !important; }
+[data-theme="dark"] .stats-value { color: #7ece40 !important; }
 [data-theme="dark"] .section-title { color: #e0eaf0 !important; }
 
 /* Chart card */
@@ -1072,7 +1072,7 @@
 [data-theme="dark"] .register-btn-container { background: #0f1c2e !important; }
 [data-theme="dark"] .register-btn {
     background: #1a2d4a !important;
-    color: #7ecece !important;
+    color: #7ece40 !important;
     border-color: #2d5a5a !important;
 }
 
@@ -1084,7 +1084,7 @@
 [data-theme="dark"] .attendance-table { background: #1a2535 !important; }
 [data-theme="dark"] .attendance-table thead tr { background: #1a2d4a !important; }
 [data-theme="dark"] .attendance-table th {
-    color: #7ecece !important;
+    color: #7ece40 !important;
     border-color: #2a3a4a !important;
 }
 [data-theme="dark"] .attendance-table td {
@@ -1104,7 +1104,7 @@
 /* Export / Print buttons */
 [data-theme="dark"] .export-btn {
     background: #1a2d4a !important;
-    color: #7ecece !important;
+    color: #7ece40 !important;
     border-color: #2d5a5a !important;
 }
 
@@ -1215,8 +1215,8 @@
     width: 100%;
     margin-top: 10px;
     padding: 10px;
-    background: #eef6f4;
-    border: 1.5px solid #b2d8d0;
+    background: #eef6e8;
+    border: 1.5px solid #b2d880;
     border-radius: 10px;
     color: #1e3a5f;
     font-size: 0.82rem;
@@ -1229,7 +1229,7 @@
 [data-theme="dark"] .stat-refresh-btn {
     background: #1a2f2f;
     border-color: #2d5a5a;
-    color: #7ecece;
+    color: #7ece40;
 }
 [data-theme="dark"] .stat-refresh-btn:hover { background: #1e3535; }
 
@@ -1293,8 +1293,8 @@
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
-    background: #eef6f4;
-    border: 1.5px solid #b2d8d0;
+    background: #eef6e8;
+    border: 1.5px solid #b2d880;
     border-radius: 10px;
     margin-bottom: 12px;
     flex-wrap: wrap;
@@ -1311,9 +1311,9 @@
 }
 .active-event-bar__badge {
     font-size: 0.82rem;
-    color: #1a5c4f;
+    color: #1e4a10;
     font-weight: 700;
-    background: #c8ece5;
+    background: #c8ecb0;
     padding: 4px 10px;
     border-radius: 20px;
     white-space: nowrap;
@@ -1325,10 +1325,10 @@
     border-color: #2d5a5a;
 }
 [data-theme="dark"] .active-event-bar__icon { fill: #4a7ab5; }
-[data-theme="dark"] .active-event-bar__label { color: #7ecece; }
+[data-theme="dark"] .active-event-bar__label { color: #7ece40; }
 [data-theme="dark"] .active-event-bar__badge {
     background: #1a3d35;
-    color: #7ecece;
+    color: #7ece40;
 }
 [data-theme="dark"] .event-name-input {
     background: #1e2f3f !important;
@@ -1342,7 +1342,7 @@
    ============================================================ */
 [data-theme="dark"] .set-event-button {
     background: linear-gradient(135deg, #1a2d4a 0%, #2d5a5a 100%) !important;
-    color: #7ecece !important;
+    color: #7ece40 !important;
     box-shadow: 0 3px 8px rgba(0,0,0,0.4) !important;
     border: 1.5px solid #1e3a5f !important;
 }
@@ -1363,24 +1363,24 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 [data-theme="dark"] .sidebar-stats-label { color: rgba(255, 255, 255, 0.55) !important; }
-[data-theme="dark"] .sidebar-stats-value { color: #7ecece !important; }
+[data-theme="dark"] .sidebar-stats-value { color: #7ece40 !important; }
 /* ============================================================
    NOTIFICATION BELL
    ============================================================ */
 .notif-btn {
     position: relative;
-    background: rgba(26,69,69,0.08);
-    border: 1.5px solid rgba(26,69,69,0.2);
+    background: rgba(26, 58, 16,0.08);
+    border: 1.5px solid rgba(26, 58, 16,0.2);
     border-radius: 10px;
     width: 38px; height: 38px;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: #1a4545;
+    cursor: pointer; color: #1e3a10;
     transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
 }
-.notif-btn svg { fill: #1a4545; }
+.notif-btn svg { fill: #1e3a10; }
 .notif-btn:hover {
-    background: rgba(26,69,69,0.15);
-    border-color: rgba(26,69,69,0.35);
+    background: rgba(26, 58, 16,0.15);
+    border-color: rgba(26, 58, 16,0.35);
 }
 [data-theme="dark"] .notif-btn {
     background: rgba(255,255,255,0.1);
@@ -1410,7 +1410,7 @@
 .notif-panel-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 18px;
-    background: linear-gradient(135deg, #1a4545 0%, #162d4a 100%);
+    background: linear-gradient(135deg, #1e3a10 0%, #162d4a 100%);
     color: white; font-size: 14px; font-weight: 700; flex-shrink: 0;
 }
 .notif-mark-all {
@@ -1439,7 +1439,7 @@
 .notif-item.unread .notif-icon { background: #c8e6c9; }
 .notif-item.unread .notif-icon svg { fill: #2e7d32; }
 .notif-body { flex: 1; min-width: 0; }
-.notif-title { font-size: 13px; font-weight: 700; color: #1a4545; margin-bottom: 2px; }
+.notif-title { font-size: 13px; font-weight: 700; color: #1e3a10; margin-bottom: 2px; }
 .notif-msg   { font-size: 12px; color: #666; line-height: 1.4; }
 .notif-time  { font-size: 10px; color: #aaa; margin-top: 4px; }
 .notif-dot   { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; flex-shrink: 0; margin-top: 5px; }
@@ -1693,7 +1693,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
-    background: rgba(20, 40, 40, 0.92);
+    background: rgba(20, 40, 10, 0.92);
     color: #ffffff;
     font-size: 11px;
     font-weight: 500;
@@ -1717,7 +1717,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     left: 50%;
     transform: translateX(-50%);
     border: 5px solid transparent;
-    border-top-color: rgba(20, 40, 40, 0.92);
+    border-top-color: rgba(20, 40, 10, 0.92);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;
@@ -1739,7 +1739,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     bottom: auto;
     top: calc(100% + 3px);
     border-top-color: transparent;
-    border-bottom-color: rgba(20, 40, 40, 0.92);
+    border-bottom-color: rgba(20, 40, 10, 0.92);
 }
 [data-tooltip][data-tooltip-pos="bottom"]:hover::after {
     transform: translateX(-50%) translateY(0);
@@ -1757,7 +1757,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     left: calc(100% + 3px);
     transform: translateY(-50%);
     border-top-color: transparent;
-    border-right-color: rgba(20, 40, 40, 0.92);
+    border-right-color: rgba(20, 40, 10, 0.92);
 }
 [data-tooltip][data-tooltip-pos="right"]:hover::after {
     transform: translateY(-50%) translateX(0);
@@ -1777,7 +1777,7 @@ Add data-tooltip="text" and optionally data-tooltip-pos="bottom|left|right"
     right: calc(100% + 3px);
     transform: translateY(-50%);
     border-top-color: transparent;
-    border-left-color: rgba(20, 40, 40, 0.92);
+    border-left-color: rgba(20, 40, 10, 0.92);
 }
 [data-tooltip][data-tooltip-pos="left"]:hover::after {
     transform: translateY(-50%) translateX(0);
